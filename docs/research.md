@@ -12,6 +12,7 @@
 | Semantic Scholar | semanticscholar.org | 搜索+引用上下文列表范式 | `[来源]` |
 | W&B / MLflow | wandb.ai / mlflow.org | run 跟踪与流水线 DAG 驾驶舱范式 | `[来源]` |
 | 同类 AI 论文写作向导（用户提供截图） | — | 创建表单范式：顶部步骤条（标题→文献→大纲→浏览/下载）+ 逐字段 label 表单（学历层次/字数/题目/语言/图表公式/格式模版），红\*必填、下拉与上传控件、橙色内联帮助文案 | `[实拍]`（用户提供截图） |
+| **Xept 内页（用户登录后截图 ×2）** | xept.online/projects · /workspace/:id | 项目列表页与工作台页真实布局，见下"内页实拍"节 | `[实拍]`（用户提供截图，2026-09-10） |
 
 ## Xept 实拍提取 `[实拍]`
 
@@ -27,6 +28,25 @@
 | 认证 | 邮箱 + Google OAuth（白底描边按钮）；整站登录墙 |
 
 **可迁移结论**：同品类对标成立——AutoSurvey 前端可直接采用"黑白 chrome + 内容即色彩"的语言：框架（导航/表格/表单）全黑白灰，彩色只留给 KG 节点分类、流水线状态、claims 核查结果三类**语义内容**。这与答辩诉求（证据链可信感）一致。
+
+## Xept 内页实拍（用户登录后提供）`[实拍]`
+
+### 项目列表页 /projects
+- **左侧栏布局**（非顶栏）：黑 wordmark + slogan（"Write with you."）→ 实底黑主按钮「Create LaTeX Project」+ 白底次按钮「Create Doc Project」→ 分组导航（PROJECTS：All/Your/Shared/Trashed；RESOURCES：Templates/Venues）
+- 主区：大标题 "All projects" + 通栏搜索框 + 排序下拉（Last modified ↓）+ **大写列头表格**（TITLE / TYPE & TARGET & DDL / OWNER / MODIFIED / ACTIONS）+ 行内图标操作 + 底部计数（"Showing 1 out of 1 projects"）
+- **主按钮实底黑+白字确认**（登录页推断成立）
+
+### 工作台页 /workspace/:id
+- **顶部状态条**：logo + 返回 + **额度进度条（credits 70，绿色）** + "Use my own AI account" + 居中项目名 + Share/History/Backup/Stats
+- **三栏 IDE 布局**：左文件树（底部 Resources/Outline 标签页）｜中 LaTeX 编辑器 + PDF 预览双栏（黑色圆形 Compile 按钮）｜右 **Paper Agent 聊天面板**
+- Agent 面板四段式：标题行（+新建/历史/收起）→ **蓝点状态 "Initializing"** → 能力清单（Review/Translate/Polish/Structure）→ 输入区（附件/「Set Venue」操作/Auto 模式下拉/发送）+ 底部免责声明
+- 空态即引导（"No PDF Preview / Click Compile to generate PDF"）
+
+### 对 AutoSurvey 的直接影响（修正与采纳）
+1. **修正**：ui-design.md 原 B1 写"卡片栅格，xept 卡片范式"——实拍是表格范式，此前为推测。**决策：项目列表保留卡片栅格**（有意差异化：5W 进度条放不进表格行），但布局骨架照搬——左侧栏分组导航 + 大标题 + 通栏搜索 + 排序下拉 + 底部计数
+2. **采纳**：顶部状态条 → 放「DEMO DATA 徽标 + 流水线状态摘要」；"Use my own AI account" → 「mock/真实后端切换」开关的交互原型
+3. **采纳**：Paper Agent 面板四段式 → Agent 控制台（B10）直接对标，差异是中间插入 agentic loop 工具调用时间线
+4. **采纳**：三栏 IDE 布局 → 报告页（B9）大纲树 + LaTeX/PDF 双栏预览
 
 ## 可借鉴的模式（按页面）
 
