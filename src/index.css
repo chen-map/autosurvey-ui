@@ -53,3 +53,47 @@
     outline-offset: 2px;
   }
 }
+
+/* ============================================================
+   动效基建（implementation-guide §2：时长三档 150/250/400ms；
+   只动 transform/opacity；尊重 prefers-reduced-motion）
+   ============================================================ */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+@keyframes gauge {
+  from {
+    stroke-dashoffset: 250;
+  }
+}
+.anim-rise {
+  animation: rise 150ms ease-out backwards;
+}
+.stagger > * {
+  animation: rise 150ms ease-out backwards;
+}
+.stagger > *:nth-child(2) { animation-delay: 30ms; }
+.stagger > *:nth-child(3) { animation-delay: 60ms; }
+.stagger > *:nth-child(4) { animation-delay: 90ms; }
+.stagger > *:nth-child(5) { animation-delay: 120ms; }
+.stagger > *:nth-child(6) { animation-delay: 150ms; }
+.stagger > *:nth-child(7) { animation-delay: 180ms; }
+.stagger > *:nth-child(8) { animation-delay: 210ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .stagger > *,
+  [animation],
+  [style*='animation'] {
+    animation: none !important;
+  }
+}

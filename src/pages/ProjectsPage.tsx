@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import type { Project, ProjectStatus } from '@/types';
 import { listProjects } from '@/services/api';
@@ -25,6 +26,7 @@ function Stat({ icon: Icon, value, label }: { icon: typeof FileText; value: stri
 }
 
 function ProjectCard({ p }: { p: Project }) {
+  const navigate = useNavigate();
   const s = statusBadge[p.status];
   const claims = p.stats.claims;
   const claimsText =
@@ -32,7 +34,13 @@ function ProjectCard({ p }: { p: Project }) {
       ? `${claims.verified + claims.needsRevision + claims.shouldRemove} 条`
       : '—';
   return (
-    <Card className="flex cursor-pointer flex-col gap-3 p-5 transition-shadow hover:shadow-s2">
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/projects/${p.id}/rq`)}
+      onKeyDown={(e) => e.key === 'Enter' && navigate(`/projects/${p.id}/rq`)}
+      className="flex cursor-pointer flex-col gap-3 p-5 transition-shadow hover:shadow-s2"
+    >
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-[16px] font-semibold leading-6">{p.title}</h3>
         <Badge variant={s.variant} withDot={p.status === 'running'}>
@@ -133,7 +141,7 @@ export function ProjectsPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
+        <div className="stagger mt-6 grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
           {shown.map((p) => (
             <ProjectCard key={p.id} p={p} />
           ))}
