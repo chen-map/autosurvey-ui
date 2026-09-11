@@ -10,6 +10,7 @@ const TABS = [
   { to: 'rq', label: 'RQ 与证据' },
   { to: 'pipeline', label: '流水线' },
   { to: 'corpus', label: '语料库' },
+  { to: 'kg', label: 'KG 图谱' },
   { to: 'report', label: '报告' },
   { to: 'agent', label: 'Agent 分析' },
 ];

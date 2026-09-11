@@ -9,7 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@xyflow/react": "^12.11.6",
     "clsx": "^2.1.1",
+    "d3-force": "^3.0.0",
     "lucide-react": "^0.441.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -18,6 +20,7 @@
     "zustand": "^4.5.5"
   },
   "devDependencies": {
+    "@types/d3-force": "^3.0.10",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",

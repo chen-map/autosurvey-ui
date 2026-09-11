@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Download, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { OutlineNode } from '@/types/data';
 import { getReport } from '@/services/api';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
-function OutlineTree({ nodes, depth = 0 }: { nodes: OutlineNode[]; depth?: number }) {
+function OutlineTree({ nodes, depth = 0, rqHref }: { nodes: OutlineNode[]; depth?: number; rqHref: (rq: string) => string }) {
   return (
     <ul className={cn(depth > 0 && 'ml-4 border-l border-line/60 pl-3')}>
       {nodes.map((n) => (
@@ -16,11 +16,19 @@ function OutlineTree({ nodes, depth = 0 }: { nodes: OutlineNode[]; depth?: numbe
           <div className="flex items-center justify-between gap-2">
             <span className={cn('text-[13.5px]', depth === 0 ? 'font-medium text-t1' : 'text-t2')}>{n.title}</span>
             <span className="shrink-0 text-[11px] text-t3">
-              {n.rq && <span className="mr-2 rounded bg-black/5 px-1.5 py-0.5">{n.rq}</span>}
+              {n.rq && (
+                <Link
+                  to={rqHref(n.rq)}
+                  title={`跳转到 ${n.rq} 的证据页`}
+                  className="mr-2 rounded bg-black/5 px-1.5 py-0.5 text-info-fg transition-colors hover:bg-info"
+                >
+                  {n.rq} →
+                </Link>
+              )}
               {n.papers} 篇
             </span>
           </div>
-          {n.children && <OutlineTree nodes={n.children} depth={depth + 1} />}
+          {n.children && <OutlineTree nodes={n.children} depth={depth + 1} rqHref={rqHref} />}
         </li>
       ))}
     </ul>
@@ -46,8 +54,12 @@ export function ReportPage() {
       {/* 大纲树 */}
       <Card className="h-fit p-5">
         <div className="text-[14px] font-medium">综述大纲（章节 → RQ → 论文）</div>
+        <p className="mt-1 text-[12px] text-t3">点击章节的 RQ 标记可直接跳转到对应证据页</p>
         <div className="mt-3">
-          <OutlineTree nodes={data.outline} />
+          <OutlineTree
+            nodes={data.outline}
+            rqHref={(rq) => `/projects/${projectId}/rq/${rq.toLowerCase()}-1`}
+          />
         </div>
       </Card>
 

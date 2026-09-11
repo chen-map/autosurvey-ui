@@ -13,6 +13,7 @@ import { RqPage } from '@/pages/RqPage';
 import { EvidencePage } from '@/pages/EvidencePage';
 import { ReportPage } from '@/pages/ReportPage';
 import { AgentPage } from '@/pages/AgentPage';
+import { KgPage } from '@/pages/KgPage';
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="rq/:rqId" element={<EvidencePage />} />
             <Route path="pipeline" element={<PipelinePage />} />
             <Route path="corpus" element={<CorpusPage />} />
+            <Route path="kg" element={<KgPage />} />
             <Route path="report" element={<ReportPage />} />
             <Route path="agent" element={<AgentPage />} />
           </Route>
