@@ -143,12 +143,13 @@ export const EDGE_KIND_LABELS: Record<KgEdge['kind'], string> = {
   supports: 'supports 支持',
 };
 
-// 压力快照：真实规模 500 节点（implementation-guide §8 大数据实测要求）
-export function buildStressGraph(total = 500): { nodes: unknown[]; edges: Edge[] } {
-  const paperCount = Math.round(total * 0.3);
-  const conceptCount = total - paperCount;
+// 压力快照：按真实比例生成（implementation-guide §8 大数据实测要求）
+// 实测比例（AutoSurvey：162 论文 → 645 概念 → 313 边）：概念 ≈ 4× 论文数
+export function buildStressGraph(papersCount = 500): { nodes: unknown[]; edges: Edge[] } {
+  const conceptCount = papersCount * 4;
+  const total = papersCount + conceptCount;
   const nodes: KgGraphNode[] = [];
-  for (let i = 0; i < paperCount; i++) {
+  for (let i = 0; i < papersCount; i++) {
     nodes.push({ id: `sp-${i}`, kgType: 'paper', label: `Paper #${i + 1}`, rqTags: [RQ_CYCLE[i % 4], RQ_CYCLE[(i + 2) % 4]] });
   }
   const types: KgType[] = ['problem', 'method', 'dataset', 'metric', 'limitation', 'assumption'];
@@ -178,12 +179,14 @@ export function buildStressGraph(total = 500): { nodes: unknown[]; edges: Edge[]
   type SimNode = KgGraphNode & { x?: number; y?: number };
   const simNodes: SimNode[] = nodes.map((n) => ({ ...n }));
   const simLinks = edges.map((e) => ({ ...e }));
+  // 大图降 tick 保加载速度：5000 节点用 50 轮，2500 用 80，小图 140
+  const ticks = total > 3000 ? 50 : total > 1200 ? 80 : 140;
   const sim = forceSimulation(simNodes)
     .force('charge', forceManyBody().strength(-140))
     .force('link', forceLink(simLinks).id((d: unknown) => (d as { id: string }).id).distance(64).strength(0.25))
     .force('center', forceCenter(480, 340))
     .stop();
-  sim.tick(140);
+  sim.tick(ticks);
   const pos = new Map(simNodes.map((n) => [n.id, { x: n.x ?? 0, y: n.y ?? 0 }]));
   const rfNodes = nodes.map((n) => ({ id: n.id, position: pos.get(n.id)!, data: { ...n }, type: n.kgType === 'paper' ? 'paper' : 'concept' }));
   const rfEdges: Edge[] = edges.map((e, i) => ({ id: `se-${i}`, source: e.source, target: e.target, kind: 'straight' as const, style: edgeStyle(e.kind), data: { kind: e.kind } }));
