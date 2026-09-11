@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 
 const PRESET_FIELDS = ['LLM 安全', '智能体', '多模态', 'GNN', '可解释性', '扩散模型', '时序预测', '联邦学习'];
+const PLATFORMS = ['Semantic Scholar', 'arXiv', 'IEEE', 'ACM', 'Springer', 'Elsevier', 'Google Scholar'];
 const STEPS = ['研究领域', '主题与种子', '本地资料', '参数配置', '确认创建'];
 
 // B2 创建向导：研究领域标签 → 主题+种子 → 本地资料 → 参数 → 确认
@@ -21,7 +22,12 @@ export function NewProjectPage() {
   const [locals, setLocals] = useState<string[]>([]);
   const [prescore, setPrescore] = useState(0.25);
   const [stage, setStage] = useState('标准（六阶段全开）');
+  const [platforms, setPlatforms] = useState<string[]>(['Semantic Scholar', 'arXiv']);
+  const [paperCap, setPaperCap] = useState(500);
   const [creating, setCreating] = useState(false);
+
+  const togglePlatform = (p: string) =>
+    setPlatforms((s) => (s.includes(p) ? (s.length > 1 ? s.filter((x) => x !== p) : s) : [...s, p]));
 
   const toggleTag = (t: string) =>
     setTags((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
@@ -162,6 +168,38 @@ export function NewProjectPage() {
         {step === 3 && (
           <div className="space-y-5">
             <div>
+              <div className="text-[14px] font-medium">论文搜索平台 <span className="text-[12px] font-normal text-t3">（可多选，至少一个）</span></div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {PLATFORMS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => togglePlatform(p)}
+                    className={cn(
+                      'rounded-full border px-3 py-1.5 text-[13px] transition-all',
+                      platforms.includes(p) ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/50',
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between text-[14px] font-medium">
+                <span>使用论文数量上限</span>
+                <span className="tabular-nums text-t2">{paperCap} 篇</span>
+              </div>
+              <input
+                type="range" min={100} max={2000} step={100} value={paperCap}
+                onChange={(e) => setPaperCap(Number(e.target.value))}
+                className="mt-2 w-full accent-black"
+              />
+              <p className="mt-1 text-[12.5px] text-t3">
+                限制进入语料库的论文规模（默认 500）。直接决定 W1 筛选量与 W2 KG 构建耗时：500 篇 ≈ 13 万论文对 ≈ 3–4h
+              </p>
+            </div>
+            <div>
               <div className="text-[14px] font-medium">检索式预览</div>
               <div className="mt-2 rounded-lg bg-page px-3 py-2.5 font-mono text-[12.5px] leading-5 text-t2">
                 ( "{tags[0] ?? 'LLM'}" OR "{tags[1] ?? 'survey'}" ) AND ( "survey" OR "review" OR "taxonomy" )
@@ -203,6 +241,8 @@ export function NewProjectPage() {
               ['综述主题', title],
               ['种子论文', `${seeds.length} 篇`],
               ['本地资料', `${locals.length} 篇`],
+              ['搜索平台', platforms.join('、')],
+              ['论文数量上限', `${paperCap} 篇`],
               ['prescore 阈值', String(prescore)],
               ['筛选档位', stage],
             ].map(([k, v]) => (

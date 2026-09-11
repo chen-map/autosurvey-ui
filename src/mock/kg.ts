@@ -142,3 +142,50 @@ export const EDGE_KIND_LABELS: Record<KgEdge['kind'], string> = {
   contradicts: 'contradicts 矛盾',
   supports: 'supports 支持',
 };
+
+// 压力快照：真实规模 500 节点（implementation-guide §8 大数据实测要求）
+export function buildStressGraph(total = 500): { nodes: unknown[]; edges: Edge[] } {
+  const paperCount = Math.round(total * 0.3);
+  const conceptCount = total - paperCount;
+  const nodes: KgGraphNode[] = [];
+  for (let i = 0; i < paperCount; i++) {
+    nodes.push({ id: `sp-${i}`, kgType: 'paper', label: `Paper #${i + 1}`, rqTags: [RQ_CYCLE[i % 4], RQ_CYCLE[(i + 2) % 4]] });
+  }
+  const types: KgType[] = ['problem', 'method', 'dataset', 'metric', 'limitation', 'assumption'];
+  for (let i = 0; i < conceptCount; i++) {
+    const kgType = types[i % types.length];
+    nodes.push({ id: `sc-${i}`, kgType, label: `${TYPE_LABELS[kgType]} #${i + 1}`, rqTags: [RQ_CYCLE[i % 4]] });
+  }
+  const byType = new Map(types.map((t) => [t, nodes.filter((n) => n.kgType === t).map((n) => n.id)]));
+  const methods = byType.get('method')!;
+  const edges: KgEdge[] = [];
+  nodes.forEach((n, i) => {
+    if (n.kgType === 'paper') edges.push({ source: n.id, target: methods[i % Math.max(methods.length, 1)], kind: 'proposes' });
+    if (n.kgType === 'dataset') edges.push({ source: methods[i % Math.max(methods.length, 1)], target: n.id, kind: 'evaluated_on' });
+  });
+  const papers = nodes.filter((n) => n.kgType === 'paper').map((n) => n.id);
+  for (let i = 0; i < papers.length; i += 2) {
+    edges.push({ source: papers[i], target: papers[(i + 3) % papers.length], kind: i % 5 === 0 ? 'contradicts' : 'extends' });
+    edges.push({ source: papers[i], target: papers[(i + 5) % papers.length], kind: 'compares_with' });
+  }
+  const metricIds = byType.get('metric')!;
+  const problemIds = byType.get('problem')!;
+  methods.forEach((m, i) => {
+    edges.push({ source: m, target: metricIds[i % metricIds.length], kind: 'measured_by' });
+    edges.push({ source: m, target: problemIds[i % problemIds.length], kind: 'addresses' });
+  });
+
+  type SimNode = KgGraphNode & { x?: number; y?: number };
+  const simNodes: SimNode[] = nodes.map((n) => ({ ...n }));
+  const simLinks = edges.map((e) => ({ ...e }));
+  const sim = forceSimulation(simNodes)
+    .force('charge', forceManyBody().strength(-140))
+    .force('link', forceLink(simLinks).id((d: unknown) => (d as { id: string }).id).distance(64).strength(0.25))
+    .force('center', forceCenter(480, 340))
+    .stop();
+  sim.tick(140);
+  const pos = new Map(simNodes.map((n) => [n.id, { x: n.x ?? 0, y: n.y ?? 0 }]));
+  const rfNodes = nodes.map((n) => ({ id: n.id, position: pos.get(n.id)!, data: { ...n }, type: n.kgType === 'paper' ? 'paper' : 'concept' }));
+  const rfEdges: Edge[] = edges.map((e, i) => ({ id: `se-${i}`, source: e.source, target: e.target, kind: 'straight' as const, style: edgeStyle(e.kind), data: { kind: e.kind } }));
+  return { nodes: rfNodes, edges: rfEdges };
+}

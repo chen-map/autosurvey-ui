@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
   ReactFlow, Background, Controls, MiniMap,
   useNodesState, useEdgesState, Handle, Position,
@@ -7,7 +7,7 @@ import {
 } from '@xyflow/react';
 import { Maximize2 } from 'lucide-react';
 import '@xyflow/react/dist/style.css';
-import { buildKgGraph, TYPE_COLORS, TYPE_LABELS, EDGE_KIND_LABELS, type KgGraphNode, type KgType } from '@/mock/kg';
+import { buildKgGraph, buildStressGraph, TYPE_COLORS, TYPE_LABELS, EDGE_KIND_LABELS, type KgGraphNode, type KgType } from '@/mock/kg';
 import { getCorpus } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -51,9 +51,20 @@ const nodeTypes = { paper: PaperNode, concept: ConceptNode };
 // ---- 页面 ----
 export function KgPage() {
   const { projectId = '' } = useParams();
-  const graph = useMemo(() => buildKgGraph(), []);
-  const [nodes, , onNodesChange] = useNodesState(graph.nodes as Node[]);
-  const [edges, , onEdgesChange] = useEdgesState(graph.edges as Edge[]);
+  const [searchParams] = useSearchParams();
+  const [stress, setStress] = useState(searchParams.get('stress') === '1');
+  // 压力快照构建计时（implementation-guide §8：大数据实测）
+  const { graph, buildMs } = useMemo(() => {
+    const t0 = performance.now();
+    const g = stress ? buildStressGraph(500) : buildKgGraph();
+    return { graph: g, buildMs: Math.round(performance.now() - t0) };
+  }, [stress]);
+  const [nodes, setNodes, onNodesChange] = useNodesState(graph.nodes as Node[]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(graph.edges as Edge[]);
+  useEffect(() => {
+    setNodes(graph.nodes as Node[]);
+    setEdges(graph.edges as Edge[]);
+  }, [graph, setNodes, setEdges]);
   const [hiddenTypes, setHiddenTypes] = useState<Set<KgType>>(new Set());
   const [onlyContradicts, setOnlyContradicts] = useState(false);
   const [rqHighlight, setRqHighlight] = useState<'ALL' | string>('ALL');
@@ -152,6 +163,20 @@ export function KgPage() {
           </button>
           <button
             type="button"
+            onClick={() => setStress((v) => !v)}
+            className={cn(
+              'rounded-full border px-2.5 py-1 text-[12px] transition-colors',
+              stress ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/60',
+            )}
+            title="加载 500 节点压力快照（implementation-guide §8）"
+          >
+            压力快照 500 节点
+          </button>
+          <Badge variant="neutral">
+            {stress ? '500 节点' : '演示子集 34 节点'} · {graph.edges.length} 边 · 构建 {buildMs}ms
+          </Badge>
+          <button
+            type="button"
             onClick={fullscreen}
             title="全屏展示（答辩模式）"
             className="inline-flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-[12px] text-t2 transition-colors hover:border-ink hover:text-t1"
@@ -171,6 +196,7 @@ export function KgPage() {
           onEdgesChange={onEdgesChange}
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
+          onlyRenderVisibleElements
           proOptions={{ hideAttribution: true }}
           fitView
         >
