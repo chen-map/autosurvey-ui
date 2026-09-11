@@ -97,3 +97,16 @@
     animation: none !important;
   }
 }
+
+/* KG 画布全屏：shell 铺满视口，画布弹性占满（修复全屏后高度仍为 560px 的问题） */
+.kg-shell:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  padding: 16px;
+  background: var(--bg-page);
+  overflow: hidden;
+}
+.kg-shell:fullscreen .kg-canvas {
+  flex: 1;
+  height: auto;
+}

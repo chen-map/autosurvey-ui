@@ -154,7 +154,7 @@ export function KgPage() {
     scale === 'demo' ? `演示子集 ${graph.nodes.length} 节点` : `${scale} 论文 · ${graph.nodes.length} 节点`;
 
   return (
-    <div ref={shellRef} className="space-y-4">
+    <div ref={shellRef} className="kg-shell flex flex-col gap-4">
       {/* 工具条 */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -222,7 +222,7 @@ export function KgPage() {
       </div>
 
       {/* 画布 + 详情面板 */}
-      <div className="relative h-[560px] overflow-hidden rounded-card border border-line/60 bg-card">
+      <div className="kg-canvas relative h-[560px] overflow-hidden rounded-card border border-line/60 bg-card">
         <ReactFlow
           nodes={display.shownNodes}
           edges={display.shownEdges}
@@ -230,7 +230,12 @@ export function KgPage() {
           onEdgesChange={onEdgesChange}
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
-          onlyRenderVisibleElements
+          onlyRenderVisibleElements={nodes.length > 400}
+          minZoom={0.05}
+          maxZoom={2.5}
+          nodesDraggable
+          nodesConnectable={false}
+          deleteKeyCode={null}
           proOptions={{ hideAttribution: true }}
           fitView
         >
