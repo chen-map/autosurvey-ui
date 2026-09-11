@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/store/auth';
 import type { ReactNode } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
@@ -22,7 +22,8 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    // HashRouter：GitHub Pages 无 SPA 回退，哈希路由免 404
+    <HashRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
@@ -48,6 +49,6 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/projects" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
