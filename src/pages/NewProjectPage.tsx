@@ -35,7 +35,8 @@ export function NewProjectPage() {
   const [prescore, setPrescore] = useState(0.25);
   const [stage, setStage] = useState('标准（六阶段全开）');
   const [platforms, setPlatforms] = useState<string[]>(['Semantic Scholar', 'arXiv']);
-  const [paperCap, setPaperCap] = useState(500);
+  const [searchCap, setSearchCap] = useState(2000);
+  const [corpusCap, setCorpusCap] = useState(500);
   const [creating, setCreating] = useState(false);
 
   // 自定义领域库：持久化保存，下次打开向导直接出现在快捷 chips 里
@@ -72,6 +73,11 @@ export function NewProjectPage() {
 
   const togglePlatform = (p: string) =>
     setPlatforms((s) => (s.includes(p) ? (s.length > 1 ? s.filter((x) => x !== p) : s) : [...s, p]));
+
+  const setCorpusCapClamped = (v: number) => {
+    setCorpusCap(v);
+    if (v > searchCap) setSearchCap(v); // 保留量不能超过检索量，自动抬底
+  };
 
   const toggleTag = (t: string) =>
     setTags((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
