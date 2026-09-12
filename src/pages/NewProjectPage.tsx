@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, X } from 'lucide-react';
 import { createProject } from '@/services/api';
@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 const PRESET_FIELDS = ['LLM 安全', '智能体', '多模态', 'GNN', '可解释性', '扩散模型', '时序预测', '联邦学习'];
 const PLATFORMS = ['Semantic Scholar', 'arXiv', 'IEEE', 'ACM', 'Springer', 'Elsevier', 'Google Scholar'];
 const STEPS = ['研究领域', '主题与种子', '本地资料', '参数配置', '确认创建'];
+const LS_CUSTOM_FIELDS = 'as.custom-fields'; // 用户自定义领域库（持久化，跨会话复用）
+const LS_LAST_FIELDS = 'as.last-fields'; // 上次使用的领域组合（自动预选）
 
 // B2 创建向导：研究领域标签 → 主题+种子 → 本地资料 → 参数 → 确认
 export function NewProjectPage() {
@@ -27,6 +29,38 @@ export function NewProjectPage() {
   const [paperCap, setPaperCap] = useState(500);
   const [creating, setCreating] = useState(false);
 
+  // 自定义领域库：持久化保存，下次打开向导直接出现在快捷 chips 里
+  const [savedCustom, setSavedCustom] = useState<string[]>(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem(LS_CUSTOM_FIELDS) ?? '[]');
+      return Array.isArray(v) ? v : [];
+    } catch {
+      return [];
+    }
+  });
+  const allFields = useMemo(
+    () => [...PRESET_FIELDS, ...savedCustom.filter((t) => !PRESET_FIELDS.includes(t))],
+    [savedCustom],
+  );
+
+  // 单用户研究方向固定：自动预选上次使用的领域组合
+  useEffect(() => {
+    try {
+      const last = JSON.parse(localStorage.getItem(LS_LAST_FIELDS) ?? '[]');
+      if (Array.isArray(last) && last.length > 0) setTags(last);
+    } catch {
+      /* 忽略损坏数据 */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const removeFromLibrary = (t: string) => {
+    const next = savedCustom.filter((x) => x !== t);
+    setSavedCustom(next);
+    localStorage.setItem(LS_CUSTOM_FIELDS, JSON.stringify(next));
+    setTags((s) => s.filter((x) => x !== t));
+  };
+
   const togglePlatform = (p: string) =>
     setPlatforms((s) => (s.includes(p) ? (s.length > 1 ? s.filter((x) => x !== p) : s) : [...s, p]));
 
@@ -35,7 +69,14 @@ export function NewProjectPage() {
 
   const addCustom = () => {
     const t = customTag.trim();
-    if (t && !tags.includes(t)) setTags((s) => [...s, t]);
+    if (!t) return;
+    // 新自定义领域入库（持久化），下次向导直接出现在快捷 chips
+    if (!allFields.includes(t)) {
+      const next = [...savedCustom, t];
+      setSavedCustom(next);
+      localStorage.setItem(LS_CUSTOM_FIELDS, JSON.stringify(next));
+    }
+    if (!tags.includes(t)) setTags((s) => [...s, t]);
     setCustomTag('');
   };
 
@@ -51,6 +92,7 @@ export function NewProjectPage() {
 
   const create = async () => {
     setCreating(true);
+    localStorage.setItem(LS_LAST_FIELDS, JSON.stringify(tags)); // 记住本次领域组合，下次自动预选
     await createProject({ title, fieldTags: tags });
     navigate('/projects');
   };
@@ -87,19 +129,36 @@ export function NewProjectPage() {
             <div className="text-[14px] font-medium">研究领域 <span className="text-danger">*</span></div>
             <p className="mt-1 text-[12.5px] text-t3">选择 1–3 个领域，用于生成检索式与 Gap 分析的聚焦范围</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {PRESET_FIELDS.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => toggleTag(t)}
-                  className={cn(
-                    'anim-rise rounded-full border px-3 py-1.5 text-[13px] transition-all',
-                    tags.includes(t) ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/50',
-                  )}
-                >
-                  {t}
-                </button>
-              ))}
+              {allFields.map((t: string) => {
+                const isCustom = savedCustom.includes(t);
+                return (
+                  <div key={t} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => toggleTag(t)}
+                      className={cn(
+                        'anim-rise rounded-full border px-3 py-1.5 text-[13px] transition-all',
+                        tags.includes(t) ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/50',
+                      )}
+                    >
+                      {t}
+                    </button>
+                    {isCustom && (
+                      <button
+                        type="button"
+                        title="从我的领域库移除"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromLibrary(t);
+                        }}
+                        className="absolute -right-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-ink text-[9px] text-white opacity-70 transition-opacity hover:opacity-100"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             {/* 已选标签回显（可移除）——修复"添加后无可见反馈" */}
             <div className="mt-3 flex min-h-[28px] flex-wrap items-center gap-1.5">
