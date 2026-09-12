@@ -5,6 +5,7 @@ import { createProject } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 
 const PRESET_FIELDS = ['LLM 安全', '智能体', '多模态', 'GNN', '可解释性', '扩散模型', '时序预测', '联邦学习'];
@@ -98,6 +99,24 @@ export function NewProjectPage() {
                 >
                   {t}
                 </button>
+              ))}
+            </div>
+            {/* 已选标签回显（可移除）——修复"添加后无可见反馈" */}
+            <div className="mt-3 flex min-h-[28px] flex-wrap items-center gap-1.5">
+              <span className="text-[12px] text-t3">已选（{tags.length}）：</span>
+              {tags.length === 0 && <span className="text-[12px] text-t3">尚未选择</span>}
+              {tags.map((t) => (
+                <Badge key={t} variant="info" className="pr-1">
+                  {t}
+                  <button
+                    type="button"
+                    title="移除"
+                    className="rounded-full p-0.5 transition-colors hover:bg-black/10"
+                    onClick={() => toggleTag(t)}
+                  >
+                    <X size={11} />
+                  </button>
+                </Badge>
               ))}
             </div>
             <div className="mt-4 flex gap-2">
