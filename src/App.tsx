@@ -14,6 +14,8 @@ import { EvidencePage } from '@/pages/EvidencePage';
 import { ReportPage } from '@/pages/ReportPage';
 import { AgentPage } from '@/pages/AgentPage';
 import { KgPage } from '@/pages/KgPage';
+import { KnowledgeBasePage } from '@/pages/KnowledgeBasePage';
+import { DirectionPage } from '@/pages/DirectionPage';
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -35,6 +37,8 @@ export default function App() {
         >
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/new" element={<NewProjectPage />} />
+          <Route path="/library" element={<KnowledgeBasePage />} />
+          <Route path="/direction" element={<DirectionPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/projects/:projectId" element={<ProjectLayout />}>
             <Route index element={<Navigate to="rq" replace />} />

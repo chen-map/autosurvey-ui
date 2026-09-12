@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, FileText } from 'lucide-react';
+import { X, FileText, Bookmark } from 'lucide-react';
 import type { PaperRecord, ScreenStage, PrismaLevel } from '@/types/data';
 import { getCorpus } from '@/services/api';
+import { useLibrary } from '@/store/library';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
 const STAGES: ScreenStage[] = ['标题筛选', '摘要筛选', '可获取性', '全文筛选', '质量评估', '已纳入'];
@@ -14,6 +16,8 @@ function stageVariantOf(s: ScreenStage): 'neutral' | 'ok' {
 }
 
 export function CorpusPage() {
+  const { items: libItems, toggleSave } = useLibrary();
+  const savedIdx = useMemo(() => new Set(libItems.map((i) => i.paperIdx)), [libItems]);
   const [data, setData] = useState<{ papers: PaperRecord[]; funnel: PrismaLevel[] } | null>(null);
   const [query, setQuery] = useState('');
   const [stage, setStage] = useState<'ALL' | ScreenStage>('ALL');
@@ -89,11 +93,15 @@ export function CorpusPage() {
                 <th className="px-2 py-2.5 font-medium">年份</th>
                 <th className="px-2 py-2.5 font-medium">发表处</th>
                 <th className="px-2 py-2.5 font-medium">引用</th>
-                <th className="px-4 py-2.5 font-medium">筛选阶段</th>
+                <th className="px-2 py-2.5 font-medium">筛选阶段</th>
+                <th className="px-4 py-2.5 font-medium">收藏</th>
               </tr>
             </thead>
             <tbody>
-              {shown.map((p, i) => (
+              {shown.map((p, i) => {
+                const idx = Number(p.id.replace('paper-', '')) - 1;
+                const saved = savedIdx.has(idx);
+                return (
                 <tr
                   key={p.id}
                   className="anim-rise cursor-pointer border-b border-line/40 last:border-0 transition-colors hover:bg-black/[0.03]"
@@ -105,11 +113,25 @@ export function CorpusPage() {
                   <td className="px-2 py-2.5 tabular-nums text-t2">{p.year}</td>
                   <td className="px-2 py-2.5 text-t2">{p.venue}</td>
                   <td className="px-2 py-2.5 tabular-nums text-t2">{p.citations}</td>
-                  <td className="px-4 py-2.5"><Badge variant={stageVariantOf(p.stage)}>{p.stage}</Badge></td>
+                  <td className="px-2 py-2.5"><Badge variant={stageVariantOf(p.stage)}>{p.stage}</Badge></td>
+                  <td className="px-4 py-2.5">
+                    <button
+                      type="button"
+                      title={saved ? '从知识库移除' : '收藏到知识库'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSave({ paperIdx: idx, title: p.title, authors: p.authors, venue: p.venue, year: p.year, citations: p.citations });
+                      }}
+                      className="rounded p-1.5 text-t3 transition-colors hover:bg-black/5"
+                    >
+                      <Bookmark size={14} className={saved ? 'fill-ink text-ink' : ''} />
+                    </button>
+                  </td>
                 </tr>
-              ))}
+                );
+              })}
               {shown.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-t3">没有匹配的论文</td></tr>
+                <tr><td colSpan={7} className="px-4 py-10 text-center text-t3">没有匹配的论文</td></tr>
               )}
             </tbody>
           </table>
@@ -136,6 +158,9 @@ const CARD_TABS = [
 
 function PaperDrawer({ paper, onClose }: { paper: PaperRecord; onClose: () => void }) {
   const [tab, setTab] = useState<(typeof CARD_TABS)[number][0]>('problems');
+  const { items: libItems, toggleSave } = useLibrary();
+  const idx = Number(paper.id.replace('paper-', '')) - 1;
+  const saved = libItems.some((i) => i.paperIdx === idx);
   return (
     <div className="fixed inset-0 z-[100]">
       <div className="absolute inset-0 bg-black/45" style={{ animation: 'rise .15s ease-out' }} onClick={onClose} />
@@ -193,9 +218,18 @@ function PaperDrawer({ paper, onClose }: { paper: PaperRecord; onClose: () => vo
         </div>
 
         <div className="border-t border-line/60 p-5">
-          <div className="flex items-center gap-2 rounded-lg bg-info px-3 py-2 text-[12px] text-info-fg">
-            <FileText size={14} />
-            PDF 全文预览在里程碑 3（语料库深化）接入
+          <div className="flex items-center gap-2">
+            <Button
+              variant={saved ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={() =>
+                toggleSave({ paperIdx: idx, title: paper.title, authors: paper.authors, venue: paper.venue, year: paper.year, citations: paper.citations })
+              }
+            >
+              <Bookmark size={13} className={saved ? 'fill-ink' : ''} />
+              {saved ? '已在知识库' : '收藏到知识库'}
+            </Button>
+            <span className="text-[12px] text-t3">PDF 全文预览在语料库深化阶段接入</span>
           </div>
         </div>
       </aside>
