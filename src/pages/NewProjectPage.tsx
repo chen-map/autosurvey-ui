@@ -21,7 +21,7 @@ export function NewProjectPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
   const [title, setTitle] = useState('');
-  const [seeds, setSeeds] = useState<string[]>(['seed-transformer-safety.pdf']);
+  const [seeds, setSeeds] = useState<string[]>([]);
   const [locals, setLocals] = useState<string[]>([]);
   const [prescore, setPrescore] = useState(0.25);
   const [stage, setStage] = useState('标准（六阶段全开）');
