@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Lock } from 'lucide-react';
 import { createProject } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -9,7 +9,16 @@ import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 
 const PRESET_FIELDS = ['LLM 安全', '智能体', '多模态', 'GNN', '可解释性', '扩散模型', '时序预测', '联邦学习'];
-const PLATFORMS = ['Semantic Scholar', 'arXiv', 'IEEE', 'ACM', 'Springer', 'Elsevier', 'Google Scholar'];
+// 平台分层：免费 API / 需订阅或付费 API（付费平台走 BYO Key，见支付说明）
+const PLATFORMS: { name: string; paid: boolean }[] = [
+  { name: 'Semantic Scholar', paid: false },
+  { name: 'arXiv', paid: false },
+  { name: 'Google Scholar', paid: false },
+  { name: 'IEEE', paid: true },
+  { name: 'ACM', paid: true },
+  { name: 'Springer', paid: true },
+  { name: 'Elsevier', paid: true },
+];
 const STEPS = ['研究领域', '主题与种子', '本地资料', '参数配置', '确认创建'];
 const LS_CUSTOM_FIELDS = 'as.custom-fields'; // 用户自定义领域库（持久化，跨会话复用）
 const LS_LAST_FIELDS = 'as.last-fields'; // 上次使用的领域组合（自动预选）
@@ -246,35 +255,60 @@ export function NewProjectPage() {
         {step === 3 && (
           <div className="space-y-5">
             <div>
-              <div className="text-[14px] font-medium">论文搜索平台 <span className="text-[12px] font-normal text-t3">（可多选，至少一个）</span></div>
+              <div className="text-[14px] font-medium">论文搜索平台 <span className="text-[12px] font-normal text-t3">（可多选，至少一个；<Lock size={11} className="inline" /> = 需订阅/付费 API，用自带密钥接入）</span></div>
               <div className="mt-2 flex flex-wrap gap-2">
-                {PLATFORMS.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => togglePlatform(p)}
-                    className={cn(
-                      'rounded-full border px-3 py-1.5 text-[13px] transition-all',
-                      platforms.includes(p) ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/50',
-                    )}
-                  >
-                    {p}
-                  </button>
-                ))}
+                {PLATFORMS.map(({ name, paid }) => {
+                  const selectedPlat = platforms.includes(name);
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => togglePlatform(name)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] transition-all',
+                        selectedPlat ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/50',
+                      )}
+                    >
+                      {paid && <Lock size={11} className={selectedPlat ? 'text-white/80' : 'text-warn-fg'} />}
+                      {name}
+                    </button>
+                  );
+                })}
               </div>
+              {platforms.some((name) => PLATFORMS.find((x) => x.name === name)?.paid) && (
+                <p className="mt-2 text-[12.5px] leading-5 text-warn-fg">
+                  已选订阅制平台：需在设置中填入机构/API Key 后才会真实返回数据（Key 仅存本地）。
+                </p>
+              )}
             </div>
             <div>
               <div className="flex items-center justify-between text-[14px] font-medium">
-                <span>使用论文数量上限</span>
-                <span className="tabular-nums text-t2">{paperCap} 篇</span>
+                <span>检索上限</span>
+                <span className="tabular-nums text-t2">{searchCap} 篇</span>
               </div>
               <input
-                type="range" min={100} max={2000} step={100} value={paperCap}
-                onChange={(e) => setPaperCap(Number(e.target.value))}
+                type="range" min={200} max={5000} step={100} value={searchCap}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setSearchCap(v);
+                  if (corpusCap > v) setCorpusCap(v);
+                }}
+                className="mt-2 w-full accent-black"
+              />
+              <p className="mt-1 text-[12.5px] text-t3">七库联合检索与六阶段筛选的处理量（默认 2000），决定 W1 筛选耗时</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-between text-[14px] font-medium">
+                <span>最终保留上限</span>
+                <span className="tabular-nums text-t2">{corpusCap} 篇</span>
+              </div>
+              <input
+                type="range" min={100} max={Math.max(searchCap, 100)} step={50} value={corpusCap}
+                onChange={(e) => setCorpusCapClamped(Number(e.target.value))}
                 className="mt-2 w-full accent-black"
               />
               <p className="mt-1 text-[12.5px] text-t3">
-                限制进入语料库的论文规模（默认 500）。直接决定 W1 筛选量与 W2 KG 构建耗时：500 篇 ≈ 13 万论文对 ≈ 3–4h
+                筛选后进入语料库的规模（默认 500），直接决定 W2 KG 构建耗时：500 篇 ≈ 13 万论文对 ≈ 3–4h
               </p>
             </div>
             <div>
@@ -320,7 +354,8 @@ export function NewProjectPage() {
               ['种子论文', `${seeds.length} 篇`],
               ['本地资料', `${locals.length} 篇`],
               ['搜索平台', platforms.join('、')],
-              ['论文数量上限', `${paperCap} 篇`],
+              ['检索上限', `${searchCap} 篇`],
+              ['最终保留上限', `${corpusCap} 篇`],
               ['prescore 阈值', String(prescore)],
               ['筛选档位', stage],
             ].map(([k, v]) => (
