@@ -24,11 +24,26 @@
 
 前端 localStorage 键：`as.custom-fields` / `as.last-fields` / `as.research-goal`。
 
-## 3. 选题推荐（对应 F18，包装已有能力）
+## 3. 选题推荐 / AI 方向精炼（对应 B14/F18；前端 mock 版已并入「研究方向」页）
 
-- 包装流水线 **W3-P1 Survey Gap Analyzer**：`GET /projects/:id/gaps`
-- 返回：coverage gaps + methodological gaps + 推荐选题（含 KG 证据支撑说明）
-- 这是「后端已有能力的包装」，非新造能力
+前端不直连 LLM（密钥安全），由后端代理：
+
+| 接口 | 说明 |
+|---|---|
+| `POST /direction/refine` | 请求 `{ vaguePrompt: string, fields: string[] }` → 后端调 LLM 按模板精炼为专业研究方向，并经 Semantic Scholar Graph API（免费）检索高质量论文 |
+| `GET /projects/:id/gaps` | 包装流水线 **W3-P1 Survey Gap Analyzer**（已有能力）：返回 coverage gaps + methodological gaps + 推荐选题（含 KG 证据支撑） |
+
+响应形状（与前端 `DirectionPage.tsx` 的 `RefinedDirection` 一致）：
+
+```json
+{
+  "title": "专业化的研究方向标题",
+  "statement": "一句话阐述",
+  "questions": ["研究问题 1", "研究问题 2", "研究问题 3"],
+  "gap": "为什么值得做（识别出的空白）",
+  "papers": [{ "title": "...", "venue": "...", "year": 2024, "reason": "推荐理由" }]
+}
+```
 
 ## 4. createProject 载荷扩展（对应向导参数）
 
