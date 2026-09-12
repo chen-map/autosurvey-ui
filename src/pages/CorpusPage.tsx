@@ -120,7 +120,7 @@ export function CorpusPage() {
                       title={saved ? '从知识库移除' : '收藏到知识库'}
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleSave({ paperIdx: idx, title: p.title, authors: p.authors, venue: p.venue, year: p.year, citations: p.citations });
+                        toggleSave({ paperIdx: idx, source: 'corpus', title: p.title, authors: p.authors, venue: p.venue, year: p.year, citations: p.citations });
                       }}
                       className="rounded p-1.5 text-t3 transition-colors hover:bg-black/5"
                     >
@@ -223,7 +223,7 @@ function PaperDrawer({ paper, onClose }: { paper: PaperRecord; onClose: () => vo
               variant={saved ? 'secondary' : 'primary'}
               size="sm"
               onClick={() =>
-                toggleSave({ paperIdx: idx, title: paper.title, authors: paper.authors, venue: paper.venue, year: paper.year, citations: paper.citations })
+                toggleSave({ paperIdx: idx, source: 'corpus', title: paper.title, authors: paper.authors, venue: paper.venue, year: paper.year, citations: paper.citations })
               }
             >
               <Bookmark size={13} className={saved ? 'fill-ink' : ''} />
