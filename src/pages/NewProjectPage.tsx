@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Upload, X, Lock } from 'lucide-react';
 import { createProject } from '@/services/api';
 import { Button } from '@/components/ui/Button';
@@ -283,7 +283,9 @@ export function NewProjectPage() {
               </div>
               {platforms.some((name) => PLATFORMS.find((x) => x.name === name)?.paid) && (
                 <p className="mt-2 text-[12.5px] leading-5 text-warn-fg">
-                  已选订阅制平台：需在设置中填入机构/API Key 后才会真实返回数据（Key 仅存本地）。
+                  已选订阅制平台：需在
+                  <Link to="/me" className="mx-1 underline">个人中心</Link>
+                  填入机构/API Key 后才会真实返回数据（Key 仅存本地）。
                 </p>
               )}
             </div>

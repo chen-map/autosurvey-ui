@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutGrid, Settings, Plus, LogOut, Database, Library, Compass } from 'lucide-react';
+import { LayoutGrid, Settings, Plus, LogOut, Database, Library, Compass, User } from 'lucide-react';
 import { useAuth } from '@/store/auth';
 import { useUi } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
@@ -10,6 +10,7 @@ const navItems = [
   { to: '/projects', label: '全部项目', icon: LayoutGrid },
   { to: '/library', label: '知识库', icon: Library },
   { to: '/direction', label: '研究方向', icon: Compass },
+  { to: '/me', label: '个人中心', icon: User },
   { to: '/admin', label: '管理后台', icon: Settings },
 ];
 

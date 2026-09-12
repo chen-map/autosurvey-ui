@@ -60,7 +60,13 @@
 }
 ```
 
-## 5. 基础设施（部署阶段）
+## 5. 个人中心与 API 密钥存储（对应 B15）
+
+- **users 表扩展**：昵称、头像 URL、研究方向关联（direction_id）
+- **API 密钥加密存储**：`api_keys` 表（user_id, platform, key_ciphertext）——服务端 AES/KMS 加密 at rest，**接口只回传掩码**（如 `abcd••••efgh`），明文仅在服务端调用付费平台时解密使用
+- 前端 localStorage 键 `as.apikeys` 为过渡方案，后端就绪后迁移并清空本地
+
+## 6. 基础设施（部署阶段）
 
 - ECS（放既有 VPC 交换机）+ 弹性公网 IP + 安全组 80/443
 - nginx 反代 `/api/*` → FastAPI 流水线包装层；托管前端 dist 静态产物
