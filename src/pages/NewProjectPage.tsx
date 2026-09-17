@@ -358,7 +358,7 @@ export function NewProjectPage() {
                 <span className="tabular-nums text-t2">{searchCap} 篇</span>
               </div>
               <input
-                type="range" min={200} max={5000} step={100} value={searchCap}
+                type="range" min={200} max={2000} step={100} value={searchCap}
                 onChange={(e) => {
                   const v = Number(e.target.value);
                   setSearchCap(v);
@@ -374,7 +374,7 @@ export function NewProjectPage() {
                 <span className="tabular-nums text-t2">{corpusCap} 篇</span>
               </div>
               <input
-                type="range" min={100} max={Math.max(searchCap, 100)} step={50} value={corpusCap}
+                type="range" min={100} max={Math.min(searchCap, 500)} step={50} value={corpusCap}
                 onChange={(e) => setCorpusCapClamped(Number(e.target.value))}
                 className="mt-2 w-full accent-black"
               />
