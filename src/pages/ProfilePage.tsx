@@ -25,15 +25,22 @@ export function ProfilePage() {
   const [show, setShow] = useState<Record<string, boolean>>({});
   const [savedTip, setSavedTip] = useState('');
 
-  const fields = useMemo(() => {
+  const { fields, goal }: { fields: string[]; goal: string } = useMemo(() => {
     try {
-      const v = JSON.parse(localStorage.getItem('as.last-fields') ?? '[]');
-      return Array.isArray(v) ? v : [];
+      const dirs: { id: string; fields: string[]; goal?: string }[] = JSON.parse(localStorage.getItem('as.directions') ?? '[]');
+      const activeId = localStorage.getItem('as.active-direction');
+      const d = dirs.find((x) => x.id === activeId) ?? dirs[0];
+      if (d) return { fields: d.fields ?? [], goal: d.goal ?? '' };
     } catch {
-      return [];
+      /* 忽略损坏数据 */
+    }
+    try {
+      const v: string[] = JSON.parse(localStorage.getItem('as.last-fields') ?? '[]');
+      return { fields: v, goal: localStorage.getItem('as.research-goal') ?? '' };
+    } catch {
+      return { fields: [], goal: '' };
     }
   }, []);
-  const goal = localStorage.getItem('as.research-goal') ?? '';
 
   const setKey = (platform: string, value: string) => {
     const next = { ...keys, [platform]: value };

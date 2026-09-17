@@ -53,9 +53,16 @@ export function NewProjectPage() {
     [savedCustom],
   );
 
-  // 单用户研究方向固定：自动预选上次使用的领域组合
+  // 自动预选：优先读「研究方向库」中设为默认的方向；无则回退上次组合
   useEffect(() => {
     try {
+      const dirs: { id: string; fields: string[] }[] = JSON.parse(localStorage.getItem('as.directions') ?? '[]');
+      const activeId = localStorage.getItem('as.active-direction');
+      const active = dirs.find((d) => d.id === activeId) ?? dirs[0];
+      if (active && Array.isArray(active.fields) && active.fields.length > 0) {
+        setTags(active.fields);
+        return;
+      }
       const last = JSON.parse(localStorage.getItem(LS_LAST_FIELDS) ?? '[]');
       if (Array.isArray(last) && last.length > 0) setTags(last);
     } catch {

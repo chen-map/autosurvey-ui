@@ -1,18 +1,40 @@
-import { useMemo, useState } from 'react';
-import { Compass, Save, Check, Sparkles, ArrowRight, FileText } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Compass, Save, Sparkles, ArrowRight, FileText, Plus, Trash2, Pencil, Star } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/utils';
 
-// 研究方向画像（F17 静态版）+ AI 方向精炼（B14 mock 版）
-// 与创建向导的预选双向共享 localStorage 键；AI 真实实现为后端代理（backend-todo.md §3）
+// 研究方向库（F13 升级版）：多方向管理 + 默认预选（向导自动带出）+ AI 精炼一键入库
+// localStorage 持久化；后端 CRUD 见 backend-todo.md §2
+const LS_DIRECTIONS = 'as.directions';
+const LS_ACTIVE = 'as.active-direction';
 const LS_CUSTOM_FIELDS = 'as.custom-fields';
 const LS_LAST_FIELDS = 'as.last-fields';
-const LS_GOAL = 'as.research-goal';
-
 const PRESET_FIELDS = ['LLM 安全', '智能体', '多模态', 'GNN', '可解释性', '扩散模型', '时序预测', '联邦学习'];
+
+interface Direction {
+  id: string;
+  title: string;
+  fields: string[];
+  goal: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function readDirections(): Direction[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(LS_DIRECTIONS) ?? '[]');
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDirections(dirs: Direction[]) {
+  localStorage.setItem(LS_DIRECTIONS, JSON.stringify(dirs));
+}
 
 function readJSON(key: string): string[] {
   try {
@@ -23,7 +45,6 @@ function readJSON(key: string): string[] {
   }
 }
 
-// RefinedDirection：未来 POST /direction/refine 的响应形状（契约见 backend-todo.md §3）
 interface RefinedDirection {
   title: string;
   statement: string;
@@ -32,63 +53,73 @@ interface RefinedDirection {
   papers: { title: string; venue: string; year: number; reason: string }[];
 }
 
-export function DirectionPage() {
-  const [savedCustom, setSavedCustom] = useState<string[]>(() => readJSON(LS_CUSTOM_FIELDS));
-  const [tags, setTags] = useState<string[]>(() => readJSON(LS_LAST_FIELDS));
-  const [customTag, setCustomTag] = useState('');
-  const [goal, setGoal] = useState(() => localStorage.getItem(LS_GOAL) ?? '');
-  const [saved, setSaved] = useState(false);
+const EMPTY_FORM = { id: '', title: '', fields: [] as string[], goal: '' };
+type Form = typeof EMPTY_FORM | null;
 
+export function DirectionPage() {
+  const [directions, setDirections] = useState<Direction[]>(readDirections);
+  const [activeId, setActiveId] = useState<string | null>(() => localStorage.getItem(LS_ACTIVE));
+  const [form, setForm] = useState<Form>(null);
+  const [savedTip, setSavedTip] = useState(false);
+
+  // 领域标签库（与创建向导共享）
+  const [savedCustom, setSavedCustom] = useState<string[]>(() => readJSON(LS_CUSTOM_FIELDS));
+  const [customTag, setCustomTag] = useState('');
   const allFields = useMemo(
     () => [...PRESET_FIELDS, ...savedCustom.filter((t) => !PRESET_FIELDS.includes(t))],
     [savedCustom],
   );
 
-  const toggleTag = (t: string) =>
-    setTags((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
-
-  const addCustom = () => {
-    const t = customTag.trim();
-    if (!t) return;
-    if (!allFields.includes(t)) {
-      const next = [...savedCustom, t];
-      setSavedCustom(next);
+  // 旧数据迁移：首次进入时把单一画像（上次领域+目标）转成一条方向
+  useEffect(() => {
+    if (readDirections().length === 0) {
+      const last = readJSON(LS_LAST_FIELDS);
+      const goal = localStorage.getItem('as.research-goal') ?? '';
+      if (last.length > 0 || goal) {
+        const now = new Date().toLocaleString();
+        const d: Direction = {
+          id: `dir-${Date.now()}`,
+          title: last.length ? `${last[0]} 等方向` : '我的研究方向',
+          fields: last, goal, createdAt: now, updatedAt: now,
+        };
+        saveDirections([d]);
+        localStorage.setItem(LS_ACTIVE, d.id);
+        setDirections([d]);
+        setActiveId(d.id);
+      }
     }
-    if (!tags.includes(t)) setTags((s) => [...s, t]);
-    setCustomTag('');
+  }, []);
+
+  const persist = (dirs: Direction[], active: string | null = activeId) => {
+    setDirections(dirs);
+    saveDirections(dirs);
+    if (active !== null) {
+      localStorage.setItem(LS_ACTIVE, active);
+      setActiveId(active);
+    }
+    setSavedTip(true);
+    setTimeout(() => setSavedTip(false), 1500);
   };
 
-  const removeFromLibrary = (t: string) => {
-    setSavedCustom((s) => s.filter((x) => x !== t));
-    setTags((s) => s.filter((x) => x !== t));
-  };
-
-  const save = () => {
-    localStorage.setItem(LS_CUSTOM_FIELDS, JSON.stringify(savedCustom));
-    localStorage.setItem(LS_LAST_FIELDS, JSON.stringify(tags));
-    localStorage.setItem(LS_GOAL, goal);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  // ---- AI 方向精炼（B14 mock 版）：真实实现为 POST /direction/refine（后端 LLM 代理 + Semantic Scholar 检索） ----
+  // ---- AI 方向精炼（B14 mock 版）：真实实现为 POST /direction/refine ----
   const [vague, setVague] = useState('');
   const [phase, setPhase] = useState<'idle' | 'thinking' | 'done'>('idle');
   const [refined, setRefined] = useState<RefinedDirection | null>(null);
+
+  const ctxFields = directions[0]?.fields ?? [];
 
   const refine = () => {
     if (!vague.trim()) return;
     setPhase('thinking');
     const kw = vague.trim();
-    // mock 输出：仅演示交互与数据形状
     setTimeout(() => {
       setRefined({
         title: `${kw}：从现象描述到机制刻画的系统性研究`,
-        statement: `围绕「${kw}」构建可复现的评测体系与机制分析框架，结合你关注的 ${tags[0] ?? '相关领域'} 视角，识别现有研究的覆盖缺口并提出对照性研究问题。`,
+        statement: `围绕「${kw}」构建可复现的评测体系与机制分析框架，结合你关注的 ${ctxFields[0] ?? '相关领域'} 视角，识别现有研究的覆盖缺口并提出对照性研究问题。`,
         questions: [
           `${kw} 相关问题中，哪些已被系统研究、覆盖度如何（可用 KG 覆盖缺口验证）？`,
-          `现有方法在你的目标场景下的失效边界与失败模式是什么？`,
-          `哪些交叉视角尚未被组合研究？`,
+          '现有方法在真实场景下的失效边界与失败模式是什么？',
+          '哪些交叉视角尚未被组合研究？',
         ],
         gap: '现有工作偏重单点性能提升，缺少跨方法对照与失败案例分析；评测多基于合成设定，真实场景证据不足。',
         papers: [
@@ -101,80 +132,156 @@ export function DirectionPage() {
     }, 1800);
   };
 
-  const adopt = () => {
+  const adoptRefined = () => {
     if (!refined) return;
-    setGoal(`${refined.title} —— ${refined.statement}`);
-    setSaved(false);
+    const now = new Date().toLocaleString();
+    const d: Direction = {
+      id: `dir-${Date.now()}`, title: refined.title,
+      fields: [...ctxFields], goal: refined.statement,
+      createdAt: now, updatedAt: now,
+    };
+    persist([d, ...directions], d.id);
+    setRefined(null);
+    setPhase('idle');
+    setVague('');
+  };
+
+  // ---- 新建/编辑表单 ----
+  const openNew = () => setForm({ ...EMPTY_FORM });
+  const openEdit = (d: Direction) => setForm({ id: d.id, title: d.title, fields: [...d.fields], goal: d.goal });
+  const saveForm = () => {
+    if (!form || !form.title.trim()) return;
+    const now = new Date().toLocaleString();
+    if (form.id) {
+      persist(directions.map((d) => (d.id === form.id ? { ...d, ...form, updatedAt: now } : d)));
+    } else {
+      const d: Direction = { ...form, id: `dir-${Date.now()}`, createdAt: now, updatedAt: now };
+      persist([d, ...directions], d.id);
+    }
+    setForm(null);
+  };
+  const removeDirection = (id: string) => {
+    const next = directions.filter((d) => d.id !== id);
+    persist(next, activeId === id ? next[0]?.id ?? null : activeId);
+  };
+
+  const toggleFormTag = (t: string) =>
+    setForm((f) => (f && !f.fields.includes(t) ? { ...f, fields: f.fields.filter((x) => x !== t) } : f));
+
+  const addFormCustom = () => {
+    const t = customTag.trim();
+    if (!t) return;
+    if (!allFields.includes(t)) setSavedCustom((s) => [...s, t]);
+    setForm((f) => (f && !f.fields.includes(t) ? { ...f, fields: [...f.fields, t] } : f));
+    setCustomTag('');
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-8">
-      <h1 className="text-[24px] font-semibold leading-8">研究方向</h1>
-      <p className="mt-1 text-[13px] text-t3">
-        维护你的研究方向画像：领域组合会自动预选到新建项目的向导中；AI 方向精炼可以把模糊想法变成有研究水准的方向。
+    <div className="mx-auto max-w-3xl space-y-5 px-8 py-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-[24px] font-semibold leading-8">研究方向库</h1>
+        {!form && (
+          <Button onClick={openNew}>
+            <Plus size={14} />
+            新建方向
+          </Button>
+        )}
+        {savedTip && <Badge variant="ok" withDot>已保存</Badge>}
+      </div>
+      <p className="text-[13px] text-t3">
+        把研究方向当作条目来管理：可建多条，设一条为「默认预选」——新建项目向导会自动带出它的领域标签；AI 精炼的结果也可一键入库。
       </p>
 
-      <div className="mt-6 space-y-5">
-        <Card className="p-5">
-          <div className="text-[14px] font-medium">我的研究领域</div>
-          <p className="mt-1 text-[12.5px] text-t3">点击切换选中；自定义标签保存后进入快捷列表（单用户研究方向固定，常用标签建议保留在库中）</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {allFields.map((t) => {
-              const isCustom = savedCustom.includes(t);
-              return (
-                <div key={t} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => toggleTag(t)}
-                    className={cn(
-                      'rounded-full border px-3 py-1.5 text-[13px] transition-all',
-                      tags.includes(t) ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/50',
-                    )}
-                  >
+      {/* 方向列表 */}
+      {!form && (
+        <div className="stagger space-y-3">
+          {directions.length === 0 && (
+            <Card className="px-8 py-12 text-center">
+              <Compass size={28} className="mx-auto text-t3" />
+              <p className="mt-3 text-[14px] text-t2">方向库还是空的</p>
+              <p className="mt-1 text-[13px] text-t3">点击「新建方向」，或用下方 AI 精炼把模糊想法变成一条方向</p>
+            </Card>
+          )}
+          {directions.map((d) => (
+            <Card key={d.id} className={cn('p-4 transition-shadow hover:shadow-s2', activeId === d.id && 'border-ink/60')}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-[15px] font-semibold text-t1">{d.title}</span>
+                    {activeId === d.id && <Badge variant="ok" withDot>默认预选</Badge>}
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {d.fields.map((f) => <Badge key={f} variant="info">{f}</Badge>)}
+                  </div>
+                  {d.goal && <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-t2">{d.goal}</p>}
+                  <div className="mt-1.5 text-[11px] text-t3">更新于 {d.updatedAt}</div>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  {activeId !== d.id && (
+                    <Button variant="ghost" size="sm" onClick={() => persist(directions, d.id)}>
+                      <Star size={13} />
+                      设为预选
+                    </Button>
+                  )}
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(d)}><Pencil size={13} />编辑</Button>
+                    <Button variant="ghost" size="sm" onClick={() => removeDirection(d.id)} title="删除"><Trash2 size={13} /></Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* 新建/编辑表单 */}
+      {form && (
+        <Card className="anim-rise p-5">
+          <div className="text-[14px] font-medium">{form.id ? '编辑方向' : '新建方向'}</div>
+          <div className="mt-4 space-y-4">
+            <div>
+              <div className="text-[13px] text-t2">方向标题 *</div>
+              <Input className="mt-1.5" placeholder="例如：LLM Agent 安全的攻防对照体系" value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            </div>
+            <div>
+              <div className="text-[13px] text-t2">领域标签</div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {allFields.map((t) => (
+                  <button key={t} type="button" onClick={() => toggleFormTag(t)}
+                    className={cn('rounded-full border px-3 py-1 text-[12.5px] transition-all',
+                      form.fields.includes(t) ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/50')}>
                     {t}
                   </button>
-                  {isCustom && (
-                    <button
-                      type="button"
-                      title="从我的领域库移除"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFromLibrary(t);
-                      }}
-                      className="absolute -right-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-ink text-[9px] text-white opacity-70 transition-opacity hover:opacity-100"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                ))}
+              </div>
+              <div className="mt-2 flex gap-2">
+                <Input placeholder="自定义领域标签，回车添加" value={customTag}
+                  onChange={(e) => setCustomTag(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addFormCustom()} className="flex-1" />
+                <Button variant="secondary" size="sm" onClick={addFormCustom}>添加</Button>
+              </div>
+            </div>
+            <div>
+              <div className="text-[13px] text-t2">研究目标</div>
+              <textarea rows={3}
+                className="mt-1.5 w-full resize-none rounded-lg border border-line bg-page px-3 py-2.5 text-[14px] text-t1 placeholder:text-t3 focus:border-ink focus:outline-none"
+                placeholder="一句话描述这个方向要解决什么、做到什么程度"
+                value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value })} />
+            </div>
           </div>
-          <div className="mt-4 flex gap-2">
-            <Input
-              placeholder="添加自定义领域标签，回车确认"
-              value={customTag}
-              onChange={(e) => setCustomTag(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addCustom()}
-              className="flex-1"
-            />
-            <Button variant="secondary" onClick={addCustom}>添加</Button>
+          <div className="mt-5 flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setForm(null)}>取消</Button>
+            <Button size="sm" onClick={saveForm} disabled={!form.title.trim()}>
+              <Save size={13} />
+              {form.id ? '保存修改' : '加入方向库'}
+            </Button>
           </div>
         </Card>
+      )}
 
-        <Card className="p-5">
-          <div className="text-[14px] font-medium">研究目标</div>
-          <p className="mt-1 text-[12.5px] text-t3">一句话描述你的研究目标或当前关注点（例如：为 LLM Agent 安全建立攻击-防御对照的分类体系）</p>
-          <textarea
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            rows={3}
-            className="mt-2 w-full resize-none rounded-lg border border-line bg-page px-3 py-2.5 text-[14px] text-t1 placeholder:text-t3 focus:border-ink focus:outline-none"
-            placeholder="输入研究目标…"
-          />
-        </Card>
-
-        {/* AI 方向精炼（B14 mock 版） */}
+      {/* AI 方向精炼 */}
+      {!form && (
         <Card className="p-5">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-[14px] font-medium">
@@ -184,17 +291,17 @@ export function DirectionPage() {
             <Badge variant="warn">实验 · mock 数据</Badge>
           </div>
           <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
-            想不到好方向？用一段模糊的描述，AI 会结合你的领域标签，把它精炼成更专业、更有研究水准的方向，并附上可能的高质量论文。
+            用一段模糊描述，AI 会结合你的领域标签，把它精炼成更专业、更有研究水准的方向——生成后一键入库。
           </p>
           <textarea
-            value={vague}
-            onChange={(e) => setVague(e.target.value)}
-            rows={2}
+            value={vague} onChange={(e) => setVague(e.target.value)} rows={2}
             placeholder="随便写。例如：我想做大模型和图相关的东西，但不知道具体研究什么……"
             className="mt-3 w-full resize-none rounded-lg border border-line bg-page px-3 py-2.5 text-[14px] text-t1 placeholder:text-t3 focus:border-ink focus:outline-none"
           />
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-[12px] text-t3">将结合你的领域标签：{tags.length > 0 ? tags.join(' / ') : '（尚未选择）'}</span>
+            <span className="text-[12px] text-t3">
+              将结合领域标签：{ctxFields.length > 0 ? ctxFields.join(' / ') : '（默认方向未设标签）'}
+            </span>
             <Button onClick={refine} disabled={phase === 'thinking' || !vague.trim()}>
               {phase === 'thinking' ? '精炼中…' : '生成专业方向'}
             </Button>
@@ -245,38 +352,27 @@ export function DirectionPage() {
                   ))}
                 </ul>
               </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={adopt}
-              >
+              <Button variant="secondary" size="sm" onClick={adoptRefined}>
                 <ArrowRight size={13} />
-                采纳为我的研究目标
+                采纳并存入方向库
               </Button>
             </div>
           )}
         </Card>
+      )}
 
-        <div className="flex items-center gap-3">
-          <Button onClick={save}>
-            {saved ? <Check size={15} /> : <Save size={15} />}
-            {saved ? '已保存' : '保存研究方向'}
-          </Button>
-          {saved && (
-            <Badge variant="ok" withDot>已保存，新建项目时将自动预选领域</Badge>
-          )}
-        </div>
-
+      {/* 与流水线联动说明 */}
+      {!form && (
         <Card className="p-4">
           <div className="flex items-center gap-2 text-[13px] font-medium text-t2">
             <Compass size={14} className="text-t3" />
             与流水线的联动 · 规划中
           </div>
           <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
-            保存后的方向画像将作为 W3 Gap Analyzer 的输入：结合你的知识库与 KG 识别 coverage gaps，主动推送值得研究的选题（依赖后端接口，见 backend-todo.md §3）。
+            默认预选的方向将作为 W3 Gap Analyzer 的输入：结合你的知识库与 KG 识别 coverage gaps，主动推送值得研究的选题（依赖后端接口，见 backend-todo.md §3）。
           </p>
         </Card>
-      </div>
+      )}
     </div>
   );
 }
