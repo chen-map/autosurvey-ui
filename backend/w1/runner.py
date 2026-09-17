@@ -102,7 +102,8 @@ def run_phase(phase: dict[str, Any], cfg: dict[str, Any], workspace: Path,
 
     t0 = time.time()
     try:
-        for n, step in enumerate(phase["steps"], 1):
+        steps = list(phase["steps"]) + list(phase.get("steps_tail", []))
+        for n, step in enumerate(steps, 1):
             log_path = workspace / "logs" / f"{pid}_step{n}.log"
             rc = run_step(step, log_path, cfg.get("step_timeout_sec", STEP_TIMEOUT_SEC), cwd=workspace)
             if rc != 0:

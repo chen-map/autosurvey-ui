@@ -5,6 +5,8 @@
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from typing import Any
 
 
@@ -58,6 +60,11 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--golden-set", f"{ws}/golden_set/seed_papers.csv"]},
             ],
             "outputs": [f"{ws}/normalized/unified_records.csv"],
+            "steps_tail": [
+                {"script": str(Path(__file__).resolve().parent / "cache_ingest.py"),
+                 "args": ["--normalized", f"{ws}/normalized/unified_records.csv",
+                          "--cache-db", str(Path(workspace) / "paper_cache.sqlite3")]},
+            ],
         },
         {
             "id": "W1-P4",
