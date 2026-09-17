@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Upload, X, Lock } from 'lucide-react';
 import { createProject } from '@/services/api';
+import { readApiKeys } from '@/lib/apikeys';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
@@ -28,6 +29,11 @@ export function NewProjectPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [tags, setTags] = useState<string[]>([]);
+  // 个人 API Key 快照（进入参数配置步时刷新）
+  const [keySnapshot, setKeySnapshot] = useState<Record<string, string>>(() => readApiKeys());
+  useEffect(() => {
+    if (step === 3) setKeySnapshot(readApiKeys());
+  }, [step]);
   // 研究方向库：主题步的快速选择数据源（localStorage，与方向库页共享）
   const [directions] = useState<{ id: string; title: string; fields: string[]; goal?: string }[]>(() => {
     try {
@@ -42,9 +48,15 @@ export function NewProjectPage() {
   const [seeds, setSeeds] = useState<string[]>([]);
   const [description, setDescription] = useState('');
   const [locals, setLocals] = useState<string[]>([]);
+
   const [prescore, setPrescore] = useState(0.25);
   const [stage, setStage] = useState('标准（六阶段全开）');
   const [platforms, setPlatforms] = useState<string[]>(['Semantic Scholar', 'arXiv']);
+  // 选中的付费平台中缺 Key 的（提示用）
+  const missingKeys = platforms.filter((n) => {
+    const p = PLATFORMS.find((x) => x.name === n);
+    return p?.paid && !p.builtin && !keySnapshot[n];
+  });
   const [searchCap, setSearchCap] = useState(2000);
   const [corpusCap, setCorpusCap] = useState(500);
   const [creating, setCreating] = useState(false);
@@ -334,23 +346,33 @@ export function NewProjectPage() {
                         selectedPlat ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/50',
                       )}
                     >
-                      {paid && !builtin && <Lock size={11} className={selectedPlat ? 'text-white/80' : 'text-warn-fg'} />}
+                      {paid && !builtin && (
+                        <span
+                          className={cn('text-[10px]', keySnapshot[name] ? 'text-ok' : 'text-warn-fg')}
+                          title={keySnapshot[name] ? '已配置 Key' : '缺 Key——可在个人中心配置'}
+                        >
+                          {keySnapshot[name] ? 'Key✓' : '缺Key'}
+                        </span>
+                      )}
                       {name}
                       {builtin && <span className="text-[10px] opacity-75">内置Key</span>}
                     </button>
                   );
                 })}
               </div>
-              {platforms.some((name) => {
-                const p = PLATFORMS.find((x) => x.name === name);
-                return p?.paid && !p.builtin;
-              }) && (
-                <p className="mt-2 text-[12.5px] leading-5 text-warn-fg">
-                  Springer / Elsevier 需机构或 API Key：可在
-                  <Link to="/me" className="mx-1 underline">个人中心</Link>
-                  填入（Key 仅存本地）；IEEE 已内置项目 Key，可直接检索。
-                </p>
-              )}
+              <div className="mt-2 text-[12.5px] leading-5">
+                {missingKeys.length === 0 ? (
+                  <span className="text-[12px] text-t3">
+                    IEEE 已内置项目 Key，可直接检索；所选付费平台 Key 均已配置。
+                  </span>
+                ) : (
+                  <span className="text-[12.5px] text-warn-fg">
+                    缺 Key 的平台将被跳过：{missingKeys.join('、')}——去
+                    <Link to="/me" className="underline">个人中心</Link>
+                    配置 API Key。
+                  </span>
+                )}
+              </div>
             </div>
             <div>
               <div className="flex items-center justify-between text-[14px] font-medium">
