@@ -76,7 +76,15 @@
 - **API 密钥加密存储**：`api_keys` 表（user_id, platform, key_ciphertext）——服务端 AES/KMS 加密 at rest，**接口只回传掩码**（如 `abcd••••efgh`），明文仅在服务端调用付费平台时解密使用
 - 前端 localStorage 键 `as.apikeys` 为过渡方案，后端就绪后迁移并清空本地
 
-## 6. 基础设施（部署阶段）
+## 7. Agent 聚合检索服务（对应 B16）
+
+交互式检索的聚合层（apipick 式模式）：前端把用户问题发给聚合服务，服务内部扇出 arXiv/PubMed/S2 并做限流管理与缓存，返回 LLM 友好 JSON。
+
+- `POST /agent-search`：`{ question, fields[], max_papers }` → `{ papers: [{title, authors, year, doi, url, abstract}], latency_ms }`
+- 计费模式：open-core——自部署免费直连各库；托管版按调用计费（关联 F15）
+- 前端契约：`createProject`/运行配置增加 `agentSearch: boolean` + `agentSearchKeyId`
+
+## 8. 基础设施（部署阶段）
 
 - ECS（放既有 VPC 交换机）+ 弹性公网 IP + 安全组 80/443
 - nginx 反代 `/api/*` → FastAPI 流水线包装层；托管前端 dist 静态产物

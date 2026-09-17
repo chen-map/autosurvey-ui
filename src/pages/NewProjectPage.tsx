@@ -19,6 +19,7 @@ const PLATFORMS: { name: string; paid: boolean; builtin?: boolean; note?: string
   { name: 'ACM', paid: false, note: '免费爬取，限速' },
   { name: 'Springer', paid: true },
   { name: 'Elsevier', paid: true },
+  { name: 'Agent 检索', paid: true, note: 'LLM Agent 聚合检索：按问题发起、无布尔式限制、无平台限流' },
 ];
 const STEPS = ['研究领域', '主题与种子', '本地资料', '参数配置', '确认创建'];
 const LS_CUSTOM_FIELDS = 'as.custom-fields'; // 用户自定义领域库（持久化，跨会话复用）
