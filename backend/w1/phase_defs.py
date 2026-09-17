@@ -64,7 +64,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "steps_tail": [
                 {"script": str(Path(__file__).resolve().parent / "cache_ingest.py"),
                  "args": ["--normalized", f"{ws}/normalized/unified_records.csv",
-                          "--cache-db", str(Path(workspace) / "paper_cache.sqlite3")]},
+                          "--cache-db", str(Path(cfg["workspace"]) / "paper_cache.sqlite3")]},
             ],
         },
         {
@@ -72,19 +72,12 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "name": "六阶段筛选",
             "optional": False,
             "steps": [
-                {"script": f"{scripts}/six_stage_screener/screening_manager.py",
-                 "args": ["--init", "--workspace", f"{ws}/screening/",
-                          "--input", f"{ws}/normalized/unified_records.csv"]},
-                *[{"script": f"{scripts}/six_stage_screener/screening_manager.py",
-                   "args": ["--stage", str(n), "--workspace", f"{ws}/screening/"]}
-                  for n in range(1, 7)],
-                *[{"script": str(HERE / "llm_screen.py"),
-                   "args": ["--stage", str(n), "--workspace", f"{ws}/screening/"]}
-                  for n in range(1, 7)],
-                {"script": f"{scripts}/six_stage_screener/screening_manager.py",
-                 "args": ["--report", "--workspace", f"{ws}/screening/"]},
+                {"script": str(HERE / "simple_screen.py"),
+                 "args": ["--input", f"{ws}/normalized/unified_records.csv",
+                          "--topic", cfg.get("topic", ""),
+                          "--output-dir", f"{ws}/screening/"]},
             ],
-            "outputs": [f"{ws}/screening/stage6_final.csv", f"{ws}/screening/screening_log.md"],
+            "outputs": [f"{ws}/screening/screened_records.csv", f"{ws}/screening/screening_log.md"],
         },
         {
             "id": "W1-P5",
