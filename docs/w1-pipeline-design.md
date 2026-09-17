@@ -85,7 +85,7 @@ PHASES = [
 ## 7. 残余不确定性与验收标准
 
 - LLM 判断的残余不确定 → 缓解：固定 prompt + temperature=0 + 缓存 + raw 响应可回溯
-- **验收标准**：同一 config 跑两遍——确定性 Phase（P1/2/3/5/6/7）产物逐字节一致；P4 仅 LLM 列允许差异且比例 <5%
+- **验收标准**：同一 config 跑两遍——P1/3/5/6/7（本地文件处理）产物逐字节一致；**P2（外部数据库检索）只验字段结构一致 + 数量级稳定**（外部内容随时间漂移，逐字节一致不可能）
 - 达标后按同一模式固化 W2（脚本同样齐全：run_pipeline.py 一条命令含全部 4 Phase）
 
 ## 8. 工作量与顺序
@@ -96,3 +96,20 @@ PHASES = [
 | `llm_screen.py` 收敛层 | ~200 行 | ② |
 | FastAPI 包装（status/retry/create） | ~150 行 | ③（与 api-contract.md 同步定稿） |
 | W2 同模式固化 | 复用执行器 | ④ |
+
+## 9. W1 现有代码评审结论（2026-09-12，3605 行全读）
+
+**总评**：研究原型水准之上——结构清晰、降级设计到位（六级下载+magic bytes 校验）、去重有 blocking+richness 保留策略+置信度分级、PRISMA 日志规范。作为商业化后端需按以下清单整改：
+
+| 优先级 | 问题 | 位置 | 整改 |
+|---|---|---|---|
+| **P0 合规** | Sci-Hub 镜像抓取集成，且默认启用 | `download_papers.py` L43-45/L329 | 默认禁用（--no-scihub 反转）；商用版移除，改"请求机构访问"提示 |
+| **P0 正确性** | rapidfuzz 缺失时静默跳过模糊去重 → 语料库带重不报错 | `normalize_and_dedup.py` L196-200 | 进 requirements；缺失时非零退出 |
+| **P1 安全** | IEEE API key 明文提交在 key_settings.py | `key_settings.py` | 重置该 key；keys 迁移 env/.env（不入库） |
+| **P1 确定性** | Google Scholar 依赖非官方爬虫（自述不稳定） | GUIDE Phase 2 | 固定 workflow 中 GS 设为可选、失败不阻塞 |
+| **P2 工程** | 全部 print 无 logging；无 --quiet/--verbose | 全部脚本 | 执行器层统一捕获 stdout 重定向日志文件（脚本可不动） |
+| **P2 健壮性** | 裸 `except Exception` 静默吞错（PDF 解析等） | extract_seed_metadata / search_databases | 记日志（含 paper_id）再继续 |
+| **P3 测试** | 零单元测试——固化验收（双跑一致）目前只能人工 | 全部 | 最小集：normalize/dedup 纯函数测试（最易测最值得） |
+| P3 性能 | 去重 `df.loc` 逐对访问 O(n²)（blocking 已缓解） | normalize_and_dedup L230+ | 500 篇可接受；2000+ 时改向量化 |
+
+**与执行器的关系**：以上均为脚本级整改，不改 w1_pipeline 执行器设计；P0 两项应在执行器联调前完成。
