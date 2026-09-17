@@ -166,7 +166,11 @@ export function DirectionPage() {
   };
 
   const toggleFormTag = (t: string) =>
-    setForm((f) => (f && !f.fields.includes(t) ? { ...f, fields: f.fields.filter((x) => x !== t) } : f));
+    setForm((f) => {
+      if (!f) return f;
+      const has = f.fields.includes(t);
+      return { ...f, fields: has ? f.fields.filter((x) => x !== t) : [...f.fields, t] };
+    });
 
   const addFormCustom = () => {
     const t = customTag.trim();
