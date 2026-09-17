@@ -28,6 +28,15 @@ export function NewProjectPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [tags, setTags] = useState<string[]>([]);
+  // 研究方向库：主题步的快速选择数据源（localStorage，与方向库页共享）
+  const [directions] = useState<{ id: string; title: string; fields: string[]; goal?: string }[]>(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem('as.directions') ?? '[]');
+      return Array.isArray(v) ? v : [];
+    } catch {
+      return [];
+    }
+  });
   const [customTag, setCustomTag] = useState('');
   const [title, setTitle] = useState('');
   const [seeds, setSeeds] = useState<string[]>([]);
@@ -215,6 +224,32 @@ export function NewProjectPage() {
 
         {step === 1 && (
           <div className="space-y-5">
+            {/* 研究方向库快速选择（上下游衔接：方向库 → 向导） */}
+            {directions.length > 0 && (
+              <div className="rounded-lg bg-page px-3 py-2.5">
+                <div className="text-[12px] text-t3">从研究方向库快速选择：</div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {directions.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      title={d.goal || undefined}
+                      onClick={() => {
+                        setTitle(d.title);
+                        setTags(d.fields);
+                      }}
+                      className={cn(
+                        'rounded-full border px-2.5 py-1 text-[12.5px] transition-colors',
+                        title === d.title ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/60',
+                      )}
+                    >
+                      {d.title}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11.5px] text-t3">选中后自动带出该方向的领域标签，主题与标签仍可手动修改</p>
+              </div>
+            )}
             <div>
               <div className="text-[14px] font-medium">综述主题 <span className="text-danger">*</span></div>
               <p className="mt-1 text-[12.5px] text-t3">输入完整的研究主题或选题关键词，获得更好的生成效果</p>
