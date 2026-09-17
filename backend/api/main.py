@@ -1,7 +1,7 @@
 """AutoSurvey Pipeline API — FastAPI 薄壳。
 
 前端 B3/B4 的真实数据源。契约：docs/backend-todo.md。
-启动：cd backend && uvicorn api.main:app --port 8000 --reload
+启动：cd backend && uvicorn api.main:app --port 8000
 """
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ class CreateProjectRequest(BaseModel):
     year_range: list[int] = [2020, 2026]
     seed_dir: str = ""
     local_dir: str = ""
-    llm: dict = {}
+    llm: dict = Field(default_factory=dict)
     scripts_root: str = ""
     spawn_runner: bool = True
 
@@ -55,7 +55,7 @@ class RetryPhaseRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# helpers
+# Helpers
 # ---------------------------------------------------------------------------
 
 def _wm(pid: str) -> Path:
@@ -64,9 +64,7 @@ def _wm(pid: str) -> Path:
 
 def _read_state(pid: str) -> dict[str, Any] | None:
     p = _wm(pid) / "w1_state.json"
-    if not p.exists():
-        return None
-    return json.loads(p.read_text(encoding="utf-8"))
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 
 def _write_state(pid: str, state: dict) -> None:
@@ -76,34 +74,17 @@ def _write_state(pid: str, state: dict) -> None:
 
 def _read_config(pid: str) -> dict | None:
     p = _wm(pid) / "w1_config.json"
-    if not p.exists():
-        return None
-    return json.loads(p.read_text(encoding="utf-8"))
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 
 def _spawn_runner(pid: str, extra: list[str] | None = None) -> None:
-    """后台启动 W1 执行器（stdout/stderr 重定向到日志文件）。"""
     ws = _wm(pid)
     ws.mkdir(parents=True, exist_ok=True)
     log = open(ws / "runner.log", "ab")
-    cmd = [sys.executable, str(BACKEND / "w1" / "runner.py"),
-           "--config", str(ws / "w1_config.json")]
+    cmd = [sys.executable, str(RUNNER), "--config", str(ws / "w1_config.json")]
     if extra:
         cmd.extend(extra)
     subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, cwd=str(ws))
-
-
-def _patch_phase_state(pid: str, phase_id: str, **kwargs) -> bool:
-    state_path = _wm(pid) / "w1_state.json"
-    if not state_path.exists():
-        return False
-    state = json.loads(state_path.read_text(encoding="utf-8"))
-    for ph in state.get("phases", []):
-        if ph["id"] == phase_id:
-            ph.update(kwargs)
-            break
-    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
-    return True
 
 
 # ---------------------------------------------------------------------------
@@ -129,7 +110,8 @@ def create_project(body: CreateProjectRequest):
         "year_range": body.year_range,
         "seed_dir": body.seed_dir, "local_dir": body.local_dir,
         "llm": body.llm, "scripts_root": body.scripts_root,
-        "workspace": str(ws), "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "workspace": str(ws),
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
     (ws / "w1_config.json").write_text(
         json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -166,11 +148,10 @@ def list_projects():
             cfg = d / "w1" / "w1_config.json"
             if cfg.exists():
                 c = json.loads(cfg.read_text(encoding="utf-8"))
-                state = _read_state(d.name)
                 projects.append({
                     "project_id": c.get("project_id", d.name),
                     "title": c.get("title", d.name),
-                    "status": "running" if state and state.get("status") == "running" else "draft",
+                    "status": "draft",
                     "field_tags": c.get("field_tags", []),
                     "description": c.get("description", ""),
                     "search_cap": c.get("search_cap", 2000),
