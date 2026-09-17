@@ -6,3 +6,4 @@ dist
 # 后端存量（含真实密钥）永不进入公开仓库
 autoSurvey_v2/
 **/key_settings.py
+backend/_refine_block.txt
