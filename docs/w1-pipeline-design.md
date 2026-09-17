@@ -106,7 +106,7 @@ PHASES = [
 |---|---|---|---|
 | **P0 合规** | Sci-Hub 镜像抓取集成，且默认启用 | `download_papers.py` L43-45/L329 | 默认禁用（--no-scihub 反转）；商用版移除，改"请求机构访问"提示 |
 | **P0 正确性** | rapidfuzz 缺失时静默跳过模糊去重 → 语料库带重不报错 | `normalize_and_dedup.py` L196-200 | 进 requirements；缺失时非零退出 |
-| **P1 安全** | IEEE API key 明文提交在 key_settings.py | `key_settings.py` | 重置该 key；keys 迁移 env/.env（不入库） |
+| **P1 安全** | IEEE API key 明文提交在 key_settings.py | `key_settings.py` | **用户决策（2026-09-12）：沿用前学者的 Key 先行**（用量计入原账户，建议知会对方）；商业化前替换为自己的免费 Key 并迁 env/.env。已登记 .gitignore 防线：autoSurvey_v2/ 与 key_settings.py 永不入公开仓库 |
 | **P1 确定性** | Google Scholar 依赖非官方爬虫（自述不稳定） | GUIDE Phase 2 | 固定 workflow 中 GS 设为可选、失败不阻塞 |
 | **P2 工程** | 全部 print 无 logging；无 --quiet/--verbose | 全部脚本 | 执行器层统一捕获 stdout 重定向日志文件（脚本可不动） |
 | **P2 健壮性** | 裸 `except Exception` 静默吞错（PDF 解析等） | extract_seed_metadata / search_databases | 记日志（含 paper_id）再继续 |

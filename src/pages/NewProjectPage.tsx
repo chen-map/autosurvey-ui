@@ -9,13 +9,13 @@ import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 
 const PRESET_FIELDS = ['LLM 安全', '智能体', '多模态', 'GNN', '可解释性', '扩散模型', '时序预测', '联邦学习'];
-// 平台分层：免费 API / 需订阅或付费 API（付费平台走 BYO Key，见支付说明）
-const PLATFORMS: { name: string; paid: boolean }[] = [
+// 平台分层（依据 W1 GUIDE 真实情况）：builtin=项目已内置 Key 可直接用；free=免费；paid=需机构/API Key（个人中心填入）
+const PLATFORMS: { name: string; paid: boolean; builtin?: boolean; note?: string }[] = [
   { name: 'Semantic Scholar', paid: false },
   { name: 'arXiv', paid: false },
-  { name: 'Google Scholar', paid: false },
-  { name: 'IEEE', paid: true },
-  { name: 'ACM', paid: true },
+  { name: 'Google Scholar', paid: false, note: '非官方爬取，限速' },
+  { name: 'IEEE', paid: true, builtin: true, note: '项目已内置 Key' },
+  { name: 'ACM', paid: false, note: '免费爬取，限速' },
   { name: 'Springer', paid: true },
   { name: 'Elsevier', paid: true },
 ];
@@ -263,29 +263,34 @@ export function NewProjectPage() {
             <div>
               <div className="text-[14px] font-medium">论文搜索平台 <span className="text-[12px] font-normal text-t3">（可多选，至少一个；<Lock size={11} className="inline" /> = 需订阅/付费 API，用自带密钥接入）</span></div>
               <div className="mt-2 flex flex-wrap gap-2">
-                {PLATFORMS.map(({ name, paid }) => {
+                {PLATFORMS.map(({ name, paid, builtin, note }) => {
                   const selectedPlat = platforms.includes(name);
                   return (
                     <button
                       key={name}
                       type="button"
+                      title={note}
                       onClick={() => togglePlatform(name)}
                       className={cn(
                         'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] transition-all',
                         selectedPlat ? 'border-ink bg-ink text-white' : 'border-line text-t2 hover:border-ink/50',
                       )}
                     >
-                      {paid && <Lock size={11} className={selectedPlat ? 'text-white/80' : 'text-warn-fg'} />}
+                      {paid && !builtin && <Lock size={11} className={selectedPlat ? 'text-white/80' : 'text-warn-fg'} />}
                       {name}
+                      {builtin && <span className="text-[10px] opacity-75">内置Key</span>}
                     </button>
                   );
                 })}
               </div>
-              {platforms.some((name) => PLATFORMS.find((x) => x.name === name)?.paid) && (
+              {platforms.some((name) => {
+                const p = PLATFORMS.find((x) => x.name === name);
+                return p?.paid && !p.builtin;
+              }) && (
                 <p className="mt-2 text-[12.5px] leading-5 text-warn-fg">
-                  已选订阅制平台：需在
+                  Springer / Elsevier 需机构或 API Key：可在
                   <Link to="/me" className="mx-1 underline">个人中心</Link>
-                  填入机构/API Key 后才会真实返回数据（Key 仅存本地）。
+                  填入（Key 仅存本地）；IEEE 已内置项目 Key，可直接检索。
                 </p>
               )}
             </div>
