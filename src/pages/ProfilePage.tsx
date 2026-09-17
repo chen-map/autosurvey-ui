@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { KeyRound, Library, Compass, Eye, EyeOff, Check, ArrowUpRight } from 'lucide-react';
+import { KeyRound, Library, Compass, Eye, EyeOff, Check, ArrowUpRight, Bot } from 'lucide-react';
+import { useAuth } from '@/store/auth';
+import { readLlmConfig, saveLlmConfig, type LlmConfig } from '@/lib/llm';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
-import { useAuth } from '@/store/auth';
 
 // 个人中心（B15 前端版）：个人信息 + 付费平台 API Key 存储
 // Key 仅存本浏览器 localStorage；生产环境由后端加密存储、接口只回掩码（backend-todo.md §6）
@@ -47,6 +48,16 @@ export function ProfilePage() {
     setKeys(next);
     localStorage.setItem(LS_APIKEYS, JSON.stringify(next));
     setSavedTip(platform);
+    setTimeout(() => setSavedTip(''), 1500);
+  };
+
+  // 统一 LLM 执行器配置（url + apikey + model）
+  const [llm, setLlmState] = useState<LlmConfig>(readLlmConfig);
+  const setLlmField = (field: keyof LlmConfig, value: string) => {
+    const next = { ...llm, [field]: value };
+    setLlmState(next);
+    saveLlmConfig(next);
+    setSavedTip('LLM 配置');
     setTimeout(() => setSavedTip(''), 1500);
   };
 
@@ -116,6 +127,53 @@ export function ProfilePage() {
         </div>
         <div className="mt-3 text-[12px] text-t3">
           密钥仅用于联合检索，不会出现在日志与导出文件中。掩码示例：{masked('abcd1234efgh')}
+        </div>
+      </Card>
+
+      {/* LLM 接入配置（url + apikey + model，统一执行器） */}
+      <Card className="p-5">
+        <div className="flex items-center gap-2 text-[14px] font-medium">
+          <Bot size={15} className="text-t3" />
+          LLM 接入配置
+          <Badge variant={llm.baseUrl && llm.apiKey && llm.model ? 'ok' : 'warn'} withDot>
+            {llm.baseUrl && llm.apiKey && llm.model ? '已配置' : '未配置——AI 功能将使用内置演示数据'}
+          </Badge>
+        </div>
+        <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
+          OpenAI 兼容协议：DeepSeek / Moonshot / 通义 / 本地 Ollama 均可。方向精炼与 Agent 分析统一使用此配置执行。
+        </p>
+        <div className="mt-3 grid gap-2.5 md:grid-cols-3">
+          <div>
+            <div className="text-[12px] text-t3">接口地址</div>
+            <Input
+              value={llm.baseUrl}
+              onChange={(e) => setLlmField('baseUrl', e.target.value)}
+              placeholder="https://api.deepseek.com/v1"
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <div className="text-[12px] text-t3">API Key</div>
+            <Input
+              type="password"
+              value={llm.apiKey}
+              onChange={(e) => setLlmField('apiKey', e.target.value)}
+              placeholder="sk-…"
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <div className="text-[12px] text-t3">模型</div>
+            <Input
+              value={llm.model}
+              onChange={(e) => setLlmField('model', e.target.value)}
+              placeholder="deepseek-chat"
+              autoComplete="off"
+            />
+          </div>
+        </div>
+        <div className="mt-2 text-[11.5px] text-t3">
+          配置保存于本浏览器；生产部署时 LLM 调用迁至后端代理，Key 不落前端（backend-todo §6）。
         </div>
       </Card>
 
