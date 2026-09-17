@@ -40,6 +40,7 @@ export function NewProjectPage() {
   const [customTag, setCustomTag] = useState('');
   const [title, setTitle] = useState('');
   const [seeds, setSeeds] = useState<string[]>([]);
+  const [description, setDescription] = useState('');
   const [locals, setLocals] = useState<string[]>([]);
   const [prescore, setPrescore] = useState(0.25);
   const [stage, setStage] = useState('标准（六阶段全开）');
@@ -124,7 +125,7 @@ export function NewProjectPage() {
   const create = async () => {
     setCreating(true);
     localStorage.setItem(LS_LAST_FIELDS, JSON.stringify(tags)); // 记住本次领域组合，下次自动预选
-    await createProject({ title, fieldTags: tags });
+    await createProject({ title, fieldTags: tags, description });
     navigate('/projects');
   };
 
@@ -235,8 +236,10 @@ export function NewProjectPage() {
                       type="button"
                       title={d.goal || undefined}
                       onClick={() => {
+                        // 整方向带入：标题 + 领域标签 + 研究目标（领域描述）
                         setTitle(d.title);
                         setTags(d.fields);
+                        setDescription(d.goal ?? '');
                       }}
                       className={cn(
                         'rounded-full border px-2.5 py-1 text-[12.5px] transition-colors',
@@ -258,6 +261,19 @@ export function NewProjectPage() {
                 placeholder="例如：大语言模型 Agent 安全攻击与防御综述"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+            <div>
+              <div className="text-[14px] font-medium">领域描述 / 研究目标</div>
+              <p className="mt-1 text-[12.5px] text-t3">
+                这个方向要解决什么、覆盖哪些范围——将作为流水线 W1 关键词提取与 Gap 分析的输入
+              </p>
+              <textarea
+                rows={3}
+                className="mt-2 w-full resize-none rounded-lg border border-line bg-page px-3 py-2.5 text-[14px] text-t1 placeholder:text-t3 focus:border-ink focus:outline-none"
+                placeholder="例如：面向 LLM Agent 的安全攻击与防御建立攻防对照的分类体系，覆盖 RAG 与持久化记忆场景……"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               />
             </div>
             <div>
@@ -409,6 +425,7 @@ export function NewProjectPage() {
               ['种子论文', `${seeds.length} 篇`],
               ['本地资料', `${locals.length} 篇`],
               ['搜索平台', platforms.join('、')],
+              ['领域描述', description ? (description.length > 26 ? description.slice(0, 26) + '…' : description) : '—'],
               ['检索上限', `${searchCap} 篇`],
               ['最终保留上限', `${corpusCap} 篇`],
               ['prescore 阈值', String(prescore)],
