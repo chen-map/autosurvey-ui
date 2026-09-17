@@ -29,9 +29,9 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                  "args": ["--input", cfg["seed_dir"], "--output", f"{ws}/golden_set/seed_papers.csv"]},
                 {"script": f"{scripts}/golden_set_builder/keyword_analyzer.py",
                  "args": ["--input", f"{ws}/golden_set/seed_papers.csv", "--domain", domain,
-                          "--output", f"{ws}/golden_set/search_strings.md", "--top-n", "30"]},
+                          "--output", f"{ws}/golden_set/keyword_analysis", "--top-n", "30"]},
             ],
-            "outputs": golden("seed_papers.csv", "search_strings.md"),
+            "outputs": [f"{ws}/golden_set/keyword_analysis/search_strings.md"],
         },
         {
             "id": "W1-P2",
@@ -39,7 +39,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": False,
             "steps": [
                 {"script": f"{scripts}/multi_database_searcher/search_databases.py",
-                 "args": ["--db", "all", "--query-file", f"{ws}/golden_set/search_strings.md",
+                 "args": ["--db", "all", "--query-file", f"{ws}/golden_set/keyword_analysis/search_strings.md",
                           "--start-year", str(year_from), "--end-year", str(year_to),
                           "--max-results", str(cfg.get("search_cap", 2000)),
                           "--output", f"{ws}/raw_results/"]},
