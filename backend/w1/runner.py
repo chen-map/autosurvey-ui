@@ -76,6 +76,18 @@ def outputs_ready(workspace: Path, outputs: list[str]) -> bool:
     return all((workspace / o).exists() for o in outputs)
 
 
+def check_requires(phase: dict[str, Any]) -> None:
+    """Phase 声明的硬依赖缺失时显式失败（防静默降级，如 rapidfuzz 缺失跳过去重）。"""
+    import importlib  # noqa: PLC0415
+
+    for mod in phase.get("requires", []):
+        try:
+            importlib.import_module(mod)
+        except ImportError as exc:
+            raise RuntimeError(
+                f"{phase['id']} 依赖 {mod} 未安装——该依赖缺失会导致静默降级，请先 pip install {mod}") from exc
+
+
 def run_phase(phase: dict[str, Any], cfg: dict[str, Any], workspace: Path,
               state: dict[str, Any]) -> str:
     pid = phase["id"]
@@ -86,6 +98,7 @@ def run_phase(phase: dict[str, Any], cfg: dict[str, Any], workspace: Path,
     entry["started_at"] = now()
     state["current"] = pid
     save_state(workspace, state)
+    check_requires(phase)
 
     t0 = time.time()
     try:

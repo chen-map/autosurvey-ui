@@ -50,6 +50,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "id": "W1-P3",
             "name": "归一化与去重",
             "optional": False,
+            "requires": ["rapidfuzz"],
             "steps": [
                 {"script": f"{scripts}/record_normalizer/normalize_and_dedup.py",
                  "args": ["--input", f"{ws}/raw_results/", "--output", f"{ws}/normalized/",
