@@ -40,6 +40,12 @@ export async function getProject(id: string): Promise<Project | undefined> {
 export interface NewProjectInput {
   title: string;
   fieldTags: string[];
+  description?: string; // 领域描述 → W1 P1 关键词提取输入
+  platforms?: string[];
+  searchCap?: number;
+  corpusCap?: number;
+  prescore?: number;
+  localDir?: string;
 }
 export async function createProject(input: NewProjectInput): Promise<Project> {
   await delay(500);
@@ -49,6 +55,7 @@ export async function createProject(input: NewProjectInput): Promise<Project> {
     id: `proj-${Date.now()}`,
     title: input.title,
     fieldTags: input.fieldTags,
+    description: input.description,
     status: 'draft',
     createdAt: fmt,
     updatedAt: fmt,

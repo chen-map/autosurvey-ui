@@ -58,6 +58,9 @@
 
 ```json
 {
+  "title": "…",
+  "description": "领域描述/研究目标（→ W1 P1 关键词提取输入）",
+  "fieldTags": ["LLM 安全", "智能体"],
   "platforms": ["Semantic Scholar", "arXiv"],
   "searchCap": 2000,
   "corpusCap": 500,

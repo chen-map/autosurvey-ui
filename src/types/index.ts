@@ -22,6 +22,7 @@ export interface Project {
   id: string;
   title: string;
   fieldTags: string[];
+  description?: string; // 领域描述/研究目标 → W1 关键词提取与 Gap 分析的输入
   status: ProjectStatus;
   createdAt: string;
   updatedAt: string;
