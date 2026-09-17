@@ -9,7 +9,7 @@ import { useAuth } from '@/store/auth';
 // 个人中心（B15 前端版）：个人信息 + 付费平台 API Key 存储
 // Key 仅存本浏览器 localStorage；生产环境由后端加密存储、接口只回掩码（backend-todo.md §6）
 const LS_APIKEYS = 'as.apikeys';
-const PAID_PLATFORMS = ['IEEE', 'ACM', 'Springer', 'Elsevier'];
+const PAID_PLATFORMS = ['IEEE', 'ACM', 'Springer', 'Elsevier', 'Agent 检索'];
 
 function readKeys(): Record<string, string> {
   try {
