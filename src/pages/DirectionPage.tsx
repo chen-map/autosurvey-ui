@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Compass, Save, Sparkles, ArrowRight, FileText, Plus, Trash2, Pencil, Star } from 'lucide-react';
+import { readLlmConfig, llmConfigured, chatCompletion } from '@/lib/llm';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -108,9 +109,44 @@ export function DirectionPage() {
 
   const ctxFields = directions[0]?.fields ?? [];
 
-  const refine = () => {
+  const [refineError, setRefineError] = useState('');
+
+  const refine = async () => {
     if (!vague.trim()) return;
+    setRefineError('');
     setPhase('thinking');
+    const cfg = readLlmConfig();
+
+    if (llmConfigured(cfg)) {
+      // 真实模式：统一 LLM 执行器（url + apikey + model）
+      try {
+        const sys = [
+          '你是学术选题顾问。把用户的模糊研究想法精炼为专业、可执行的研究方向。',
+          '严格只输出 JSON（不要代码块围栏、不要解释）：',
+          '{"title":"方向标题","statement":"一句话阐述","questions":["研究问题1","研究问题2","研究问题3"],"gap":"为什么值得做（识别的空白）","papers":[{"title":"真实存在的论文标题","venue":"会议或期刊","year":2024,"reason":"推荐理由"}]}',
+          'papers 恰好 3 篇且必须真实存在的文献。',
+        ].join('\n');
+        const raw = await chatCompletion(cfg, [
+          { role: 'system', content: sys },
+          { role: 'user', content: `模糊想法：${vague}\n我的领域标签：${ctxFields.join('、') || '无'}` },
+        ], { maxTokens: 1500 });
+        const cleaned = raw.replace(/```json|```/g, '').trim();
+        const d = JSON.parse(cleaned);
+        setRefined({
+          title: d.title || '未命名方向',
+          statement: d.statement || '',
+          questions: Array.isArray(d.questions) ? d.questions : [],
+          gap: d.gap || '',
+          papers: Array.isArray(d.papers) ? d.papers : [],
+        });
+      } catch (e) {
+        setRefineError(e instanceof Error ? e.message : String(e));
+      }
+      setPhase('done');
+      return;
+    }
+
+    // mock 演示（未配置 LLM）：数据形状与真实模式一致
     const kw = vague.trim();
     setTimeout(() => {
       setRefined({
@@ -124,12 +160,12 @@ export function DirectionPage() {
         gap: '现有工作偏重单点性能提升，缺少跨方法对照与失败案例分析；评测多基于合成设定，真实场景证据不足。',
         papers: [
           { title: 'A Survey on Evaluation Practices in Modern NLP Research', venue: 'arXiv', year: 2024, reason: '评测方法论对照框架' },
-          { title: 'On the Generalization Gaps in Contemporary Machine Learning', venue: 'ACL', year: 2023, reason: '泛化缺口的量化分析范式' },
-          { title: 'Reproducibility and Rigor in ML Empirical Studies', venue: 'Nature Machine Intelligence', year: 2022, reason: '可复现性规范来源' },
+          { title: 'On the Generalization Gaps in Contemporary Machine Learning', venue: 'ACL', year: 2023, reason: '泛化缺口分析框架' },
+          { title: 'Reproducibility in Machine Learning Research', venue: 'Nature Machine Intelligence', year: 2022, reason: '可复现性规范来源' },
         ],
       });
       setPhase('done');
-    }, 1800);
+    }, 1500);
   };
 
   const adoptRefined = () => {
@@ -310,6 +346,12 @@ export function DirectionPage() {
               {phase === 'thinking' ? '精炼中…' : '生成专业方向'}
             </Button>
           </div>
+
+          {refineError && (
+            <div className="mt-3 rounded-lg border border-danger/40 bg-[#fff2f0] px-3 py-2 text-[12.5px] leading-5 text-danger">
+              精炼失败：{refineError}——可检查 LLM 接入配置后重试
+            </div>
+          )}
 
           {phase === 'thinking' && (
             <div className="mt-4 space-y-2">

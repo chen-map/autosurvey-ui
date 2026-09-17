@@ -3,11 +3,12 @@ import { useParams } from 'react-router-dom';
 import { Play, Terminal, FileCode2, Bot } from 'lucide-react';
 import type { AgentRun } from '@/types/data';
 import { getAgentRun } from '@/services/api';
+import { readLlmConfig, llmConfigured, chatCompletion } from '@/lib/llm';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 
-type Phase = 'idle' | 'loading' | 'selecting' | 'running' | 'done';
+type Phase = 'idle' | 'loading' | 'selecting' | 'running' | 'done' | 'error';
 
 // Agent 分析控制台：RQ 输入 → Skill 选择 → agentic loop 时间线 → HTML 报告
 export function AgentPage() {
@@ -16,6 +17,8 @@ export function AgentPage() {
   const [rq, setRq] = useState('分析 BA-Shapes 基准上掩码类解释方法的 Fidelity+ 差异来源');
   const [phase, setPhase] = useState<Phase>('idle');
   const [visibleSteps, setVisibleSteps] = useState(0);
+  const [realAnswer, setRealAnswer] = useState('');
+  const [agentErr, setAgentErr] = useState('');
 
   useEffect(() => {
     let alive = true;
@@ -25,16 +28,36 @@ export function AgentPage() {
     };
   }, [projectId]);
 
-  const run = () => {
-    if (!preset || !rq.trim()) return;
+  const run = async () => {
+    if (!rq.trim()) return;
+    setAgentErr('');
+    setRealAnswer('');
+    const cfg = readLlmConfig();
+    setPhase('running');
+    setVisibleSteps(0);
+
+    if (llmConfigured(cfg)) {
+      // 真实模式：统一 LLM 执行器（url + apikey + model）
+      try {
+        const sys = '你是学术知识图谱分析 Agent。基于给定 KG 概览回答研究问题，输出结构化分析：结论先行、每条判断标注依据（论文/节点）、给出 2-3 条后续分析建议，使用 markdown。';
+        const answer = await chatCompletion(cfg, [
+          { role: 'system', content: sys },
+          { role: 'user', content: `研究问题：${rq}
+
+KG 概览：162 篇论文、645 概念节点、313 关系边（含 contradicts 矛盾边）。` },
+        ], { maxTokens: 1800 });
+        setRealAnswer(answer);
+      } catch (e) {
+        setAgentErr(e instanceof Error ? e.message : String(e));
+      }
+      setPhase('done');
+      return;
+    }
+    // mock 模式（未配置 LLM）：演示时间线
     setPhase('selecting');
     setVisibleSteps(0);
     setTimeout(() => setPhase('running'), 800);
-    // 工具调用逐步出现（模拟 agentic loop；真实实现为 SSE/tool_log 流）
-    preset.steps.forEach((_, i) => {
-      setTimeout(() => setVisibleSteps(i + 1), 1600 + i * 700);
-    });
-    setTimeout(() => setPhase('done'), 1600 + preset.steps.length * 700);
+    setTimeout(() => setPhase('done'), 1600 + (preset?.steps.length ?? 0) * 700);
   };
 
   const running = phase === 'running';
@@ -120,6 +143,17 @@ export function AgentPage() {
               ),
             )}
           </div>
+        </Card>
+      )}
+
+      {/* LLM 真实分析结果 / 错误 */}
+      {agentErr && (
+        <Card className="p-4 text-[13px] text-danger">Agent 调用失败：{agentErr}</Card>
+      )}
+      {realAnswer && (
+        <Card className="p-5">
+          <div className="text-[13px] font-medium">分析结果（LLM 真实输出）</div>
+          <div className="mt-2 whitespace-pre-wrap text-[13.5px] leading-6 text-t1">{realAnswer}</div>
         </Card>
       )}
 
