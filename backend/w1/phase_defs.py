@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+HERE = Path(__file__).resolve().parent
 
 from typing import Any
 
@@ -75,6 +76,9 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                  "args": ["--init", "--workspace", f"{ws}/screening/",
                           "--input", f"{ws}/normalized/unified_records.csv"]},
                 *[{"script": f"{scripts}/six_stage_screener/screening_manager.py",
+                   "args": ["--stage", str(n), "--workspace", f"{ws}/screening/"]}
+                  for n in range(1, 7)],
+                *[{"script": str(HERE / "llm_screen.py"),
                    "args": ["--stage", str(n), "--workspace", f"{ws}/screening/"]}
                   for n in range(1, 7)],
                 {"script": f"{scripts}/six_stage_screener/screening_manager.py",
