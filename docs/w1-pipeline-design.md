@@ -39,6 +39,7 @@ PHASES = [
 ```
 
 - **状态机**：顺序执行；每 Phase 结束写 `w1_state.json`（`phases: [{id, name, status, started_at, ended_at, duration_sec, outputs, rc}]` + `current` + `logs_path`）——**结构与前端 B3 页的 phase_states 一一对应**
+- **CWD 纪律**：所有存量脚本以 `workspace` 为工作目录执行（GUIDE 的 `retrieval_workspace/...` 相对路径布局成立的前提）——测试中发现的首个真实缺陷
 - **断点恢复**：`--resume` 跳过已有 done 标记的 Phase；`--from W1-P4` / `--only W1-P2` 单点重跑
 - **失败策略**：默认 fail-fast；Phase 内部已有降级（如 P6 六级下载降级、占位 txt）
 - **现有脚本零改动**：执行器只做子进程调起 + 参数渲染 + 产物校验
