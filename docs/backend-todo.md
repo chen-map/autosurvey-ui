@@ -17,14 +17,19 @@
 
 存储建议：用户维度一张收藏表（user_id, paper_id, collection, saved_at）+ 分类表。前端 localStorage 键 `as.library-items` / `as.library-collections`。
 
-## 2. 研究方向画像持久化（对应前端 F17）
+## 2. 研究方向库持久化（对应前端 B13 研究方向库）
+
+前端类型：`src/pages/DirectionPage.tsx` 的 `Direction`（id/title/fields/goal/时间戳）+ 默认预选 id
 
 | 接口 | 说明 |
 |---|---|
-| `GET /me/direction` | `{ fields: string[], goal: string }` |
-| `PUT /me/direction` | 更新画像 |
+| `GET /me/directions` | 方向库列表（含 is_default 标记） |
+| `POST /me/directions` | 新建方向 |
+| `PUT /me/directions/:id` | 更新方向 |
+| `DELETE /me/directions/:id` | 删除方向 |
+| `PUT /me/directions/:id/default` | 设为默认预选（向导自动带出） |
 
-前端 localStorage 键：`as.custom-fields` / `as.last-fields` / `as.research-goal`。
+存储建议：`directions` 表（user_id, title, fields_json, goal, is_default, created_at, updated_at）。前端 localStorage 键 `as.directions` / `as.active-direction` 为过渡方案，后端就绪后迁移并清空本地。
 
 ## 3. 选题推荐 / AI 方向精炼（对应 B14/F18；前端 mock 版已并入「研究方向」页）
 
