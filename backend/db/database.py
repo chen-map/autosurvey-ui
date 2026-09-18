@@ -1,0 +1,79 @@
+"""SQLite 连接 + 全表 schema（加密数据库）。"""
+from __future__ import annotations
+
+import sqlite3
+from pathlib import Path
+
+DB_PATH = Path(__file__).resolve().parents[2] / "autosurvey.db"
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'researcher',
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS api_keys (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    platform TEXT NOT NULL,
+    key_encrypted TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, platform)
+);
+
+CREATE TABLE IF NOT EXISTS llm_configs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id),
+    base_url TEXT NOT NULL DEFAULT '',
+    api_key_encrypted TEXT NOT NULL DEFAULT '',
+    model TEXT NOT NULL DEFAULT '',
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS directions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    title TEXT NOT NULL DEFAULT '',
+    fields_json TEXT NOT NULL DEFAULT '[]',
+    goal TEXT NOT NULL DEFAULT '',
+    is_default INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS library_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    paper_idx INTEGER,
+    source TEXT NOT NULL DEFAULT 'corpus',
+    title TEXT NOT NULL DEFAULT '',
+    authors TEXT DEFAULT '',
+    venue TEXT DEFAULT '',
+    year INTEGER,
+    doi TEXT DEFAULT '',
+    collection TEXT DEFAULT '未分类',
+    saved_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, doi, title)
+);
+"""
+
+
+def get_db() -> sqlite3.Connection:
+    """获取数据库连接（启用外键 + WAL 模式）。"""
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
+    return conn
+
+
+def init_db():
+    """初始化数据库表（幂等）。"""
+    conn = get_db()
+    conn.executescript(SCHEMA)
+    conn.commit()
+    conn.close()
