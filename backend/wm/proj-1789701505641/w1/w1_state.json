@@ -1,0 +1,87 @@
+{
+  "phases": [
+    {
+      "id": "W1-P1",
+      "name": "Golden Set 检索式构建",
+      "status": "done",
+      "started_at": "2026-09-18 11:18:25",
+      "ended_at": "2026-09-18 11:18:34",
+      "duration_sec": 8.2,
+      "rc": 0,
+      "outputs": [
+        "retrieval_workspace/golden_set/keyword_analysis/search_strings.md"
+      ],
+      "log": "logs/W1-P1.log"
+    },
+    {
+      "id": "W1-P2",
+      "name": "七数据库检索",
+      "status": "done",
+      "started_at": "2026-09-18 11:18:34",
+      "ended_at": "2026-09-18 11:22:27",
+      "duration_sec": 233.4,
+      "rc": 0,
+      "outputs": [
+        "retrieval_workspace/raw_results/"
+      ],
+      "log": "logs/W1-P2.log"
+    },
+    {
+      "id": "W1-P3",
+      "name": "归一化与去重",
+      "status": "done",
+      "started_at": "2026-09-18 11:22:27",
+      "ended_at": "2026-09-18 11:22:28",
+      "duration_sec": 1.2,
+      "rc": 0,
+      "outputs": [
+        "retrieval_workspace/normalized/unified_records.csv"
+      ],
+      "log": "logs/W1-P3.log"
+    },
+    {
+      "id": "W1-P4",
+      "name": "六阶段筛选",
+      "status": "done",
+      "started_at": "2026-09-18 11:22:28",
+      "ended_at": "2026-09-18 11:22:28",
+      "duration_sec": 0.1,
+      "rc": 0,
+      "outputs": [
+        "retrieval_workspace/screening/screened_records.csv",
+        "retrieval_workspace/screening/screening_log.md"
+      ],
+      "log": "logs/W1-P4.log"
+    },
+    {
+      "id": "W1-P5",
+      "name": "滚雪球扩展",
+      "status": "failed",
+      "started_at": "2026-09-18 11:22:28",
+      "ended_at": "2026-09-18 11:22:29",
+      "duration_sec": 1.0,
+      "rc": 2,
+      "outputs": [
+        "retrieval_workspace/snowball/FINAL_INCLUDED_PAPERS.csv"
+      ],
+      "log": "logs/W1-P5.log"
+    },
+    {
+      "id": "W1-P6",
+      "name": "论文下载（六级降级）",
+      "status": "pending",
+      "started_at": null,
+      "ended_at": null,
+      "duration_sec": null,
+      "rc": null,
+      "outputs": [
+        "retrieval_workspace/papers/download_report.md"
+      ],
+      "log": "logs/W1-P6.log"
+    }
+  ],
+  "started_at": "2026-09-18 11:18:25",
+  "updated_at": "2026-09-18 11:22:29",
+  "current": null,
+  "project_id": "proj-1789701505641"
+}

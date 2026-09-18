@@ -1,0 +1,9 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_1_corpus_construction/snowball_searcher/snowball_search.py --direction both --input retrieval_workspace/normalized/unified_records.csv --output retrieval_workspace/snowball/ --merge
+usage: snowball_search.py [-h] [--direction {forward,backward,both}]
+                          [--input INPUT] [--existing-corpus EXISTING_CORPUS]
+                          [--output OUTPUT] [--start-year START_YEAR]
+                          [--end-year END_YEAR] [--merge]
+                          [--original ORIGINAL]
+                          [--snowball-included SNOWBALL_INCLUDED]
+snowball_search.py: error: --merge requires --original and --output
