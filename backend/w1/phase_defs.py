@@ -86,7 +86,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "steps": [
                 {"script": f"{scripts}/snowball_searcher/snowball_search.py",
                  "args": ["--direction", "both", "--input", f"{ws}/normalized/unified_records.csv",
-                          "--output", f"{ws}/snowball/", "--merge"]},
+                          "--output", f"{ws}/snowball/"]},
             ],
             "outputs": [f"{ws}/snowball/FINAL_INCLUDED_PAPERS.csv"],
         },
