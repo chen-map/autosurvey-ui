@@ -88,7 +88,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                  "args": ["--direction", "both", "--input", f"{ws}/normalized/unified_records.csv",
                           "--output", f"{ws}/snowball/"]},
             ],
-            "outputs": [f"{ws}/snowball/FINAL_INCLUDED_PAPERS.csv"],
+            "outputs": [f"{ws}/snowball/snowball_candidates.csv"],
         },
         {
             "id": "W1-P6",
@@ -96,7 +96,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": False,
             "steps": [
                 {"script": f"{scripts}/paper_downloader/download_papers.py",
-                 "args": ["--input", f"{ws}/snowball/FINAL_INCLUDED_PAPERS.csv",
+                 "args": ["--input", f"{ws}/snowball/snowball_candidates.csv",
                           "--output", f"{ws}/papers/", "--no-scihub", "--skip-existing",
                           "--delay", "2"]},
             ],
