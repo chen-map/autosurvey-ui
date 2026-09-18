@@ -1,0 +1,29 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_1_corpus_construction/golden_set_builder/keyword_analyzer.py --input retrieval_workspace/golden_set/seed_papers.csv --domain general --output retrieval_workspace/golden_set/keyword_analysis --top-n 30
+Loading seed papers from: retrieval_workspace/golden_set/seed_papers.csv
+  Loaded 3 papers
+Extracting text corpus...
+Computing TF-IDF keywords (top 30)...
+Computing frequency keywords (top 30)...
+Merging rankings...
+Building search strings...
+Saving keyword analysis report to: retrieval_workspace\golden_set\keyword_analysis/keyword_analysis.md
+Saving search strings to: retrieval_workspace\golden_set\keyword_analysis/search_strings.md
+
+=== Keyword Analysis Summary ===
+Top 10 keywords (combined ranking):
+   1. graph                          (TF-IDF: 0.1882, freq: 4)
+   2. neural                         (TF-IDF: 0.1882, freq: 4)
+   3. networks                       (TF-IDF: 0.1882, freq: 4)
+   4. including                      (TF-IDF: 0.2176, freq: 3)
+   5. gaps                           (TF-IDF: 0.2176, freq: 3)
+   6. increasingly                   (TF-IDF: 0.2332, freq: 2)
+   7. covering                       (TF-IDF: 0.2332, freq: 2)
+   8. graph neural                   (TF-IDF: 0.1882, freq: 0)
+   9. neural networks                (TF-IDF: 0.1882, freq: 0)
+  10. subgraph                       (TF-IDF: 0.0941, freq: 2)
+
+Primary search string:
+  ("graph neural") AND ("neural networks") AND ("graph")
+
+Outputs saved to: retrieval_workspace\golden_set\keyword_analysis/

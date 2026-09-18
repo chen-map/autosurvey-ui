@@ -1,0 +1,27 @@
+{
+  "project_id": "proj-1789701505641",
+  "title": "LLM Agent 安全综述",
+  "field_tags": [
+    "LLM 安全",
+    "智能体"
+  ],
+  "description": "面向 LLM Agent 的安全攻击与防御建立攻防对照的分类体系",
+  "platforms": [
+    "Semantic Scholar",
+    "arXiv",
+    "OpenAlex"
+  ],
+  "search_cap": 10,
+  "corpus_cap": 500,
+  "prescore": 0.25,
+  "year_range": [
+    2020,
+    2026
+  ],
+  "seed_dir": "C:/Users/85864/.zcode/workspace/default/autosurvey-ui/backend/.real-run/seed_papers",
+  "local_dir": "",
+  "llm": {},
+  "scripts_root": "C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2",
+  "workspace": "C:\\Users\\85864\\.zcode\\workspace\\default\\autosurvey-ui\\backend\\wm\\proj-1789701505641\\w1",
+  "created_at": "2026-09-18 11:18:25"
+}

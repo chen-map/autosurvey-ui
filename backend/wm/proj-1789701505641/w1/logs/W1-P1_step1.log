@@ -1,0 +1,15 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_1_corpus_construction/golden_set_builder/extract_seed_metadata.py --input C:/Users/85864/.zcode/workspace/default/autosurvey-ui/backend/.real-run/seed_papers --output retrieval_workspace/golden_set/seed_papers.csv
+Found 3 PDFs in C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\.real-run\seed_papers
+Output: retrieval_workspace\golden_set\seed_papers.csv
+
+  Processing: seed1-llm-agent-security.pdf ...   [WARN] opendataloader-pdf not installed, trying pymupdf
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+OK (title: Security of Externalized Memory in LLM Agents: A Survey...)
+  Processing: seed2-gnn-interpretability.pdf ...   [WARN] opendataloader-pdf not installed, trying pymupdf
+OK (title: Interpretability of Graph Neural Networks: Methods and Chall...)
+  Processing: seed2-graph-interpretability.pdf ...   [WARN] opendataloader-pdf not installed, trying pymupdf
+OK (title: Interpretability of Graph Neural Networks: A Survey...)
+
+Extraction complete: 3/3 papers with titles
+Output: retrieval_workspace\golden_set\seed_papers.csv

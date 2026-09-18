@@ -1,0 +1,17 @@
+{
+  "project_id": "proj-demo",
+  "title": "LLM Agent 安全综述",
+  "domain_tags": [
+    "LLM 安全",
+    "智能体"
+  ],
+  "description": "面向 LLM Agent 的安全攻击与防御建立攻防对照的分类体系",
+  "scripts_root": "C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2",
+  "workspace": "C:/Users/85864/.zcode/workspace/default/autosurvey-ui/backend/wm/proj-demo/w1",
+  "seed_dir": "C:/Users/85864/.zcode/workspace/default/autosurvey-ui/backend/.real-run/seed_papers",
+  "search_cap": 10,
+  "year_range": [
+    2020,
+    2026
+  ]
+}
