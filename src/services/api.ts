@@ -120,6 +120,15 @@ export async function login(username: string, password: string): Promise<LoginRe
 }
 
 // ---- pipeline ----
+export async function startRun(projectId: string): Promise<void> {
+  if (!USE_MOCK) {
+    const res = await fetch(`${API}/projects/${projectId}/run`, { method: 'POST' });
+    if (!res.ok) throw new Error(`startRun 失败: ${res.status}`);
+    return;
+  }
+  await delay(200);
+}
+
 export async function getPipeline(projectId: string): Promise<PipelineRun> {
   if (!USE_MOCK) return realFetch<PipelineRun>(`/projects/${projectId}/run`);
   await delay();
