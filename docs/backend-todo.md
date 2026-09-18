@@ -70,6 +70,8 @@
 }
 ```
 
+**运行生命周期（已实现）**：`POST /projects` 只创建 draft（写 `w1_config.json`，不自动跑）；`POST /projects/{pid}/run` 显式启动/续跑 W1（runner 以 `--resume` 拉起，跳过已完成 Phase）；`GET /projects/{pid}/run` 在启动前返回 404，前端流水线页以此区分「未启动」并轮询等待首个状态文件。
+
 ## 5. 个人中心与 API 密钥存储（对应 B15）
 
 - **users 表扩展**：昵称、头像 URL、研究方向关联（direction_id）

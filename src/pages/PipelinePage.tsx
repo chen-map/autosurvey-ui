@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { RotateCcw, FileText, Network, Clock } from 'lucide-react';
+import { Play, RotateCcw, FileText, Network, Clock } from 'lucide-react';
 import type { PipelineRun, PhaseState } from '@/types/data';
-import { getPipeline } from '@/services/api';
+import { getPipeline, startRun } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -36,23 +36,56 @@ function fmt(sec?: number) {
 export function PipelinePage() {
   const { projectId = '' } = useParams();
   const [run, setRun] = useState<PipelineRun | null>(null);
+  const [notStarted, setNotStarted] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [logPhase, setLogPhase] = useState('ALL');
   const [reruns, setReruns] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let alive = true;
-    getPipeline(projectId).then((r) => alive && setRun(r));
+    const load = () =>
+      getPipeline(projectId)
+        .then((r) => alive && (setRun(r), setNotStarted(false)))
+        .catch(() => alive && setNotStarted(true)); // 真实模式：项目尚未启动（无 w1_state.json）
+    load();
+    // 轮询刷新：运行中页面实时跟进状态；未启动时等 runner 写出首个状态文件
+    const t = setInterval(load, 4000);
     return () => {
       alive = false;
+      clearInterval(t);
     };
   }, [projectId]);
+
+  const start = async () => {
+    setStarting(true);
+    try {
+      await startRun(projectId);
+      setNotStarted(false); // 轮询会在 runner 写出状态文件后自动接管
+    } finally {
+      setStarting(false);
+    }
+  };
 
   const logs = useMemo(
     () => (run ? run.logs.filter((l) => logPhase === 'ALL' || l.phase === logPhase) : []),
     [run, logPhase],
   );
 
-  if (!run) return <div className="py-16 text-center text-[13px] text-t3">加载中…</div>;
+  if (!run && !notStarted) return <div className="py-16 text-center text-[13px] text-t3">加载中…</div>;
+
+  if (!run)
+    return (
+      <Card className="mx-auto max-w-lg p-8 text-center">
+        <div className="text-[15px] font-medium">W1 尚未启动</div>
+        <div className="mt-1.5 text-[13px] leading-5 text-t3">
+          该项目还没有运行记录（或 runner 正在初始化）。启动后将自动执行语料库构建的 7 个 Phase。
+        </div>
+        <Button className="mx-auto mt-4" onClick={start} disabled={starting}>
+          <Play size={14} />
+          {starting ? '启动中…' : '启动 W1'}
+        </Button>
+      </Card>
+    );
 
   const elapsed = reruns['W3-P2'] ? run.elapsedSec + 300 : run.elapsedSec;
 

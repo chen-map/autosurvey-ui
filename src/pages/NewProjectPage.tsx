@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Upload, X, Lock } from 'lucide-react';
-import { createProject } from '@/services/api';
+import { createProject, startRun } from '@/services/api';
 import { readApiKeys } from '@/lib/apikeys';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -138,8 +138,13 @@ export function NewProjectPage() {
   const create = async () => {
     setCreating(true);
     localStorage.setItem(LS_LAST_FIELDS, JSON.stringify(tags)); // 记住本次领域组合，下次自动预选
-    await createProject({ title, fieldTags: tags, description });
-    navigate('/projects');
+    const p = await createProject({ title, fieldTags: tags, description });
+    try {
+      await startRun(p.id); // 真实模式：创建即启动 W1；启动失败不阻断，可在流水线页手动启动
+    } catch {
+      /* ignore */
+    }
+    navigate(`/projects/${p.id}/pipeline`);
   };
 
   const canNext = [tags.length > 0, title.trim().length > 0 && seeds.length > 0, true, true][step];
