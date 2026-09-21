@@ -54,8 +54,10 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "name": "候选对象筛选",
             "optional": True,  # 主参考：可选过滤；全量进 KG 可跳过
             "steps": [
-                {"script": f"{kg_scripts}/select_candidate_objects.py",
-                 "args": ["--input", "knowledge_graph/structured_papers.jsonl",
+                {"script": LLM_WRAP,
+                 "args": ["--use-case", "w2.candidate",
+                          "--target", f"{kg_scripts}/select_candidate_objects.py",
+                          "--input", "knowledge_graph/structured_papers.jsonl",
                           "--out", "knowledge_graph/candidate_structured_papers.jsonl"]},
             ],
             "outputs": ["knowledge_graph/candidate_structured_papers.jsonl"],

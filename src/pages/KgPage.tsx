@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation,
+  forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY,
   type Simulation, type SimulationLinkDatum, type SimulationNodeDatum,
 } from 'd3-force';
-import { Loader2, Play, Search, X, ZoomIn } from 'lucide-react';
+import { Loader2, Maximize2, Play, Search, X, ZoomIn } from 'lucide-react';
 import type { KgGraphData } from '@/services/api';
 import { getKg, startRun, USE_MOCK } from '@/services/api';
 import { edgeColor, mapNodeType, TYPE_COLORS, TYPE_LABELS, type KgType } from '@/mock/kg';
@@ -37,7 +37,7 @@ export function KgPage() {
   const [data, setData] = useState<KgGraphData | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [w2Starting, setW2Starting] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 900, h: 560 });
 
   // 数据加载（真实 404 → 空态；启动 W2 后轮询直至 KG 产出）
@@ -113,20 +113,45 @@ export function KgPage() {
     return m;
   }, [simLinks]);
 
-  // 力导向仿真（每 tick 重渲染；alpha 衰减后自动停）
+  // 力导向仿真：同步预跑 300 tick 得到确定性布局 → 自适应视野；拖拽时再热
   const [, setTick] = useState(0);
   const simRef = useRef<Simulation<SimNode, SimLink> | null>(null);
+  const simNodesRef = useRef<SimNode[]>([]);
+  simNodesRef.current = simNodes;
+  const wrapRef2 = useRef<HTMLDivElement | null>(null);
+
+  const fitView = useCallback(() => {
+    const el = wrapRef2.current ?? wrapRef.current;
+    if (!el) return;
+    const w = el.clientWidth, h = el.clientHeight;
+    const xs = simNodesRef.current.map((n) => n.x).filter((x): x is number => x != null);
+    const ys = simNodesRef.current.map((n) => n.y).filter((y): y is number => y != null);
+    if (!xs.length) return;
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const bw = Math.max(maxX - minX, 10), bh = Math.max(maxY - minY, 10);
+    const k = Math.min(w / bw, h / bh) * 0.88;
+    setView({ k, x: w / 2 - ((minX + maxX) / 2) * k, y: h / 2 - ((minY + maxY) / 2) * k });
+  }, []);
+
   useEffect(() => {
     if (!simNodes.length) return;
     const sim = forceSimulation<SimNode>(simNodes)
-      .force('link', forceLink<SimNode, SimLink>(simLinks).id((d) => d.id).distance(92).strength(0.35))
-      .force('charge', forceManyBody<SimNode>().strength(-300))
+      .force('link', forceLink<SimNode, SimLink>(simLinks).id((d) => d.id).distance(58).strength(0.6))
+      .force('charge', forceManyBody<SimNode>().strength(-150))
       .force('center', forceCenter(size.w / 2, size.h / 2))
       .force('collide', forceCollide<SimNode>((d) => radiusOf(d.degree, d.type) + 8))
+      // 弱向心力：把互不连通的论文星簇聚拢（断连分量的 Obsidian 观感）
+      .force('x', forceX(size.w / 2).strength(0.12))
+      .force('y', forceY(size.h / 2).strength(0.16))
       .on('tick', () => setTick((t) => t + 1));
     simRef.current = sim;
+    sim.stop();
+    for (let i = 0; i < 300; i++) sim.tick(); // 同步预计算
+    setTick((t) => t + 1);
+    setTimeout(fitView, 0);
     return () => { sim.stop(); };
-  }, [simNodes, simLinks, size.w, size.h]);
+  }, [simNodes, simLinks, size.w, size.h, fitView]);
 
   const reheat = () => simRef.current?.alpha(0.4).restart();
 
@@ -233,6 +258,9 @@ export function KgPage() {
         ))}
         <div className="ml-auto flex items-center gap-2">
           <Badge variant="neutral">{simNodes.length} 节点 · {simLinks.length} 边{data?.paperCount ? ` · 论文 ${data.paperCount} 篇` : ''}</Badge>
+          <Button size="sm" variant="secondary" onClick={fitView} title="缩放至全部节点可见">
+            <Maximize2 size={13} />
+          </Button>
           <div className="relative">
             <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-t3" />
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索节点…" className="w-44 pl-7" />
@@ -242,7 +270,7 @@ export function KgPage() {
 
       {/* 画布 */}
       <div
-        ref={wrapRef}
+        ref={(el) => { wrapRef.current = el; wrapRef2.current = el; }}
         className="relative h-[560px] touch-none select-none overflow-hidden rounded-xl border border-line/60 bg-page"
         style={{ backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.055) 1px, transparent 1px)', backgroundSize: '22px 22px' }}
         onWheel={onWheel}
