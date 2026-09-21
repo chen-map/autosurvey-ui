@@ -86,24 +86,24 @@
 - 计费模式：open-core——自部署免费直连各库；托管版按调用计费（关联 F15）
 - 前端契约：`createProject`/运行配置增加 `agentSearch: boolean` + `agentSearchKeyId`
 
-## 7.5 W3 → RQ 专页数据契约（前端 RQ 树/专页的每个字段 = W3 哪个 Phase 产出）
+## 7.5 W3 → RQ 专页数据契约（对齐 autoSurvey_v2 真实产物，WORKFLOW3_GUIDE.md §二/§三）
 
-前端 RQ 界面的内容范围由 W3 真实产出决定，字段一一对应（均为主参考 §3.3 已有能力）：
+W3 实际写出 `analyze_report/` 下的产物，前端 RQ 树/专页的每个分节都对应真实文件（页面分节上直接标注来源文件名）：
 
-| 前端字段 | W3 产出 Phase | 来源产物 |
+| 前端展示 | 来源产物（真实文件） | 关键字段/内容 |
 |---|---|---|
-| Macro-RQ 列表 + 绑定章节（chapter） | W3-P2 RQ Designer | 每个 Macro-RQ 对应一个核心章节 |
-| Macro 分解逻辑（decompositionNote）/ 综合策略（synthesisPlan） | W3-P2 | Sub-RQ 划分依据与答案组织策略 |
-| Sub-RQ 类型（rqType：descriptive/comparative/causal/trend/evaluative） | W3-P2 | 答案组织策略按类型选择 |
-| 选择原因（motivation） | W3-P1 Survey Gap Analyzer | coverage/methodological gaps，不允许凭空声称 novelty |
-| 焦点词（focusTerms） | W3-P2 定义，W3-P4 可扩展 | focus_terms |
-| 期望证据（expectedEvidence）/ KG 查询路径（kgQueryPaths） | W3-P2/P3 | 预设 KG 证据类型 + 候选查询路径 |
-| 可答性（score/level，strong ≥0.85 / weak 0.45–0.85 / blocked <0.45） | W3-P3 Grounding | Answerability Score |
-| 冻结论文集合（matrix.entries） | W3-P3 | **rq_evidence_matrix.json（冻结，下游唯一入口）** |
-| 修订动作（revisionNote） | W3-P4 Revision Loop | 扩展 focus_terms / 合并 / 降级 / 删除的处置记录 |
-| 大纲章节绑定 | W3-P5 Outline Skeleton | survey_outline.json |
+| RQ 树（RQ1 → RQ1.1 层级） | `rq_evidence_matrix.json`（冻结） | `RQ1.rq_text / sub_rqs.RQ1.1.sub_rq_text`，**ID 约定为点号层级** |
+| 冻结论文集合 / KG 命中数 | 同上 | `paper_ids / kg_node_ids / kg_edge_ids / answerability_score` |
+| 章节绑定 + 建议综合产物 | `survey_outline.json` | `sections.subsections.{section_id, sub_rq, suggested_artifact}` |
+| 查询计划（意图/焦点词/节点边类型/候选路径） | `rq_query_registry.json` | `query_intent / focus_terms / node_types / edge_types / candidate_paths` |
+| 选择原因（回应的 Gap） | `gap_summary.md`（W3-P1） | markdown，后端抽取为可选注解字段 |
+| 简述 / 口径 / 分解逻辑 / 综合策略 | `design_report.md`（W3-P2） | markdown 注解 |
+| 修订记录 | `rq_reflection_log.md`（W3-P4） | markdown 注解（blocked/weak 的处置） |
+| 答案与核查 | W4 `rq_answer.json` | `overall_answer / key_claims`（四维核查） |
 
-**接口建议**：`GET /projects/:pid/rqs` 返回 `{ macros: [...], matrix: {...} }`，字段命名与前端 `types/data.ts` 的 `MacroRQ/SubRQ` 一致；缺失字段（optional）前端自动显示"尚未生成（W3-Px 产出）"占位。
+**接口建议**：`GET /projects/:pid/rqs` 汇总返回 `{ macros, matrix: { frozenAt } }`，其中 Sub-RQ 内嵌 `paperIds/kgNodeCount/kgEdgeCount/section/query`（后端读上面三个 JSON + 三个 md 组装）；字段命名与前端 `types/data.ts` 的 `MacroRQ/SubRQ/QueryPlan` 一致。可选注解字段缺失时，前端自动显示"尚未生成（对应 Phase 产出）"。
+
+**核心纪律（真实文件即契约）**：`rq_evidence_matrix.json` 是下游唯一入口；W4/W5/前端都不得重新执行 KG 查询，只消费冻结映射。
 
 ## 8. 基础设施（部署阶段）
 

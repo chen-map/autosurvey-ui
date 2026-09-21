@@ -53,53 +53,55 @@ export interface PaperRecord {
 export interface PrismaLevel { stage: string; count: number; note?: string }
 
 // ---------- RQ / 证据（W4 门面） ----------
+// 类型对齐 autoSurvey_v2 W3 真实产物（WORKFLOW3_GUIDE.md §二/§三）：
+//   analyze_report/rq_evidence_matrix.json（冻结）· rq_query_registry.json · survey_outline.json
+// 其余字段来自 markdown 产物（gap_summary.md / design_report.md / rq_reflection_log.md），均为可选注解。
 export type AnswerabilityLevel = 'strong' | 'weak' | 'blocked';
 
-export type RQType = 'descriptive' | 'comparative' | 'causal' | 'trend' | 'evaluative';
-
-export interface KgQueryPath { path: string; expected: string }
+// rq_query_registry.json 中每个 Sub-RQ 的查询计划（结构化）
+export interface QueryPlan {
+  queryIntent?: string;      // 查询意图描述
+  focusTerms?: string[];     // focus_terms 关键词列表
+  nodeTypes?: string[];      // 目标 KG 节点类型
+  edgeTypes?: string[];      // 目标 KG 边类型
+  candidatePaths?: string[]; // 候选图路径模式
+}
 
 export interface SubRQ {
-  id: string;
-  text: string;
-  score: number;
-  level: AnswerabilityLevel;
-  paperCount: number;
-  // ---- RQ 专页（主参考 W3-P2 RQ Designer / P3 Grounding 产出；后端可选提供） ----
-  rqType?: RQType;
-  summary?: string;             // RQ 简述（这个 RQ 在问什么的叙事概括）
-  motivation?: string;          // 选择原因 · 来源（W3-P1 Gap 分析）
-  roleInSurvey?: string;        // 选择原因 · 在综述中的角色（删去会怎样）
-  definition?: string;          // 包含内容 · 总口径
-  includedScope?: string[];     // 包含内容 · 纳入清单
-  excludedScope?: string[];     // 包含内容 · 排除清单（及去向）
-  focusTerms?: string[];        // 焦点词（P4 修订循环可扩展）
-  analysisPlan?: string;        // 怎么分析 · 按 RQ 类型的答案组织策略
-  analysisSteps?: string[];     // 怎么分析 · 执行步骤
-  expectedEvidence?: string[];  // 预设 KG 证据类型
-  kgQueryPaths?: KgQueryPath[]; // 候选 KG 查询路径
-  deficiencies?: string[];      // 具体目前缺陷（证据/数据/口径层面）
-  chapter?: string;             // 绑定大纲章节
-  revisionNote?: string;        // P4 修订循环动作（blocked/weak 时）
+  id: string;                // 真实约定："RQ1.1"（点号层级）
+  text: string;              // sub_rq_text
+  score: number;             // answerability_score（W3-P3）
+  level: AnswerabilityLevel; // 由 score 派生展示（strong ≥0.85 / weak ≥0.45 / blocked）
+  paperIds: string[];        // 冻结 Paper ID 集合（rq_evidence_matrix.json）
+  kgNodeCount: number;       // kg_node_ids 数
+  kgEdgeCount: number;       // kg_edge_ids 数
+  section: string;           // 绑定二级章节号，如 "4.1"（matrix.section + survey_outline.json）
+  // ---- markdown 产物注解（可选，后端从对应 .md 抽取） ----
+  summary?: string;          // design_report.md：Sub-RQ 简述
+  motivation?: string;       // gap_summary.md：回应的 gap（W3-P1）
+  roleInSurvey?: string;     // design_report.md：在综述中的角色
+  definition?: string;       // design_report.md：口径与边界
+  includedScope?: string[];  // design_report.md：纳入清单
+  excludedScope?: string[];  // design_report.md：排除清单
+  query?: QueryPlan;         // rq_query_registry.json：完整查询计划
+  suggestedArtifact?: string;// survey_outline.json：建议综合产物（taxonomy_table 等）
+  revisionNote?: string;     // rq_reflection_log.md：W3-P4 修订记录
 }
 
 export interface MacroRQ {
-  id: string;
-  text: string;
+  id: string;                // 真实约定："RQ1"
+  text: string;              // rq_text
   subs: SubRQ[];
-  // ---- Macro 专页（W3 产出；后端可选提供） ----
-  summary?: string;           // Macro 简述（对应哪个核心章节、问什么）
-  chapter?: string;           // 绑定核心章节
-  role?: string;              // 在综述中的角色
-  decompositionNote?: string; // 为什么拆成这几个 Sub-RQ（W3-P2 分解逻辑）
-  synthesisPlan?: string;     // Sub 答案如何综合成 Macro 结论
-  deficiencies?: string[];    // Macro 层缺陷
+  chapter?: string;          // 对应核心章节（W3-P2：每个 Macro 对应一个章节）
+  summary?: string;          // design_report.md
+  role?: string;             // design_report.md
+  decompositionNote?: string;// design_report.md：Sub 拆分依据
+  synthesisPlan?: string;    // design_report.md：Sub 答案 → Macro 结论的组织策略
+  deficiencies?: string[];
 }
 
-export interface FrozenMatrix {
-  frozenAt: string;
-  entries: { subRqId: string; subRqText: string; papers: string[] }[];
-}
+// 冻结矩阵元信息（论文集合内嵌在各 Sub-RQ 上，与真实文件同构）
+export interface FrozenMatrix { frozenAt: string }
 
 export type ClaimStatus = 'verified' | 'needs_revision' | 'should_remove';
 
@@ -120,7 +122,7 @@ export interface EvidencePaper { id: string; title: string; venue: string; year:
 
 export interface RQBundle {
   macros: MacroRQ[];
-  matrix: FrozenMatrix | null;
+  matrix: FrozenMatrix | null;   // null = W3 未冻结
   overallAnswer: string;
   claims: Claim[];
   evidencePapers: EvidencePaper[];

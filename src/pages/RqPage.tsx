@@ -109,7 +109,7 @@ export function RqPage() {
                 <span className="truncate text-[15px] font-medium leading-6">{m.text}</span>
               </div>
               <div className="flex shrink-0 items-center gap-2 text-[12px] text-t3">
-                <span>{m.subs.length} Sub · {m.subs.reduce((n, x) => n + x.paperCount, 0)} 篇</span>
+                <span>{m.subs.length} Sub · {m.subs.reduce((n, x) => n + x.paperIds.length, 0)} 篇</span>
                 <ChevronRight size={15} />
               </div>
             </Link>
@@ -127,7 +127,7 @@ export function RqPage() {
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <Badge variant={levelVariant[s.level]}>{levelLabel[s.level]} {s.score.toFixed(2)}</Badge>
-                    <span className="text-[12px] text-t3">{s.paperCount} 篇</span>
+                    <span className="shrink-0 text-[12px] text-t3">§{s.section} · {s.paperIds.length} 篇</span>
                     <ChevronRight size={15} className="text-t3" />
                   </div>
                 </Link>
@@ -148,20 +148,24 @@ export function RqPage() {
             <thead>
               <tr className="border-b border-line/60 text-[12px] uppercase tracking-wide text-t3">
                 <th className="px-5 py-2.5 font-medium">Sub-RQ</th>
+                <th className="px-3 py-2.5 font-medium">章节</th>
+                <th className="px-3 py-2.5 font-medium">可答性</th>
                 <th className="px-3 py-2.5 font-medium">论文数</th>
                 <th className="px-5 py-2.5 font-medium">论文 ID（冻结集合）</th>
               </tr>
             </thead>
             <tbody>
-              {bundle.matrix.entries.map((e) => (
-                <tr key={e.subRqId} className="border-b border-line/40 last:border-0">
+              {bundle.macros.flatMap((m) => m.subs).map((s) => (
+                <tr key={s.id} className="border-b border-line/40 last:border-0">
                   <td className="px-5 py-2.5">
-                    <span className="text-t3">{e.subRqId}</span>
-                    <span className="ml-2 text-t1">{e.subRqText}</span>
+                    <span className="text-t3">{s.id}</span>
+                    <span className="ml-2 text-t1">{s.text}</span>
                   </td>
-                  <td className="px-3 py-2.5 tabular-nums text-t2">{e.papers.length}</td>
-                  <td className="max-w-[380px] truncate px-5 py-2.5 font-mono text-[12px] text-t2" title={e.papers.join(' · ')}>
-                    {e.papers.join(' · ')}
+                  <td className="px-3 py-2.5 text-t2">{s.section}</td>
+                  <td className="px-3 py-2.5"><Badge variant={levelVariant[s.level]}>{s.score.toFixed(2)}</Badge></td>
+                  <td className="px-3 py-2.5 tabular-nums text-t2">{s.paperIds.length}</td>
+                  <td className="max-w-[380px] truncate px-5 py-2.5 font-mono text-[12px] text-t2" title={s.paperIds.join(' · ')}>
+                    {s.paperIds.join(' · ')}
                   </td>
                 </tr>
               ))}
