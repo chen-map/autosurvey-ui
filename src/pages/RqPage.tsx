@@ -119,7 +119,7 @@ export function RqPage() {
                         'border-line hover:border-ink hover:text-t1',
                       )}
                     >
-                      查看证据 →
+                      查看详情 →
                     </Link>
                   </div>
                 </div>
