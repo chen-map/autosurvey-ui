@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { ChevronRight, Lock } from 'lucide-react';
 import type { AnswerabilityLevel, RQBundle } from '@/types/data';
 import { getRQBundle } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { cn } from '@/lib/utils';
+
+export type { AnswerabilityLevel };
 
 export const levelVariant: Record<AnswerabilityLevel, 'ok' | 'warn' | 'danger'> = {
   strong: 'ok',
@@ -94,17 +95,32 @@ export function RqPage() {
         )}
       </div>
 
-      {/* Macro → Sub 树 */}
+      {/* Macro → Sub 树：两级都可点击进入专页 */}
       <div className="stagger space-y-4">
         {bundle.macros.map((m) => (
-          <Card key={m.id} className="p-5">
-            <div className="flex items-baseline gap-2.5">
-              <span className="rounded bg-ink px-1.5 py-0.5 text-[12px] font-semibold text-white">{m.id}</span>
-              <span className="text-[15px] font-medium leading-6">{m.text}</span>
-            </div>
-            <div className="mt-3 divide-y divide-line/40">
+          <Card key={m.id} className="p-0">
+            <Link
+              to={m.id}
+              className="flex items-center justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-black/[0.03]"
+              title={`进入 ${m.id} 专页`}
+            >
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="rounded bg-ink px-1.5 py-0.5 text-[12px] font-semibold text-white">{m.id}</span>
+                <span className="truncate text-[15px] font-medium leading-6">{m.text}</span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 text-[12px] text-t3">
+                <span>{m.subs.length} Sub · {m.subs.reduce((n, x) => n + x.paperCount, 0)} 篇</span>
+                <ChevronRight size={15} />
+              </div>
+            </Link>
+            <div className="border-t border-line/40 px-2 py-1.5">
               {m.subs.map((s) => (
-                <div key={s.id} className="flex items-center justify-between gap-3 py-2.5">
+                <Link
+                  key={s.id}
+                  to={s.id}
+                  className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-black/[0.03]"
+                  title={`进入 ${s.id} 专页`}
+                >
                   <div className="flex min-w-0 items-center gap-2.5">
                     <span className="shrink-0 text-[12px] text-t3">{s.id}</span>
                     <span className="truncate text-[14px] text-t1" title={s.text}>{s.text}</span>
@@ -112,17 +128,9 @@ export function RqPage() {
                   <div className="flex shrink-0 items-center gap-3">
                     <Badge variant={levelVariant[s.level]}>{levelLabel[s.level]} {s.score.toFixed(2)}</Badge>
                     <span className="text-[12px] text-t3">{s.paperCount} 篇</span>
-                    <Link
-                      to={`${s.id}`}
-                      className={cn(
-                        'rounded-lg border px-2.5 py-1 text-[12px] text-t2 transition-colors',
-                        'border-line hover:border-ink hover:text-t1',
-                      )}
-                    >
-                      查看详情 →
-                    </Link>
+                    <ChevronRight size={15} className="text-t3" />
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </Card>
