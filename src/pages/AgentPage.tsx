@@ -4,6 +4,7 @@ import { Play, Terminal, FileCode2, Bot } from 'lucide-react';
 import type { AgentRun } from '@/types/data';
 import { getAgentRun } from '@/services/api';
 import { readLlmConfig, llmConfigured, chatCompletion } from '@/lib/llm';
+import { USE_MOCK } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -36,7 +37,7 @@ export function AgentPage() {
     setPhase('running');
     setVisibleSteps(0);
 
-    if (llmConfigured(cfg)) {
+    if (!USE_MOCK || llmConfigured(cfg)) {
       // 真实模式：统一 LLM 执行器（url + apikey + model）
       try {
         const sys = '你是学术知识图谱分析 Agent。基于给定 KG 概览回答研究问题，输出结构化分析：结论先行、每条判断标注依据（论文/节点）、给出 2-3 条后续分析建议，使用 markdown。';

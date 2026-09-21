@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { KeyRound, Library, Compass, Eye, EyeOff, Check, ArrowUpRight, Bot } from 'lucide-react';
 import { useAuth } from '@/store/auth';
 import { readLlmConfig, saveLlmConfig, type LlmConfig } from '@/lib/llm';
+import { syncKeysFromBackend, pushKeyToBackend } from '@/lib/apikeys';
+import { USE_MOCK } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -44,22 +46,56 @@ export function ProfilePage() {
   }, []);
 
   const setKey = (platform: string, value: string) => {
-    const next = { ...keys, [platform]: value };
-    setKeys(next);
-    localStorage.setItem(LS_APIKEYS, JSON.stringify(next));
+    setKeys((k) => ({ ...k, [platform]: value }));
     setSavedTip(platform);
     setTimeout(() => setSavedTip(''), 1500);
+    // 真实模式：后端加密存储，回写掩码；演示模式：仅本地
+    pushKeyToBackend(platform, value)
+      .then((masked) => setKeys(masked))
+      .catch(() => setKeys((k) => ({ ...k, [platform]: `${value.slice(0, 4)}••••（未同步，后端不可达）` })));
   };
 
   // 统一 LLM 执行器配置（url + apikey + model）
   const [llm, setLlmState] = useState<LlmConfig>(readLlmConfig);
+  const [llmKeyEdited, setLlmKeyEdited] = useState(false);
   const setLlmField = (field: keyof LlmConfig, value: string) => {
     const next = { ...llm, [field]: value };
     setLlmState(next);
-    saveLlmConfig(next);
+    if (field === 'apiKey') setLlmKeyEdited(true);
+    if (USE_MOCK) saveLlmConfig(next); // 真实模式在 blur 时统一提交后端
     setSavedTip('LLM 配置');
     setTimeout(() => setSavedTip(''), 1500);
+    if (!USE_MOCK) void pushLlmConfig(next);
   };
+
+  // 真实模式：LLM 配置提交后端（apiKey 仅在用户改过时提交，避免掩码回写覆盖真值）
+  const pushLlmConfig = async (cfg: LlmConfig) => {
+    const API = import.meta.env.VITE_API_BASE ?? '/api';
+    const token = localStorage.getItem('as.token') ?? '';
+    await fetch(`${API}/me/llm-config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({
+        baseUrl: cfg.baseUrl, model: cfg.model,
+        apiKey: llmKeyEdited ? cfg.apiKey : '',
+      }),
+    });
+    setLlmKeyEdited(false);
+  };
+
+  // 真实模式：挂载时从后端拉掩码 Key 与 LLM 配置
+  useEffect(() => {
+    if (USE_MOCK) return;
+    syncKeysFromBackend().then(setKeys).catch(() => {});
+    (async () => {
+      const API = import.meta.env.VITE_API_BASE ?? '/api';
+      const token = localStorage.getItem('as.token') ?? '';
+      const res = await fetch(`${API}/me/llm-config`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      if (!res.ok) return;
+      const d = await res.json();
+      setLlmState({ baseUrl: d.baseUrl ?? '', model: d.model ?? '', apiKey: d.apiKeyMasked ?? '' });
+    })().catch(() => {});
+  }, []);
 
   const masked = (v?: string) => {
     if (!v) return '未配置';
