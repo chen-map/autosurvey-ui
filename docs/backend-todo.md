@@ -105,6 +105,15 @@ W3 实际写出 `analyze_report/` 下的产物，前端 RQ 树/专页的每个�
 
 **核心纪律（真实文件即契约）**：`rq_evidence_matrix.json` 是下游唯一入口；W4/W5/前端都不得重新执行 KG 查询，只消费冻结映射。
 
+## 7.6 W1 语料入库 → 语料库页（已实现）
+
+用户裁决：W1-P6 下载完成后写入**用户端本地数据库**，语料库页从库中读取。
+
+- **表**：`autosurvey.db` 的 `corpus_papers`（project_id, doi, title, venue, year, url, abstract, source, status, pdf_path, record_id；UNIQUE(project_id, doi, title)）
+- **入库**：`w1/corpus_ingest.py` 挂在 P6 `steps_tail`——读 `download/download_ready.csv` + `no_doi_records.csv`，对照 `papers/` 实际产出判状态（PDF=downloaded / 占位 txt=failed / 无 DOI=no_doi）UPSERT 落库
+- **读取**：`GET /projects/{pid}/corpus` → `{ papers, funnel }`；论文映射前端 `PaperRecord`（downloaded→已纳入，failed/no_doi→可获取性），漏斗前两级从 W1 中间产物 CSV 计数（检索归一/筛选纳入），后四级从库统计
+- **前端**：`getCorpus(projectId)` 真实模式调上述端点；CorpusPage/KgPage 已带 projectId 接线
+
 ## 8. 基础设施（部署阶段）
 
 - ECS（放既有 VPC 交换机）+ 弹性公网 IP + 安全组 80/443

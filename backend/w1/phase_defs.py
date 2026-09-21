@@ -107,6 +107,14 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             ],
             "outputs": [f"{ws}/download/prep_stats.json",
                         f"{ws}/papers/download_report.md"],
+            # 下载完成 → 入本地库（用户裁决：语料页从 corpus_papers 表读）
+            "steps_tail": [
+                {"script": str(HERE / "corpus_ingest.py"),
+                 "args": ["--download-dir", f"{ws}/download/",
+                          "--papers-dir", f"{ws}/papers/",
+                          "--project-id", cfg["project_id"],
+                          "--db", str(HERE.parents[1] / "autosurvey.db")]},
+            ],
         },
     ]
 

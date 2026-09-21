@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { X, FileText, Bookmark } from 'lucide-react';
 import type { PaperRecord, ScreenStage, PrismaLevel } from '@/types/data';
 import { getCorpus } from '@/services/api';
@@ -16,6 +17,7 @@ function stageVariantOf(s: ScreenStage): 'neutral' | 'ok' {
 }
 
 export function CorpusPage() {
+  const { projectId = '' } = useParams();
   const { items: libItems, toggleSave } = useLibrary();
   const savedIdx = useMemo(() => new Set(libItems.map((i) => i.paperIdx)), [libItems]);
   const [data, setData] = useState<{ papers: PaperRecord[]; funnel: PrismaLevel[] } | null>(null);
@@ -25,11 +27,11 @@ export function CorpusPage() {
 
   useEffect(() => {
     let alive = true;
-    getCorpus().then((d) => alive && setData(d));
+    getCorpus(projectId).then((d) => alive && setData(d));
     return () => {
       alive = false;
     };
-  }, []);
+  }, [projectId]);
 
   const shown = useMemo(() => {
     const list = (data?.papers ?? []).filter(
