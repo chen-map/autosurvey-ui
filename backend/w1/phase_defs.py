@@ -92,15 +92,21 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
         },
         {
             "id": "W1-P6",
-            "name": "论文下载（六级降级）",
+            "name": "论文下载（DOI 锚定 · 五级合法降级）",
             "optional": False,
             "steps": [
-                {"script": f"{scripts}/paper_downloader/download_papers.py",
+                # DOI 锚定预处理（用户裁决：不用 DOI 会跑偏）——消毒/补 arXiv DOI/去重/无 DOI 分流
+                {"script": str(HERE / "download_prep.py"),
                  "args": ["--input", f"{ws}/snowball/snowball_candidates.csv",
+                          "--out-dir", f"{ws}/download/"]},
+                {"script": f"{scripts}/paper_downloader/download_papers.py",
+                 "args": ["--input", f"{ws}/download/download_ready.csv",
                           "--output", f"{ws}/papers/", "--no-scihub", "--skip-existing",
-                          "--delay", "2"]},
+                          "--delay", "2",
+                          "--unpaywall-email", cfg.get("unpaywall_email", "autosurvey@example.com")]},
             ],
-            "outputs": [f"{ws}/papers/download_report.md"],
+            "outputs": [f"{ws}/download/prep_stats.json",
+                        f"{ws}/papers/download_report.md"],
         },
     ]
 
