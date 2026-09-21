@@ -1,0 +1,135 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/pdf_batch_parser/parse_pdfs.py --pdf-dir papers --out-dir paper_cards/parsed --log paper_cards/parsed/PARSE_LOG.csv
+共发现 18 篇 PDF，开始解析...
+
+  解析: 0001_sok_trading_agents_or_market_crashers_dissecting_robustness.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+OK
+  解析: 0002_ace_a_security_architecture_for_llmintegrated_app_systems.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0003_complete_security_framework_for_wireless_sensor_networks.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0004_adaptive_adversaries_a_multiturn_multillm_benchmark_for_llm.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0005_esaasecurity_an_eventsourced_verifiable_architecture_for_age.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0006_agents_at_risk_how_users_unwittingly_undermine_llm_safety.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0007_can_opensource_llm_agents_replace_static_application_securit.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0008_skcc_portable_and_secure_skill_compilation_for_crossframewor.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0009_multiagent_reinforcement_learning_for_maritime_operational_t.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0010_caging_the_agents_a_zero_trust_security_architecture_for_aut.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0011_exploring_user_security_and_privacy_attitudes_and_concerns_t.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0012_isolategpt_an_execution_isolation_architecture_for_llmbased.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0013_llm_agents_security_duality_a_comprehensive_survey_of_selfse.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0014_solavisibilityispm_benchmarking_agentic_ai_for_identity_secu.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0015_llm_agents_should_employ_security_principles.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0016_medical_large_language_models_are_vulnerable_to_datapoisonin.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0018_prompt_injection_attacks_on_vision_language_models_in_oncolo.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0022_medical_large_language_models_are_susceptible_to_targeted_mi.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+
+解析完成：18/18 篇成功。
+日志：paper_cards/parsed/PARSE_LOG.csv
+输出：paper_cards/parsed/
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/pdf_batch_parser/parse_pdfs.py --pdf-dir papers --out-dir paper_cards/parsed --log paper_cards/parsed/PARSE_LOG.csv
+共发现 18 篇 PDF，开始解析...
+
+  解析: 0001_sok_trading_agents_or_market_crashers_dissecting_robustness.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+OK
+  解析: 0002_ace_a_security_architecture_for_llmintegrated_app_systems.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0003_complete_security_framework_for_wireless_sensor_networks.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0004_adaptive_adversaries_a_multiturn_multillm_benchmark_for_llm.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0005_esaasecurity_an_eventsourced_verifiable_architecture_for_age.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0006_agents_at_risk_how_users_unwittingly_undermine_llm_safety.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0007_can_opensource_llm_agents_replace_static_application_securit.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0008_skcc_portable_and_secure_skill_compilation_for_crossframewor.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0009_multiagent_reinforcement_learning_for_maritime_operational_t.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0010_caging_the_agents_a_zero_trust_security_architecture_for_aut.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0011_exploring_user_security_and_privacy_attitudes_and_concerns_t.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0012_isolategpt_an_execution_isolation_architecture_for_llmbased.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0013_llm_agents_security_duality_a_comprehensive_survey_of_selfse.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0014_solavisibilityispm_benchmarking_agentic_ai_for_identity_secu.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0015_llm_agents_should_employ_security_principles.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0016_medical_large_language_models_are_vulnerable_to_datapoisonin.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0018_prompt_injection_attacks_on_vision_language_models_in_oncolo.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0022_medical_large_language_models_are_susceptible_to_targeted_mi.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+
+解析完成：18/18 篇成功。
+日志：paper_cards/parsed/PARSE_LOG.csv
+输出：paper_cards/parsed/
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/pdf_batch_parser/parse_pdfs.py --pdf-dir papers --out-dir paper_cards/parsed --log paper_cards/parsed/PARSE_LOG.csv
+共发现 18 篇 PDF，开始解析...
+
+  解析: 0001_sok_trading_agents_or_market_crashers_dissecting_robustness.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+OK
+  解析: 0002_ace_a_security_architecture_for_llmintegrated_app_systems.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0003_complete_security_framework_for_wireless_sensor_networks.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0004_adaptive_adversaries_a_multiturn_multillm_benchmark_for_llm.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0005_esaasecurity_an_eventsourced_verifiable_architecture_for_age.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0006_agents_at_risk_how_users_unwittingly_undermine_llm_safety.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0007_can_opensource_llm_agents_replace_static_application_securit.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0008_skcc_portable_and_secure_skill_compilation_for_crossframewor.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0009_multiagent_reinforcement_learning_for_maritime_operational_t.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0010_caging_the_agents_a_zero_trust_security_architecture_for_aut.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0011_exploring_user_security_and_privacy_attitudes_and_concerns_t.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0012_isolategpt_an_execution_isolation_architecture_for_llmbased.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0013_llm_agents_security_duality_a_comprehensive_survey_of_selfse.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0014_solavisibilityispm_benchmarking_agentic_ai_for_identity_secu.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0015_llm_agents_should_employ_security_principles.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0016_medical_large_language_models_are_vulnerable_to_datapoisonin.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0018_prompt_injection_attacks_on_vision_language_models_in_oncolo.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+  解析: 0022_medical_large_language_models_are_susceptible_to_targeted_mi.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+
+解析完成：18/18 篇成功。
+日志：paper_cards/parsed/PARSE_LOG.csv
+输出：paper_cards/parsed/

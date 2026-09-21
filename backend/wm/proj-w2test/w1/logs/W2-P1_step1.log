@@ -1,0 +1,47 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py --target C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/build_structured_papers.py --input paper_cards/parsed --out knowledge_graph/structured_papers.jsonl --max-text-chars 16000
+{"llm_wrap": true, "base_url": "https://api.deepseek.com/v1", "model": ["deepseek-chat"], "key_from_db": false}
+[structured] 1/18 extracting 0001_sok_trading_agents_or_market_crashers_dissecting_robustness — SoK: Trading Agents or Market Crashers? Dissecting Robustnes ...
+Traceback (most recent call last):
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\build_structured_papers.py", line 323, in build_structured_records
+    payload = llm.chat_json(
+        llm_prompt(card, max_text_chars=text_limit),
+        temperature=0.0,
+        max_tokens=3200,
+    )
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\kg_common.py", line 170, in chat_json
+    raw = self.chat(
+        messages,
+    ...<2 lines>...
+        json_object=True,
+    )
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\kg_common.py", line 161, in chat
+    raise RuntimeError(f"LLM request failed after {len(self.models)} model(s): {last_error}")
+RuntimeError: LLM request failed after 1 model(s): Client error '401 Authorization Required' for url 'https://api.deepseek.com/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py", line 71, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py", line 67, in main
+    runpy.run_path(str(target), run_name="__main__")
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\build_structured_papers.py", line 394, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\build_structured_papers.py", line 373, in main
+    records = build_structured_records(
+        inputs=args.input,
+        max_papers=args.max_papers,
+        max_text_chars=args.max_text_chars,
+    )
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\build_structured_papers.py", line 333, in build_structured_records
+    raise RuntimeError(f"LLM structured extraction failed for {paper_id}: {last_error}") from last_error
+RuntimeError: LLM structured extraction failed for 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: LLM request failed after 1 model(s): Client error '401 Authorization Required' for url 'https://api.deepseek.com/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401

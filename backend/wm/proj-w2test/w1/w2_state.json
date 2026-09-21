@@ -1,0 +1,61 @@
+{
+  "phases": [
+    {
+      "id": "W2-P0",
+      "name": "PDF 批量解析（三级降级）",
+      "status": "pending",
+      "started_at": null,
+      "ended_at": null,
+      "duration_sec": null,
+      "rc": null,
+      "outputs": [
+        "paper_cards/parsed/PARSE_LOG.csv"
+      ],
+      "log": "logs/W2-P0.log"
+    },
+    {
+      "id": "W2-P1",
+      "name": "结构化对象提取（LLM · 六类对象）",
+      "status": "failed",
+      "started_at": "2026-09-22 00:19:31",
+      "ended_at": "2026-09-22 00:19:33",
+      "duration_sec": 2.6,
+      "rc": 1,
+      "outputs": [
+        "knowledge_graph/structured_papers.jsonl"
+      ],
+      "log": "logs/W2-P1.log"
+    },
+    {
+      "id": "W2-P2",
+      "name": "候选对象筛选",
+      "status": "pending",
+      "started_at": null,
+      "ended_at": null,
+      "duration_sec": null,
+      "rc": null,
+      "outputs": [
+        "knowledge_graph/candidate_structured_papers.jsonl"
+      ],
+      "log": "logs/W2-P2.log"
+    },
+    {
+      "id": "W2-P3",
+      "name": "KG 构建（prescore 预评分 + 论文对关系判断）",
+      "status": "pending",
+      "started_at": null,
+      "ended_at": null,
+      "duration_sec": null,
+      "rc": null,
+      "outputs": [
+        "knowledge_graph/paper_kg.db",
+        "knowledge_graph/paper_kg.json"
+      ],
+      "log": "logs/W2-P3.log"
+    }
+  ],
+  "started_at": "2026-09-22 00:19:31",
+  "updated_at": "2026-09-22 00:19:33",
+  "current": null,
+  "project_id": "proj-w2test"
+}

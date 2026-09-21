@@ -1,0 +1,8 @@
+{
+  "project_id": "proj-w2test",
+  "title": "W2 真实链路验证",
+  "scripts_root": "C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2",
+  "workspace": "C:/Users/85864/.zcode/workspace/default/autosurvey-ui/backend/wm/proj-w2test/w1",
+  "w2_max_pairs": 24,
+  "w2_min_confidence": 0.4
+}
