@@ -3,6 +3,8 @@
 > 状态：✅ 已确认基线（非冻结，新需求走变更协议） ｜ 最后确认：2026-09-10
 > 编号：B = 品类标配（用户裁决保留）；F = 功能点；全部条目已经 Phase 3 逐项裁决
 
+> **📌 主参考（用户指定，牢记）**：`references/Auto_Survey_系统总结与可迁移方向分析.docx`（已归档，流程图见 `references/主参考-流程图/`）。系统 = 5 Workflow / 19 Phase；KG 是唯一事实权威；Workflow 间仅经 Working Memory（wm/{project_id}/）交换数据；rq_evidence_matrix.json 冻结为下游唯一入口。**单 RQ 分析（Agent 页）= 主参考 §3.4.1 LLM Agent 驱动版**：L1 KG 原子工具（get_entity_by_type / get_relation / semantic_search / count / intersect / judge / end 等）→ L2 37 Skills（Problem Space 18 + Solution Space 19）→ L3 Agent tool_use 循环（≤30 轮）→ HTML 报告 + tool_log.json。**其数据底座是 W2 产出的 KG（paper_kg.db），不是 W1 原始语料**。
+
 ## 登录与全局
 
 ### 页面：`/login` + 全局框架
@@ -116,6 +118,7 @@ DEMO DATA 徽标常驻；403 页；上传非 PDF 行内报错；空项目/无论
 ## 变更记录
 | 日期 | 变更 | 影响面 | 提出人 |
 |---|---|---|---|
+| 2026-09-21 | **登记主参考**：《Auto_Survey_系统总结与可迁移方向分析.docx》为项目主要参考（已归档 references/，含 6 张流程图）。据主参考修正主功能链路认知：单 RQ 分析（主功能）的数据底座是 **W2 产出的 KG（paper_kg.db / nodes+edges JSON）**，非 W1 原始语料——W1 语料需先经 W2（PDF 解析 → 六类对象提取 → KG 构建）才能被 Agent 工具查询。Agent 页目标形态 = 主参考 §3.4.1 三层架构（L1 KG 原子工具 / L2 37 Skills / L3 Agent 循环 → HTML 报告 + tool_log.json）；当前 AgentPage 硬编码的「162 篇/645 概念/313 边」即主参考 §3.2 的示例 KG 规模 | 需求基线全局、Agent 页目标形态、后端 roadmap（W2 为单 RQ 主功能的前置） | 用户 |
 | 2026-09-21 | **功能优先级澄清**：单个 RQ 分析（Agent 页）为主要功能；综述写作（W5/报告页）为主要功能之后产生的衍生功能。W1 语料库定位为服务于单 RQ 分析的数据底座。当前断点：AgentPage 喂给 LLM 的是硬编码 KG 概览（162 篇/645 概念/313 边），未消费 W1 真实语料产物；语料页（/projects/corpus）、RQ 树（/{pid}/rqs）、报告（/projects/report）、agent-runs、/users 五个真实端点后端未实现 | 需求基线优先级、Agent 页数据来源、backend-todo 端点清单 | 用户 |
 | 2026-09-12 | 方向库快速选择升级为**整方向带入**：选中方向自动填入主题、领域标签与领域描述/研究目标（新增描述字段，作为 W1 关键词提取与 Gap 分析输入）；createProject 契约增加 description | 向导第 2/5 步、api-contract（createProject 载荷）、backend-todo §4 | 用户 |
 | 2026-09-12 | B2-2 增加方向库快速选择：新建向导主题步可直接选用研究方向库中的方向（自动填入主题与领域标签） | 仅 `/projects/new` 第 2 步 | 用户 |
