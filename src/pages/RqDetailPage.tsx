@@ -2,13 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Lock, CheckCircle2, AlertTriangle, XCircle, ChevronDown, FileText,
-  Compass, HelpCircle, Search, Route, GitBranch,
+  FileQuestion, GitBranch, Compass, ListChecks, Route, Database, Wrench, MessageSquareText,
 } from 'lucide-react';
-import type { Claim, ClaimStatus, RQType, SubRQ } from '@/types/data';
+import type { Claim, ClaimStatus, EvidencePaper, RQType } from '@/types/data';
 import { getRQBundle } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { Gauge, levelVariant, levelLabel } from './RqPage';
 
@@ -26,7 +25,8 @@ const claimStatusMeta: Record<ClaimStatus, { label: string; variant: 'ok' | 'war
   should_remove: { label: 'should_remove', variant: 'danger', icon: XCircle },
 };
 
-// 带 [n] 引用角标的答案渲染
+// ---- 小件 ----
+
 function AnswerText({ text }: { text: string }) {
   const parts = text.split(/(\[\d+\])/g);
   return (
@@ -83,10 +83,7 @@ function ClaimRow({ claim, index }: { claim: Claim; index: number }) {
           <ChevronDown size={14} className={cn('ml-auto text-t3 transition-transform', open && 'rotate-180')} />
         </div>
       </button>
-      {/* 展开追溯链（grid-rows 过渡，200ms） */}
-      <div
-        className={cn('grid transition-[grid-template-rows] duration-200', open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}
-      >
+      <div className={cn('grid transition-[grid-template-rows] duration-200', open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
         <div className="overflow-hidden">
           <div className="space-y-2 border-t border-line/40 px-4 py-3">
             {claim.note && (
@@ -108,110 +105,53 @@ function ClaimRow({ claim, index }: { claim: Claim; index: number }) {
   );
 }
 
-// ---- RQ 说明标签页：这个 RQ 是什么 / 为什么提它 / 打算怎么答 ----
-function SpecTab({ sub, onGoAnswer }: { sub: SubRQ; onGoAnswer: () => void }) {
-  const hasSpec = !!(sub.definition || sub.motivation);
+// 文档式分节：编号 + 图标 + 标题 + 侧注
+function Section({ id, no, icon: Icon, title, note, children }: {
+  id: string; no: number; icon: typeof FileQuestion; title: string; note?: string; children: React.ReactNode;
+}) {
   return (
-    <div className="space-y-4">
-      {!hasSpec && (
-        <Card className="px-8 py-12 text-center">
-          <p className="text-[14px] text-t2">该 RQ 的设计说明尚未生成</p>
-          <p className="mt-1.5 text-[13px] leading-5 text-t3">
-            RQ 说明由流水线 W3-P2「RQ 设计」产出（类型 / 动机 / 口径 / 焦点词 / KG 查询路径）。
-          </p>
-        </Card>
-      )}
-
-      {sub.definition && (
-        <Card className="anim-rise p-5">
-          <div className="flex items-center gap-2 text-[14px] font-medium">
-            <HelpCircle size={15} className="text-t3" />
-            这个 RQ 在问什么
-          </div>
-          <p className="mt-2.5 text-[14px] leading-[24px] text-t1">{sub.definition}</p>
-          {sub.focusTerms && sub.focusTerms.length > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <span className="text-[12px] text-t3">焦点词</span>
-              {sub.focusTerms.map((t) => (
-                <span key={t} className="rounded-full border border-line px-2.5 py-0.5 text-[12px] text-t2">{t}</span>
-              ))}
-            </div>
-          )}
-        </Card>
-      )}
-
-      {sub.motivation && (
-        <Card className="anim-rise p-5">
-          <div className="flex items-center gap-2 text-[14px] font-medium">
-            <Compass size={15} className="text-t3" />
-            为什么提出这个问题
-          </div>
-          <p className="mt-2.5 text-[14px] leading-[24px] text-t1">{sub.motivation}</p>
-          <div className="mt-2 text-[12px] text-t3">来源：W3-P1 Survey Gap Analyzer（coverage / methodological gaps），不允许凭空声称 novelty</div>
-        </Card>
-      )}
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {sub.expectedEvidence && sub.expectedEvidence.length > 0 && (
-          <Card className="anim-rise p-5">
-            <div className="flex items-center gap-2 text-[14px] font-medium">
-              <Search size={15} className="text-t3" />
-              期望的证据
-            </div>
-            <ul className="mt-2.5 space-y-1.5">
-              {sub.expectedEvidence.map((e) => (
-                <li key={e} className="flex gap-2 text-[13px] leading-5 text-t2">
-                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
-                  {e}
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
-        {sub.kgQueryPaths && sub.kgQueryPaths.length > 0 && (
-          <Card className="anim-rise p-5">
-            <div className="flex items-center gap-2 text-[14px] font-medium">
-              <Route size={15} className="text-t3" />
-              KG 候选查询路径
-            </div>
-            <ul className="mt-2.5 space-y-2">
-              {sub.kgQueryPaths.map((p) => (
-                <li key={p.path} className="rounded-lg bg-page px-3 py-2">
-                  <div className="font-mono text-[12.5px] text-t1">{p.path}</div>
-                  <div className="mt-0.5 text-[12px] text-t3">→ {p.expected}</div>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-      </div>
-
-      {sub.revisionNote && (
-        <Card className={cn('border-warn-fg/30 p-5', sub.level === 'blocked' ? 'bg-warn/5' : '')}>
-          <div className="flex items-center gap-2 text-[14px] font-medium">
-            <GitBranch size={15} className="text-warn-fg" />
-            修订循环动作（W3-P4）
-          </div>
-          <p className="mt-2 text-[13px] leading-5 text-t2">{sub.revisionNote}</p>
-        </Card>
-      )}
-
-      <Card className="flex items-center justify-between p-4">
-        <div className="text-[13px] text-t2">
-          说明看完了吗？查看该 RQ 的<span className="font-medium text-t1">综合答案、证据池与声明核查</span>。
+    <section id={id} className="scroll-mt-24">
+      <Card className="p-5">
+        <div className="flex items-baseline gap-2.5">
+          <span className="rounded bg-ink px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white">{no}</span>
+          <Icon size={15} className="translate-y-[3px] shrink-0 text-t3" />
+          <h3 className="text-[15px] font-semibold">{title}</h3>
+          {note && <span className="text-[12px] text-t3">{note}</span>}
         </div>
-        <Button size="sm" onClick={onGoAnswer}>答案与核查 →</Button>
+        <div className="mt-3.5">{children}</div>
       </Card>
-    </div>
+    </section>
   );
 }
 
-// RQ 详情页：RQ 说明（默认）＋ 答案与核查 两个标签页
+function Bullets({ items, icon: Icon, tone }: { items: string[]; icon: typeof CheckCircle2; tone: 'in' | 'out' }) {
+  return (
+    <ul className="space-y-1.5">
+      {items.map((t) => (
+        <li key={t} className="flex gap-2 text-[13.5px] leading-5 text-t2">
+          <Icon size={14} className={cn('mt-0.5 shrink-0', tone === 'in' ? 'text-ok' : 'text-t3')} />
+          {t}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// ---- 页面 ----
+
+const NAV = [
+  ['s-summary', 'RQ 简述'],
+  ['s-why', '选择原因'],
+  ['s-scope', '包含内容'],
+  ['s-method', '怎么分析'],
+  ['s-evidence', '使用证据'],
+  ['s-gaps', '当前缺陷'],
+  ['s-answer', '答案与核查'],
+] as const;
+
 export function RqDetailPage() {
   const { projectId = '', rqId = '' } = useParams();
   const [bundle, setBundle] = useState<Awaited<ReturnType<typeof getRQBundle>>>(null);
-  const [tab, setTab] = useState<'spec' | 'answer'>('spec');
   const [filter, setFilter] = useState<'ALL' | ClaimStatus>('ALL');
 
   useEffect(() => {
@@ -229,6 +169,15 @@ export function RqDetailPage() {
     }
     return { sub: undefined, macro: undefined };
   }, [bundle, rqId]);
+
+  // 使用证据：冻结矩阵该 Sub-RQ 的论文集合 → 解析详情
+  const evidence = useMemo(() => {
+    if (!bundle || !sub) return { entry: undefined as typeof bundle extends null ? never : { papers: string[] } | undefined, rows: [] as (EvidencePaper | undefined)[] };
+    const entry = bundle.matrix?.entries.find((e) => e.subRqId === sub.id);
+    const byId = new Map(bundle.evidencePapers.map((p) => [p.id, p]));
+    return { entry, rows: (entry?.papers ?? []).map((id) => byId.get(id)) };
+  }, [bundle, sub]);
+
   const claims = useMemo(
     () => (bundle?.claims ?? []).filter((c) => filter === 'ALL' || c.status === filter),
     [bundle, filter],
@@ -248,6 +197,9 @@ export function RqDetailPage() {
     needs_revision: bundle.claims.filter((c) => c.status === 'needs_revision').length,
     should_remove: bundle.claims.filter((c) => c.status === 'should_remove').length,
   };
+
+  const goNav = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const frozenIds = evidence.entry?.papers ?? [];
 
   return (
     <div className="space-y-5">
@@ -276,8 +228,8 @@ export function RqDetailPage() {
         </div>
         <div className="ml-auto flex gap-6">
           <div className="text-center">
-            <div className="text-[22px] font-semibold leading-7">{bundle.evidencePapers.length}</div>
-            <div className="text-[12px] text-t3">证据论文（≥5 ✓）</div>
+            <div className="text-[22px] font-semibold leading-7">{sub.paperCount}</div>
+            <div className="text-[12px] text-t3">冻结证据（≥5 ✓）</div>
           </div>
           <div className="text-center">
             <div className="text-[22px] font-semibold leading-7">
@@ -288,103 +240,205 @@ export function RqDetailPage() {
         </div>
       </Card>
 
-      {/* 标签页 */}
-      <div className="flex items-center gap-1 border-b border-line/60">
-        {([['spec', 'RQ 说明'], ['answer', '答案与核查']] as const).map(([k, label]) => (
+      {/* 粘滞分节导航 */}
+      <nav className="sticky top-0 z-10 -mx-1 flex gap-1 overflow-x-auto border-b border-line/60 bg-page/95 px-1 py-2 backdrop-blur">
+        {NAV.map(([id, label], i) => (
           <button
-            key={k}
+            key={id}
             type="button"
-            onClick={() => setTab(k)}
-            className={cn(
-              '-mb-px border-b-2 px-3.5 py-2 text-[13.5px] transition-colors',
-              tab === k ? 'border-ink font-medium text-t1' : 'border-transparent text-t3 hover:text-t2',
-            )}
+            onClick={() => goNav(id)}
+            className="flex shrink-0 items-center gap-1.5 rounded px-2.5 py-1 text-[12.5px] text-t2 transition-colors hover:bg-black/5 hover:text-t1"
           >
+            <span className="font-mono text-[11px] text-t3">{i + 1}</span>
             {label}
           </button>
         ))}
-      </div>
+      </nav>
 
-      {tab === 'spec' ? (
-        <SpecTab sub={sub} onGoAnswer={() => setTab('answer')} />
-      ) : (
-        <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
-          {/* 左：综合答案 + claims */}
-          <div className="min-w-0 space-y-4">
-            <Card className="p-5">
-              <div className="text-[14px] font-medium">综合答案（overall_answer）</div>
-              <div className="mt-2">
-                <AnswerText text={bundle.overallAnswer} />
-              </div>
-            </Card>
+      {/* 1 RQ 简述 */}
+      <Section id="s-summary" no={1} icon={FileQuestion} title="RQ 简述">
+        <p className="text-[14px] leading-[24px] text-t1">
+          {sub.summary ?? `${sub.text}——该 RQ 的简述尚未生成（W3-P2 RQ 设计产出）。`}
+        </p>
+      </Section>
 
-            <div className="flex items-center gap-2">
-              <span className="text-[14px] font-medium">Key Claims</span>
-              {(['ALL', 'verified', 'needs_revision', 'should_remove'] as const).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setFilter(f)}
-                  className={cn(
-                    'rounded-full px-2.5 py-0.5 text-[12px] transition-colors',
-                    filter === f ? 'bg-ink text-white' : 'text-t2 hover:bg-black/5',
-                  )}
-                >
-                  {f === 'ALL' ? `全部 ${counts.all}` : `${claimStatusMeta[f].label} ${counts[f]}`}
-                </button>
-              ))}
-            </div>
-
-            <div className="space-y-3">
-              {claims.map((c, i) => (
-                <ClaimRow key={c.id} claim={c} index={i} />
-              ))}
-            </div>
+      {/* 2 选择原因 */}
+      <Section id="s-why" no={2} icon={Compass} title="选择原因" note="为什么单独立这个 RQ">
+        {sub.motivation && (
+          <div>
+            <div className="text-[12.5px] font-medium text-t3">来源 · Gap 分析（W3-P1）</div>
+            <p className="mt-1.5 text-[13.5px] leading-[22px] text-t1">{sub.motivation}</p>
           </div>
+        )}
+        {sub.roleInSurvey && (
+          <div className="mt-4 rounded-lg bg-page px-4 py-3">
+            <div className="text-[12.5px] font-medium text-t3">在综述中的角色</div>
+            <p className="mt-1.5 text-[13.5px] leading-[22px] text-t1">{sub.roleInSurvey}</p>
+          </div>
+        )}
+        {!sub.motivation && !sub.roleInSurvey && (
+          <p className="text-[13px] text-t3">选择原因尚未生成。</p>
+        )}
+      </Section>
 
-          {/* 右：证据池 + 缺口 */}
-          <div className="space-y-4">
-            <Card className="p-4">
-              <div className="text-[13px] font-medium">证据池（{bundle.evidencePapers.length} 篇）</div>
-              <ul className="mt-2.5 space-y-2">
-                {bundle.evidencePapers.map((p, i) => (
-                  <li key={p.id} className="anim-rise text-[12.5px] leading-4" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}>
-                    <span className="mr-1.5 font-mono text-[11px] text-t3">[{i + 1}]</span>
-                    <span className="text-t1">{p.title}</span>
-                    <span className="block pl-6 text-t3">{p.venue} {p.year}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+      {/* 3 包含内容 */}
+      <Section id="s-scope" no={3} icon={ListChecks} title="包含内容" note="口径与边界">
+        {sub.definition && <p className="text-[13.5px] leading-[22px] text-t1">{sub.definition}</p>}
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          {sub.includedScope && sub.includedScope.length > 0 && (
+            <div className="rounded-lg border border-line/60 p-3.5">
+              <div className="text-[12.5px] font-medium text-ok">纳入</div>
+              <div className="mt-2"><Bullets items={sub.includedScope} icon={CheckCircle2} tone="in" /></div>
+            </div>
+          )}
+          {sub.excludedScope && sub.excludedScope.length > 0 && (
+            <div className="rounded-lg border border-line/60 p-3.5">
+              <div className="text-[12.5px] font-medium text-t3">排除（及去向）</div>
+              <div className="mt-2"><Bullets items={sub.excludedScope} icon={XCircle} tone="out" /></div>
+            </div>
+          )}
+        </div>
+        {sub.focusTerms && sub.focusTerms.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-[12px] text-t3">焦点词</span>
+            {sub.focusTerms.map((t) => (
+              <span key={t} className="rounded-full border border-line px-2.5 py-0.5 text-[12px] text-t2">{t}</span>
+            ))}
+          </div>
+        )}
+      </Section>
 
-            <Card className="p-4">
-              <div className="text-[13px] font-medium">Evidence Gaps（{bundle.evidenceGaps.length}）</div>
-              <ul className="mt-2.5 space-y-1.5">
-                {bundle.evidenceGaps.map((g) => (
-                  <li key={g} className="flex gap-2 text-[12.5px] leading-4 text-t2">
-                    <AlertTriangle size={13} className="mt-0.5 shrink-0 text-warn-fg" />
-                    {g}
-                  </li>
-                ))}
-                {bundle.evidenceGaps.length === 0 && <li className="text-[12.5px] text-t3">无明显缺口</li>}
-              </ul>
-            </Card>
+      {/* 4 怎么分析 */}
+      <Section id="s-method" no={4} icon={Wrench} title="怎么分析" note={sub.rqType ? `${rqTypeLabel[sub.rqType]}问题 · 答案组织策略` : undefined}>
+        {sub.analysisPlan && <p className="text-[13.5px] leading-[22px] text-t1">{sub.analysisPlan}</p>}
+        {sub.analysisSteps && sub.analysisSteps.length > 0 && (
+          <ol className="mt-3 space-y-1.5">
+            {sub.analysisSteps.map((s, i) => (
+              <li key={s} className="flex gap-2.5 text-[13.5px] leading-5 text-t2">
+                <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded bg-ink font-mono text-[10px] text-white">{i + 1}</span>
+                {s}
+              </li>
+            ))}
+          </ol>
+        )}
+        {sub.kgQueryPaths && sub.kgQueryPaths.length > 0 && (
+          <div className="mt-4">
+            <div className="flex items-center gap-1.5 text-[12.5px] font-medium text-t3">
+              <Route size={13} />
+              KG 候选查询路径（每条路径预期拿到什么）
+            </div>
+            <ul className="mt-2 space-y-2">
+              {sub.kgQueryPaths.map((p) => (
+                <li key={p.path} className="rounded-lg bg-page px-3 py-2">
+                  <div className="font-mono text-[12.5px] text-t1">{p.path}</div>
+                  <div className="mt-0.5 text-[12px] text-t3">→ {p.expected}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Section>
 
-            <Card className="p-4">
-              <details>
-                <summary className="cursor-pointer text-[13px] font-medium text-t2">综合答案 Prompt 模板（讲解用）</summary>
-                <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-page p-3 font-mono text-[11.5px] leading-4 text-t2">{`角色：学术综述综合器
-输入：rq_id + evidence_pool（冻结矩阵恢复）
-规则：
-  1. 仅使用证据池内论文，禁止外部知识
-  2. 每条 key_claim 标注 [paper_n]
-  3. 冲突结论显式呈现，不写成定论
-输出：overall_answer(500-800字) + key_claims`}</pre>
-              </details>
-            </Card>
+      {/* 5 使用证据 */}
+      <Section id="s-evidence" no={5} icon={Database} title="使用证据" note="从冻结矩阵恢复，不重新查询">
+        <div className="flex flex-wrap items-center gap-3">
+          <Badge variant={levelVariant[sub.level]}>{levelLabel[sub.level]} {sub.score.toFixed(2)}</Badge>
+          <span className="text-[13px] text-t2">{evidence.entry?.papers.length ?? 0} 篇冻结论文</span>
+          {evidence.entry ? (
+            <Badge variant="ok"><Lock size={12} /> 冻结集合有效</Badge>
+          ) : (
+            <Badge variant="danger">矩阵中无该 RQ 条目</Badge>
+          )}
+        </div>
+        <ul className="mt-3 space-y-1.5">
+          {(evidence.rows.length > 0 ? evidence.rows : frozenIds.map(() => undefined)).map((p, i) => (
+            <li key={i} className="anim-rise flex items-baseline gap-2 rounded-lg bg-page px-3 py-2 text-[13px]" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}>
+              <span className="shrink-0 font-mono text-[11px] text-t3">[{i + 1}]</span>
+              {p ? (
+                <>
+                  <span className="min-w-0 flex-1 truncate text-t1" title={p.title}>{p.title}</span>
+                  <span className="shrink-0 text-[12px] text-t3">{p.venue} {p.year}</span>
+                </>
+              ) : (
+                <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-t3">{frozenIds[i]}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      {/* 6 当前缺陷 */}
+      <Section id="s-gaps" no={6} icon={AlertTriangle} title="具体缺陷" note="证据 / 数据 / 口径层面">
+        {sub.deficiencies && sub.deficiencies.length > 0 ? (
+          <ul className="space-y-1.5">
+            {sub.deficiencies.map((g) => (
+              <li key={g} className="flex gap-2 text-[13.5px] leading-5 text-t2">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0 text-warn-fg" />
+                {g}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[13px] text-t3">未登记具体缺陷。</p>
+        )}
+        {sub.revisionNote && (
+          <div className="mt-3 rounded-lg border border-warn-fg/30 bg-warn/5 px-4 py-3">
+            <div className="flex items-center gap-1.5 text-[12.5px] font-medium text-warn-fg">
+              <GitBranch size={13} />
+              修订循环动作（W3-P4）
+            </div>
+            <p className="mt-1.5 text-[13px] leading-5 text-t2">{sub.revisionNote}</p>
+          </div>
+        )}
+        {bundle.evidenceGaps.length > 0 && (
+          <div className="mt-3">
+            <div className="text-[12.5px] font-medium text-t3">证据池全局缺口</div>
+            <ul className="mt-1.5 space-y-1">
+              {bundle.evidenceGaps.map((g) => (
+                <li key={g} className="flex gap-2 text-[12.5px] leading-4 text-t2">
+                  <span className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full bg-warn-fg" />
+                  {g}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Section>
+
+      {/* 7 答案与核查 */}
+      <Section id="s-answer" no={7} icon={MessageSquareText} title="答案与核查" note="W4 产出">
+        <div className="rounded-lg border border-line/60 p-4">
+          <div className="text-[13px] font-medium">综合答案（overall_answer）</div>
+          <div className="mt-2">
+            {bundle.overallAnswer
+              ? <AnswerText text={bundle.overallAnswer} />
+              : <p className="text-[13px] text-t3">尚未生成（W4 未运行）。</p>}
           </div>
         </div>
-      )}
+
+        <div className="mt-4 flex items-center gap-2">
+          <span className="text-[13.5px] font-medium">Key Claims</span>
+          {(['ALL', 'verified', 'needs_revision', 'should_remove'] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={cn(
+                'rounded-full px-2.5 py-0.5 text-[12px] transition-colors',
+                filter === f ? 'bg-ink text-white' : 'text-t2 hover:bg-black/5',
+              )}
+            >
+              {f === 'ALL' ? `全部 ${counts.all}` : `${claimStatusMeta[f].label} ${counts[f]}`}
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 space-y-3">
+          {claims.map((c, i) => (
+            <ClaimRow key={c.id} claim={c} index={i} />
+          ))}
+          {claims.length === 0 && <p className="text-[13px] text-t3">该 RQ 暂无 claims（W4 未运行）。</p>}
+        </div>
+      </Section>
     </div>
   );
 }
