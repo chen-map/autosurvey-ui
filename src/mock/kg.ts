@@ -1,17 +1,17 @@
-// KG 图谱 mock：12 篇论文 + 六类概念节点，d3-force 预计算布局
-import { forceCenter, forceLink, forceManyBody, forceSimulation } from 'd3-force';
-import type { Edge } from '@xyflow/react';
+// KG 图谱数据与视觉映射 —— 数据结构与 W2-P3 产物 paper_kg.json 同构
+// ({nodes:[{id,type,label,description}], edges:[{source,target,type,confidence}]})
 
 export type KgType = 'paper' | 'problem' | 'method' | 'dataset' | 'metric' | 'limitation' | 'assumption';
 
+// 黑白账本基调 + 六类彩色证据（Obsidian 分组观感）
 export const TYPE_COLORS: Record<KgType, string> = {
-  paper: 'var(--ink)',
-  problem: '#2563eb',
-  method: '#16a34a',
-  dataset: '#d97706',
-  metric: '#9333ea',
-  limitation: '#dc2626',
-  assumption: '#0891b2',
+  paper: '#1a1a1a',
+  problem: '#e53935',
+  method: '#1e88e5',
+  dataset: '#43a047',
+  metric: '#fb8c00',
+  limitation: '#8e24aa',
+  assumption: '#6d7f8f',
 };
 
 export const TYPE_LABELS: Record<KgType, string> = {
@@ -24,171 +24,113 @@ export const TYPE_LABELS: Record<KgType, string> = {
   assumption: '假设约束',
 };
 
-export interface KgGraphNode {
-  id: string;
-  kgType: KgType;
-  label: string;
-  rqTags: string[];
-  paperIdx?: number;
+// W2 真实 node_type（build_paper_kg.py）→ 前端 KgType
+export function mapNodeType(realType: string): KgType {
+  const lower = realType.toLowerCase() as KgType;
+  if (lower in TYPE_COLORS) return lower; // 已是前端 KgType（mock/演示数据）
+  const m: Record<string, KgType> = {
+    Paper: 'paper', Problem: 'problem', Method: 'method',
+    AssumptionConstraint: 'assumption', DatasetBenchmark: 'dataset',
+    Metric: 'metric', Limitation: 'limitation', RQ: 'problem',
+  };
+  return m[realType] ?? 'method';
 }
 
-interface KgEdge { source: string; target: string; kind: 'proposes' | 'evaluated_on' | 'measured_by' | 'addresses' | 'extends' | 'compares_with' | 'contradicts' | 'supports' }
-
-const PAPER_NAMES = [
-  'GNNExplainer', 'PGExplainer', 'ParamExplainer', 'PGM-Explainer', 'GraphMask',
-  'SubgraphX', 'RCExplainer', 'DSAA Eval', 'Robustness ICLR23', 'KDD Benchmark',
-  'CSUR Survey', 'Causal Attention',
-];
-
-const CONCEPTS: [KgType, string[]][] = [
-  ['problem', ['解释不稳定', '合成基准依赖', '跨图泛化弱', '计算开销高', '人类对齐差']],
-  ['method', ['梯度归因', '软掩码学习', '子图搜索', '代理模型近似', '反事实解释']],
-  ['dataset', ['BA-Shapes', 'BA-Community', 'Tree-Cycle', 'Cora', 'PubMed']],
-  ['metric', ['Fidelity+', 'Fidelity−', 'Sparsity', 'Accuracy@K']],
-  ['limitation', ['稳定性未评估', '可扩展性差']],
-  ['assumption', ['k-hop 局部性假设']],
-];
-
-const RQ_CYCLE = ['RQ1', 'RQ2', 'RQ3', 'RQ4'];
-
-export function buildKgGraph() {
-  const nodes: KgGraphNode[] = [];
-  const edges: KgEdge[] = [];
-
-  PAPER_NAMES.forEach((name, i) => {
-    nodes.push({ id: `p-${i}`, kgType: 'paper', label: name, rqTags: [RQ_CYCLE[i % 4], RQ_CYCLE[(i + 1) % 4]], paperIdx: i });
-  });
-  CONCEPTS.forEach(([type, names]) => {
-    names.forEach((label, j) => {
-      nodes.push({ id: `c-${type}-${j}`, kgType: type, label, rqTags: [RQ_CYCLE[j % 4]] });
-    });
-  });
-
-  const methods = nodes.filter((n) => n.kgType === 'method').map((n) => n.id);
-  const datasets = nodes.filter((n) => n.kgType === 'dataset').map((n) => n.id);
-  const metrics = nodes.filter((n) => n.kgType === 'metric').map((n) => n.id);
-  const problems = nodes.filter((n) => n.kgType === 'problem').map((n) => n.id);
-
-  nodes.filter((n) => n.kgType === 'paper').forEach((p, i) => {
-    edges.push({ source: p.id, target: methods[i % methods.length], kind: 'proposes' });
-    if (i % 3 === 0) edges.push({ source: p.id, target: methods[(i + 1) % methods.length], kind: 'proposes' });
-  });
-  methods.forEach((m, i) => {
-    edges.push({ source: m, target: datasets[i % datasets.length], kind: 'evaluated_on' });
-    edges.push({ source: m, target: metrics[i % metrics.length], kind: 'measured_by' });
-    edges.push({ source: m, target: problems[i % problems.length], kind: 'addresses' });
-  });
-  const papers = nodes.filter((n) => n.kgType === 'paper').map((n) => n.id);
-  edges.push({ source: papers[1], target: papers[0], kind: 'extends' });
-  edges.push({ source: papers[2], target: papers[1], kind: 'extends' });
-  edges.push({ source: papers[5], target: papers[1], kind: 'extends' });
-  edges.push({ source: papers[4], target: papers[3], kind: 'extends' });
-  edges.push({ source: papers[8], target: papers[6], kind: 'contradicts' });
-  edges.push({ source: papers[9], target: papers[0], kind: 'contradicts' });
-  edges.push({ source: papers[5], target: papers[3], kind: 'contradicts' });
-  edges.push({ source: papers[7], target: papers[1], kind: 'compares_with' });
-  edges.push({ source: papers[10], target: papers[8], kind: 'compares_with' });
-  edges.push({ source: papers[11], target: papers[9], kind: 'supports' });
-  edges.push({ source: papers[6], target: papers[10], kind: 'supports' });
-
-  // d3-force 预计算布局（一次性同步跑 320 轮）
-  type SimNode = KgGraphNode & { x?: number; y?: number };
-  const simNodes: SimNode[] = nodes.map((n) => ({ ...n }));
-  const simLinks = edges.map((e) => ({ ...e }));
-  const sim = forceSimulation(simNodes)
-    .force('charge', forceManyBody().strength(-420))
-    .force('link', forceLink(simLinks).id((d: unknown) => (d as { id: string }).id).distance(110).strength(0.4))
-    .force('center', forceCenter(480, 340))
-    .stop();
-  sim.tick(320);
-
-  const pos = new Map(simNodes.map((n) => [n.id, { x: n.x ?? 0, y: n.y ?? 0 }]));
-
-  const rfNodes = nodes.map((n) => ({
-    id: n.id,
-    position: pos.get(n.id)!,
-    data: { ...n },
-    type: n.kgType === 'paper' ? 'paper' : 'concept',
-  }));
-
-  const rfEdges: Edge[] = edges.map((e, i) => ({
-    id: `e-${i}`,
-    source: e.source,
-    target: e.target,
-    kind: 'straight' as const,
-    style: edgeStyle(e.kind),
-    data: { kind: e.kind },
-  }));
-
-  return { nodes: rfNodes, edges: rfEdges };
+// 边类型视觉：矛盾红 / 支持绿 / 其余灰
+export function edgeColor(type: string): string {
+  if (type === 'contradicts') return '#e53935';
+  if (type === 'supports') return '#2e7d32';
+  return '#b9bec4';
 }
 
-function edgeStyle(kind: KgEdge['kind']) {
-  if (kind === 'contradicts') return { stroke: 'var(--danger)', strokeWidth: 2.5 };
-  if (kind === 'extends') return { stroke: 'var(--border)', strokeWidth: 1.5 };
-  if (kind === 'compares_with') return { stroke: 'var(--border)', strokeWidth: 1.5, strokeDasharray: '6 4' };
-  if (kind === 'supports') return { stroke: 'var(--ok)', strokeWidth: 1.5 };
-  if (kind === 'addresses') return { stroke: '#2563eb55', strokeWidth: 1.5 };
-  return { stroke: 'var(--border)', strokeWidth: 1 };
-}
-
-export const EDGE_KIND_LABELS: Record<KgEdge['kind'], string> = {
-  proposes: 'proposes 提出',
-  evaluated_on: 'evaluated_on 评测于',
-  measured_by: 'measured_by 度量',
-  addresses: 'addresses 解决',
-  extends: 'extends 扩展',
-  compares_with: 'compares_with 对比',
-  contradicts: 'contradicts 矛盾',
-  supports: 'supports 支持',
+export const EDGE_LABELS: Record<string, string> = {
+  addresses: '研究该问题', proposes: '提出', targets: '针对',
+  requires: '依赖约束', relaxes: '放宽约束', evaluated_on: '评估于',
+  measured_by: '度量', has_limitation: '存在局限', extends: '扩展',
+  compares_with: '对比', contradicts: '矛盾', supports: '支持', related: '关联',
 };
 
-// 压力快照：按真实比例生成（implementation-guide §8 大数据实测要求）
-// 实测比例（AutoSurvey：162 论文 → 645 概念 → 313 边）：概念 ≈ 4× 论文数
-export function buildStressGraph(papersCount = 500): { nodes: unknown[]; edges: Edge[] } {
-  const conceptCount = papersCount * 4;
-  const total = papersCount + conceptCount;
-  const nodes: KgGraphNode[] = [];
-  for (let i = 0; i < papersCount; i++) {
-    nodes.push({ id: `sp-${i}`, kgType: 'paper', label: `Paper #${i + 1}`, rqTags: [RQ_CYCLE[i % 4], RQ_CYCLE[(i + 2) % 4]] });
-  }
-  const types: KgType[] = ['problem', 'method', 'dataset', 'metric', 'limitation', 'assumption'];
-  for (let i = 0; i < conceptCount; i++) {
-    const kgType = types[i % types.length];
-    nodes.push({ id: `sc-${i}`, kgType, label: `${TYPE_LABELS[kgType]} #${i + 1}`, rqTags: [RQ_CYCLE[i % 4]] });
-  }
-  const byType = new Map(types.map((t) => [t, nodes.filter((n) => n.kgType === t).map((n) => n.id)]));
-  const methods = byType.get('method')!;
-  const edges: KgEdge[] = [];
-  nodes.forEach((n, i) => {
-    if (n.kgType === 'paper') edges.push({ source: n.id, target: methods[i % Math.max(methods.length, 1)], kind: 'proposes' });
-    if (n.kgType === 'dataset') edges.push({ source: methods[i % Math.max(methods.length, 1)], target: n.id, kind: 'evaluated_on' });
-  });
-  const papers = nodes.filter((n) => n.kgType === 'paper').map((n) => n.id);
-  for (let i = 0; i < papers.length; i += 2) {
-    edges.push({ source: papers[i], target: papers[(i + 3) % papers.length], kind: i % 5 === 0 ? 'contradicts' : 'extends' });
-    edges.push({ source: papers[i], target: papers[(i + 5) % papers.length], kind: 'compares_with' });
-  }
-  const metricIds = byType.get('metric')!;
-  const problemIds = byType.get('problem')!;
-  methods.forEach((m, i) => {
-    edges.push({ source: m, target: metricIds[i % metricIds.length], kind: 'measured_by' });
-    edges.push({ source: m, target: problemIds[i % problemIds.length], kind: 'addresses' });
-  });
+export interface KgGraphNode { id: string; type: KgType; label: string; description?: string }
+export interface KgGraphEdge { source: string; target: string; type: string; confidence?: number }
 
-  type SimNode = KgGraphNode & { x?: number; y?: number };
-  const simNodes: SimNode[] = nodes.map((n) => ({ ...n }));
-  const simLinks = edges.map((e) => ({ ...e }));
-  // 大图降 tick 保加载速度：5000 节点用 50 轮，2500 用 80，小图 140
-  const ticks = total > 3000 ? 50 : total > 1200 ? 80 : 140;
-  const sim = forceSimulation(simNodes)
-    .force('charge', forceManyBody().strength(-140))
-    .force('link', forceLink(simLinks).id((d: unknown) => (d as { id: string }).id).distance(64).strength(0.25))
-    .force('center', forceCenter(480, 340))
-    .stop();
-  sim.tick(ticks);
-  const pos = new Map(simNodes.map((n) => [n.id, { x: n.x ?? 0, y: n.y ?? 0 }]));
-  const rfNodes = nodes.map((n) => ({ id: n.id, position: pos.get(n.id)!, data: { ...n }, type: n.kgType === 'paper' ? 'paper' : 'concept' }));
-  const rfEdges: Edge[] = edges.map((e, i) => ({ id: `se-${i}`, source: e.source, target: e.target, kind: 'straight' as const, style: edgeStyle(e.kind), data: { kind: e.kind } }));
-  return { nodes: rfNodes, edges: rfEdges };
-}
+// 演示图谱：LLM Agent 安全主题（与 RQ mock 同一论文集）
+const P = (id: string, label: string): KgGraphNode => ({ id, type: 'paper', label });
+const N = (id: string, type: KgType, label: string, description = ''): KgGraphNode => ({ id, type, label, description });
+
+export const MOCK_KG_GRAPH: { nodes: KgGraphNode[]; edges: KgGraphEdge[]; paperCount: number } = {
+  nodes: [
+    // 论文（8 篇，与 RQ mock 证据池一致）
+    P('arXiv:2302.12173', 'Not What You\'ve Signed Up For（间接注入）'),
+    P('arXiv:2306.05499', 'Prompt Injection Attack（LLM 集成应用）'),
+    P('arXiv:2403.02691', 'InjecAgent（工具注入基准）'),
+    P('arXiv:2402.10753', 'ToolSword（工具学习安全）'),
+    P('arXiv:2406.13352', 'AgentDojo（攻防评测环境）'),
+    P('arXiv:2401.10019', 'R-Judge（风险意识基准）'),
+    P('arXiv:2403.14720', 'Spotlighting（注入防御）'),
+    P('arXiv:2406.09187', 'GuardAgent（Agent 护栏）'),
+    // 问题
+    N('prob-inject', 'problem', '间接提示注入', '经工具返回值/检索内容污染 Agent 上下文'),
+    N('prob-tool', 'problem', '工具链攻击', '恶意工具返回与参数滥用'),
+    N('prob-jailbreak', 'problem', '越狱与对齐失效', '模型层安全对齐被绕过'),
+    N('prob-longhorizon', 'problem', '长程任务防御失效', '多步任务中防御累积失效'),
+    N('prob-coverage', 'problem', '基准覆盖不足', '现有基准对多步/中文场景覆盖弱'),
+    // 方法
+    N('m-spotlight', 'method', 'Spotlighting（数据标记）'),
+    N('m-instr-hier', 'method', '指令层级分隔'),
+    N('m-filter', 'method', '输入过滤判别器'),
+    N('m-guard', 'method', 'GuardAgent 护栏架构'),
+    // 数据集 / 基准
+    N('ds-agentdojo', 'dataset', 'AgentDojo'),
+    N('ds-rjudge', 'dataset', 'R-Judge'),
+    N('ds-injecagent', 'dataset', 'InjecAgent'),
+    // 指标
+    N('mt-asr', 'metric', '攻击成功率'),
+    N('mt-utility', 'metric', '任务性能保持'),
+    // 局限 / 假设
+    N('lim-synthetic', 'limitation', '基准场景偏合成', '真实任务分布覆盖有限'),
+    N('lim-onestep', 'limitation', '单步评测为主', '缺少多步长程评测'),
+    N('asm-trust', 'assumption', '假设：工具返回可信', '被间接注入直接打破'),
+  ],
+  edges: [
+    // 论文 ─addresses→ 问题
+    { source: 'arXiv:2302.12173', target: 'prob-inject', type: 'addresses' },
+    { source: 'arXiv:2306.05499', target: 'prob-inject', type: 'addresses' },
+    { source: 'arXiv:2403.02691', target: 'prob-inject', type: 'addresses' },
+    { source: 'arXiv:2403.02691', target: 'prob-tool', type: 'addresses' },
+    { source: 'arXiv:2402.10753', target: 'prob-tool', type: 'addresses' },
+    { source: 'arXiv:2406.13352', target: 'prob-coverage', type: 'addresses' },
+    { source: 'arXiv:2401.10019', target: 'prob-coverage', type: 'addresses' },
+    { source: 'arXiv:2406.09187', target: 'prob-longhorizon', type: 'addresses' },
+    // 论文 ─proposes→ 方法
+    { source: 'arXiv:2403.14720', target: 'm-spotlight', type: 'proposes' },
+    { source: 'arXiv:2406.09187', target: 'm-guard', type: 'proposes' },
+    // 方法 ─targets→ 问题
+    { source: 'm-spotlight', target: 'prob-inject', type: 'targets' },
+    { source: 'm-instr-hier', target: 'prob-inject', type: 'targets' },
+    { source: 'm-filter', target: 'prob-inject', type: 'targets' },
+    { source: 'm-guard', target: 'prob-longhorizon', type: 'targets' },
+    { source: 'm-guard', target: 'prob-tool', type: 'targets' },
+    // 评估关系
+    { source: 'arXiv:2403.14720', target: 'ds-agentdojo', type: 'evaluated_on' },
+    { source: 'arXiv:2406.13352', target: 'ds-agentdojo', type: 'evaluated_on' },
+    { source: 'arXiv:2403.02691', target: 'ds-injecagent', type: 'evaluated_on' },
+    { source: 'arXiv:2401.10019', target: 'ds-rjudge', type: 'evaluated_on' },
+    { source: 'm-spotlight', target: 'mt-asr', type: 'measured_by' },
+    { source: 'm-spotlight', target: 'mt-utility', type: 'measured_by' },
+    { source: 'm-guard', target: 'mt-asr', type: 'measured_by' },
+    { source: 'arXiv:2406.13352', target: 'mt-asr', type: 'measured_by' },
+    // 局限与假设
+    { source: 'ds-agentdojo', target: 'lim-onestep', type: 'has_limitation' },
+    { source: 'ds-injecagent', target: 'lim-synthetic', type: 'has_limitation' },
+    { source: 'arXiv:2302.12173', target: 'asm-trust', type: 'contradicts' },
+    // 论文间关系
+    { source: 'arXiv:2403.02691', target: 'arXiv:2302.12173', type: 'extends' },
+    { source: 'arXiv:2406.13352', target: 'arXiv:2403.02691', type: 'extends' },
+    { source: 'arXiv:2403.14720', target: 'arXiv:2302.12173', type: 'supports' },
+    { source: 'arXiv:2406.09187', target: 'arXiv:2403.14720', type: 'compares_with' },
+    { source: 'arXiv:2306.05499', target: 'arXiv:2403.14720', type: 'contradicts' },
+    { source: 'arXiv:2402.10753', target: 'arXiv:2406.13352', type: 'compares_with' },
+    { source: 'arXiv:2401.10019', target: 'arXiv:2406.13352', type: 'compares_with' },
+  ],
+  paperCount: 8,
+};

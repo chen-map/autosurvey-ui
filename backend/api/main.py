@@ -84,13 +84,14 @@ def _read_config(pid: str) -> dict | None:
     return _read_json(_wm(pid) / "w1_config.json")
 
 
-def _spawn_runner(pid: str) -> None:
+def _spawn_runner(pid: str, workflow: str = "w1") -> None:
     ws = _wm(pid)
     ws.mkdir(parents=True, exist_ok=True)
-    log_path = ws / "runner.log"
+    log_path = ws / f"runner_{workflow}.log"
     log = open(log_path, "ab")
     subprocess.Popen(
-        [sys.executable, str(RUNNER), "--config", str(ws / "w1_config.json"), "--resume"],
+        [sys.executable, str(RUNNER), "--config", str(ws / "w1_config.json"),
+         "--workflow", workflow, "--resume"],
         stdout=log, stderr=subprocess.STDOUT, cwd=str(ws),
     )
 
@@ -130,25 +131,27 @@ def create_project(body: dict):
 
 
 @app.post("/api/projects/{pid}/run")
-def start_run(pid: str):
-    """启动（或续跑）W1。创建后项目为 draft，由此端点显式启动；--resume 跳过已完成 Phase。"""
+def start_run(pid: str, workflow: str = "w1"):
+    """启动（或续跑）工作流。创建后项目为 draft，由此端点显式启动；--resume 跳过已完成 Phase。"""
+    if workflow not in ("w1", "w2"):
+        raise HTTPException(400, f"unknown workflow: {workflow}")
     if _read_config(pid) is None:
         raise HTTPException(404, f"project not found: {pid}")
-    _spawn_runner(pid)
-    return {"ok": True, "project_id": pid}
+    _spawn_runner(pid, workflow)
+    return {"ok": True, "project_id": pid, "workflow": workflow}
 
 
 @app.get("/api/projects/{pid}/run")
-def get_run(pid: str):
-    state_path = WORKSPACE / pid / "w1" / "w1_state.json"
+def get_run(pid: str, workflow: str = "w1"):
+    state_path = WORKSPACE / pid / "w1" / f"{workflow}_state.json"
     if not state_path.exists():
         raise HTTPException(404, f"run not found for {pid}")
     return json.loads(state_path.read_text(encoding="utf-8"))
 
 
 @app.post("/api/projects/{pid}/phases/{phase_id}/retry")
-def retry_phase(pid: str, phase_id: str):
-    state_path = WORKSPACE / pid / "w1" / "w1_state.json"
+def retry_phase(pid: str, phase_id: str, workflow: str = "w1"):
+    state_path = WORKSPACE / pid / "w1" / f"{workflow}_state.json"
     if not state_path.exists():
         raise HTTPException(404, f"run not found for {pid}")
     state = json.loads(state_path.read_text(encoding="utf-8"))
@@ -157,7 +160,7 @@ def retry_phase(pid: str, phase_id: str):
             ph["status"] = "pending"
             break
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
-    _spawn_runner(pid)
+    _spawn_runner(pid, workflow)
     return {"ok": True, "phase_id": phase_id}
 
 
@@ -368,6 +371,25 @@ def get_library(user: dict = Depends(_me)):
 def put_library(body: dict = Body(...), user: dict = Depends(_me)):
     _kv_put(user["user_id"], "library", body)
     return {"ok": True}
+
+
+@app.get("/api/projects/{pid}/kg")
+def get_kg(pid: str):
+    """KG 图谱数据：读 W2-P3 产物 paper_kg.json（{papers, nodes, edges}）。"""
+    p = _wm(pid) / "knowledge_graph" / "paper_kg.json"
+    if not p.exists():
+        raise HTTPException(404, f"KG not built for {pid}（W2 未完成）")
+    data = json.loads(p.read_text(encoding="utf-8"))
+    nodes = [{"id": n.get("node_id"), "type": n.get("node_type", "Method"),
+              "label": n.get("canonical_name") or n.get("title") or n.get("node_id"),
+              "description": n.get("description", "")}
+             for n in data.get("nodes", []) if n.get("node_id")]
+    edges = [{"source": e.get("source_id"), "target": e.get("target_id"),
+              "type": e.get("edge_type") or e.get("relation") or "related",
+              "confidence": e.get("confidence")}
+             for e in data.get("edges", []) if e.get("source_id") and e.get("target_id")]
+    return {"nodes": nodes, "edges": edges,
+            "paperCount": len(data.get("papers", []))}
 
 
 @app.get("/api/projects")
