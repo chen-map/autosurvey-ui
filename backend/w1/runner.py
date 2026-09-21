@@ -1,4 +1,4 @@
-"""W1 固定工作流执行器 — 确定性状态机（设计：docs/w1-pipeline-design.md）。
+"""固定工作流执行器 — 确定性状态机（W1 语料构建 / W2 事实记忆，设计：docs/w1-pipeline-design.md）。
 
 职责边界：
   - 本执行器只做编排（调起存量脚本、校验产物、落盘状态），不实现任何筛选/检索逻辑
@@ -20,7 +20,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-STATE_FILE = "w1_state.json"
+STATE_FILES = {"w1": "w1_state.json", "w2": "w2_state.json"}
+WORKFLOW_DIRS = {"w1": Path(__file__).resolve().parent,
+                 "w2": Path(__file__).resolve().parents[1] / "w2"}
 STEP_TIMEOUT_SEC = 3600
 
 
@@ -28,22 +30,23 @@ def now() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def load_state(workspace: Path) -> dict[str, Any]:
-    path = workspace / STATE_FILE
+def load_state(workspace: Path, state_file: str = STATE_FILES["w1"]) -> dict[str, Any]:
+    path = workspace / state_file
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
     return {"phases": [], "started_at": now(), "updated_at": now(), "current": None}
 
 
-def save_state(workspace: Path, state: dict[str, Any]) -> None:
+def save_state(workspace: Path, state: dict[str, Any], state_file: str = STATE_FILES["w1"]) -> None:
     state["updated_at"] = now()
     workspace.mkdir(parents=True, exist_ok=True)
-    (workspace / STATE_FILE).write_text(
+    (workspace / state_file).write_text(
         json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def init_state(workspace: Path, phases: list[dict[str, Any]], project_id: str) -> dict[str, Any]:
-    state = load_state(workspace)
+def init_state(workspace: Path, phases: list[dict[str, Any]], project_id: str,
+               state_file: str = STATE_FILES["w1"]) -> dict[str, Any]:
+    state = load_state(workspace, state_file)
     known = {p["id"]: p for p in state.get("phases", [])}
     merged = []
     for ph in phases:
@@ -57,7 +60,7 @@ def init_state(workspace: Path, phases: list[dict[str, Any]], project_id: str) -
         })
     state["phases"] = merged
     state["project_id"] = project_id
-    save_state(workspace, state)
+    save_state(workspace, state, state_file)
     return state
 
 
@@ -89,7 +92,7 @@ def check_requires(phase: dict[str, Any]) -> None:
 
 
 def run_phase(phase: dict[str, Any], cfg: dict[str, Any], workspace: Path,
-              state: dict[str, Any]) -> str:
+              state: dict[str, Any], state_file: str = STATE_FILES["w1"]) -> str:
     pid = phase["id"]
     entry = next(p for p in state["phases"] if p["id"] == pid)
     if entry["status"] == "done" and outputs_ready(workspace, entry["outputs"]):
@@ -97,7 +100,7 @@ def run_phase(phase: dict[str, Any], cfg: dict[str, Any], workspace: Path,
     entry["status"] = "running"
     entry["started_at"] = now()
     state["current"] = pid
-    save_state(workspace, state)
+    save_state(workspace, state, state_file)
     check_requires(phase)
 
     t0 = time.time()
@@ -111,14 +114,14 @@ def run_phase(phase: dict[str, Any], cfg: dict[str, Any], workspace: Path,
                 entry["rc"] = rc
                 entry["ended_at"] = now()
                 entry["duration_sec"] = round(time.time() - t0, 1)
-                save_state(workspace, state)
+                save_state(workspace, state, state_file)
                 return "failed"
         missing = [o for o in phase["outputs"] if not (workspace / o).exists()]
         if missing:
             entry["status"] = "failed"
             entry["rc"] = -1
             entry["ended_at"] = now()
-            save_state(workspace, state)
+            save_state(workspace, state, state_file)
             raise FileNotFoundError(f"{pid} 产物缺失: {missing}")
         entry["status"] = "done"
         entry["rc"] = 0
@@ -131,16 +134,27 @@ def run_phase(phase: dict[str, Any], cfg: dict[str, Any], workspace: Path,
         entry["error"] = str(exc)
     entry["ended_at"] = now()
     entry["duration_sec"] = round(time.time() - t0, 1)
-    save_state(workspace, state)
+    save_state(workspace, state, state_file)
     return entry["status"]
 
 
-def run_pipeline(cfg: dict[str, Any], *, resume: bool = True,
-                 only: str | None = None, from_phase: str | None = None) -> dict[str, Any]:
-    from phase_defs import build_phases  # noqa: PLC0415 — 允许脚本式导入
+def _load_build_phases(workflow: str):
+    """按工作流加载对应 phase_defs.build_phases（显式路径导入，避免同名模块冲突）。"""
+    import importlib.util  # noqa: PLC0415
 
+    spec = importlib.util.spec_from_file_location(
+        f"{workflow}_phase_defs", WORKFLOW_DIRS[workflow] / "phase_defs.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.build_phases
+
+
+def run_pipeline(cfg: dict[str, Any], *, workflow: str = "w1", resume: bool = True,
+                 only: str | None = None, from_phase: str | None = None) -> dict[str, Any]:
+    build_phases = _load_build_phases(workflow)
     return run_pipeline_with(build_phases(cfg), cfg, Path(cfg["workspace"]),
-                             resume=resume, only=only, from_phase=from_phase)
+                             resume=resume, only=only, from_phase=from_phase,
+                             state_file=STATE_FILES[workflow])
 
 
 def run_pipeline_with(phases: list[dict[str, Any]], cfg: dict[str, Any],
@@ -163,23 +177,24 @@ def run_pipeline_with(phases: list[dict[str, Any]], cfg: dict[str, Any],
         status = run_phase(phase, cfg, workspace, state)
         if status == "failed":
             state["current"] = None
-            save_state(workspace, state)
+            save_state(workspace, state, state_file)
             return state  # fail-fast：前端可用 retry 恢复
     state["current"] = None
-    save_state(workspace, state)
+    save_state(workspace, state, state_file)
     return state
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="W1 固定工作流执行器")
+    parser = argparse.ArgumentParser(description="固定工作流执行器（W1 语料构建 / W2 事实记忆）")
     parser.add_argument("--config", required=True, help="w1_config.json 路径")
+    parser.add_argument("--workflow", choices=sorted(STATE_FILES), default="w1", help="工作流（默认 w1）")
     parser.add_argument("--resume", action="store_true", help="跳过已完成 Phase")
     parser.add_argument("--only", help="只跑指定 Phase（如 W1-P2）")
     parser.add_argument("--from", dest="from_phase", help="从指定 Phase 开始")
     args = parser.parse_args(argv)
 
     cfg = json.loads(Path(args.config).read_text(encoding="utf-8"))
-    state = run_pipeline(cfg, resume=args.resume, only=args.only, from_phase=args.from_phase)
+    state = run_pipeline(cfg, workflow=args.workflow, resume=args.resume, only=args.only, from_phase=args.from_phase)
     failed = [p for p in state["phases"] if p["status"] == "failed"]
     print(f"完成：{sum(1 for p in state['phases'] if p['status'] == 'done')}"
           f"/{len(state['phases'])} done，失败 {len(failed)}")

@@ -12,6 +12,7 @@ import type {
 import { MOCK_PROJECTS } from '@/mock/data';
 import { getPipeline as getPipelineData, PAPERS, PRISMA } from '@/mock/detail';
 import { RQ_BUNDLES } from '@/mock/rq';
+import { MOCK_KG_GRAPH } from '@/mock/kg';
 import { OUTLINE, REVIEW_ROUNDS, AGENT_RUN, USERS } from '@/mock/detail';
 
 const delay = (ms = 260) => new Promise((r) => setTimeout(r, ms));
@@ -150,19 +151,32 @@ export async function login(username: string, password: string): Promise<LoginRe
 }
 
 // ---- pipeline ----
-export async function startRun(projectId: string): Promise<void> {
+export async function startRun(projectId: string, workflow: 'w1' | 'w2' = 'w1'): Promise<void> {
   if (!USE_MOCK) {
-    const res = await fetch(`${API}/projects/${projectId}/run`, { method: 'POST' });
+    const res = await fetch(`${API}/projects/${projectId}/run?workflow=${workflow}`, { method: 'POST' });
     if (!res.ok) throw new Error(`startRun 失败: ${res.status}`);
     return;
   }
   await delay(200);
 }
 
-export async function getPipeline(projectId: string): Promise<PipelineRun> {
-  if (!USE_MOCK) return realFetch<PipelineRun>(`/projects/${projectId}/run`);
+export async function getPipeline(projectId: string, workflow: 'w1' | 'w2' = 'w1'): Promise<PipelineRun> {
+  if (!USE_MOCK) return realFetch<PipelineRun>(`/projects/${projectId}/run?workflow=${workflow}`);
   await delay();
   return getPipelineData(projectId);
+}
+
+// ---- KG 图谱（W2 产物，Obsidian 风格力导向图数据） ----
+export interface KgGraphEdge { source: string; target: string; type: string; confidence?: number }
+export interface KgGraphData {
+  nodes: { id: string; type: string; label: string; description?: string }[];
+  edges: KgGraphEdge[];
+  paperCount?: number;
+}
+export async function getKg(projectId: string): Promise<KgGraphData> {
+  if (!USE_MOCK) return realFetch<KgGraphData>(`/projects/${projectId}/kg`);
+  await delay(400);
+  return MOCK_KG_GRAPH;
 }
 
 export async function getCorpus(projectId: string): Promise<{ papers: PaperRecord[]; funnel: PrismaLevel[] }> {

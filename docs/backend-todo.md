@@ -114,6 +114,20 @@ W3 实际写出 `analyze_report/` 下的产物，前端 RQ 树/专页的每个�
 - **读取**：`GET /projects/{pid}/corpus` → `{ papers, funnel }`；论文映射前端 `PaperRecord`（downloaded→已纳入，failed/no_doi→可获取性），漏斗前两级从 W1 中间产物 CSV 计数（检索归一/筛选纳入），后四级从库统计
 - **前端**：`getCorpus(projectId)` 真实模式调上述端点；CorpusPage/KgPage 已带 projectId 接线
 
+## 7.7 W2 事实记忆构建集成（已实现）
+
+主参考 §3.2 四 Phase 接入执行器（存量脚本零改动，`w2/phase_defs.py`）：
+
+- **W2-P0** `parse_pdfs.py --pdf-dir papers`（W1-P6 下载产物）→ `paper_cards/parsed/`
+- **W2-P1** `build_structured_papers.py`（LLM 六类对象，checkpoint 断点续传）→ `structured_papers.jsonl`
+- **W2-P2**（可选）`select_candidate_objects.py` → `candidate_structured_papers.jsonl`
+- **W2-P3** `build_paper_kg.py`（prescore 预评分 + 论文对关系，checkpoint 续跑）→ `paper_kg.db` + `paper_kg.json` + nodes/edges + KG_SUMMARY.md
+
+- **runner 泛化**：`runner.py --workflow w1|w2`，状态文件 `w1_state.json` / `w2_state.json`；API `POST /run?workflow=`、`GET /run?workflow=`、retry 同参
+- **KG 端点**：`GET /projects/{pid}/kg` 读 `paper_kg.json` → `{nodes, edges, paperCount}`（前端做类型映射）
+- **KG 页**：Obsidian 风格 d3-force 力导向图——按连接度定节点大小、七类着色、悬停高亮邻域其余淡出、光标锚点缩放/平移、节点可拖拽、类型筛选 chips、点选详情卡、矛盾红/支持绿边
+- **LLM 依赖**：P1/P3 必须 LLM（启发式已移除），配置沿用 kg_common.py 内置默认；后续可切服务端代理
+
 ## 8. 基础设施（部署阶段）
 
 - ECS（放既有 VPC 交换机）+ 弹性公网 IP + 安全组 80/443
