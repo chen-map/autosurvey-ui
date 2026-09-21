@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import csv
 import subprocess
 import sys
 import time
@@ -15,6 +16,8 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+from db.database import get_db, init_db
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 WORKSPACE = Path(os.environ.get("AS_WORKSPACE", str(BACKEND_DIR / "wm")))
@@ -135,6 +138,57 @@ def retry_phase(pid: str, phase_id: str):
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     _spawn_runner(pid)
     return {"ok": True, "phase_id": phase_id}
+
+
+@app.get("/api/projects/{pid}/corpus")
+def get_corpus(pid: str):
+    """语料库页：W1 下载产物（corpus_papers 表）+ PRISMA 漏斗计数。
+
+    数据来源：W1-P6 完成后 corpus_ingest.py 落库；漏斗前两级从 W1 中间产物 CSV 计数。
+    """
+    if _read_config(pid) is None:
+        raise HTTPException(404, f"project not found: {pid}")
+    init_db()
+    conn = get_db()
+    rows = [dict(r) for r in conn.execute(
+        "SELECT * FROM corpus_papers WHERE project_id=? ORDER BY id", (pid,)).fetchall()]
+    conn.close()
+
+    papers = [{
+        "id": r["doi"] or f"paper-{r['id']}",
+        "title": r["title"],
+        "authors": "",
+        "venue": r["venue"],
+        "year": int(r["year"] or 0),
+        "citations": 0,
+        "stage": "已纳入" if r["status"] == "downloaded" else "可获取性",
+        "abstract": r["abstract"],
+        "status": r["status"],
+        "pdfPath": r["pdf_path"],
+        "card": {"problems": [], "methods": [], "datasets": [], "metrics": [], "limitations": [], "assumptions": []},
+    } for r in rows]
+
+    def _csv_count(rel: str) -> int:
+        p = _wm(pid) / rel
+        if not p.exists():
+            return 0
+        with open(p, encoding="utf-8-sig", newline="") as f:
+            return sum(1 for _ in csv.DictReader(f))
+
+    funnel = [
+        {"stage": "检索归一", "count": _csv_count("retrieval_workspace/normalized/unified_records.csv"),
+         "note": "W1-P3 归一去重后候选"},
+        {"stage": "筛选纳入", "count": _csv_count("retrieval_workspace/screening/screened_records.csv"),
+         "note": "W1-P4 筛选通过"},
+        {"stage": "下载就绪", "count": len(rows), "note": "DOI 锚定 + 无 DOI 分流合计"},
+        {"stage": "成功下载", "count": sum(1 for r in rows if r["status"] == "downloaded"),
+         "note": "PDF 落盘（magic bytes 校验通过）"},
+        {"stage": "下载失败", "count": sum(1 for r in rows if r["status"] == "failed"),
+         "note": "占位 txt 含手动下载指引"},
+        {"stage": "无 DOI 分流", "count": sum(1 for r in rows if r["status"] == "no_doi"),
+         "note": "不进下载器，走人工/本地合并"},
+    ]
+    return {"papers": papers, "funnel": funnel}
 
 
 @app.get("/api/projects")

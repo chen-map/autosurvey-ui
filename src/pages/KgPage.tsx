@@ -85,8 +85,8 @@ export function KgPage() {
   const shellRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getCorpus().then((d) => setPapers(d.papers));
-  }, []);
+    getCorpus(projectId).then((d) => setPapers(d.papers));
+  }, [projectId]);
 
   const nodeMap = useMemo(() => new Map((nodes as Node[]).map((n) => [n.id, n])), [nodes]);
 

@@ -58,6 +58,26 @@ CREATE TABLE IF NOT EXISTS library_items (
     saved_at TEXT DEFAULT (datetime('now')),
     UNIQUE(user_id, doi, title)
 );
+
+-- W1 语料库：下载完成后由 corpus_ingest.py 落库（用户裁决：下载后入本地库，语料页从库读）
+CREATE TABLE IF NOT EXISTS corpus_papers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT NOT NULL,
+    doi TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL DEFAULT '',
+    venue TEXT NOT NULL DEFAULT '',
+    year INTEGER,
+    url TEXT NOT NULL DEFAULT '',
+    abstract TEXT NOT NULL DEFAULT '',
+    source TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'failed',
+    pdf_path TEXT NOT NULL DEFAULT '',
+    record_id TEXT NOT NULL DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(project_id, doi, title)
+);
+
+CREATE INDEX IF NOT EXISTS idx_corpus_project ON corpus_papers(project_id);
 """
 
 

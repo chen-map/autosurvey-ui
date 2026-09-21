@@ -135,8 +135,8 @@ export async function getPipeline(projectId: string): Promise<PipelineRun> {
   return getPipelineData(projectId);
 }
 
-export async function getCorpus(): Promise<{ papers: PaperRecord[]; funnel: PrismaLevel[] }> {
-  if (!USE_MOCK) return realFetch<{ papers: PaperRecord[]; funnel: PrismaLevel[] }>('/projects/corpus');
+export async function getCorpus(projectId: string): Promise<{ papers: PaperRecord[]; funnel: PrismaLevel[] }> {
+  if (!USE_MOCK) return realFetch<{ papers: PaperRecord[]; funnel: PrismaLevel[] }>(`/projects/${projectId}/corpus`);
   await delay();
   return { papers: PAPERS, funnel: PRISMA };
 }

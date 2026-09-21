@@ -8,3 +8,4 @@ autoSurvey_v2/
 **/key_settings.py
 backend/_refine_block.txt
 __pycache__/
+autosurvey.db
