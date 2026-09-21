@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
-  Lock, CheckCircle2, AlertTriangle, XCircle, ChevronDown, FileText,
+  Lock, CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronRight, FileText,
   FileQuestion, GitBranch, Compass, ListChecks, Route, Database, Wrench, MessageSquareText,
+  GitMerge, Layers,
 } from 'lucide-react';
-import type { Claim, ClaimStatus, EvidencePaper, RQType } from '@/types/data';
+import type { Claim, ClaimStatus, MacroRQ, RQType, SubRQ } from '@/types/data';
 import { getRQBundle } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { Gauge, levelVariant, levelLabel } from './RqPage';
+import type { AnswerabilityLevel } from '@/types/data';
 
 export const rqTypeLabel: Record<RQType, string> = {
   descriptive: '描述型',
@@ -137,68 +139,245 @@ function Bullets({ items, icon: Icon, tone }: { items: string[]; icon: typeof Ch
   );
 }
 
-// ---- 页面 ----
-
-const NAV = [
-  ['s-summary', 'RQ 简述'],
-  ['s-why', '选择原因'],
-  ['s-scope', '包含内容'],
-  ['s-method', '怎么分析'],
-  ['s-evidence', '使用证据'],
-  ['s-gaps', '当前缺陷'],
-  ['s-answer', '答案与核查'],
-] as const;
-
-export function RqDetailPage() {
-  const { projectId = '', rqId = '' } = useParams();
-  const [bundle, setBundle] = useState<Awaited<ReturnType<typeof getRQBundle>>>(null);
-  const [filter, setFilter] = useState<'ALL' | ClaimStatus>('ALL');
-
-  useEffect(() => {
-    let alive = true;
-    getRQBundle(projectId).then((b) => alive && setBundle(b));
-    return () => {
-      alive = false;
-    };
-  }, [projectId]);
-
-  const { sub, macro } = useMemo(() => {
-    for (const m of bundle?.macros ?? []) {
-      const s = m.subs.find((x) => x.id === rqId);
-      if (s) return { sub: s, macro: m };
-    }
-    return { sub: undefined, macro: undefined };
-  }, [bundle, rqId]);
-
-  // 使用证据：冻结矩阵该 Sub-RQ 的论文集合 → 解析详情
-  const evidence = useMemo(() => {
-    if (!bundle || !sub) return { entry: undefined as typeof bundle extends null ? never : { papers: string[] } | undefined, rows: [] as (EvidencePaper | undefined)[] };
-    const entry = bundle.matrix?.entries.find((e) => e.subRqId === sub.id);
-    const byId = new Map(bundle.evidencePapers.map((p) => [p.id, p]));
-    return { entry, rows: (entry?.papers ?? []).map((id) => byId.get(id)) };
-  }, [bundle, sub]);
-
-  const claims = useMemo(
-    () => (bundle?.claims ?? []).filter((c) => filter === 'ALL' || c.status === filter),
-    [bundle, filter],
+// 粘滞分节导航
+function StickyNav({ items }: { items: readonly (readonly [string, string])[] }) {
+  return (
+    <nav className="sticky top-0 z-10 -mx-1 flex gap-1 overflow-x-auto border-b border-line/60 bg-page/95 px-1 py-2 backdrop-blur">
+      {items.map(([id, label], i) => (
+        <button
+          key={id}
+          type="button"
+          onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="flex shrink-0 items-center gap-1.5 rounded px-2.5 py-1 text-[12.5px] text-t2 transition-colors hover:bg-black/5 hover:text-t1"
+        >
+          <span className="font-mono text-[11px] text-t3">{i + 1}</span>
+          {label}
+        </button>
+      ))}
+    </nav>
   );
+}
 
-  if (!bundle || !sub || !macro) {
-    return (
-      <Card className="px-8 py-16 text-center">
-        <p className="text-[14px] text-t2">该 Sub-RQ 不存在（或 W3 矩阵尚未冻结）</p>
-      </Card>
-    );
-  }
-
+// 答案与核查（Sub / Macro 共用，W4 产出）
+function AnswerSection({ no, bundle }: { no: number; bundle: NonNullable<Awaited<ReturnType<typeof getRQBundle>>> }) {
+  const [filter, setFilter] = useState<'ALL' | ClaimStatus>('ALL');
   const counts = {
     all: bundle.claims.length,
     verified: bundle.claims.filter((c) => c.status === 'verified').length,
     needs_revision: bundle.claims.filter((c) => c.status === 'needs_revision').length,
     should_remove: bundle.claims.filter((c) => c.status === 'should_remove').length,
   };
+  const claims = bundle.claims.filter((c) => filter === 'ALL' || c.status === filter);
+  return (
+    <Section id="s-answer" no={no} icon={MessageSquareText} title="答案与核查" note="W4 产出">
+      <div className="rounded-lg border border-line/60 p-4">
+        <div className="text-[13px] font-medium">综合答案（overall_answer）</div>
+        <div className="mt-2">
+          {bundle.overallAnswer
+            ? <AnswerText text={bundle.overallAnswer} />
+            : <p className="text-[13px] text-t3">尚未生成（W4 未运行）。</p>}
+        </div>
+      </div>
 
-  const goNav = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      <div className="mt-4 flex items-center gap-2">
+        <span className="text-[13.5px] font-medium">Key Claims</span>
+        {(['ALL', 'verified', 'needs_revision', 'should_remove'] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => setFilter(f)}
+            className={cn(
+              'rounded-full px-2.5 py-0.5 text-[12px] transition-colors',
+              filter === f ? 'bg-ink text-white' : 'text-t2 hover:bg-black/5',
+            )}
+          >
+            {f === 'ALL' ? `全部 ${counts.all}` : `${claimStatusMeta[f].label} ${counts[f]}`}
+          </button>
+        ))}
+      </div>
+      <div className="mt-3 space-y-3">
+        {claims.map((c, i) => (
+          <ClaimRow key={c.id} claim={c} index={i} />
+        ))}
+        {claims.length === 0 && <p className="text-[13px] text-t3">暂无 claims（W4 未运行）。</p>}
+      </div>
+    </Section>
+  );
+}
+
+const SUB_NAV = [
+  ['s-summary', 'RQ 简述'],
+  ['s-why', '选择原因'],
+  ['s-scope', '包含内容'],
+  ['s-method', '怎么分析'],
+  ['s-evidence', '使用证据'],
+  ['s-gaps', '具体缺陷'],
+  ['s-answer', '答案与核查'],
+] as const;
+
+const MACRO_NAV = [
+  ['s-summary', 'Macro 简述'],
+  ['s-decompose', '分解逻辑'],
+  ['s-subs', 'Sub-RQ 分解'],
+  ['s-evidence', '汇总证据'],
+  ['s-synthesis', '怎么综合'],
+  ['s-gaps', '缺陷'],
+  ['s-answer', '答案与核查'],
+] as const;
+
+// ---- Macro 专页 ----
+function MacroPage({ macro, bundle }: { macro: MacroRQ; bundle: NonNullable<Awaited<ReturnType<typeof getRQBundle>>> }) {
+  const avgScore = macro.subs.reduce((n, s) => n + s.score, 0) / Math.max(macro.subs.length, 1);
+  const avgLevel: AnswerabilityLevel = avgScore >= 0.85 ? 'strong' : avgScore >= 0.45 ? 'weak' : 'blocked';
+  const totalPapers = macro.subs.reduce((n, s) => n + s.paperCount, 0);
+
+  // 汇总证据：各 Sub 冻结集合去重合并，解析详情
+  const unionPapers = useMemo(() => {
+    const ids: string[] = [];
+    const seen = new Set<string>();
+    for (const s of macro.subs) {
+      const entry = bundle.matrix?.entries.find((e) => e.subRqId === s.id);
+      for (const pid of entry?.papers ?? []) {
+        if (!seen.has(pid)) { seen.add(pid); ids.push(pid); }
+      }
+    }
+    const byId = new Map(bundle.evidencePapers.map((p) => [p.id, p]));
+    return ids.map((id) => ({ id, paper: byId.get(id) }));
+  }, [macro, bundle]);
+
+  return (
+    <div className="space-y-5">
+      {/* 头部 */}
+      <Card className="flex flex-wrap items-center gap-6 p-5">
+        <Gauge score={avgScore} level={avgLevel} size={84} />
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 text-[12px] text-t3">
+            <span>{macro.id}</span>
+            <span>·</span>
+            <span>Macro-RQ（Sub 均值）</span>
+            {macro.chapter && <span>· {macro.chapter}</span>}
+          </div>
+          <div className="mt-0.5 text-[15px] font-medium leading-6">{macro.text}</div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <Badge variant={levelVariant[avgLevel]}>{levelLabel[avgLevel]}（均值）</Badge>
+            {bundle.matrix && (
+              <Badge variant="ok"><Lock size={12} /> 证据矩阵已冻结 {bundle.matrix.frozenAt}</Badge>
+            )}
+          </div>
+        </div>
+        <div className="ml-auto flex gap-6">
+          <div className="text-center">
+            <div className="text-[22px] font-semibold leading-7">{macro.subs.length}</div>
+            <div className="text-[12px] text-t3">Sub-RQ</div>
+          </div>
+          <div className="text-center">
+            <div className="text-[22px] font-semibold leading-7">{totalPapers}</div>
+            <div className="text-[12px] text-t3">证据论文（去重前）</div>
+          </div>
+        </div>
+      </Card>
+
+      <StickyNav items={MACRO_NAV} />
+
+      {/* 1 Macro 简述 */}
+      <Section id="s-summary" no={1} icon={FileQuestion} title="Macro 简述">
+        <p className="text-[14px] leading-[24px] text-t1">
+          {macro.summary ?? `${macro.text}——该 Macro 的简述尚未生成（W3-P2 产出）。`}
+        </p>
+      </Section>
+
+      {/* 2 分解逻辑 */}
+      <Section id="s-decompose" no={2} icon={GitMerge} title="分解逻辑" note="为什么拆成这几个 Sub-RQ（W3-P2）">
+        <p className="text-[13.5px] leading-[22px] text-t1">
+          {macro.decompositionNote ?? '分解逻辑尚未生成。'}
+        </p>
+        {macro.role && (
+          <div className="mt-4 rounded-lg bg-page px-4 py-3">
+            <div className="text-[12.5px] font-medium text-t3">在综述中的角色</div>
+            <p className="mt-1.5 text-[13.5px] leading-[22px] text-t1">{macro.role}</p>
+          </div>
+        )}
+      </Section>
+
+      {/* 3 Sub-RQ 分解 */}
+      <Section id="s-subs" no={3} icon={Layers} title="Sub-RQ 分解" note="点击进入 Sub 专页">
+        <div className="divide-y divide-line/40">
+          {macro.subs.map((s) => (
+            <Link key={s.id} to={`../${s.id}`} className="flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-black/[0.03]">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="shrink-0 text-[12px] text-t3">{s.id}</span>
+                <span className="truncate text-[14px] text-t1" title={s.text}>{s.text}</span>
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <Badge variant={levelVariant[s.level]}>{levelLabel[s.level]} {s.score.toFixed(2)}</Badge>
+                <span className="text-[12px] text-t3">{s.paperCount} 篇</span>
+                <ChevronRight size={15} className="text-t3" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </Section>
+
+      {/* 4 汇总证据 */}
+      <Section id="s-evidence" no={4} icon={Database} title="汇总证据" note="各 Sub 冻结集合去重合并">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-[13px] text-t2">{unionPapers.length} 篇去重后论文</span>
+          {bundle.matrix && <Badge variant="ok"><Lock size={12} /> 冻结集合有效</Badge>}
+        </div>
+        <ul className="mt-3 space-y-1.5">
+          {unionPapers.map((p, i) => (
+            <li key={p.id} className="anim-rise flex items-baseline gap-2 rounded-lg bg-page px-3 py-2 text-[13px]" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}>
+              <span className="shrink-0 font-mono text-[11px] text-t3">[{i + 1}]</span>
+              {p.paper ? (
+                <>
+                  <span className="min-w-0 flex-1 truncate text-t1" title={p.paper.title}>{p.paper.title}</span>
+                  <span className="shrink-0 text-[12px] text-t3">{p.paper.venue} {p.paper.year}</span>
+                </>
+              ) : (
+                <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-t3">{p.id}</span>
+              )}
+            </li>
+          ))}
+          {unionPapers.length === 0 && <li className="text-[13px] text-t3">证据矩阵中暂无该 Macro 下 Sub 的条目。</li>}
+        </ul>
+      </Section>
+
+      {/* 5 怎么综合 */}
+      <Section id="s-synthesis" no={5} icon={Wrench} title="怎么综合" note="Sub 答案 → Macro 结论">
+        <p className="text-[13.5px] leading-[22px] text-t1">
+          {macro.synthesisPlan ?? '综合策略尚未生成。'}
+        </p>
+      </Section>
+
+      {/* 6 缺陷 */}
+      <Section id="s-gaps" no={6} icon={AlertTriangle} title="Macro 层缺陷">
+        {macro.deficiencies && macro.deficiencies.length > 0 ? (
+          <ul className="space-y-1.5">
+            {macro.deficiencies.map((g) => (
+              <li key={g} className="flex gap-2 text-[13.5px] leading-5 text-t2">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0 text-warn-fg" />
+                {g}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[13px] text-t3">未登记 Macro 层缺陷。</p>
+        )}
+      </Section>
+
+      {/* 7 答案与核查 */}
+      <AnswerSection no={7} bundle={bundle} />
+    </div>
+  );
+}
+
+// ---- Sub 专页 ----
+function SubPage({ sub, macro, bundle }: { sub: SubRQ; macro: MacroRQ; bundle: NonNullable<Awaited<ReturnType<typeof getRQBundle>>> }) {
+  const evidence = useMemo(() => {
+    const entry = bundle.matrix?.entries.find((e) => e.subRqId === sub.id);
+    const byId = new Map(bundle.evidencePapers.map((p) => [p.id, p]));
+    return { entry, rows: (entry?.papers ?? []).map((id) => byId.get(id)) };
+  }, [sub, bundle]);
   const frozenIds = evidence.entry?.papers ?? [];
 
   return (
@@ -208,9 +387,10 @@ export function RqDetailPage() {
         <Gauge score={sub.score} level={sub.level} size={84} />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-[12px] text-t3">
-            <span>{sub.id}</span>
-            <span>·</span>
-            <span>Answerability</span>
+            <Link to={`../${macro.id}`} className="rounded bg-ink px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white transition-opacity hover:opacity-80" title={`返回 ${macro.id} 专页`}>
+              {macro.id}
+            </Link>
+            <span>· Answerability</span>
             {sub.rqType && <Badge variant="neutral">{rqTypeLabel[sub.rqType]}</Badge>}
             {sub.chapter && <span>· {sub.chapter}</span>}
           </div>
@@ -218,42 +398,19 @@ export function RqDetailPage() {
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <Badge variant={levelVariant[sub.level]}>{levelLabel[sub.level]}</Badge>
             {bundle.matrix && (
-              <Badge variant="ok">
-                <Lock size={12} />
-                已冻结 {bundle.matrix.frozenAt}
-              </Badge>
+              <Badge variant="ok"><Lock size={12} /> 已冻结 {bundle.matrix.frozenAt}</Badge>
             )}
           </div>
-          <div className="mt-1.5 text-[12px] text-t3">归属 {macro.id}：{macro.text}</div>
         </div>
         <div className="ml-auto flex gap-6">
           <div className="text-center">
             <div className="text-[22px] font-semibold leading-7">{sub.paperCount}</div>
             <div className="text-[12px] text-t3">冻结证据（≥5 ✓）</div>
           </div>
-          <div className="text-center">
-            <div className="text-[22px] font-semibold leading-7">
-              {counts.verified}<span className="text-[14px] text-t3">/{counts.all}</span>
-            </div>
-            <div className="text-[12px] text-t3">claims 验证通过</div>
-          </div>
         </div>
       </Card>
 
-      {/* 粘滞分节导航 */}
-      <nav className="sticky top-0 z-10 -mx-1 flex gap-1 overflow-x-auto border-b border-line/60 bg-page/95 px-1 py-2 backdrop-blur">
-        {NAV.map(([id, label], i) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => goNav(id)}
-            className="flex shrink-0 items-center gap-1.5 rounded px-2.5 py-1 text-[12.5px] text-t2 transition-colors hover:bg-black/5 hover:text-t1"
-          >
-            <span className="font-mono text-[11px] text-t3">{i + 1}</span>
-            {label}
-          </button>
-        ))}
-      </nav>
+      <StickyNav items={SUB_NAV} />
 
       {/* 1 RQ 简述 */}
       <Section id="s-summary" no={1} icon={FileQuestion} title="RQ 简述">
@@ -276,9 +433,7 @@ export function RqDetailPage() {
             <p className="mt-1.5 text-[13.5px] leading-[22px] text-t1">{sub.roleInSurvey}</p>
           </div>
         )}
-        {!sub.motivation && !sub.roleInSurvey && (
-          <p className="text-[13px] text-t3">选择原因尚未生成。</p>
-        )}
+        {!sub.motivation && !sub.roleInSurvey && <p className="text-[13px] text-t3">选择原因尚未生成。</p>}
       </Section>
 
       {/* 3 包含内容 */}
@@ -343,7 +498,7 @@ export function RqDetailPage() {
       <Section id="s-evidence" no={5} icon={Database} title="使用证据" note="从冻结矩阵恢复，不重新查询">
         <div className="flex flex-wrap items-center gap-3">
           <Badge variant={levelVariant[sub.level]}>{levelLabel[sub.level]} {sub.score.toFixed(2)}</Badge>
-          <span className="text-[13px] text-t2">{evidence.entry?.papers.length ?? 0} 篇冻结论文</span>
+          <span className="text-[13px] text-t2">{frozenIds.length} 篇冻结论文</span>
           {evidence.entry ? (
             <Badge variant="ok"><Lock size={12} /> 冻结集合有效</Badge>
           ) : (
@@ -367,7 +522,7 @@ export function RqDetailPage() {
         </ul>
       </Section>
 
-      {/* 6 当前缺陷 */}
+      {/* 6 具体缺陷 */}
       <Section id="s-gaps" no={6} icon={AlertTriangle} title="具体缺陷" note="证据 / 数据 / 口径层面">
         {sub.deficiencies && sub.deficiencies.length > 0 ? (
           <ul className="space-y-1.5">
@@ -406,39 +561,44 @@ export function RqDetailPage() {
       </Section>
 
       {/* 7 答案与核查 */}
-      <Section id="s-answer" no={7} icon={MessageSquareText} title="答案与核查" note="W4 产出">
-        <div className="rounded-lg border border-line/60 p-4">
-          <div className="text-[13px] font-medium">综合答案（overall_answer）</div>
-          <div className="mt-2">
-            {bundle.overallAnswer
-              ? <AnswerText text={bundle.overallAnswer} />
-              : <p className="text-[13px] text-t3">尚未生成（W4 未运行）。</p>}
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-2">
-          <span className="text-[13.5px] font-medium">Key Claims</span>
-          {(['ALL', 'verified', 'needs_revision', 'should_remove'] as const).map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={cn(
-                'rounded-full px-2.5 py-0.5 text-[12px] transition-colors',
-                filter === f ? 'bg-ink text-white' : 'text-t2 hover:bg-black/5',
-              )}
-            >
-              {f === 'ALL' ? `全部 ${counts.all}` : `${claimStatusMeta[f].label} ${counts[f]}`}
-            </button>
-          ))}
-        </div>
-        <div className="mt-3 space-y-3">
-          {claims.map((c, i) => (
-            <ClaimRow key={c.id} claim={c} index={i} />
-          ))}
-          {claims.length === 0 && <p className="text-[13px] text-t3">该 RQ 暂无 claims（W4 未运行）。</p>}
-        </div>
-      </Section>
+      <AnswerSection no={7} bundle={bundle} />
     </div>
   );
+}
+
+// RQ 专页路由：rqId 命中 Sub → Sub 专页；命中 Macro → Macro 专页
+export function RqDetailPage() {
+  const { projectId = '', rqId = '' } = useParams();
+  const [bundle, setBundle] = useState<Awaited<ReturnType<typeof getRQBundle>>>(null);
+
+  useEffect(() => {
+    let alive = true;
+    getRQBundle(projectId).then((b) => alive && setBundle(b));
+    return () => {
+      alive = false;
+    };
+  }, [projectId]);
+
+  const resolved = useMemo(() => {
+    for (const m of bundle?.macros ?? []) {
+      const s = m.subs.find((x) => x.id === rqId);
+      if (s) return { kind: 'sub' as const, sub: s, macro: m };
+    }
+    const m = bundle?.macros.find((x) => x.id === rqId);
+    if (m) return { kind: 'macro' as const, sub: undefined, macro: m };
+    return { kind: 'none' as const, sub: undefined, macro: undefined };
+  }, [bundle, rqId]);
+
+  if (!bundle || resolved.kind === 'none') {
+    return (
+      <Card className="px-8 py-16 text-center">
+        <p className="text-[14px] text-t2">该 RQ 不存在（或 W3 矩阵尚未冻结）</p>
+      </Card>
+    );
+  }
+
+  if (resolved.kind === 'macro') {
+    return <MacroPage macro={resolved.macro} bundle={bundle} />;
+  }
+  return <SubPage sub={resolved.sub} macro={resolved.macro} bundle={bundle} />;
 }

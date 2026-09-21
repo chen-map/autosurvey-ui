@@ -83,7 +83,18 @@ export interface SubRQ {
   revisionNote?: string;        // P4 修订循环动作（blocked/weak 时）
 }
 
-export interface MacroRQ { id: string; text: string; subs: SubRQ[] }
+export interface MacroRQ {
+  id: string;
+  text: string;
+  subs: SubRQ[];
+  // ---- Macro 专页（W3 产出；后端可选提供） ----
+  summary?: string;           // Macro 简述（对应哪个核心章节、问什么）
+  chapter?: string;           // 绑定核心章节
+  role?: string;              // 在综述中的角色
+  decompositionNote?: string; // 为什么拆成这几个 Sub-RQ（W3-P2 分解逻辑）
+  synthesisPlan?: string;     // Sub 答案如何综合成 Macro 结论
+  deficiencies?: string[];    // Macro 层缺陷
+}
 
 export interface FrozenMatrix {
   frozenAt: string;
