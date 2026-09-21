@@ -55,12 +55,25 @@ export interface PrismaLevel { stage: string; count: number; note?: string }
 // ---------- RQ / 证据（W4 门面） ----------
 export type AnswerabilityLevel = 'strong' | 'weak' | 'blocked';
 
+export type RQType = 'descriptive' | 'comparative' | 'causal' | 'trend' | 'evaluative';
+
+export interface KgQueryPath { path: string; expected: string }
+
 export interface SubRQ {
   id: string;
   text: string;
   score: number;
   level: AnswerabilityLevel;
   paperCount: number;
+  // ---- RQ 说明（主参考 W3-P2 RQ Designer / P3 Grounding 产出；后端可选提供） ----
+  rqType?: RQType;
+  motivation?: string;          // 为什么提这个问题（W3-P1 Gap 分析来源）
+  definition?: string;          // 口径与边界（覆盖什么/不含什么）
+  focusTerms?: string[];        // 焦点词（P4 修订循环可扩展）
+  expectedEvidence?: string[];  // 预设 KG 证据类型
+  kgQueryPaths?: KgQueryPath[]; // 候选 KG 查询路径
+  chapter?: string;             // 绑定大纲章节
+  revisionNote?: string;        // P4 修订循环动作（blocked/weak 时）
 }
 
 export interface MacroRQ { id: string; text: string; subs: SubRQ[] }

@@ -10,7 +10,7 @@ import { AdminPage } from '@/pages/AdminPage';
 import { PipelinePage } from '@/pages/PipelinePage';
 import { CorpusPage } from '@/pages/CorpusPage';
 import { RqPage } from '@/pages/RqPage';
-import { EvidencePage } from '@/pages/EvidencePage';
+import { RqDetailPage } from '@/pages/RqDetailPage';
 import { ReportPage } from '@/pages/ReportPage';
 import { AgentPage } from '@/pages/AgentPage';
 import { KgPage } from '@/pages/KgPage';
@@ -45,7 +45,7 @@ export default function App() {
           <Route path="/projects/:projectId" element={<ProjectLayout />}>
             <Route index element={<Navigate to="rq" replace />} />
             <Route path="rq" element={<RqPage />} />
-            <Route path="rq/:rqId" element={<EvidencePage />} />
+            <Route path="rq/:rqId" element={<RqDetailPage />} />
             <Route path="pipeline" element={<PipelinePage />} />
             <Route path="corpus" element={<CorpusPage />} />
             <Route path="kg" element={<KgPage />} />
