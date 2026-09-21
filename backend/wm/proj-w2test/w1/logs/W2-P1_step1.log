@@ -1,47 +1,56 @@
 
-$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py --target C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/build_structured_papers.py --input paper_cards/parsed --out knowledge_graph/structured_papers.jsonl --max-text-chars 16000
-{"llm_wrap": true, "base_url": "https://api.deepseek.com/v1", "model": ["deepseek-chat"], "key_from_db": false}
-[structured] 1/18 extracting 0001_sok_trading_agents_or_market_crashers_dissecting_robustness — SoK: Trading Agents or Market Crashers? Dissecting Robustnes ...
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py --use-case w2.extract --target C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/build_structured_papers.py --input paper_cards/parsed --out knowledge_graph/structured_papers.jsonl --max-text-chars 16000
 Traceback (most recent call last):
-  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\build_structured_papers.py", line 323, in build_structured_records
-    payload = llm.chat_json(
-        llm_prompt(card, max_text_chars=text_limit),
-        temperature=0.0,
-        max_tokens=3200,
-    )
-  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\kg_common.py", line 170, in chat_json
-    raw = self.chat(
-        messages,
-    ...<2 lines>...
-        json_object=True,
-    )
-  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\kg_common.py", line 161, in chat
-    raise RuntimeError(f"LLM request failed after {len(self.models)} model(s): {last_error}")
-RuntimeError: LLM request failed after 1 model(s): Client error '401 Authorization Required' for url 'https://api.deepseek.com/v1/chat/completions'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py", line 71, in <module>
+  File "C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py", line 77, in <module>
     main()
     ~~~~^^
-  File "C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py", line 67, in main
-    runpy.run_path(str(target), run_name="__main__")
-    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "<frozen runpy>", line 287, in run_path
-  File "<frozen runpy>", line 98, in _run_module_code
-  File "<frozen runpy>", line 88, in _run_code
-  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\build_structured_papers.py", line 394, in <module>
-    raise SystemExit(main())
-                     ~~~~^^
-  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\build_structured_papers.py", line 373, in main
-    records = build_structured_records(
-        inputs=args.input,
-        max_papers=args.max_papers,
-        max_text_chars=args.max_text_chars,
-    )
-  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\build_structured_papers.py", line 333, in build_structured_records
-    raise RuntimeError(f"LLM structured extraction failed for {paper_id}: {last_error}") from last_error
-RuntimeError: LLM structured extraction failed for 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: LLM request failed after 1 model(s): Client error '401 Authorization Required' for url 'https://api.deepseek.com/v1/chat/completions'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+  File "C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py", line 59, in main
+    base, key, models = load_llm_config(use_case)
+                        ~~~~~~~~~~~~~~~^^^^^^^^^^
+TypeError: load_llm_config() takes 0 positional arguments but 1 was given
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py --use-case w2.extract --target C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/build_structured_papers.py --input paper_cards/parsed --out knowledge_graph/structured_papers.jsonl --max-text-chars 16000
+{"llm_wrap": true, "use_case": "w2.extract"}
+{"llm_wrap": true, "base_url": "https://api.deepseek.com/v1", "model": ["deepseek-chat"], "key_from_db": true}
+[structured] 1/18 extracting 0001_sok_trading_agents_or_market_crashers_dissecting_robustness — SoK: Trading Agents or Market Crashers? Dissecting Robustnes ...
+[structured] 1/18 done     0001_sok_trading_agents_or_market_crashers_dissecting_robustness — SoK: Trading Agents or Market Crashers? Dissecting Robustnes
+[structured] 2/18 extracting 0002_ace_a_security_architecture_for_llmintegrated_app_systems — ACE: A Security Architecture ...
+[structured] 2/18 done     0002_ace_a_security_architecture_for_llmintegrated_app_systems — ACE: A Security Architecture
+[structured] 3/18 extracting 0003_complete_security_framework_for_wireless_sensor_networks — (IJCSIS) International Journal of Computer Science and Infor ...
+[structured] 3/18 done     0003_complete_security_framework_for_wireless_sensor_networks — (IJCSIS) International Journal of Computer Science and Infor
+[structured] 4/18 extracting 0004_adaptive_adversaries_a_multiturn_multillm_benchmark_for_llm — Adaptive Adversaries: A Multi-Turn, Multi-LLM Benchmark for  ...
+[structured] 4/18 done     0004_adaptive_adversaries_a_multiturn_multillm_benchmark_for_llm — Adaptive Adversaries: A Multi-Turn, Multi-LLM Benchmark for 
+[structured] 5/18 extracting 0005_esaasecurity_an_eventsourced_verifiable_architecture_for_age — ESAA-Security: An Event-Sourced, Verifiable Architecture for ...
+[structured] 5/18 done     0005_esaasecurity_an_eventsourced_verifiable_architecture_for_age — ESAA-Security: An Event-Sourced, Verifiable Architecture for
+[structured] 6/18 extracting 0006_agents_at_risk_how_users_unwittingly_undermine_llm_safety — Agents at Risk: How Users Unwittingly Undermine LLM Safety F ...
+[structured] 6/18 done     0006_agents_at_risk_how_users_unwittingly_undermine_llm_safety — Agents at Risk: How Users Unwittingly Undermine LLM Safety F
+[structured] 7/18 extracting 0007_can_opensource_llm_agents_replace_static_application_securit — 0007_can_opensource_llm_agents_replace_static_application_se ...
+[structured] 7/18 done     0007_can_opensource_llm_agents_replace_static_application_securit — 0007_can_opensource_llm_agents_replace_static_application_se
+[structured] 8/18 extracting 0008_skcc_portable_and_secure_skill_compilation_for_crossframewor — SKCC: Portable and Secure Skill Compilation for Cross-Framew ...
+[structured] 8/18 done     0008_skcc_portable_and_secure_skill_compilation_for_crossframewor — SKCC: Portable and Secure Skill Compilation for Cross-Framew
+[structured] 9/18 extracting 0009_multiagent_reinforcement_learning_for_maritime_operational_t — Multi-Agent Reinforcement Learning for Maritime ...
+[structured] 9/18 done     0009_multiagent_reinforcement_learning_for_maritime_operational_t — Multi-Agent Reinforcement Learning for Maritime
+[structured] 10/18 extracting 0010_caging_the_agents_a_zero_trust_security_architecture_for_aut — Caging the Agents | Maiti 2026 Caging the Agents: A Zero Tru ...
+[structured] 10/18 done     0010_caging_the_agents_a_zero_trust_security_architecture_for_aut — Caging the Agents | Maiti 2026 Caging the Agents: A Zero Tru
+[structured] 11/18 extracting 0011_exploring_user_security_and_privacy_attitudes_and_concerns_t — Exploring User Security and Privacy Attitudes and Concerns T ...
+[structured] 11/18 done     0011_exploring_user_security_and_privacy_attitudes_and_concerns_t — Exploring User Security and Privacy Attitudes and Concerns T
+[structured] 12/18 extracting 0012_isolategpt_an_execution_isolation_architecture_for_llmbased — ISOLATEGPT: An Execution Isolation ...
+[structured] 12/18 done     0012_isolategpt_an_execution_isolation_architecture_for_llmbased — ISOLATEGPT: An Execution Isolation
+[structured] 13/18 extracting 0013_llm_agents_security_duality_a_comprehensive_survey_of_selfse — Accepted by Artificial Intelligence Review; early-access ver ...
+[structured] 13/18 done     0013_llm_agents_security_duality_a_comprehensive_survey_of_selfse — Accepted by Artificial Intelligence Review; early-access ver
+[structured] 14/18 extracting 0014_solavisibilityispm_benchmarking_agentic_ai_for_identity_secu — 0014_solavisibilityispm_benchmarking_agentic_ai_for_identity ...
+[structured] 14/18 done     0014_solavisibilityispm_benchmarking_agentic_ai_for_identity_secu — 0014_solavisibilityispm_benchmarking_agentic_ai_for_identity
+[structured] 15/18 extracting 0015_llm_agents_should_employ_security_principles — arXiv:2505.24019v1 [cs.CR] 29 May 2025 LLM Agents Should Emp ...
+[structured] 15/18 done     0015_llm_agents_should_employ_security_principles — arXiv:2505.24019v1 [cs.CR] 29 May 2025 LLM Agents Should Emp
+[structured] 16/18 extracting 0016_medical_large_language_models_are_vulnerable_to_datapoisonin — Nature Medicine | Volume 31 | February 2025 | 618–626 ...
+[structured] 16/18 done     0016_medical_large_language_models_are_vulnerable_to_datapoisonin — Nature Medicine | Volume 31 | February 2025 | 618–626
+[structured] 17/18 extracting 0018_prompt_injection_attacks_on_vision_language_models_in_oncolo — Article ...
+[structured] 17/18 done     0018_prompt_injection_attacks_on_vision_language_models_in_oncolo — Article
+[structured] 18/18 extracting 0022_medical_large_language_models_are_susceptible_to_targeted_mi — npj | digital medicine ...
+[structured] 18/18 done     0022_medical_large_language_models_are_susceptible_to_targeted_mi — npj | digital medicine
+[structured] completed 18/18 papers.
+{
+  "out": "knowledge_graph/structured_papers.jsonl",
+  "papers": 18,
+  "llm_used": true
+}

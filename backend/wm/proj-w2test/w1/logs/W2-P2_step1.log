@@ -1,0 +1,36 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/select_candidate_objects.py --input knowledge_graph/structured_papers.jsonl --out knowledge_graph/candidate_structured_papers.jsonl
+Traceback (most recent call last):
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\select_candidate_objects.py", line 191, in select_candidate_records
+    payload = llm.chat_json(
+        llm_prompt(record, max_items_per_type=max_items_per_type, max_methods=max_methods),
+        temperature=0.0,
+        max_tokens=1800,
+    )
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\kg_common.py", line 170, in chat_json
+    raw = self.chat(
+        messages,
+    ...<2 lines>...
+        json_object=True,
+    )
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\kg_common.py", line 161, in chat
+    raise RuntimeError(f"LLM request failed after {len(self.models)} model(s): {last_error}")
+RuntimeError: LLM request failed after 1 model(s): Client error '401 Unauthorized' for url 'https://token-plan-cn.xiaomimimo.com/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\select_candidate_objects.py", line 245, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\select_candidate_objects.py", line 223, in main
+    records = select_candidate_records(
+        inputs=args.input,
+    ...<2 lines>...
+        max_methods=args.max_methods,
+    )
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\paper-cards-kg-builder\scripts\select_candidate_objects.py", line 197, in select_candidate_records
+    raise RuntimeError(f"LLM candidate selection failed for {paper_id}: {exc}") from exc
+RuntimeError: LLM candidate selection failed for 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: LLM request failed after 1 model(s): Client error '401 Unauthorized' for url 'https://token-plan-cn.xiaomimimo.com/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401

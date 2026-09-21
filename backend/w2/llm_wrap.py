@@ -20,22 +20,24 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIR))
 
 
-def load_llm_config() -> tuple[str, str, list[str]]:
-    """读最近一条有效 llm-config（单机应用：取最新的）。DB_PATH 与 API 层同源。"""
+def load_llm_config(use_case: str) -> tuple[str, str, list[str]]:
+    """按使用点读 llm-config，解析链：环节专属 → default。DB_PATH 与 API 层同源。"""
     from db.crypto import decrypt  # noqa: PLC0415
     from db.database import DB_PATH  # noqa: PLC0415 — 单一事实源
 
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
-    row = conn.execute(
-        "SELECT base_url, api_key_encrypted, model FROM llm_configs "
-        "WHERE base_url != '' ORDER BY updated_at DESC LIMIT 1").fetchone()
+    rows = {r["use_case"]: r for r in conn.execute(
+        "SELECT use_case, base_url, api_key_encrypted, model FROM llm_configs WHERE user_id=1").fetchall()}
     conn.close()
-    if row is None:
-        return "", "", []
-    key = decrypt(row["api_key_encrypted"])
-    models = [row["model"]] if row["model"] else []
-    return row["base_url"], key, models
+    for uc in (use_case, "default"):
+        r = rows.get(uc)
+        if r is None:
+            continue
+        key = decrypt(r["api_key_encrypted"])
+        if r["base_url"] and key and r["model"]:
+            return r["base_url"], key, [r["model"]]
+    return "", "", []
 
 
 def main() -> None:
@@ -45,13 +47,19 @@ def main() -> None:
     i = argv.index("--target")
     target = Path(argv[i + 1]).resolve()
     rest = argv[:i] + argv[i + 2:]
+    use_case = "default"
+    if "--use-case" in rest:
+        j = rest.index("--use-case")
+        use_case = rest[j + 1]
+        rest = rest[:j] + rest[j + 2:]
 
     target_dir = str(target.parent)
     if target_dir not in sys.path:
         sys.path.insert(0, target_dir)
     import kg_common  # noqa: PLC0415 — 目标脚本同目录的共享 LLM 配置
 
-    base, key, models = load_llm_config()
+    base, key, models = load_llm_config(use_case)
+    print(json.dumps({"llm_wrap": True, "use_case": use_case}, ensure_ascii=False), file=sys.stderr)
     if base:
         kg_common.DEFAULT_LLM_BASE_URL = base
     if key:

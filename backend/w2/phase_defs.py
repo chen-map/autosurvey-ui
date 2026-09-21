@@ -41,7 +41,8 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": False,
             "steps": [
                 {"script": LLM_WRAP,
-                 "args": ["--target", f"{kg_scripts}/build_structured_papers.py",
+                 "args": ["--use-case", "w2.extract",
+                          "--target", f"{kg_scripts}/build_structured_papers.py",
                           "--input", "paper_cards/parsed",
                           "--out", "knowledge_graph/structured_papers.jsonl",
                           "--max-text-chars", str(max_text_chars)]},
@@ -65,7 +66,8 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": False,
             "steps": [
                 {"script": LLM_WRAP,
-                 "args": ["--target", f"{kg_scripts}/build_paper_kg.py",
+                 "args": ["--use-case", "w2.relation",
+                          "--target", f"{kg_scripts}/build_paper_kg.py",
                           "--input", "knowledge_graph/candidate_structured_papers.jsonl",
                           "--out-db", "knowledge_graph/paper_kg.db",
                           "--out-json", "knowledge_graph/paper_kg.json",
