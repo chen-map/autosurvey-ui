@@ -21,7 +21,7 @@ W1 七个 Phase 全部有真实可复用的脚本，**无需重写任何筛选/�
 | P3 归一去重 | `normalize_and_dedup.py --title-threshold` | ✅ 确定性 |
 | P4 六阶段筛选 | `screening_manager.py --stage N --workspace`（状态机） | ⚠️ 决策列依赖 LLM（P4 是唯一不确定点） |
 | P5 滚雪球 | `snowball_search.py --direction --merge` | ✅ 确定性 |
-| P6 下载 | `download_papers.py --unpaywall-email --sci-hub-mirrors --delay` | ✅ 确定性 |
+| P6 下载 | `download_prep.py`（DOI 锚定预处理）→ `download_papers.py --no-scihub --unpaywall-email` | ✅ 确定性 |
 | P7 本地合并 | `merge_local_papers.py --local-dir --corpus-dir` | ✅ 确定性 |
 
 ## 3. 执行器设计 `w1_pipeline.py`（~300 行）
@@ -33,7 +33,7 @@ PHASES = [
   {"id": "W1-P3", "script": "record_normalizer/normalize_and_dedup.py", "outputs": ["normalized/unified_records.csv"]},
   {"id": "W1-P4", "script": "screening/runner", "outputs": ["screening/stage6_final.csv", "screening/screening_log.md"]},
   {"id": "W1-P5", "script": "snowball_searcher/snowball_search.py", "outputs": ["snowball/FINAL_INCLUDED_PAPERS.csv"]},
-  {"id": "W1-P6", "script": "paper_downloader/download_papers.py", "outputs": ["papers/download_report.md"]},
+  {"id": "W1-P6", "script": "w1/download_prep.py + paper_downloader/download_papers.py", "outputs": ["download/prep_stats.json", "download/download_ready.csv", "download/no_doi_records.csv", "papers/download_report.md"]},
   {"id": "W1-P7", "script": "local_paper_merger/merge_local_papers.py", "outputs": ["corpus/CORPUS_PAPERS.csv"]},
 ]
 ```
@@ -41,7 +41,9 @@ PHASES = [
 - **状态机**：顺序执行；每 Phase 结束写 `w1_state.json`（`phases: [{id, name, status, started_at, ended_at, duration_sec, outputs, rc}]` + `current` + `logs_path`）——**结构与前端 B3 页的 phase_states 一一对应**
 - **CWD 纪律**：所有存量脚本以 `workspace` 为工作目录执行（GUIDE 的 `retrieval_workspace/...` 相对路径布局成立的前提）——测试中发现的首个真实缺陷
 - **断点恢复**：`--resume` 跳过已有 done 标记的 Phase；`--from W1-P4` / `--only W1-P2` 单点重跑
-- **失败策略**：默认 fail-fast；Phase 内部已有降级（如 P6 六级下载降级、占位 txt）
+- **失败策略**：默认 fail-fast；Phase 内部已有降级（如 P6 五级合法下载降级、占位 txt）
+- **P6 DOI 锚定协议（2026-09-21 用户裁决）**：下载必须以 DOI 为锚，不用 DOI 会跑偏。执行器层新增 `download_prep.py`（存量脚本零改动）：① DOI 归一（剥 doi.org 前缀/空白）② 无 DOI 的 arXiv 记录注入官方 DOI `10.48550/arXiv.<id>` ③ 标题消毒（存量脚本占位文件名直接拼标题，Windows 非法字符会让整批崩溃——实测踩中）④ 按 DOI/arXiv ID 去重 ⑤ 分流：无 DOI 记录进 `no_doi_records.csv` 不进下载器，走人工/P7 本地合并。`--no-scihub` 固定关闭（Sci-Hub 不用）
+- **P6 实测（2026-09-21，25 条真实混合样本，OpenAlex/arXiv 抽取）**：arXiv 批 15/15（100%）；付费墙批 3/10（IEEE XPlore bot 防护/闭源出版社不可下，doi_resolve 拿到 1 条 OA 副本）；合计 18/25 = 72%，全部通过 magic bytes 校验。失败记录自动生成占位 txt（含手动下载指引）→ 配合 P7 本地合并闭环；对无 PDF 论文，W2 提取可用摘要降级
 - **现有脚本零改动**：执行器只做子进程调起 + 参数渲染 + 产物校验
 
 ## 4. LLM 判断收敛（P4 专属层 `llm_screen.py`，~200 行）
