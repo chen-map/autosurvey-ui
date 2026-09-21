@@ -1,0 +1,92 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py --use-case w2.relation --target C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/build_paper_kg.py --input knowledge_graph/candidate_structured_papers.jsonl --out-db knowledge_graph/paper_kg.db --out-json knowledge_graph/paper_kg.json --workflow2-assets-dir knowledge_graph --max-pairs 24 --min-confidence 0.4
+{"llm_wrap": true, "use_case": "w2.relation"}
+{"llm_wrap": true, "base_url": "https://api.deepseek.com/v1", "model": ["deepseek-chat"], "key_from_db": true}
+[prescore] Scoring 24 candidate pairs via LLM (threshold=0.25, cached=0)
+[prescore] 0002_ace_a_security_architecture_for_llmintegrated_app_systems -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=False, confidence=0.85, reason=Both papers address security of LLM agents, but they study different systems (ap
+[prescore] 0003_complete_security_framework_for_wireless_sensor_networks -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=False, confidence=0.95, reason=The papers address security in entirely different domains (wireless sensor netwo
+[prescore] 0004_adaptive_adversaries_a_multiturn_multillm_benchmark_for_llm -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=True, confidence=0.70, reason=Both papers empirically evaluate security and robustness of LLM agents against a
+[prescore] 0005_esaasecurity_an_eventsourced_verifiable_architecture_for_age -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=False, confidence=0.85, reason=Both papers address security of LLM agents but in different domains (code auditi
+[prescore] 0006_agents_at_risk_how_users_unwittingly_undermine_llm_safety -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=True, confidence=0.70, reason=Both papers empirically evaluate security vulnerabilities of LLM-based agents ag
+[prescore] 0007_can_opensource_llm_agents_replace_static_application_securit -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=False, confidence=0.90, reason=Both papers evaluate LLM agents in high-stakes domains, but they address differe
+[prescore] 0008_skcc_portable_and_secure_skill_compilation_for_crossframewor -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=False, confidence=0.85, reason=Both papers address security of LLM agents but focus on different problems (skil
+[prescore] 0009_multiagent_reinforcement_learning_for_maritime_operational_t -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=False, confidence=0.90, reason=Both papers apply multi-agent or LLM agents to security in high-stakes domains, 
+[prescore] 0010_caging_the_agents_a_zero_trust_security_architecture_for_aut -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=True, confidence=0.85, reason=Both papers address security vulnerabilities of autonomous LLM agents in high-st
+[prescore] 0011_exploring_user_security_and_privacy_attitudes_and_concerns_t -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=False, confidence=0.90, reason=Both study LLM security/privacy but in different domains (mental health vs. fina
+[prescore] 0012_isolategpt_an_execution_isolation_architecture_for_llmbased -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=False, confidence=0.90, reason=The papers address different research problems: one proposes an execution isolat
+[prescore] 0013_llm_agents_security_duality_a_comprehensive_survey_of_selfse -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=True, confidence=0.85, reason=Both papers survey security and robustness of LLM agents, with Paper B applying 
+[prescore] 0014_solavisibilityispm_benchmarking_agentic_ai_for_identity_secu -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=False, confidence=0.90, reason=Both papers evaluate agentic AI systems but in entirely different domains (ident
+[prescore] 0015_llm_agents_should_employ_security_principles -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=True, confidence=0.85, reason=Both papers address security and robustness of LLM agents, with Paper A proposin
+[prescore] 0016_medical_large_language_models_are_vulnerable_to_datapoisonin -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=True, confidence=0.70, reason=Both papers study security vulnerabilities of LLM agents in high-stakes domains,
+[prescore] 0018_prompt_injection_attacks_on_vision_language_models_in_oncolo -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=True, confidence=0.70, reason=Both papers empirically evaluate security vulnerabilities of LLM-based agents in
+[prescore] 0022_medical_large_language_models_are_susceptible_to_targeted_mi -> 0001_sok_trading_agents_or_market_crashers_dissecting_robustness: is_related=False, confidence=0.85, reason=Both study LLM vulnerabilities but in different domains (medical misinformation 
+[prescore] 0003_complete_security_framework_for_wireless_sensor_networks -> 0002_ace_a_security_architecture_for_llmintegrated_app_systems: is_related=False, confidence=0.90, reason=The papers address security in different domains (wireless sensor networks vs. L
+[prescore] 0004_adaptive_adversaries_a_multiturn_multillm_benchmark_for_llm -> 0002_ace_a_security_architecture_for_llmintegrated_app_systems: is_related=True, confidence=0.70, reason=Both papers address security of LLM-based systems against adversarial manipulati
+[prescore] 0005_esaasecurity_an_eventsourced_verifiable_architecture_for_age -> 0002_ace_a_security_architecture_for_llmintegrated_app_systems: is_related=False, confidence=0.85, reason=Both papers propose security architectures for LLM-based systems, but they addre
+[prescore] 0006_agents_at_risk_how_users_unwittingly_undermine_llm_safety -> 0002_ace_a_security_architecture_for_llmintegrated_app_systems: is_related=True, confidence=0.75, reason=Both papers analyze security vulnerabilities in LLM-based agent systems and prop
+[prescore] 0007_can_opensource_llm_agents_replace_static_application_securit -> 0002_ace_a_security_architecture_for_llmintegrated_app_systems: is_related=False, confidence=0.90, reason=The papers address different security problems (SAST scanning vs. LLM-integrated
+[prescore] 0008_skcc_portable_and_secure_skill_compilation_for_crossframewor -> 0002_ace_a_security_architecture_for_llmintegrated_app_systems: is_related=True, confidence=0.75, reason=Both papers address security in LLM agent systems by introducing a structured in
+[prescore] 0009_multiagent_reinforcement_learning_for_maritime_operational_t -> 0002_ace_a_security_architecture_for_llmintegrated_app_systems: is_related=False, confidence=0.90, reason=The papers address different domains (maritime OT vs. LLM-integrated apps) and u
+[prescore] 10/24 pairs passed (threshold=0.25, newly scored=24)
+[paper-pair-relations] start: 0/10 (0.0%), prescore_passed=10/153, reused=0, generated=0, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] progress: 1/10 (10.0%), prescore_passed=10/153, reused=0, generated=1, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] progress: 2/10 (20.0%), prescore_passed=10/153, reused=0, generated=2, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] progress: 3/10 (30.0%), prescore_passed=10/153, reused=0, generated=3, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] progress: 4/10 (40.0%), prescore_passed=10/153, reused=0, generated=4, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] progress: 5/10 (50.0%), prescore_passed=10/153, reused=0, generated=5, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] progress: 6/10 (60.0%), prescore_passed=10/153, reused=0, generated=6, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] progress: 7/10 (70.0%), prescore_passed=10/153, reused=0, generated=7, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] progress: 8/10 (80.0%), prescore_passed=10/153, reused=0, generated=8, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] progress: 9/10 (90.0%), prescore_passed=10/153, reused=0, generated=9, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] progress: 10/10 (100.0%), prescore_passed=10/153, reused=0, generated=10, edges=1, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] completed: 10/10 (100.0%), prescore_passed=10/153, reused=0, generated=10, edges=1, progress=knowledge_graph\paper_pair_relations.progress.json
+{
+  "db": "knowledge_graph/paper_kg.db",
+  "json": "knowledge_graph/paper_kg.json",
+  "workflow2_assets_dir": "knowledge_graph",
+  "workflow2_assets": {
+    "out_dir": "knowledge_graph",
+    "node_files": {
+      "papers.json": 18,
+      "assumptions_constraints.json": 32,
+      "datasets_benchmarks.json": 21,
+      "limitations.json": 24,
+      "methods.json": 37,
+      "metrics.json": 36,
+      "problems.json": 52
+    },
+    "edge_files": {
+      "addresses": 52,
+      "proposes": 34,
+      "targets": 61,
+      "requires": 0,
+      "relaxes": 0,
+      "evaluated_on": 45,
+      "measured_by": 78,
+      "has_limitation": 28,
+      "extends": 1,
+      "compares_with": 0,
+      "contradicts": 0,
+      "supports": 0
+    },
+    "papers": 18,
+    "nodes": 202,
+    "edges": 299
+  },
+  "papers": 18,
+  "nodes": 202,
+  "edges": 299,
+  "prescore_enabled": true,
+  "prescore_threshold": 0.25,
+  "prescore_checkpoint": "knowledge_graph\\paper_pair_prescore.checkpoint.jsonl",
+  "paper_pair_candidates_total": 153,
+  "paper_pair_prescore_passed": 10,
+  "paper_pair_candidates": 10,
+  "paper_pair_candidates_capped": true,
+  "paper_pair_relations_from_checkpoint": 0,
+  "paper_pair_relations_generated": 10,
+  "paper_pair_relation_edges": 1,
+  "relation_checkpoint": "knowledge_graph\\paper_pair_relations.checkpoint.jsonl",
+  "relation_progress": "knowledge_graph\\paper_pair_relations.progress.json",
+  "llm_used": true
+}

@@ -1,0 +1,32 @@
+{
+  "status": "completed",
+  "started_at": "2026-09-21T16:29:18.429820+00:00",
+  "updated_at": "2026-09-21T16:29:27.921373+00:00",
+  "checkpoint_path": "knowledge_graph\\paper_pair_relations.checkpoint.jsonl",
+  "progress_path": "knowledge_graph\\paper_pair_relations.progress.json",
+  "prescore_enabled": true,
+  "prescore_threshold": 0.25,
+  "prescore_checkpoint_path": "knowledge_graph\\paper_pair_prescore.checkpoint.jsonl",
+  "total_papers": 18,
+  "total_unique_pairs": 153,
+  "prescore_passed_pairs": 10,
+  "planned_pairs": 10,
+  "max_pairs": 24,
+  "capped": true,
+  "completed_pairs": 10,
+  "pending_pairs": 0,
+  "checkpoint_completed_pairs": 0,
+  "reused_checkpoint_pairs": 0,
+  "generated_pairs": 10,
+  "paper_relation_edges": 1,
+  "current_pair": {
+    "index": 10,
+    "total": 10,
+    "pair_key": "0008_skcc_portable_and_secure_skill_compilation_for_crossframewor -> 0002_ace_a_security_architecture_for_llmintegrated_app_systems",
+    "newer_paper_id": "0008_skcc_portable_and_secure_skill_compilation_for_crossframewor",
+    "newer_title": "SKCC: Portable and Secure Skill Compilation for Cross-Framework LLM Agents",
+    "older_paper_id": "0002_ace_a_security_architecture_for_llmintegrated_app_systems",
+    "older_title": "ACE: A Security Architecture for LLM-Integrated App Systems"
+  },
+  "error": ""
+}

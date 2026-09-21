@@ -1,0 +1,13 @@
+[
+  {
+    "source_id": "0006_agents_at_risk_how_users_unwittingly_undermine_llm_safety",
+    "source_type": "Paper",
+    "target_id": "0002_ace_a_security_architecture_for_llmintegrated_app_systems",
+    "target_type": "Paper",
+    "edge_type": "extends",
+    "confidence": 0.85,
+    "evidence": "The newer paper builds on the older paper's security architecture by introducing a new attack (UReCoM) that exploits user-relayed context manipulation, extending the threat model beyond malicious apps to include benign users as attack vectors.",
+    "context_paper_id": "0006_agents_at_risk_how_users_unwittingly_undermine_llm_safety",
+    "created_at": "2026-09-21 16:29:28"
+  }
+]

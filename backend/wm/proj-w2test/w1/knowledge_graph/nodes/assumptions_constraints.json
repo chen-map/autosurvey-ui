@@ -1,0 +1,290 @@
+[
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_access_to_model_weights_4d76a2124d",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Access to model weights",
+    "description": "The attack requires the ability to modify the model's weights, which may not be possible for closed-source models.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Access to model weights"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_alert_success_probability_2bbf1db552",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Alert success probability",
+    "description": "The probability that an alert is successfully parsed to the defender(s), affecting partial observability. Tested at reduced probabilities of 0.75 and 0.9.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Alert success probability"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_attacker_cannot_access_agent_or_user_device_1e4a08a082",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Attacker cannot access agent or user device",
+    "description": "The attacker does not directly interact with the agent interface and does not compromise external tools, browsers, or client devices.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Attacker cannot access agent or user device"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_attacker_knows_target_application_domain_a493fdce74",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Attacker knows target application domain",
+    "description": "The attacker knows the target application domain and can infer common user goals, but does not know the agent's internal policy, system prompt, or exact user request.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Attacker knows target application domain"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_attacker_retains_history_and_feedback_6217590504",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Attacker retains history and feedback",
+    "description": "The attacker keeps prior inputs, defender responses, and scorer feedback across rounds.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Attacker retains history and feedback"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_autoregressive_base_models_565422b840",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Autoregressive base models",
+    "description": "The attack is particularly effective on autoregressive models like GPT-J, Llama-2, and Llama-3.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Autoregressive base models"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_base_station_is_safe_3a4020863b",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Base station is safe",
+    "description": "The base station is assumed to be secure and cannot be compromised by adversaries.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Base station is safe"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_black_box_access_88c3b271b2",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Black-box access",
+    "description": "Attacks performed without access to model parameters.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Black-box access"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_boundary_discipline_6c24963b92",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Boundary discipline",
+    "description": "Artifact writes are permitted only under complete and only within the admissible boundary of the current task kind.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Boundary discipline"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_bounded_rounds_8957bdc8f3",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Bounded rounds",
+    "description": "Each battle allows up to 15 rounds and stops at the first scored success.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Bounded rounds"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_claim_before_work_1b4ea1462d",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Claim-before-work",
+    "description": "A task must be claimed before work is performed; substantive work and file updates are forbidden while the task is in todo.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Claim-before-work"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_complete_after_work_0af7e54716",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Complete-after-work",
+    "description": "Once a task is in_progress and assigned to the same actor, the agent may emit complete with verification checks and bounded file updates.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Complete-after-work"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_defender_controls_the_user_s_personal_llm_agent_a9dccbe106",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Defender controls the user's personal LLM agent",
+    "description": "The defender possesses full control over the design and implementation of the user’s personal LLM agent, including internal logic, prompts, policies, modules, and interaction protocols.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Defender controls the user's personal LLM agent"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_done_immutability_cf0b27b092",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Done immutability",
+    "description": "Once a task is terminal, it must not be silently reopened; corrections must route through explicit issue or hotfix flows.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Done immutability"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_execution_authority_over_real_capital_27db2ce0df",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Execution authority over real capital",
+    "description": "Financial LLM agents have direct execution authority over real capital, making actions financially irreversible.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Execution authority over real capital"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_fresh_session_defender_d0c4a25863",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Fresh-session defender",
+    "description": "The defender receives no prior-round history, modeling a fresh session for each attempt.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Fresh-session defender"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_human_imperceptible_prompts_8edfe9c7b2",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Human-imperceptible prompts",
+    "description": "Injected prompts are non-obvious to human observers (low contrast, small font).",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Human-imperceptible prompts"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_key_types_445eae6f51",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Key types",
+    "description": "Each node has three types of keys: Node Based Keys, Pair Wise Keys, and Broadcast Keys.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Key types"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_lock_ownership_11176af940",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Lock ownership",
+    "description": "Completion is valid only when the current actor owns the task.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Lock ownership"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_misinformation_persists_in_digital_ecosystem_1112625b32",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Misinformation persists in digital ecosystem",
+    "description": "Once harmful content is uploaded, it persists indefinitely and can be ingested by web crawlers for future training datasets.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Misinformation persists in digital ecosystem"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_no_direct_access_to_model_weights_870dbe075d",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "No direct access to model weights",
+    "description": "The data-poisoning attack does not require direct access to model weights; it relies on uploading misinformation to the Internet.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "No direct access to model weights"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_no_external_tools_or_actions_053f6872c6",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "No external tools or actions",
+    "description": "The frontier scaffold executes no external tools or actions; success checks measure output violations only.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "No external tools or actions"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_node_identification_770e6ecf4d",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Node identification",
+    "description": "Each node is identified by a Group ID (8 bits) and Node ID (8 bits), limiting communication to the group.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Node identification"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_nonzero_probability_of_message_delivery_83608d6cdd",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Nonzero probability of message delivery",
+    "description": "There is a nonzero probability of delivering messages to related destinations.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Nonzero probability of message delivery"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_partial_observability_67f374fd85",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Partial observability",
+    "description": "Each defensive agent has its own view of the network state, and knowledge is not shared among agents.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Partial observability"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_prior_status_consistency_3c74c82310",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Prior-status consistency",
+    "description": "The agent must restate the status it believes it is operating under, allowing the orchestrator to reject stale-context or out-of-phase execution attempts.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Prior-status consistency"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_reflexive_market_2ecfdf8e8f",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Reflexive market",
+    "description": "One agent's output instantly becomes another's input, creating reflexive dynamics that can amplify cascades.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Reflexive market"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_tdm_scheduling_within_groups_f91c9e67aa",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "TDM scheduling within groups",
+    "description": "Time Division Multiplexing is used for communication within a group, allowing nodes to listen passively in promiscuous mode.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "TDM scheduling within groups"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_trusted_user_query_9adf21f90e",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Trusted user query",
+    "description": "The user query is considered trusted and is used for abstract plan generation.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Trusted user query"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_untrusted_apps_3a718eb6ea",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Untrusted apps",
+    "description": "Third-party apps are considered untrusted and may be malicious.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Untrusted apps"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_user_s_personal_agent_and_direct_input_queries_are__f606aa4f85",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "User's personal agent and direct input queries are benign",
+    "description": "The defender operates under the assumption that the user’s personal LLM agent and direct input queries are intrinsically benign.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "User's personal agent and direct input queries are benign"
+  },
+  {
+    "node_id": "assumptionconstraint_assumptionconstraint_zero_sum_adversarial_market_0c2ef0fa50",
+    "node_type": "AssumptionConstraint",
+    "canonical_name": "Zero-sum adversarial market",
+    "description": "Adversaries are directly profit-motivated, and the market is zero-sum, so attacks can be financially incentivized.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Zero-sum adversarial market"
+  }
+]

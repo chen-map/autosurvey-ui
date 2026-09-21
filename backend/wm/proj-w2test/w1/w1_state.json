@@ -29,11 +29,11 @@
     {
       "id": "W2-P2",
       "name": "候选对象筛选",
-      "status": "failed",
-      "started_at": "2026-09-22 00:27:35",
-      "ended_at": "2026-09-22 00:27:37",
-      "duration_sec": 1.7,
-      "rc": 1,
+      "status": "done",
+      "started_at": "2026-09-22 00:28:31",
+      "ended_at": "2026-09-22 00:28:58",
+      "duration_sec": 27.0,
+      "rc": 0,
       "outputs": [
         "knowledge_graph/candidate_structured_papers.jsonl"
       ],
@@ -42,11 +42,11 @@
     {
       "id": "W2-P3",
       "name": "KG 构建（prescore 预评分 + 论文对关系判断）",
-      "status": "pending",
-      "started_at": null,
-      "ended_at": null,
-      "duration_sec": null,
-      "rc": null,
+      "status": "done",
+      "started_at": "2026-09-22 00:28:58",
+      "ended_at": "2026-09-22 00:29:28",
+      "duration_sec": 29.4,
+      "rc": 0,
       "outputs": [
         "knowledge_graph/paper_kg.db",
         "knowledge_graph/paper_kg.json"
@@ -55,7 +55,7 @@
     }
   ],
   "started_at": "2026-09-22 00:25:39",
-  "updated_at": "2026-09-22 00:27:37",
-  "current": "W2-P2",
+  "updated_at": "2026-09-22 00:29:28",
+  "current": "W2-P3",
   "project_id": "proj-w2test"
 }

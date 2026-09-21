@@ -47,7 +47,8 @@ def _seed_demo_user():
     conn.close()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173",
+                   "http://localhost:5174", "http://127.0.0.1:5174"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -268,6 +269,7 @@ LLM_USE_CASES = [
     {"id": "default", "label": "全局默认", "stage": "所有未单独配置的环节"},
     {"id": "w2.extract", "label": "W2 结构化提取", "stage": "W2-P1 六类对象提取"},
     {"id": "w2.relation", "label": "W2 论文对关系", "stage": "W2-P3 关系判断（量大，可用便宜模型）"},
+    {"id": "w2.candidate", "label": "W2 候选筛选", "stage": "W2-P2 低质量条目过滤"},
     {"id": "w1.screen", "label": "W1 筛选判断", "stage": "W1-P4 decision/reason 列"},
     {"id": "w3.gap", "label": "W3 Gap 分析", "stage": "W3-P1"},
     {"id": "w3.design", "label": "W3 RQ 设计", "stage": "W3-P2"},
@@ -439,10 +441,15 @@ def get_kg(pid: str):
     if not p.exists():
         raise HTTPException(404, f"KG not built for {pid}（W2 未完成）")
     data = json.loads(p.read_text(encoding="utf-8"))
-    nodes = [{"id": n.get("node_id"), "type": n.get("node_type", "Method"),
-              "label": n.get("canonical_name") or n.get("title") or n.get("node_id"),
-              "description": n.get("description", "")}
-             for n in data.get("nodes", []) if n.get("node_id")]
+    # 论文也是图节点（Obsidian 式枢纽）：paper_kg.json 的 nodes 只含六类概念，论文在 papers 列表
+    nodes = [{"id": pp.get("paper_id"), "type": "Paper",
+              "label": pp.get("title") or pp.get("paper_id"),
+              "description": (pp.get("summary") or "")[:200]}
+             for pp in data.get("papers", []) if pp.get("paper_id")]
+    nodes += [{"id": n.get("node_id"), "type": n.get("node_type", "Method"),
+               "label": n.get("canonical_name") or n.get("title") or n.get("node_id"),
+               "description": n.get("description", "")}
+              for n in data.get("nodes", []) if n.get("node_id")]
     edges = [{"source": e.get("source_id"), "target": e.get("target_id"),
               "type": e.get("edge_type") or e.get("relation") or "related",
               "confidence": e.get("confidence")}

@@ -1,0 +1,218 @@
+[
+  {
+    "node_id": "limitation_limitation_abstracted_simulation_2fcbbe9c3c",
+    "node_type": "Limitation",
+    "canonical_name": "Abstracted simulation",
+    "description": "The IPMSRL environment is an abstracted and generalised simulation of a maritime IPMS, which may not capture all real-world complexities.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Abstracted simulation"
+  },
+  {
+    "node_id": "limitation_limitation_gap_in_offensive_tasks_for_credential_access_information_disc_b5accd41c3",
+    "node_type": "Limitation",
+    "canonical_name": "Gap in offensive tasks for credential access, information discovery, and data theft",
+    "description": "Research is gap on the offensive tasks that agents perform in credential access, information discovery, and data theft.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Gap in offensive tasks for credential access, information discovery, and data theft"
+  },
+  {
+    "node_id": "limitation_limitation_human_expertise_required_for_fine_grained_scoring_9366841679",
+    "node_type": "Limitation",
+    "canonical_name": "Human expertise required for fine-grained scoring",
+    "description": "A parallel LLM-based assessment disagreed on 53% of metric-level judgments, indicating that fine-grained scoring still requires human expertise.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Human expertise required for fine-grained scoring"
+  },
+  {
+    "node_id": "limitation_limitation_knowledge_graph_coverage_9a6da697ed",
+    "node_type": "Limitation",
+    "canonical_name": "Knowledge graph coverage",
+    "description": "The effectiveness of the knowledge graph screening depends on the completeness and accuracy of the biomedical knowledge graphs used.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Knowledge graph coverage"
+  },
+  {
+    "node_id": "limitation_limitation_lack_of_research_on_adaptive_defense_evasion_b59b2efb56",
+    "node_type": "Limitation",
+    "canonical_name": "Lack of research on adaptive defense evasion",
+    "description": "There is a lack of research on the adaptive defense evasion capabilities that can respond in real time to proactive defense measures such as EDR (Endpoint Detection and Response).",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Lack of research on adaptive defense evasion"
+  },
+  {
+    "node_id": "limitation_limitation_limitations_of_the_prompt_integrity_layer_74f71086e0",
+    "node_type": "Limitation",
+    "canonical_name": "Limitations of the Prompt Integrity Layer",
+    "description": "The prompt integrity framework cannot fully prevent prompt injection because instructions and data are fundamentally indistinguishable in LLM context windows; it only mitigates the risk.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Limitations of the Prompt Integrity Layer"
+  },
+  {
+    "node_id": "limitation_limitation_limited_model_set_d030b4343b",
+    "node_type": "Limitation",
+    "canonical_name": "Limited model set",
+    "description": "Only four VLMs were evaluated; other models like Gemini 1.5 and Llama-3.1 were excluded due to guardrails or lack of vision support.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Limited model set"
+  },
+  {
+    "node_id": "limitation_limitation_limited_sample_size_and_generalizability_57859ec90c",
+    "node_type": "Limitation",
+    "canonical_name": "Limited sample size and generalizability",
+    "description": "The study is based on 21 interviews with U.S. participants, which may not be representative of broader populations.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Limited sample size and generalizability"
+  },
+  {
+    "node_id": "limitation_limitation_limited_scenario_coverage_b637698c3e",
+    "node_type": "Limitation",
+    "canonical_name": "Limited scenario coverage",
+    "description": "The benchmark contains 21 scenarios, which may not cover all possible attack surfaces.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Limited scenario coverage"
+  },
+  {
+    "node_id": "limitation_limitation_limited_to_specific_model_sizes_and_datasets_85c68f3d46",
+    "node_type": "Limitation",
+    "canonical_name": "Limited to specific model sizes and datasets",
+    "description": "Experiments were conducted on 1.3B and 4B parameter models and The Pile dataset; results may not generalize to other models or datasets.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Limited to specific model sizes and datasets"
+  },
+  {
+    "node_id": "limitation_limitation_limited_to_specific_models_and_imaging_modalities_a75b85c4b9",
+    "node_type": "Limitation",
+    "canonical_name": "Limited to specific models and imaging modalities",
+    "description": "",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Limited to specific models and imaging modalities"
+  },
+  {
+    "node_id": "limitation_limitation_limited_to_three_models_per_role_7da294eb0e",
+    "node_type": "Limitation",
+    "canonical_name": "Limited to three models per role",
+    "description": "",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Limited to three models per role"
+  },
+  {
+    "node_id": "limitation_limitation_mitigation_not_general_4ad8ddda1d",
+    "node_type": "Limitation",
+    "canonical_name": "Mitigation not general",
+    "description": "Mitigation strategies only worked for Claude-3.5, not for other models.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Mitigation not general"
+  },
+  {
+    "node_id": "limitation_limitation_mitigation_only_effective_for_claude_3_5_ed6cc64c81",
+    "node_type": "Limitation",
+    "canonical_name": "Mitigation only effective for Claude-3.5",
+    "description": "",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Mitigation only effective for Claude-3.5"
+  },
+  {
+    "node_id": "limitation_limitation_potential_overfitting_to_specific_models_cebbc140d3",
+    "node_type": "Limitation",
+    "canonical_name": "Potential overfitting to specific models",
+    "description": "The controlled evaluation uses only three frontier models, which may not generalize to other LLMs.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Potential overfitting to specific models"
+  },
+  {
+    "node_id": "limitation_limitation_potential_self_selection_bias_aa0469e95a",
+    "node_type": "Limitation",
+    "canonical_name": "Potential self-selection bias",
+    "description": "Participants were early adopters of LLM chatbots for mental health, which may not reflect the views of all users.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Potential self-selection bias"
+  },
+  {
+    "node_id": "limitation_limitation_propensity_for_errors_in_multi_step_tasks_f2b7ea1bca",
+    "node_type": "Limitation",
+    "canonical_name": "Propensity for errors in multi-step tasks",
+    "description": "Current agent-empowered post-exploitation faces limitations, including a propensity for errors in multi-step tasks.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Propensity for errors in multi-step tasks"
+  },
+  {
+    "node_id": "limitation_limitation_requires_access_to_model_weights_63b057a6bc",
+    "node_type": "Limitation",
+    "canonical_name": "Requires access to model weights",
+    "description": "The attack method necessitates direct modification of the model's weights, limiting its applicability to open-source models.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Requires access to model weights"
+  },
+  {
+    "node_id": "limitation_limitation_restricted_success_rates_in_lateral_movement_10d42815ff",
+    "node_type": "Limitation",
+    "canonical_name": "Restricted success rates in lateral movement",
+    "description": "Current agent-empowered post-exploitation faces limitations, including restricted success rates in lateral movement.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Restricted success rates in lateral movement"
+  },
+  {
+    "node_id": "limitation_limitation_scheme_level_evaluation_only_cf1b76f1b5",
+    "node_type": "Limitation",
+    "canonical_name": "Scheme-level evaluation only",
+    "description": "FARSIGHT evaluates published schemes, not running instances, so it may not capture implementation-specific behaviors.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Scheme-level evaluation only"
+  },
+  {
+    "node_id": "limitation_limitation_small_sample_sizes_in_initial_cells_9e4aec0522",
+    "node_type": "Limitation",
+    "canonical_name": "Small sample sizes in initial cells",
+    "description": "Most initial cells in the 3×3 matrix have small sample sizes, requiring targeted higher-sample evaluations.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Small sample sizes in initial cells"
+  },
+  {
+    "node_id": "limitation_limitation_specific_to_autoregressive_models_238046284a",
+    "node_type": "Limitation",
+    "canonical_name": "Specific to autoregressive models",
+    "description": "The vulnerability is demonstrated on autoregressive models; other architectures may not be as susceptible.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Specific to autoregressive models"
+  },
+  {
+    "node_id": "limitation_limitation_static_alerts_c9c73829ca",
+    "node_type": "Limitation",
+    "canonical_name": "Static alerts",
+    "description": "Alerts are static in nature; defenders only receive information about infection progress at the timestep an alert is triggered, unless another alert occurs or the defender takes action.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Static alerts"
+  },
+  {
+    "node_id": "limitation_limitation_the_audit_agent_paradox_90fdd6196a",
+    "node_type": "Limitation",
+    "canonical_name": "The Audit Agent Paradox",
+    "description": "The automated security audit agent itself is an AI agent, creating a recursive security challenge: who audits the auditor? This introduces potential vulnerabilities in the audit process.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "The Audit Agent Paradox"
+  }
+]

@@ -1,0 +1,326 @@
+[
+  {
+    "node_id": "metric_metric_asr_15_c37e3b222d",
+    "node_type": "Metric",
+    "canonical_name": "ASR@15",
+    "description": "The fraction of battles with at least one scored success within 15 rounds.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "ASR@15"
+  },
+  {
+    "node_id": "metric_metric_answer_change_rate_11c45199fa",
+    "node_type": "Metric",
+    "canonical_name": "Answer change rate",
+    "description": "The rate at which the perturbed model produces different answers from the original model, e.g., 36.0% on USMLE questions.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Answer change rate"
+  },
+  {
+    "node_id": "metric_metric_attack_success_rate_asr_02e43cd7a8",
+    "node_type": "Metric",
+    "canonical_name": "Attack Success Rate (ASR)",
+    "description": "The fraction of battles in which the attacker succeeds, as determined by scenario-specific checks.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Attack Success Rate (ASR)"
+  },
+  {
+    "node_id": "metric_metric_attack_protection_3de35449d2",
+    "node_type": "Metric",
+    "canonical_name": "Attack protection",
+    "description": "The ability of ISOLATEGPT to protect against attacks from the benchmark and safety issues caused by imprecision of language.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Attack protection"
+  },
+  {
+    "node_id": "metric_metric_attack_success_rate_25dcda4e89",
+    "node_type": "Metric",
+    "canonical_name": "Attack success rate",
+    "description": "The proportion of attacks that successfully compromise the system.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Attack success rate"
+  },
+  {
+    "node_id": "metric_metric_attack_utility_bbeb88d8a1",
+    "node_type": "Metric",
+    "canonical_name": "Attack utility",
+    "description": "Measures the utility of the agent under adversarial evaluations.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Attack utility"
+  },
+  {
+    "node_id": "metric_metric_benign_utility_f9218e2a29",
+    "node_type": "Metric",
+    "canonical_name": "Benign utility",
+    "description": "Measures the utility of the agent for its intended functions under benign conditions.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Benign utility"
+  },
+  {
+    "node_id": "metric_metric_bypass_rate_dbcb78d4e6",
+    "node_type": "Metric",
+    "canonical_name": "Bypass rate",
+    "description": "The rate at which the attack successfully bypasses defenses or induces unsafe endorsement or risky execution.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Bypass rate"
+  },
+  {
+    "node_id": "metric_metric_compilation_latency_26ad6bb740",
+    "node_type": "Metric",
+    "canonical_name": "Compilation latency",
+    "description": "Time taken to compile skills, measured in milliseconds.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Compilation latency"
+  },
+  {
+    "node_id": "metric_metric_composite_score_56c2044bcb",
+    "node_type": "Metric",
+    "canonical_name": "Composite score",
+    "description": "A calculated score based on the interplay of precision, recall, and false positive count.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Composite score"
+  },
+  {
+    "node_id": "metric_metric_crash_foresight_4a88829846",
+    "node_type": "Metric",
+    "canonical_name": "Crash foresight",
+    "description": "Ability to foresee market turbulence or crashes.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Crash foresight"
+  },
+  {
+    "node_id": "metric_metric_episode_outcome_mean_3bf4d676b3",
+    "node_type": "Metric",
+    "canonical_name": "Episode outcome mean",
+    "description": "The mean outcome of episodes, where 1 indicates optimal policy (win), 0.966 indicates near-optimal, etc.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Episode outcome mean"
+  },
+  {
+    "node_id": "metric_metric_expert_accuracy_51d08be553",
+    "node_type": "Metric",
+    "canonical_name": "Expert Accuracy",
+    "description": "A metric measuring the accuracy of the agent's answers as judged by experts.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Expert Accuracy"
+  },
+  {
+    "node_id": "metric_metric_f1_score_4e8a0b7c7b",
+    "node_type": "Metric",
+    "canonical_name": "F1 score",
+    "description": "Harmonic mean of precision and recall for detecting harmful content using knowledge graphs.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "F1 score"
+  },
+  {
+    "node_id": "metric_metric_false_positive_count_55b5839a77",
+    "node_type": "Metric",
+    "canonical_name": "False positive count",
+    "description": "The number of false positive findings.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "False positive count"
+  },
+  {
+    "node_id": "metric_metric_functionality_equivalence_50548e6014",
+    "node_type": "Metric",
+    "canonical_name": "Functionality equivalence",
+    "description": "Whether ISOLATEGPT provides the same functionality as the baseline VANILLAGPT for all benchmarks.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Functionality equivalence"
+  },
+  {
+    "node_id": "metric_metric_harmful_content_capture_rate_1860cb3def",
+    "node_type": "Metric",
+    "canonical_name": "Harmful content capture rate",
+    "description": "Percentage of harmful content identified by the knowledge graph screening method.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Harmful content capture rate"
+  },
+  {
+    "node_id": "metric_metric_harmful_content_rate_59ac61ac8a",
+    "node_type": "Metric",
+    "canonical_name": "Harmful content rate",
+    "description": "Proportion of LLM-generated outputs that are medically harmful, as judged by clinicians.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Harmful content rate"
+  },
+  {
+    "node_id": "metric_metric_jailbreak_success_rate_58cb09e9c2",
+    "node_type": "Metric",
+    "canonical_name": "Jailbreak success rate",
+    "description": "The rate at which the attack enables jailbreaking, improved from 2% to 58% for Llama-3-instruct.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Jailbreak success rate"
+  },
+  {
+    "node_id": "metric_metric_lesion_miss_rate_6bbc3f087a",
+    "node_type": "Metric",
+    "canonical_name": "Lesion miss rate",
+    "description": "Proportion of cases where the model failed to detect a lesion.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Lesion miss rate"
+  },
+  {
+    "node_id": "metric_metric_loss_containment_7c773bf1a4",
+    "node_type": "Metric",
+    "canonical_name": "Loss containment",
+    "description": "Ability to contain cascading losses during market stress.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Loss containment"
+  },
+  {
+    "node_id": "metric_metric_organ_detection_rate_4b4f9cd474",
+    "node_type": "Metric",
+    "canonical_name": "Organ detection rate",
+    "description": "Proportion of cases where the model correctly identified the organ.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Organ detection rate"
+  },
+  {
+    "node_id": "metric_metric_pass_rate_7eeadf17fa",
+    "node_type": "Metric",
+    "canonical_name": "Pass rate",
+    "description": "Percentage of tasks successfully completed, used to measure performance improvements.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Pass rate"
+  },
+  {
+    "node_id": "metric_metric_performance_overhead_36c51c17e3",
+    "node_type": "Metric",
+    "canonical_name": "Performance overhead",
+    "description": "The additional time or resources incurred by ISOLATEGPT compared to VANILLAGPT, measured as a percentage. Under 30% for 75.73% of tested queries.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Performance overhead"
+  },
+  {
+    "node_id": "metric_metric_precision_8d7fae0de9",
+    "node_type": "Metric",
+    "canonical_name": "Precision",
+    "description": "The proportion of true positive findings among all positive findings.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Precision"
+  },
+  {
+    "node_id": "metric_metric_proactive_security_trigger_rate_2ef0fae395",
+    "node_type": "Metric",
+    "canonical_name": "Proactive security trigger rate",
+    "description": "Percentage of security vulnerabilities detected and blocked by the Security Optimizer.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Proactive security trigger rate"
+  },
+  {
+    "node_id": "metric_metric_reaction_91438616d0",
+    "node_type": "Metric",
+    "canonical_name": "Reaction",
+    "description": "Ability to react rapidly to market shocks.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Reaction"
+  },
+  {
+    "node_id": "metric_metric_recall_9429ac9e55",
+    "node_type": "Metric",
+    "canonical_name": "Recall",
+    "description": "The proportion of true positive findings among all actual positives.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Recall"
+  },
+  {
+    "node_id": "metric_metric_recovery_d03312049a",
+    "node_type": "Metric",
+    "canonical_name": "Recovery",
+    "description": "Ability to recover after stress events.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Recovery"
+  },
+  {
+    "node_id": "metric_metric_runtime_token_savings_4f514af7b4",
+    "node_type": "Metric",
+    "canonical_name": "Runtime token savings",
+    "description": "Percentage reduction in token usage during runtime across frameworks.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Runtime token savings"
+  },
+  {
+    "node_id": "metric_metric_s1_attacks_on_information_sources_666dadfcf3",
+    "node_type": "Metric",
+    "canonical_name": "S1: Attacks on information sources",
+    "description": "Security metric for attacks on market-relevant information sources (e.g., data or news manipulation).",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "S1: Attacks on information sources"
+  },
+  {
+    "node_id": "metric_metric_s2_attacks_on_agents_bcdc7feff0",
+    "node_type": "Metric",
+    "canonical_name": "S2: Attacks on agents",
+    "description": "Security metric for direct attacks on LLM trading agents (e.g., prompt injection, tool/API exploitation, memory manipulation).",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "S2: Attacks on agents"
+  },
+  {
+    "node_id": "metric_metric_s3_agent_as_attacker_behaviors_0fee7187fc",
+    "node_type": "Metric",
+    "canonical_name": "S3: Agent-as-attacker behaviors",
+    "description": "Security metric for scenarios where compromised agents act as attackers, injecting perturbations that can propagate market-wide.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "S3: Agent-as-attacker behaviors"
+  },
+  {
+    "node_id": "metric_metric_strict_success_rate_4e7b77d553",
+    "node_type": "Metric",
+    "canonical_name": "Strict Success Rate",
+    "description": "A metric measuring the proportion of questions where the agent's answer strictly meets all criteria for success.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Strict Success Rate"
+  },
+  {
+    "node_id": "metric_metric_utility_801f55ff81",
+    "node_type": "Metric",
+    "canonical_name": "Utility",
+    "description": "The performance of the system in completing tasks, measured as a percentage.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Utility"
+  },
+  {
+    "node_id": "metric_metric_win_rate_b5038c9245",
+    "node_type": "Metric",
+    "canonical_name": "Win rate",
+    "description": "The percentage of episodes where the defenders win, used to evaluate performance under reduced alert success probability.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Win rate"
+  }
+]

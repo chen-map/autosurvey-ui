@@ -1,0 +1,191 @@
+[
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_3_3_frontier_defender_evaluation_bc924fb2bd",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "3×3 frontier-defender evaluation",
+    "description": "A controlled evaluation with 945 battles using Claude Opus 4.6, GPT-5.4, and Gemini 2.5 Pro as both attackers and defenders.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "3×3 frontier-defender evaluation"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_agent_security_bench_9a96c92fd2",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "Agent Security Bench",
+    "description": "A benchmark for evaluating security of LLM agents.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Agent Security Bench"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_agentdojo_derived_benchmark_ca0540e2bf",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "AgentDojo-derived benchmark",
+    "description": "A benchmark constructed to operationalize UReCoM through attack carriers, including instruction-style, tips-style, and promotion-code-style carriers, across different source-placement settings.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "AgentDojo-derived benchmark"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_attack_benchmark_44c2601287",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "Attack benchmark",
+    "description": "A benchmark of attacks that assume an adversary trying to alter the behavior of another app, steal data from other apps, and the system.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Attack benchmark"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_castalia_1d83283773",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "Castalia",
+    "description": "A simulator for wireless sensor networks used to test the proposed framework.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Castalia"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_injecagent_395573e790",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "INJECAGENT",
+    "description": "A benchmark for evaluating indirect prompt injection attacks.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "INJECAGENT"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_ipmsrl_8743265944",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "IPMSRL",
+    "description": "The simulation environment introduced in this paper, used as the benchmark for evaluating MARL algorithms.",
+    "origin_paper_id": "0009_multiagent_reinforcement_learning_for_maritime_operational_t",
+    "created_at": "2026-09-21 16:29:28",
+    "label": "IPMSRL"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_jailbreak_benchmark_f8cc4d245a",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "Jailbreak benchmark",
+    "description": "A benchmark used to evaluate the success rate of jailbreaking attacks, where the method improved success from 2% to 58% for Llama-3-instruct.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Jailbreak benchmark"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_langchain_tool_usage_04c8d8f28c",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "LangChain Tool Usage",
+    "description": "A suite from the LangChain benchmark for evaluating utility in realistic environments.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "LangChain Tool Usage"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_langchain_benchmarks_c28584d75b",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "LangChain benchmarks",
+    "description": "Benchmarks from LangChain that simulate a variety of user requests, including those that do not require using apps, require use of a single app, require use of multiple apps, and require collaboration between multiple apps.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "LangChain benchmarks"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_mmlu_7077c25766",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "MMLU",
+    "description": "Massive Multitask Language Understanding benchmark, used to evaluate medical LLMs.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "MMLU"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_medqa_5ca63a0f63",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "MedQA",
+    "description": "A medical question-answering benchmark used to evaluate medical LLMs.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "MedQA"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_medical_imaging_dataset_3dde7aafd4",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "Medical imaging dataset",
+    "description": "18 cases across 6 modalities: liver CT, MRI, ultrasound, melanoma photography, endoscopy, histology.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Medical imaging dataset"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_omnet_5dc34738a8",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "Omnet++",
+    "description": "A discrete event simulation environment used to test the proposed framework.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Omnet++"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_open_competition_dataset_ede99651b1",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "Open competition dataset",
+    "description": "18,422 held-out battles on a fixed gpt-oss-20b backbone from a competition with participant-authored harnesses.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Open competition dataset"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_pubmedqa_3588d07104",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "PubMedQA",
+    "description": "A biomedical question-answering benchmark used to evaluate medical LLMs.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "PubMedQA"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_security_arena_benchmark_c787dea66b",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "Security Arena benchmark",
+    "description": "A 21-scenario benchmark for adaptive cross-session attacks against fresh-session LLM defenders, with 10 development scenarios and an executable evaluation framework.",
+    "origin_paper_id": "0004_adaptive_adversaries_a_multiturn_multillm_benchmark_for_llm",
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Security Arena benchmark"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_skillsbench_c839c853b2",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "SkillsBench",
+    "description": "A benchmark used to evaluate SKCC's performance across agent frameworks.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "SkillsBench"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_sola_visibility_ispm_benchmark_c203a025fb",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "Sola Visibility ISPM Benchmark",
+    "description": "A benchmark consisting of 77 questions focused on identity inventory and hygiene tasks, evaluated in a live production environment across AWS, Okta, and Google Workspace.",
+    "origin_paper_id": "0014_solavisibilityispm_benchmarking_agentic_ai_for_identity_secu",
+    "created_at": "2026-09-21 16:29:28",
+    "label": "Sola Visibility ISPM Benchmark"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_the_pile_e80ddae24d",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "The Pile",
+    "description": "A popular dataset used for LLM pre-training, analyzed for medical content and used in poisoning experiments.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "The Pile"
+  },
+  {
+    "node_id": "datasetbenchmark_datasetbenchmark_usmle_derived_dataset_2dcc8457ee",
+    "node_type": "DatasetBenchmark",
+    "canonical_name": "USMLE-derived dataset",
+    "description": "A dataset of 1048 perturbing biomedical facts created from USMLE questions to test the attack on Llama-3.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-21 16:29:28",
+    "label": "USMLE-derived dataset"
+  }
+]
