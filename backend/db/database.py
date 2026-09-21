@@ -24,13 +24,16 @@ CREATE TABLE IF NOT EXISTS api_keys (
     UNIQUE(user_id, platform)
 );
 
+-- 按使用点细分 LLM 配置（会议裁决：不同环节可用不同 AI）；use_case='default' 为全局兜底
 CREATE TABLE IF NOT EXISTS llm_configs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id),
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    use_case TEXT NOT NULL DEFAULT 'default',
     base_url TEXT NOT NULL DEFAULT '',
     api_key_encrypted TEXT NOT NULL DEFAULT '',
     model TEXT NOT NULL DEFAULT '',
-    updated_at TEXT DEFAULT (datetime('now'))
+    updated_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, use_case)
 );
 
 CREATE TABLE IF NOT EXISTS directions (

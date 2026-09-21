@@ -8,11 +8,18 @@ import { USE_MOCK } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
 // 个人中心（B15 前端版）：个人信息 + 付费平台 API Key 存储
 // Key 仅存本浏览器 localStorage；生产环境由后端加密存储、接口只回掩码（backend-todo.md §6）
 const LS_APIKEYS = 'as.apikeys';
 const PAID_PLATFORMS = ['IEEE', 'ACM', 'Springer', 'Elsevier', 'Agent 检索'];
+
+interface UseCaseRow {
+  id: string; label: string; stage: string;
+  configured: boolean; baseUrl: string; model: string; apiKeyMasked: string;
+}
 
 function readKeys(): Record<string, string> {
   try {
@@ -83,8 +90,37 @@ export function ProfilePage() {
     setLlmKeyEdited(false);
   };
 
+  // AI 使用点细分（会议裁决：不同环节可用不同 AI）；真实模式从目录端点拉取
+  const [catalog, setCatalog] = useState<UseCaseRow[]>([]);
+  const [ovr, setOvr] = useState<Record<string, { model: string; apiKey: string }>>({});
+  const loadCatalog = () => {
+    if (USE_MOCK) return;
+    const API = import.meta.env.VITE_API_BASE ?? '/api';
+    const token = localStorage.getItem('as.token') ?? '';
+    fetch(`${API}/me/llm-catalog`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((r) => r.json())
+      .then((d) => setCatalog(d.useCases ?? []))
+      .catch(() => {});
+  };
+  const saveOverride = async (uc: UseCaseRow) => {
+    const e = ovr[uc.id];
+    if (!e?.model.trim()) return;
+    const API = import.meta.env.VITE_API_BASE ?? '/api';
+    const token = localStorage.getItem('as.token') ?? '';
+    await fetch(`${API}/me/llm-config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ useCase: uc.id, baseUrl: uc.baseUrl || llm.baseUrl, model: e.model.trim(), apiKey: e.apiKey.trim() }),
+    });
+    setOvr((o) => ({ ...o, [uc.id]: { model: '', apiKey: '' } }));
+    setSavedTip(uc.label);
+    setTimeout(() => setSavedTip(''), 1500);
+    loadCatalog();
+  };
+
   // 真实模式：挂载时从后端拉掩码 Key 与 LLM 配置
   useEffect(() => {
+    loadCatalog();
     if (USE_MOCK) return;
     syncKeysFromBackend().then(setKeys).catch(() => {});
     (async () => {
@@ -125,7 +161,7 @@ export function ProfilePage() {
         <div className="flex items-center gap-2 text-[14px] font-medium">
           <KeyRound size={15} className="text-t3" />
           API 密钥存储
-          <Badge variant="warn">仅存本浏览器</Badge>
+          <Badge variant={USE_MOCK ? 'warn' : 'ok'}>{USE_MOCK ? '仅存本浏览器' : '后端加密存储'}</Badge>
         </div>
         <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
           订阅制论文平台需要机构/API Key 才会真实返回数据。Key 只保存在你的浏览器中；
@@ -176,7 +212,7 @@ export function ProfilePage() {
           </Badge>
         </div>
         <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
-          OpenAI 兼容协议：DeepSeek / Moonshot / 通义 / 本地 Ollama 均可。方向精炼与 Agent 分析统一使用此配置执行。
+          OpenAI 兼容协议：DeepSeek / Moonshot / 通义 / 本地 Ollama 均可。此为全局默认配置，未被单独配置的 AI 环节都使用它。
         </p>
         <div className="mt-3 grid gap-2.5 md:grid-cols-3">
           <div>
@@ -209,7 +245,58 @@ export function ProfilePage() {
           </div>
         </div>
         <div className="mt-2 text-[11.5px] text-t3">
-          配置保存于本浏览器；生产部署时 LLM 调用迁至后端代理，Key 不落前端（backend-todo §6）。
+          {USE_MOCK
+            ? '演示模式：配置保存在本浏览器，AI 调用由浏览器直连。'
+            : '真实模式：配置加密存于本地数据库（Fernet），AI 调用经服务端代理执行，明文 Key 不回传浏览器。'}
+        </div>
+
+        {/* AI 使用点细分矩阵 */}
+        <div className="mt-5 border-t border-line/60 pt-4">
+          <div className="flex items-center gap-2 text-[13.5px] font-medium">
+            按 AI 使用点细分
+            <Badge variant={USE_MOCK ? 'warn' : 'neutral'}>{USE_MOCK ? '真实模式可用' : `${catalog.filter((c) => c.id !== 'default' && c.configured).length} 个环节已单独配置`}</Badge>
+          </div>
+          <p className="mt-1 text-[12px] leading-5 text-t3">
+            会议裁决：不同环节可用不同 AI。未单独配置的环节自动回退到全局默认；量大且机械的环节（如论文对关系判断）建议配置便宜模型。
+          </p>
+          <div className="mt-3 space-y-2">
+            {catalog.filter((c) => c.id !== 'default').map((uc) => {
+              const e = ovr[uc.id] ?? { model: '', apiKey: '' };
+              return (
+                <div key={uc.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-line/60 px-3 py-2">
+                  <span className={cn('h-2 w-2 shrink-0 rounded-full', uc.configured ? 'bg-ok' : 'bg-line')} />
+                  <span className="w-32 shrink-0 text-[13px] text-t1">{uc.label}</span>
+                  <span className="hidden w-44 shrink-0 text-[11.5px] text-t3 md:block">{uc.stage}</span>
+                  <span className="shrink-0 font-mono text-[11.5px] text-t3">{uc.configured ? uc.model : '跟随默认'}</span>
+                  <div className="ml-auto flex flex-1 items-center justify-end gap-1.5">
+                    <Input
+                      value={e.model}
+                      onChange={(ev) => setOvr((o) => ({ ...o, [uc.id]: { ...e, model: ev.target.value } }))}
+                      placeholder="覆盖模型名"
+                      className="w-36"
+                      autoComplete="off"
+                    />
+                    <Input
+                      type="password"
+                      value={e.apiKey}
+                      onChange={(ev) => setOvr((o) => ({ ...o, [uc.id]: { ...e, apiKey: ev.target.value } }))}
+                      placeholder="可选换 Key"
+                      className="w-28"
+                      autoComplete="off"
+                    />
+                    <Button size="sm" variant="secondary" onClick={() => void saveOverride(uc)} disabled={!e.model.trim()}>
+                      保存
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+            {USE_MOCK && (
+              <div className="rounded-lg bg-page px-3 py-2 text-[12px] text-t3">
+                演示模式无后端目录。真实模式下此处列出 10 个 AI 使用点（W1 筛选 / W2 提取与关系 / W3 / W4 / Agent / 方向精炼），可逐环节覆盖模型与 Key。
+              </div>
+            )}
+          </div>
         </div>
       </Card>
 

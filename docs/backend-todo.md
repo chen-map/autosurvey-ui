@@ -128,6 +128,16 @@ W3 实际写出 `analyze_report/` 下的产物，前端 RQ 树/专页的每个�
 - **KG 页**：Obsidian 风格 d3-force 力导向图——按连接度定节点大小、七类着色、悬停高亮邻域其余淡出、光标锚点缩放/平移、节点可拖拽、类型筛选 chips、点选详情卡、矛盾红/支持绿边
 - **LLM 依赖**：P1/P3 必须 LLM（启发式已移除），配置沿用 kg_common.py 内置默认；后续可切服务端代理
 
+## 7.8 AI 使用点细分配置（会议裁决已实现）
+
+不同环节可用不同 AI。`llm_configs` 表增加 `use_case` 维度（UNIQUE(user_id, use_case)）：
+
+- **使用点目录**：default 兜底 + w1.screen / w2.extract / w2.relation / w3.gap / w3.design / w4.extract / w4.answer / w4.claim / agent.kg / direction.refine
+- **解析链**：环节专属行（Key 可解密且非空）→ default 行；`GET /api/me/llm-catalog` 返回目录+各环节配置概览（掩码）
+- **写入**：`PUT /api/me/llm-config` 带 `useCase`；不提供 apiKey 时继承该环节现存密文或 default 密文
+- **消费**：`/api/llm/chat` 带 `useCase`；W2 经 llm_wrap `--use-case`（P1=w2.extract，P3=w2.relation）
+- **UI**：个人中心「按 AI 使用点细分」矩阵——逐环节覆盖模型名与可选 Key
+
 ## 8. 基础设施（部署阶段）
 
 - ECS（放既有 VPC 交换机）+ 弹性公网 IP + 安全组 80/443
