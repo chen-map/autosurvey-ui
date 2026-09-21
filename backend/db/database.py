@@ -78,6 +78,15 @@ CREATE TABLE IF NOT EXISTS corpus_papers (
 );
 
 CREATE INDEX IF NOT EXISTS idx_corpus_project ON corpus_papers(project_id);
+
+-- 用户状态类数据 KV（方向库/知识库等前端全量同步；行级规范化后续迁移）
+CREATE TABLE IF NOT EXISTS user_kv (
+    user_id INTEGER NOT NULL,
+    k TEXT NOT NULL,
+    v TEXT NOT NULL DEFAULT '{}',
+    updated_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, k)
+);
 """
 
 

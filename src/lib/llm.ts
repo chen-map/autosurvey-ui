@@ -1,10 +1,12 @@
 // 统一 LLM 执行器（url + apikey + model，OpenAI 兼容协议）
-// 全站 AI 功能（方向精炼 / Agent 分析）共用此模块；生产部署时调用迁至后端代理
+// 全站 AI 功能（方向精炼 / Agent 分析）共用：真实模式走服务端代理 /api/llm/chat（Key 加密存后端）；演示模式浏览器直连
 export interface LlmConfig {
   baseUrl: string; // 如 https://api.deepseek.com/v1
   apiKey: string;
   model: string; // 如 deepseek-chat
 }
+
+import { USE_MOCK } from '@/services/api';
 
 const LS_LLM = 'as.llm';
 
@@ -39,6 +41,25 @@ export async function chatCompletion(
   messages: ChatMessage[],
   opts: { temperature?: number; maxTokens?: number; signal?: AbortSignal } = {},
 ): Promise<string> {
+  // 真实模式：走服务端代理（Key 加密存后端，明文永不回传浏览器）
+  if (!USE_MOCK) {
+    const API = import.meta.env.VITE_API_BASE ?? '/api';
+    const token = localStorage.getItem('as.token') ?? '';
+    const res = await fetch(`${API}/llm/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ messages, temperature: opts.temperature ?? 0.3, maxTokens: opts.maxTokens ?? 2000 }),
+      signal: opts.signal,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`LLM ${res.status}: ${text.slice(0, 160)}`);
+    }
+    const d = await res.json();
+    if (!d.content) throw new Error('LLM 返回内容为空');
+    return d.content as string;
+  }
+  // mock/演示模式：浏览器直连（用户本地 localStorage 配置）
   const res = await fetch(`${cfg.baseUrl.replace(/\/+$/, '')}/chat/completions`, {
     method: 'POST',
     headers: {

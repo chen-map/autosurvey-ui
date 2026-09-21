@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Compass, Save, Sparkles, ArrowRight, FileText, Plus, Trash2, Pencil, Star } from 'lucide-react';
 import { readLlmConfig, llmConfigured, chatCompletion } from '@/lib/llm';
+import { USE_MOCK } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/utils';
 
 // 研究方向库（F13 升级版）：多方向管理 + 默认预选（向导自动带出）+ AI 精炼一键入库
-// localStorage 持久化；后端 CRUD 见 backend-todo.md §2
+// 持久化：演示模式 localStorage；真实模式后端 KV 同步（启动拉取 + 变更推送）
 const LS_DIRECTIONS = 'as.directions';
 const LS_ACTIVE = 'as.active-direction';
 const LS_CUSTOM_FIELDS = 'as.custom-fields';
@@ -35,6 +36,40 @@ function readDirections(): Direction[] {
 
 function saveDirections(dirs: Direction[]) {
   localStorage.setItem(LS_DIRECTIONS, JSON.stringify(dirs));
+  void pushDirections();
+}
+
+// 真实模式：全量同步到后端 user_kv（方向 + 激活项 + 自定义领域）
+export function pushDirections() {
+  if (USE_MOCK) return;
+  const API = import.meta.env.VITE_API_BASE ?? '/api';
+  const token = localStorage.getItem('as.token') ?? '';
+  fetch(`${API}/me/directions`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({
+      directions: readDirections(),
+      activeId: localStorage.getItem(LS_ACTIVE) || null,
+      customFields: readJSON(LS_CUSTOM_FIELDS),
+    }),
+  }).catch(() => {});
+}
+
+// 真实模式：启动时从后端拉取覆盖本地
+async function pullDirections() {
+  if (USE_MOCK) return;
+  const API = import.meta.env.VITE_API_BASE ?? '/api';
+  const token = localStorage.getItem('as.token') ?? '';
+  try {
+    const res = await fetch(`${API}/me/directions`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!res.ok) return;
+    const d = await res.json();
+    if (Array.isArray(d.directions) && d.directions.length > 0) {
+      localStorage.setItem(LS_DIRECTIONS, JSON.stringify(d.directions));
+      if (d.activeId) localStorage.setItem(LS_ACTIVE, d.activeId);
+      if (Array.isArray(d.customFields)) localStorage.setItem(LS_CUSTOM_FIELDS, JSON.stringify(d.customFields));
+    }
+  } catch { /* 后端不可达时保留本地 */ }
 }
 
 function readJSON(key: string): string[] {
@@ -58,6 +93,9 @@ const EMPTY_FORM = { id: '', title: '', fields: [] as string[], goal: '' };
 type Form = typeof EMPTY_FORM | null;
 
 export function DirectionPage() {
+  useEffect(() => {
+    void pullDirections();
+  }, []);
   const [directions, setDirections] = useState<Direction[]>(readDirections);
   const [activeId, setActiveId] = useState<string | null>(() => localStorage.getItem(LS_ACTIVE));
   const [form, setForm] = useState<Form>(null);

@@ -14,16 +14,37 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
 from db.database import get_db, init_db
+from db.crypto import encrypt, decrypt, mask_key
+from api.auth import router as auth_router, get_current_user
+from fastapi import Header
+from fastapi import Body
+import requests as _requests
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 WORKSPACE = Path(os.environ.get("AS_WORKSPACE", str(BACKEND_DIR / "wm")))
 RUNNER = BACKEND_DIR / "w1" / "runner.py"
 
-app = FastAPI(title="AutoSurvey Pipeline API", version="0.2.0")
+app = FastAPI(title="AutoSurvey Pipeline API", version="0.3.0")
+app.include_router(auth_router)
+
+
+@app.on_event("startup")
+def _seed_demo_user():
+    """空库时播种演示账号 demo/123456（仅本地单机用）。"""
+    init_db()
+    conn = get_db()
+    n = conn.execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
+    if n == 0:
+        from db.crypto import hash_password
+        conn.execute("INSERT INTO users (username, password_hash, role) VALUES (?,?,?)",
+                     ("demo", hash_password("123456"), "admin"))
+        conn.commit()
+    conn.close()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -189,6 +210,164 @@ def get_corpus(pid: str):
          "note": "不进下载器，走人工/本地合并"},
     ]
     return {"papers": papers, "funnel": funnel}
+
+
+def _me(authorization: str = Header(default="")) -> dict:
+    token = authorization.removeprefix("Bearer ").strip()
+    user = get_current_user(token)
+    if not user:
+        raise HTTPException(401, "未登录或会话过期")
+    return user
+
+
+# ---- 个人 API Key（Fernet 加密 at rest，接口只回掩码） ----
+
+class ApiKeyIn(BaseModel):
+    platform: str
+    key: str
+
+
+@app.get("/api/me/api-keys")
+def list_api_keys(user: dict = Depends(_me)):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT platform, key_encrypted FROM api_keys WHERE user_id=?", (user["user_id"],)).fetchall()
+    conn.close()
+    return {"keys": {r["platform"]: mask_key(decrypt(r["key_encrypted"])) for r in rows}}
+
+
+@app.put("/api/me/api-keys")
+def put_api_key(body: ApiKeyIn, user: dict = Depends(_me)):
+    if not body.platform.strip() or not body.key.strip():
+        raise HTTPException(400, "platform 与 key 不能为空")
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO api_keys (user_id, platform, key_encrypted) VALUES (?,?,?) "
+        "ON CONFLICT(user_id, platform) DO UPDATE SET key_encrypted=excluded.key_encrypted",
+        (user["user_id"], body.platform.strip(), encrypt(body.key.strip())))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "masked": mask_key(body.key.strip())}
+
+
+@app.delete("/api/me/api-keys/{platform}")
+def delete_api_key(platform: str, user: dict = Depends(_me)):
+    conn = get_db()
+    conn.execute("DELETE FROM api_keys WHERE user_id=? AND platform=?", (user["user_id"], platform))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+# ---- LLM 接入配置（url + apikey + model，加密存储；明文仅服务端代理使用） ----
+
+class LlmConfigIn(BaseModel):
+    baseUrl: str = ""
+    apiKey: str = ""
+    model: str = ""
+
+
+@app.get("/api/me/llm-config")
+def get_llm_config(user: dict = Depends(_me)):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT base_url, api_key_encrypted, model FROM llm_configs WHERE user_id=?", (user["user_id"],)).fetchone()
+    conn.close()
+    if row is None:
+        return {"baseUrl": "", "model": "", "apiKeyMasked": "", "configured": False}
+    key = decrypt(row["api_key_encrypted"])
+    return {"baseUrl": row["base_url"], "model": row["model"],
+            "apiKeyMasked": mask_key(key) if key else "", "configured": bool(row["base_url"] and key and row["model"])}
+
+
+@app.put("/api/me/llm-config")
+def put_llm_config(body: LlmConfigIn, user: dict = Depends(_me)):
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO llm_configs (user_id, base_url, api_key_encrypted, model) VALUES (?,?,?,?) "
+        "ON CONFLICT(user_id) DO UPDATE SET base_url=excluded.base_url, "
+        "api_key_encrypted=excluded.api_key_encrypted, model=excluded.model, updated_at=datetime('now')",
+        (user["user_id"], body.baseUrl.strip(), encrypt(body.apiKey.strip()), body.model.strip()))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+class ChatIn(BaseModel):
+    messages: list[dict]
+    temperature: float = 0.3
+    maxTokens: int = 2000
+
+
+@app.post("/api/llm/chat")
+def llm_chat(body: ChatIn, user: dict = Depends(_me)):
+    """服务端 LLM 代理：解密用户存储的 url+apikey+model 调用，明文 Key 永不回传浏览器。"""
+    conn = get_db()
+    row = conn.execute(
+        "SELECT base_url, api_key_encrypted, model FROM llm_configs WHERE user_id=?", (user["user_id"],)).fetchone()
+    conn.close()
+    if row is None:
+        raise HTTPException(400, "未配置 LLM（个人中心填写 url + apikey + model）")
+    base, key, model = row["base_url"], decrypt(row["api_key_encrypted"]), row["model"]
+    if not (base and key and model):
+        raise HTTPException(400, "LLM 配置不完整（个人中心重新保存）")
+    try:
+        resp = _requests.post(
+            f"{base.rstrip('/')}/chat/completions",
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
+            json={"model": model, "messages": body.messages,
+                  "temperature": body.temperature, "max_tokens": body.maxTokens},
+            timeout=120)
+    except Exception as e:
+        raise HTTPException(502, f"LLM 接口不可达: {e}")
+    if not resp.ok:
+        raise HTTPException(502, f"LLM 接口 {resp.status_code}: {resp.text[:200]}")
+    content = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+    if not content:
+        raise HTTPException(502, "LLM 返回内容为空")
+    return {"content": content}
+
+
+# ---- 方向库 / 知识库：用户状态 KV 全量同步（前端本地逻辑不变，启动拉取 + 变更推送） ----
+
+def _kv_get(user_id: int, k: str):
+    conn = get_db()
+    init_db()
+    row = conn.execute("SELECT v FROM user_kv WHERE user_id=? AND k=?", (user_id, k)).fetchone()
+    conn.close()
+    return json.loads(row["v"]) if row else None
+
+
+def _kv_put(user_id: int, k: str, v: dict):
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO user_kv (user_id, k, v) VALUES (?,?,?) "
+        "ON CONFLICT(user_id, k) DO UPDATE SET v=excluded.v, updated_at=datetime('now')",
+        (user_id, k, json.dumps(v, ensure_ascii=False)))
+    conn.commit()
+    conn.close()
+
+
+@app.get("/api/me/directions")
+def get_directions(user: dict = Depends(_me)):
+    return _kv_get(user["user_id"], "directions") or {"directions": [], "activeId": None, "customFields": []}
+
+
+@app.put("/api/me/directions")
+def put_directions(body: dict = Body(...), user: dict = Depends(_me)):
+    _kv_put(user["user_id"], "directions", body)
+    return {"ok": True}
+
+
+@app.get("/api/me/library")
+def get_library(user: dict = Depends(_me)):
+    return _kv_get(user["user_id"], "library") or {"items": [], "collections": ["方法参考", "待精读"]}
+
+
+@app.put("/api/me/library")
+def put_library(body: dict = Body(...), user: dict = Depends(_me)):
+    _kv_put(user["user_id"], "library", body)
+    return {"ok": True}
 
 
 @app.get("/api/projects")

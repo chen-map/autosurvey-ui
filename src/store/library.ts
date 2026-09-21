@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import { USE_MOCK } from '@/services/api';
 
-// 知识库：个人收藏的论文（localStorage 持久化；后端接入后切 API，见 docs/backend-todo.md）
+// 知识库：个人收藏的论文。持久化：演示模式 localStorage；真实模式后端 KV 同步（启动拉取 + 变更推送）
 // source：corpus=语料库收藏（paperIdx 关联语料库）；upload=上传 PDF；manual=手动录入
 export interface LibraryItem {
   key: string;
@@ -48,6 +49,33 @@ interface LibraryState {
   addCollection: (name: string) => void;
 }
 
+function pushLibrary(items: LibraryItem[], collections: string[]) {
+  if (USE_MOCK) return;
+  const API = import.meta.env.VITE_API_BASE ?? '/api';
+  const token = localStorage.getItem('as.token') ?? '';
+  fetch(`${API}/me/library`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ items, collections }),
+  }).catch(() => {});
+}
+
+async function pullLibrary(set: (s: Partial<LibraryState>) => void) {
+  if (USE_MOCK) return;
+  const API = import.meta.env.VITE_API_BASE ?? '/api';
+  const token = localStorage.getItem('as.token') ?? '';
+  try {
+    const res = await fetch(`${API}/me/library`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!res.ok) return;
+    const d = await res.json();
+    if (Array.isArray(d.items) && d.items.length > 0) {
+      localStorage.setItem(ITEMS_KEY, JSON.stringify(d.items));
+      if (Array.isArray(d.collections) && d.collections.length > 0) localStorage.setItem(COLLS_KEY, JSON.stringify(d.collections));
+      set({ items: d.items, collections: d.collections?.length ? d.collections : read(COLLS_KEY, ['方法参考', '待精读']) });
+    }
+  } catch { /* 后端不可达时保留本地 */ }
+}
+
 export const useLibrary = create<LibraryState>((set, get) => ({
   items: read(ITEMS_KEY, []),
   collections: read(COLLS_KEY, ['方法参考', '待精读']),
@@ -67,6 +95,7 @@ export const useLibrary = create<LibraryState>((set, get) => ({
       added = true;
     }
     localStorage.setItem(ITEMS_KEY, JSON.stringify(next));
+    pushLibrary(next, get().collections);
     set({ items: next });
     return added;
   },
@@ -76,16 +105,19 @@ export const useLibrary = create<LibraryState>((set, get) => ({
       ...get().items,
     ];
     localStorage.setItem(ITEMS_KEY, JSON.stringify(next));
+    pushLibrary(next, get().collections);
     set({ items: next });
   },
   remove: (key) => {
     const next = get().items.filter((i) => i.key !== key);
     localStorage.setItem(ITEMS_KEY, JSON.stringify(next));
+    pushLibrary(next, get().collections);
     set({ items: next });
   },
   moveTo: (key, collection) => {
     const next = get().items.map((i) => (i.key === key ? { ...i, collection } : i));
     localStorage.setItem(ITEMS_KEY, JSON.stringify(next));
+    pushLibrary(next, get().collections);
     set({ items: next });
   },
   addCollection: (name) => {
@@ -94,6 +126,10 @@ export const useLibrary = create<LibraryState>((set, get) => ({
     if (!name0 || c.includes(name0)) return;
     const next = [...c, name0];
     localStorage.setItem(COLLS_KEY, JSON.stringify(next));
+    pushLibrary(get().items, next);
     set({ collections: next });
   },
 }));
+
+// 真实模式：启动时从后端拉取收藏覆盖本地
+void pullLibrary(useLibrary.setState);

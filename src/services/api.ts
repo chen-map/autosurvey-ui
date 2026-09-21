@@ -20,11 +20,26 @@ const delay = (ms = 260) => new Promise((r) => setTimeout(r, ms));
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== '0';
 const API = import.meta.env.VITE_API_BASE ?? '/api';
 
+const TOKEN_KEY = 'as.token';
+export function getToken(): string {
+  return localStorage.getItem(TOKEN_KEY) ?? '';
+}
+export function setToken(t: string | null) {
+  if (t) localStorage.setItem(TOKEN_KEY, t);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
 async function realFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken();
   const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   });
+  if (res.status === 401) setToken(null); // 会话过期
   if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
   return res.json();
 }
@@ -112,6 +127,21 @@ export interface LoginResult {
 const DEMO_ACCOUNT = { username: 'demo', password: '123456', role: 'admin' as const };
 
 export async function login(username: string, password: string): Promise<LoginResult> {
+  if (!USE_MOCK) {
+    try {
+      const r = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!r.ok) return { ok: false, message: '账号或密码不正确' };
+      const d = await r.json();
+      setToken(d.token);
+      return { ok: true, username: d.username, role: d.role === 'admin' ? 'admin' : 'researcher' };
+    } catch {
+      return { ok: false, message: '后端不可达，请确认已启动 FastAPI' };
+    }
+  }
   await delay(320);
   if (username === DEMO_ACCOUNT.username && password === DEMO_ACCOUNT.password) {
     return { ok: true, username, role: DEMO_ACCOUNT.role };
