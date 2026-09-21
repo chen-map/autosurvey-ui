@@ -159,9 +159,10 @@ def run_pipeline(cfg: dict[str, Any], *, workflow: str = "w1", resume: bool = Tr
 
 def run_pipeline_with(phases: list[dict[str, Any]], cfg: dict[str, Any],
                       workspace: Path, *, resume: bool = True,
-                      only: str | None = None, from_phase: str | None = None) -> dict[str, Any]:
+                      only: str | None = None, from_phase: str | None = None,
+                      state_file: str = STATE_FILES["w1"]) -> dict[str, Any]:
     workspace = Path(workspace)
-    state = init_state(workspace, phases, cfg.get("project_id", ""))
+    state = init_state(workspace, phases, cfg.get("project_id", ""), state_file)
 
     started = False
     for phase in phases:
