@@ -285,8 +285,8 @@ export function KgPage() {
                     key={i}
                     x1={s.x} y1={s.y} x2={t.x} y2={t.y}
                     stroke={edgeColor(e.type)}
-                    strokeWidth={activeSet ? 1.6 : 1}
-                    opacity={edgeDim(e) ? (activeSet ? 0.9 : 0.18) : 0.06}
+                    strokeWidth={activeSet ? 1.8 : 1.2}
+                    opacity={edgeDim(e) ? 0.05 : activeSet ? 0.95 : 0.4}
                   />
                 );
               })}
