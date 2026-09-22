@@ -54,7 +54,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                  "args": ["--set", cfg.get("oai_sets", "cs"),
                           "--from", f"{year_from}-01-01",
                           "--out", f"{ws}/raw_results/arxiv_oai_results.csv",
-                          "--max-records", str(cfg.get("oai_max_records", 800)),
+                          "--max-records", str(cfg.get("oai_max_records", 2000)),
                           "--contact-email", cfg.get("contact_email", "researcher@example.com")]},
             ],
         },
