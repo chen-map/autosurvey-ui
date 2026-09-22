@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -27,11 +28,41 @@ def main() -> int:
     with open(args.input, encoding="utf-8", newline="") as fh:
         rows = list(csv.DictReader(fh))
 
-    for r in rows:
-        text = (r.get("title", "") + " " + r.get("abstract", "")).lower()
-        hits = sum(1 for w in words if w in text)
-        r["_score"] = hits
-        r["_relevant"] = "true" if hits >= 1 else "false"
+    # IDF 加权打分：通用词（graph/neural）几乎篇篇命中、无区分度，
+    # 区分词（explain-）少见、才是主题信号。weight = log(N/df)，df=命中篇数。
+    # 词干归并：explainability/explainable/explanation 归并为 explain 家族，
+    # 否则 XAI 论文大多用 explainable/explanation 而漏检。
+    import math
+
+    def stem(w: str) -> str:
+        for suf in ("ability", "ments", "ment", "ation", "tion", "sion", "ing", "ies", "ed", "es", "s"):
+            if w.endswith(suf) and len(w) - len(suf) >= 4:
+                return w[: len(w) - len(suf)]
+        return w
+
+    stems = {stem(w) for w in words}
+    texts = [(r.get("title", "") + " " + r.get("abstract", "")).lower() for r in rows]
+    n = max(1, len(rows))
+    # 词边界前缀匹配：graph 能命中 graphs/graphical，但不能命中 cryptography；
+    # explain 能命中 explainable/explanation，但不误伤无关词
+    pat = {s: re.compile(rf"\b{s}") for s in stems}
+    df = {s: sum(1 for t in texts if pat[s].search(t)) for s in stems}
+    idf = {s: math.log(n / max(1, df[s])) for s in stems}
+
+    # 概念词自动识别：主题里最稀有（df 最低）的词干是核心概念（如 explain-），
+    # 其余（graph/neural/network 这类领域背景词）只做次级排序——
+    # 否则宽语料上背景词会把真 XAI 论文挤出 Top-N
+    df_min = min(df.values()) if df else 0
+    concept = {s for s in stems if df_min and df[s] <= max(2 * df_min, 1)}
+
+    for r, text in zip(rows, texts):
+        title_low = r.get("title", "").lower()
+        present = [s for s in stems if pat[s].search(text)]
+        # 标题是强信号：命中再加一次权重
+        score = sum(idf[s] * (10 if s in concept else 1) * (2 if pat[s].search(title_low) else 1)
+                    for s in present)
+        r["_score"] = round(score, 3)
+        r["_relevant"] = "true" if present else "false"
 
     kept = [r for r in rows if r["_relevant"] == "true"]
     dropped = [r for r in rows if r["_relevant"] != "true"]
