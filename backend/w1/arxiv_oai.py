@@ -49,14 +49,16 @@ def save_daily_count(state_path: Path, count: int) -> None:
 
 
 def request_with_backoff(url: str, user_agent: str, state_path: Path,
-                         max_backoff: int = 8) -> bytes:
-    """GET + 指数退避；429 优先按 Retry-After 等待；计入每日限额。"""
+                         max_backoff: int = 8, max_attempts: int = 6) -> bytes:
+    """GET + 指数退避；429 优先按 Retry-After 等待；计入每日限额；超过次数放弃。"""
     global _daily
     attempt = 0
     while True:
         if _daily >= DAILY_CAP:
             raise RuntimeError(f"arXiv OAI 每日请求上限 {DAILY_CAP} 已达（合规熔断），明日自动恢复")
-        req = urllib.request.Request(url, headers={"User-Agent": user_agent})
+        # urllib 默认无 Accept 头，arXiv CDN 会以 406 拒绝（实测），显式声明
+        req = urllib.request.Request(url, headers={
+            "User-Agent": user_agent, "Accept": "*/*", "Accept-Encoding": "identity"})
         try:
             _daily += 1
             save_daily_count(state_path, _daily)
@@ -64,6 +66,8 @@ def request_with_backoff(url: str, user_agent: str, state_path: Path,
                 return resp.read()
         except urllib.error.HTTPError as e:
             if e.code == 429:
+                if attempt >= max_attempts:
+                    raise RuntimeError(f"arXiv OAI 连续 {max_attempts} 次 429，放弃本轮（稍后重试）")
                 wait = int(e.headers.get("Retry-After", 0) or 0) or min(2 ** attempt, max_backoff) * 30
                 print(f"[arxiv_oai] 429 → 等待 {wait}s（Retry-After 优先）", flush=True)
                 time.sleep(wait)
@@ -71,6 +75,8 @@ def request_with_backoff(url: str, user_agent: str, state_path: Path,
                 continue
             raise
         except urllib.error.URLError:
+            if attempt >= max_attempts:
+                raise RuntimeError(f"arXiv OAI 连续 {max_attempts} 次网络异常，放弃本轮")
             wait = min(2 ** attempt, max_backoff)
             print(f"[arxiv_oai] 网络异常 → 退避 {wait}s", flush=True)
             time.sleep(wait)
@@ -87,19 +93,31 @@ def parse_resumption_token(xml_bytes: bytes) -> str | None:
 
 
 def extract_records(xml_bytes: bytes) -> list[dict]:
-    """从 OAI-PMH 响应提取 arXiv 元数据（容错解析，不依赖命名空间细节）。"""
+    """从 OAI-PMH 响应提取 arXiv 元数据。
+
+    实测 oaipmh.arxiv.org 的记录根元素是无前缀裸标签 <arXiv xmlns="...">，
+    内部字段同为裸标签（<id>/<title>/<authors>…），这里按可选前缀容错匹配。
+    """
     text = xml_bytes.decode("utf-8", errors="replace")
     records = []
-    for chunk in re.findall(r"<arXiv:x?arXiv[ >].*?</arXiv:x?arXiv>", text, re.S) or \
-            re.findall(r"<arXiv:arXiv[^>]*>.*?</arXiv:arXiv>", text, re.S):
+    for chunk in re.findall(r"<(?:\w+:)?arXiv[\s>].*?</(?:\w+:)?arXiv\s*>", text, re.S):
         def pick(tag: str) -> str:
-            m = re.search(rf"<arXiv:{tag}[^>]*>(.*?)</arXiv:{tag}>", chunk, re.S)
+            m = re.search(rf"<(?:\w+:)?{tag}[\s>](.*?)</(?:\w+:)?{tag}\s*>", chunk, re.S)
             return re.sub(r"<[^>]+>", "", m.group(1)).strip() if m else ""
         arxiv_id = pick("id")
         title = re.sub(r"\s+", " ", pick("title"))
         abstract = re.sub(r"\s+", " ", pick("abstract"))
-        authors = "; ".join(re.findall(r"<arXiv:authors>(.*?)</arXiv:authors>", chunk, re.S)[0].split(","))[:400] \
-            if re.findall(r"<arXiv:authors>(.*?)</arXiv:authors>", chunk, re.S) else ""
+        # <authors><author><forenames>Jens C.</forenames><keyname>Astor</keyname>…
+        names: list[str] = []
+        for blk in re.findall(r"<(?:\w+:)?author[\s>].*?</(?:\w+:)?author\s*>", chunk, re.S):
+            fore = re.search(r"<(?:\w+:)?forenames[\s>](.*?)</(?:\w+:)?forenames\s*>", blk, re.S)
+            key = re.search(r"<(?:\w+:)?keyname[\s>](.*?)</(?:\w+:)?keyname\s*>", blk, re.S)
+            nm = " ".join(t.strip() for t in (
+                re.sub(r"<[^>]+>", "", fore.group(1)) if fore else "",
+                re.sub(r"<[^>]+>", "", key.group(1)) if key else "") if t.strip())
+            if nm:
+                names.append(nm)
+        authors = "; ".join(names)[:400] or pick("authors")[:400]
         year = (pick("created") or pick("updated"))[:4]
         if not arxiv_id or not title:
             continue
@@ -132,18 +150,25 @@ def harvest(sets: list[str], from_date: str, out_csv: Path, *,
             params["until"] = until
         url = f"{OAI_BASE}?{urllib.parse.urlencode(params)}"
         pages = 0
+        empty_pages = 0
         while url and len(rows) < max_records:
             xml_bytes = request_with_backoff(url, ua, state_path)
             if b"<error code" in xml_bytes:
                 m = re.search(rb'<error code="[^"]+">([^<]+)<', xml_bytes)
                 print(f"[arxiv_oai] set={set_spec} OAI 错误: {m.group(1).decode() if m else '?'}", flush=True)
                 break
-            for rec in extract_records(xml_bytes):
-                if rec["title"].lower() not in seen:
-                    seen.add(rec["title"].lower())
-                    rows.append(rec)
+            new_rows = [rec for rec in extract_records(xml_bytes)
+                        if rec["title"].lower() not in seen]
+            for rec in new_rows:
+                seen.add(rec["title"].lower())
+                rows.append(rec)
             pages += 1
             print(f"[arxiv_oai] set={set_spec} page={pages} 累计 {len(rows)} 条", flush=True)
+            # 解析异常保护：连续空页说明结构与解析不匹配，翻完整个库也无意义
+            empty_pages = empty_pages + 1 if not new_rows else 0
+            if empty_pages >= 2:
+                print("[arxiv_oai] 连续 2 页解析 0 条 → 终止该 set（疑似解析/结构变化）", flush=True)
+                break
             token = parse_resumption_token(xml_bytes)
             if token and len(rows) < max_records:
                 time.sleep(MIN_INTERVAL)
@@ -151,6 +176,7 @@ def harvest(sets: list[str], from_date: str, out_csv: Path, *,
             else:
                 url = None
 
+    rows = rows[:max_records]  # 单页可能超额返回，尊重上限
     with open(out_csv, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FIELD_ORDER, extrasaction="ignore")
         w.writeheader()
