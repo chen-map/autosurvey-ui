@@ -33,14 +33,15 @@ function fmt(sec?: number) {
   return sec > 3600 ? `${(sec / 3600).toFixed(1)}h` : `${Math.round(sec / 60)}m`;
 }
 
-const WORKFLOW_TABS: { key: 'w1' | 'w2'; label: string; hint: string; phases: string }[] = [
-  { key: 'w1', label: 'W1 语料构建', hint: '该项目还没有 W1 运行记录（或 runner 正在初始化）。启动后将自动执行语料库构建的 7 个 Phase。', phases: '7 个 Phase' },
-  { key: 'w2', label: 'W2 事实记忆', hint: '该项目还没有 W2 运行记录。W2 消费 W1 下载的 PDF，产出六类对象知识图谱（KG 图谱页展示）。建议先完成 W1。', phases: '4 个 Phase' },
+const WORKFLOW_TABS: { key: 'w1' | 'w2' | 'w3'; label: string; hint: string }[] = [
+  { key: 'w1', label: 'W1 语料构建', hint: '该项目还没有 W1 运行记录（或 runner 正在初始化）。启动后将自动执行语料库构建的 7 个 Phase。' },
+  { key: 'w2', label: 'W2 事实记忆', hint: '该项目还没有 W2 运行记录。W2 消费 W1 下载的 PDF，产出六类对象知识图谱（KG 图谱页展示）。建议先完成 W1。' },
+  { key: 'w3', label: 'W3 框架与RQ', hint: '该项目还没有 W3 运行记录。W3 消费 W2 知识图谱，产出 Gap 分析、RQ 体系（Macro/Sub）、证据矩阵与综述大纲（analyze_report/）。建议先完成 W2。' },
 ];
 
 export function PipelinePage() {
   const { projectId = '' } = useParams();
-  const [workflow, setWorkflow] = useState<'w1' | 'w2'>('w1');
+  const [workflow, setWorkflow] = useState<'w1' | 'w2' | 'w3'>('w1');
   const [run, setRun] = useState<PipelineRun | null>(null);
   const [notStarted, setNotStarted] = useState(false);
   const [starting, setStarting] = useState(false);

@@ -56,6 +56,13 @@ def main() -> None:
     target_dir = str(target.parent)
     if target_dir not in sys.path:
         sys.path.insert(0, target_dir)
+    # 可选：跨工作流共享的 kg_common 所在目录（如 W3 rq_card_linker 复用 W2 的 kg_common）
+    if "--kg-common-path" in rest:
+        j = rest.index("--kg-common-path")
+        kg_dir = rest[j + 1]
+        rest = rest[:j] + rest[j + 2:]
+        if kg_dir and kg_dir not in sys.path:
+            sys.path.insert(0, kg_dir)
     import kg_common  # noqa: PLC0415 — 目标脚本同目录的共享 LLM 配置
 
     base, key, models = load_llm_config(use_case)
