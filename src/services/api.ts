@@ -152,7 +152,7 @@ export async function login(username: string, password: string): Promise<LoginRe
 }
 
 // ---- pipeline ----
-export async function startRun(projectId: string, workflow: 'w1' | 'w2' = 'w1'): Promise<void> {
+export async function startRun(projectId: string, workflow: 'w1' | 'w2' | 'w3' = 'w1'): Promise<void> {
   if (!USE_MOCK) {
     const res = await fetch(`${API}/projects/${projectId}/run?workflow=${workflow}`, { method: 'POST' });
     if (!res.ok) throw new Error(`startRun 失败: ${res.status}`);
@@ -162,9 +162,10 @@ export async function startRun(projectId: string, workflow: 'w1' | 'w2' = 'w1'):
 }
 
 // 后端 /run 返回 runner 的裸状态文件（phases 平铺），这里适配成前端 PipelineRun 契约
-const WORKFLOW_META: Record<'w1' | 'w2', { id: string; name: string }> = {
+const WORKFLOW_META: Record<'w1' | 'w2' | 'w3', { id: string; name: string }> = {
   w1: { id: 'W1', name: '语料构建（检索 → 筛选 → 下载 → 入库）' },
   w2: { id: 'W2', name: '事实记忆构建（解析 → 提取 → 筛选 → KG）' },
+  w3: { id: 'W3', name: '框架与 RQ 规划（Gap → RQ 设计 → 证据矩阵 → 评审）' },
 };
 
 interface RawPhase {
@@ -185,7 +186,7 @@ function aggregateStatus(phases: { status: PhaseState['status'] }[]): PhaseState
   return 'pending';
 }
 
-export async function getPipeline(projectId: string, workflow: 'w1' | 'w2' = 'w1'): Promise<PipelineRun> {
+export async function getPipeline(projectId: string, workflow: 'w1' | 'w2' | 'w3' = 'w1'): Promise<PipelineRun> {
   if (USE_MOCK) {
     await delay();
     return getPipelineData(projectId);
