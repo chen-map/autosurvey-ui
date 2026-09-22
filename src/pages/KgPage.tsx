@@ -4,7 +4,7 @@ import {
   forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY,
   type Simulation, type SimulationLinkDatum, type SimulationNodeDatum,
 } from 'd3-force';
-import { Loader2, Maximize2, Play, Search, X, ZoomIn } from 'lucide-react';
+import { Layers, Loader2, Maximize2, Play, Search, X, ZoomIn } from 'lucide-react';
 import type { KgGraphData } from '@/services/api';
 import { getKg, startRun, USE_MOCK } from '@/services/api';
 import { edgeColor, mapNodeType, TYPE_COLORS, TYPE_LABELS, type KgType } from '@/mock/kg';
@@ -14,7 +14,12 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/utils';
 
-// ---- Obsidian 风格 KG 画布：d3-force 力导向 + 类型着色 + 悬停高亮邻域 + 缩放平移 ----
+// ---- Obsidian 风格 KG 画布（canvas 版）----
+// 大图策略（100 篇 ≈ 1000 节点，500 篇 ≈ 5000+）：
+//   1. 渲染走 <canvas> 命令式重绘（rAF + 脏标记），React 不参与每帧循环；
+//   2. 概览模式（默认）：只画 Paper 层 + 度数 Top-K 概念，其余按需展开——
+//      选中/搜索任一节点时把它的一跳邻域临时加入可见集，清空即收起；
+//   3. 标签按 LOD 绘制（缩放不足像素高时只画重点节点的标签）。
 
 interface SimNode extends SimulationNodeDatum {
   id: string;
@@ -26,11 +31,16 @@ interface SimNode extends SimulationNodeDatum {
 type SimLink = SimulationLinkDatum<SimNode> & { type: string };
 
 const ALL_TYPES: KgType[] = ['paper', 'problem', 'method', 'dataset', 'metric', 'limitation', 'assumption'];
+const OVERVIEW_CONCEPT_CAP = 300;   // 概览模式可见概念上限（度数 Top-K）
+const OVERVIEW_THRESHOLD = 400;     // 节点数超过此值才启用概览模式
+const PRE_LAYOUT_TICKS = 300;
 
 function radiusOf(deg: number, type: KgType): number {
   const base = type === 'paper' ? 7 : 5.5;
   return base + Math.min(deg, 12) * 1.1;
 }
+
+const endId = (v: SimNode | string | number) => String(typeof v === 'object' ? v.id : v);
 
 export function KgPage() {
   const { projectId = '' } = useParams();
@@ -38,6 +48,7 @@ export function KgPage() {
   const [loaded, setLoaded] = useState(false);
   const [w2Starting, setW2Starting] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [size, setSize] = useState({ w: 900, h: 560 });
 
   // 数据加载（真实 404 → 空态；启动 W2 后轮询直至 KG 产出）
@@ -48,6 +59,10 @@ export function KgPage() {
   }, [projectId]);
   useEffect(() => {
     setLoaded(false);
+    setQuery('');
+    setSelectedId(null);
+    setHoverId(null);
+    setHidden(new Set());
     load();
   }, [load]);
 
@@ -76,9 +91,10 @@ export function KgPage() {
     return () => ro.disconnect();
   }, []);
 
-  // 类型筛选 + 搜索
+  // 类型筛选 + 搜索 + 视图模式
   const [hidden, setHidden] = useState<Set<KgType>>(new Set());
   const [query, setQuery] = useState('');
+  const [mode, setMode] = useState<'overview' | 'full'>('overview');
 
   // 图结构（度数在全集上计算）
   const { simNodes, simLinks, typeCounts } = useMemo(() => {
@@ -103,8 +119,7 @@ export function KgPage() {
   const neighborIds = useMemo(() => {
     const m = new Map<string, Set<string>>();
     for (const e of simLinks) {
-      const s = String(typeof e.source === 'object' ? e.source.id : e.source);
-      const t = String(typeof e.target === 'object' ? e.target.id : e.target);
+      const s = endId(e.source); const t = endId(e.target);
       if (!m.has(s)) m.set(s, new Set());
       if (!m.has(t)) m.set(t, new Set());
       m.get(s)!.add(t);
@@ -113,26 +128,53 @@ export function KgPage() {
     return m;
   }, [simLinks]);
 
-  // 力导向仿真：同步预跑 300 tick 得到确定性布局 → 自适应视野；拖拽时再热
-  const [, setTick] = useState(0);
+  // 概览基集：Paper 层 + 度数 Top-K 概念（类型被隐藏的不进基集）
+  const overviewBase = useMemo(() => {
+    if (simNodes.length <= OVERVIEW_THRESHOLD) return null; // 小图全量即可
+    const papers = simNodes.filter((n) => n.type === 'paper' && !hidden.has(n.type));
+    const concepts = simNodes
+      .filter((n) => n.type !== 'paper' && !hidden.has(n.type))
+      .sort((a, b) => b.degree - a.degree)
+      .slice(0, OVERVIEW_CONCEPT_CAP);
+    return new Set([...papers, ...concepts].map((n) => n.id));
+  }, [simNodes, hidden]);
+
+  const bigGraph = simNodes.length > OVERVIEW_THRESHOLD;
+  useEffect(() => {
+    // 大图默认概览（Paper 层 + Top 概念），小图全量；仅随规模翻转，不覆盖用户手动切换后的稳态
+    setMode(bigGraph ? 'overview' : 'full');
+  }, [bigGraph]);
+
+  // 力导向仿真：同步预跑得到确定性布局 → 自适应视野；拖拽时再热。
+  // tick 不再触发 React 渲染，只标脏等 rAF 重绘。
   const simRef = useRef<Simulation<SimNode, SimLink> | null>(null);
-  const simNodesRef = useRef<SimNode[]>([]);
-  simNodesRef.current = simNodes;
-  const wrapRef2 = useRef<HTMLDivElement | null>(null);
+  const dirtyRef = useRef(true);
+  const requestDraw = useCallback(() => { dirtyRef.current = true; }, []);
+
+  const viewRef = useRef({ k: 1, x: 0, y: 0 });
+  const hoverRef = useRef<string | null>(null);
+  const dragRef = useRef<string | null>(null);
+  const panRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
+  const movedRef = useRef(false);
+  const sizeRef = useRef(size);
+  sizeRef.current = size;
+  const nodesRef = useRef(simNodes);
+  nodesRef.current = simNodes;
 
   const fitView = useCallback(() => {
-    const el = wrapRef2.current ?? wrapRef.current;
+    const el = wrapRef.current;
     if (!el) return;
     const w = el.clientWidth, h = el.clientHeight;
-    const xs = simNodesRef.current.map((n) => n.x).filter((x): x is number => x != null);
-    const ys = simNodesRef.current.map((n) => n.y).filter((y): y is number => y != null);
+    const xs = nodesRef.current.map((n) => n.x).filter((x): x is number => x != null);
+    const ys = nodesRef.current.map((n) => n.y).filter((y): y is number => y != null);
     if (!xs.length) return;
     const minX = Math.min(...xs), maxX = Math.max(...xs);
     const minY = Math.min(...ys), maxY = Math.max(...ys);
     const bw = Math.max(maxX - minX, 10), bh = Math.max(maxY - minY, 10);
     const k = Math.min(w / bw, h / bh) * 0.88;
-    setView({ k, x: w / 2 - ((minX + maxX) / 2) * k, y: h / 2 - ((minY + maxY) / 2) * k });
-  }, []);
+    viewRef.current = { k, x: w / 2 - ((minX + maxX) / 2) * k, y: h / 2 - ((minY + maxY) / 2) * k };
+    requestDraw();
+  }, [requestDraw]);
 
   useEffect(() => {
     if (!simNodes.length) return;
@@ -144,64 +186,19 @@ export function KgPage() {
       // 弱向心力：把互不连通的论文星簇聚拢（断连分量的 Obsidian 观感）
       .force('x', forceX(size.w / 2).strength(0.12))
       .force('y', forceY(size.h / 2).strength(0.16))
-      .on('tick', () => setTick((t) => t + 1));
+      .on('tick', () => { dirtyRef.current = true; });
     simRef.current = sim;
     sim.stop();
-    for (let i = 0; i < 300; i++) sim.tick(); // 同步预计算
-    setTick((t) => t + 1);
+    const ticks = simNodes.length > 2500 ? 160 : PRE_LAYOUT_TICKS; // 大图减少预跑换取首屏
+    for (let i = 0; i < ticks; i++) sim.tick();
+    dirtyRef.current = true;
     setTimeout(fitView, 0);
     return () => { sim.stop(); };
   }, [simNodes, simLinks, size.w, size.h, fitView]);
 
   const reheat = () => simRef.current?.alpha(0.4).restart();
 
-  // 节点拖拽（按住固定，松开释放）
-  const dragRef = useRef<string | null>(null);
-  const onNodePointerDown = (e: React.PointerEvent, id: string) => {
-    e.stopPropagation();
-    dragRef.current = id;
-    (e.target as Element).setPointerCapture(e.pointerId);
-  };
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragRef.current) return;
-    const n = byId.get(dragRef.current);
-    if (!n) return;
-    const rect = wrapRef.current!.getBoundingClientRect();
-    n.fx = (e.clientX - rect.left - view.x) / view.k;
-    n.fy = (e.clientY - rect.top - view.y) / view.k;
-    reheat();
-  };
-  const onPointerUp = () => {
-    if (!dragRef.current) return;
-    const n = byId.get(dragRef.current);
-    if (n) { n.fx = undefined; n.fy = undefined; }
-    dragRef.current = null;
-    reheat();
-  };
-
-  // 缩放（光标锚点）+ 空白平移
-  const [view, setView] = useState({ k: 1, x: 0, y: 0 });
-  const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const rect = wrapRef.current!.getBoundingClientRect();
-    const cx = e.clientX - rect.left;
-    const cy = e.clientY - rect.top;
-    setView((v) => {
-      const k = Math.min(3, Math.max(0.3, v.k * (1 - e.deltaY * 0.0012)));
-      return { k, x: cx - ((cx - v.x) / v.k) * k, y: cy - ((cy - v.y) / v.k) * k };
-    });
-  };
-  const panRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
-  const onBgPointerDown = (e: React.PointerEvent) => {
-    panRef.current = { sx: e.clientX, sy: e.clientY, ox: view.x, oy: view.y };
-  };
-  const onBgPointerMove = (e: React.PointerEvent) => {
-    if (!panRef.current) return;
-    const { sx, sy, ox, oy } = panRef.current;
-    setView((v) => ({ ...v, x: ox + (e.clientX - sx), y: oy + (e.clientY - sy) }));
-  };
-
-  // 高亮：悬停/选中节点 → 邻域；搜索 → 匹配
+  // 高亮：悬停/选中节点 → 邻域；搜索 → 匹配（驱动 canvas 与详情卡）
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const focusId = hoverId ?? selectedId;
@@ -214,28 +211,241 @@ export function KgPage() {
     return null;
   }, [focusId, neighborIds]);
 
-  const visible = (t: KgType) => !hidden.has(t);
+  const visibleType = (t: KgType) => !hidden.has(t);
   const q = query.trim().toLowerCase();
+
+  // 概览模式的展开集：焦点节点一跳邻域 + 搜索命中（上限 40 个）
+  const expanded = useMemo(() => {
+    if (mode !== 'overview' || !overviewBase) return null;
+    const s = new Set<string>();
+    if (focusId) neighborIds.get(focusId)?.forEach((id) => s.add(id));
+    if (q) {
+      let n = 0;
+      for (const node of simNodes) {
+        if (n >= 40) break;
+        if (visibleType(node.type) && node.label.toLowerCase().includes(q)) { s.add(node.id); n++; }
+      }
+    }
+    return s;
+  }, [mode, overviewBase, focusId, neighborIds, q, simNodes]);
+
+  const nodeHidden = (n: SimNode) => {
+    if (!visibleType(n.type)) return true;
+    if (mode === 'overview' && overviewBase && !overviewBase.has(n.id) && !expanded?.has(n.id)) return true;
+    return false;
+  };
   const nodeDim = (n: SimNode) => {
-    if (!visible(n.type)) return true;
-    if (q && !n.label.toLowerCase().includes(q)) return true;
+    if (nodeHidden(n)) return true;
+    if (q && !expanded?.has(n.id) && !n.label.toLowerCase().includes(q)) return true;
     if (activeSet) return !activeSet.has(n.id);
     return false;
   };
-  const edgeDim = (e: SimLink) => {
-    const s = typeof e.source === 'object' ? e.source : byId.get(e.source as string);
-    const t = typeof e.target === 'object' ? e.target : byId.get(e.target as string);
-    if (!s || !t) return true;
-    if (hidden.has(s.type) || hidden.has(t.type)) return true;
+  const edgeDim = (s: SimNode, t: SimNode) => {
+    if (nodeHidden(s) || nodeHidden(t)) return true;
     if (activeSet) return !(activeSet.has(s.id) && activeSet.has(t.id));
+    if (q) return !(s.label.toLowerCase().includes(q) || t.label.toLowerCase().includes(q));
     return false;
   };
 
+  // ---- canvas 绘制（命令式，每帧读 ref，不经过 React）----
+  // 可见性/高亮逻辑每轮渲染重建，经 ref 传入 rAF 循环，避免闭包过期
+  const helpersRef = useRef({ nodeHidden, nodeDim, edgeDim });
+  helpersRef.current = { nodeHidden, nodeDim, edgeDim };
+  const stateRef = useRef({ activeSet, focusId, selectedId, mode, q, simNodes, simLinks, byId });
+  stateRef.current = { activeSet, focusId, selectedId, mode, q, simNodes, simLinks, byId };
+
+  useEffect(() => {
+    let raf = 0;
+
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
+      if (!dirtyRef.current) return;
+      // canvas 在数据加载后才挂载，ctx 必须惰性获取（挂载时可能是 null）
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      dirtyRef.current = false;
+      const st = stateRef.current;
+      const hp = helpersRef.current;
+      const { w, h } = sizeRef.current;
+      const dpr = window.devicePixelRatio || 1;
+      const view = viewRef.current;
+      if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      ctx.translate(view.x, view.y);
+      ctx.scale(view.k, view.k);
+      ctx.lineCap = 'round';
+
+      const focus = st.focusId;
+      const labelPx = 10.5 * view.k;
+
+      // 边
+      for (const e of st.simLinks) {
+        const s = st.byId.get(endId(e.source));
+        const t = st.byId.get(endId(e.target));
+        if (!s || !t) continue;
+        const sx = s.x, sy = s.y, tx = t.x, ty = t.y;
+        if (sx == null || sy == null || tx == null || ty == null) continue;
+        if (hp.nodeHidden(s) || hp.nodeHidden(t)) continue;
+        const dim = hp.edgeDim(s, t);
+        if (st.activeSet && dim) {
+          ctx.globalAlpha = 0.05;
+        } else if (st.activeSet) {
+          ctx.globalAlpha = 0.95;
+        } else if (st.q !== '' && dim) {
+          ctx.globalAlpha = 0.06;
+        } else {
+          ctx.globalAlpha = 0.4;
+        }
+        ctx.strokeStyle = edgeColor(e.type);
+        ctx.lineWidth = st.activeSet && !dim ? 1.8 : 1.2;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+      }
+
+      // 节点 + 标签（LOD：缩放像素高不足时只画焦点邻域/概览 Paper 的标签）
+      for (const n of st.simNodes) {
+        if (hp.nodeHidden(n) || n.x == null || n.y == null) continue;
+        const dim = hp.nodeDim(n);
+        const r = radiusOf(n.degree, n.type);
+        ctx.globalAlpha = dim ? 0.08 : 1;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = TYPE_COLORS[n.type];
+        ctx.fill();
+        ctx.lineWidth = focus === n.id ? 2.5 : 1.2;
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+
+        const important = focus === n.id || (st.activeSet?.has(n.id) ?? false)
+          || (st.mode === 'overview' && n.type === 'paper')
+          || (st.q !== '' && n.label.toLowerCase().includes(st.q));
+        if (!dim && (labelPx >= 5.5 || important)) {
+          ctx.globalAlpha = 1;
+          ctx.font = '10.5px -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+          const text = n.label.length > 16 ? `${n.label.slice(0, 16)}…` : n.label;
+          const ly = n.y + r + 11;
+          ctx.strokeText(text, n.x, ly);
+          ctx.fillStyle = '#111318';
+          ctx.fillText(text, n.x, ly);
+        }
+      }
+      ctx.globalAlpha = 1;
+    };
+
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  useEffect(() => { requestDraw(); }, [simNodes, simLinks, hidden, query, mode, selectedId, hoverId, size, requestDraw]);
+
+  // 命中检测：屏幕坐标 → 绘制顺序的逆序查找（nodeHidden 经 ref 取最新值）
+  const hitTest = useCallback((mx: number, my: number): SimNode | null => {
+    const view = viewRef.current;
+    const wx = (mx - view.x) / view.k;
+    const wy = (my - view.y) / view.k;
+    const nodes = nodesRef.current;
+    const isHidden = nodeHiddenRef.current;
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const n = nodes[i];
+      if (isHidden(n) || n.x == null || n.y == null) continue;
+      const r = radiusOf(n.degree, n.type) + 4 / view.k;
+      const dx = n.x - wx, dy = n.y - wy;
+      if (dx * dx + dy * dy <= r * r) return n;
+    }
+    return null;
+  }, []);
+
+  const nodeHiddenRef = useRef(nodeHidden);
+  nodeHiddenRef.current = nodeHidden;
+
+  // 指针交互：节点拖拽 / 空白平移 / 点选 / 悬停
+  const onPointerDown = (e: React.PointerEvent) => {
+    const rect = wrapRef.current!.getBoundingClientRect();
+    const hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
+    movedRef.current = false;
+    if (hit) {
+      dragRef.current = hit.id;
+      (e.target as Element).setPointerCapture(e.pointerId);
+    } else {
+      panRef.current = { sx: e.clientX, sy: e.clientY, ox: viewRef.current.x, oy: viewRef.current.y };
+    }
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const rect = wrapRef.current!.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    if (dragRef.current) {
+      movedRef.current = true;
+      const n = byId.get(dragRef.current);
+      if (n) {
+        const view = viewRef.current;
+        n.fx = (mx - view.x) / view.k;
+        n.fy = (my - view.y) / view.k;
+        reheat();
+      }
+      return;
+    }
+    if (panRef.current) {
+      movedRef.current = true;
+      const { sx, sy, ox, oy } = panRef.current;
+      viewRef.current = { ...viewRef.current, x: ox + (e.clientX - sx), y: oy + (e.clientY - sy) };
+      requestDraw();
+      return;
+    }
+    const hit = hitTest(mx, my);
+    const id = hit?.id ?? null;
+    if (id !== hoverRef.current) {
+      hoverRef.current = id;
+      setHoverId(id);
+      requestDraw();
+    }
+    const el = canvasRef.current;
+    if (el) el.style.cursor = id ? 'pointer' : 'grab';
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const dragId = dragRef.current;
+    const wasPan = panRef.current != null;
+    dragRef.current = null;
+    panRef.current = null;
+    if (dragId != null) {
+      const n = byId.get(dragId);
+      if (n) { n.fx = undefined; n.fy = undefined; }
+      reheat();
+    }
+    // 拖拽/平移过就不算点击；否则按命中切换选中
+    if (movedRef.current) return;
+    const rect = wrapRef.current!.getBoundingClientRect();
+    const hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
+    if (hit || wasPan) setSelectedId((s) => (hit ? (s === hit.id ? null : hit.id) : null));
+    requestDraw();
+  };
+  const onWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const rect = wrapRef.current!.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const v = viewRef.current;
+    const k = Math.min(3, Math.max(0.3, v.k * (1 - e.deltaY * 0.0012)));
+    viewRef.current = { k, x: cx - ((cx - v.x) / v.k) * k, y: cy - ((cy - v.y) / v.k) * k };
+    requestDraw();
+  };
+
   const selected = selectedId ? byId.get(selectedId) : null;
+  const showModeToggle = bigGraph;
 
   return (
     <div className="space-y-4">
-      {/* 工具条：类型筛选 + 搜索 + 统计 */}
+      {/* 工具条：类型筛选 + 视图模式 + 搜索 + 统计 */}
       <div className="flex flex-wrap items-center gap-2">
         {ALL_TYPES.map((t) => (
           <button
@@ -257,6 +467,26 @@ export function KgPage() {
           </button>
         ))}
         <div className="ml-auto flex items-center gap-2">
+          {showModeToggle && (
+            <div className="flex items-center overflow-hidden rounded-lg border border-line text-[12px]" role="group" aria-label="视图粒度">
+              <button
+                type="button"
+                onClick={() => setMode('overview')}
+                className={cn('flex items-center gap-1 px-2.5 py-1 transition-colors',
+                  mode === 'overview' ? 'bg-ink text-white' : 'text-t2 hover:bg-page')}
+              >
+                <Layers size={12} /> 概览
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('full')}
+                className={cn('px-2.5 py-1 transition-colors',
+                  mode === 'full' ? 'bg-ink text-white' : 'text-t2 hover:bg-page')}
+              >
+                全部
+              </button>
+            </div>
+          )}
           <Badge variant="neutral">{simNodes.length} 节点 · {simLinks.length} 边{data?.paperCount ? ` · 论文 ${data.paperCount} 篇` : ''}</Badge>
           <Button size="sm" variant="secondary" onClick={fitView} title="缩放至全部节点可见">
             <Maximize2 size={13} />
@@ -268,15 +498,21 @@ export function KgPage() {
         </div>
       </div>
 
-      {/* 画布 */}
+      {/* 画布（canvas 命令式渲染：大图不经过 React 每帧循环） */}
       <div
-        ref={(el) => { wrapRef.current = el; wrapRef2.current = el; }}
+        ref={wrapRef}
         className="relative h-[560px] touch-none select-none overflow-hidden rounded-xl border border-line/60 bg-page"
         style={{ backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.055) 1px, transparent 1px)', backgroundSize: '22px 22px' }}
         onWheel={onWheel}
-        onPointerMove={(e) => { onPointerMove(e); onBgPointerMove(e); }}
-        onPointerUp={() => { onPointerUp(); panRef.current = null; }}
-        onPointerLeave={() => { onPointerUp(); panRef.current = null; }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={() => {
+          dragRef.current = null;
+          panRef.current = null;
+          if (hoverRef.current) { hoverRef.current = null; setHoverId(null); }
+          requestDraw();
+        }}
       >
         {!loaded ? (
           <div className="flex h-full items-center justify-center text-[13px] text-t3">
@@ -296,64 +532,11 @@ export function KgPage() {
             )}
           </div>
         ) : (
-          <svg
-            width={size.w}
-            height={size.h}
-            className={cn('block', panRef.current ? 'cursor-grabbing' : 'cursor-grab')}
-            onPointerDown={onBgPointerDown}
-          >
-            <g transform={`translate(${view.x},${view.y}) scale(${view.k})`}>
-              {/* 边 */}
-              {simLinks.map((e, i) => {
-                const s = typeof e.source === 'object' ? e.source : byId.get(e.source as string);
-                const t = typeof e.target === 'object' ? e.target : byId.get(e.target as string);
-                if (!s || !t || nodeDim(s) || nodeDim(t)) return null;
-                return (
-                  <line
-                    key={i}
-                    x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-                    stroke={edgeColor(e.type)}
-                    strokeWidth={activeSet ? 1.8 : 1.2}
-                    opacity={edgeDim(e) ? 0.05 : activeSet ? 0.95 : 0.4}
-                  />
-                );
-              })}
-              {/* 节点 + 标签（标签在节点下方，Obsidian 式） */}
-              {simNodes.map((n) => {
-                const dim = nodeDim(n);
-                const r = radiusOf(n.degree, n.type);
-                return (
-                  <g
-                    key={n.id}
-                    transform={`translate(${n.x ?? 0},${n.y ?? 0})`}
-                    opacity={dim ? 0.08 : 1}
-                    className="cursor-pointer"
-                    onPointerDown={(e) => onNodePointerDown(e, n.id)}
-                    onPointerEnter={() => setHoverId(n.id)}
-                    onPointerLeave={() => setHoverId(null)}
-                    onClick={() => setSelectedId((s) => (s === n.id ? null : n.id))}
-                  >
-                    <circle r={r + 3} fill="transparent" />
-                    <circle
-                      r={r}
-                      fill={TYPE_COLORS[n.type]}
-                      stroke="#fff"
-                      strokeWidth={focusId === n.id ? 2.5 : 1.2}
-                    />
-                    <text
-                      y={r + 12}
-                      textAnchor="middle"
-                      className="pointer-events-none fill-t1"
-                      fontSize={10.5}
-                      style={{ paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.85)', strokeWidth: 3 }}
-                    >
-                      {n.label.length > 16 ? `${n.label.slice(0, 16)}…` : n.label}
-                    </text>
-                  </g>
-                );
-              })}
-            </g>
-          </svg>
+          <canvas
+            ref={canvasRef}
+            className="block h-full w-full cursor-grab"
+            style={{ width: size.w, height: size.h }}
+          />
         )}
 
         {/* 左下：边类型图例 */}
@@ -362,7 +545,7 @@ export function KgPage() {
             <span className="flex items-center gap-1"><span className="h-0.5 w-4" style={{ background: '#b9bec4' }} />结构关系</span>
             <span className="flex items-center gap-1"><span className="h-0.5 w-4" style={{ background: '#2e7d32' }} />支持</span>
             <span className="flex items-center gap-1"><span className="h-0.5 w-4" style={{ background: '#e53935' }} />矛盾</span>
-            <span className="text-t3">滚轮缩放 · 拖拽平移 · 点选查看</span>
+            <span className="text-t3">滚轮缩放 · 拖拽平移 · 点选查看{mode === 'overview' ? ' · 点节点展开邻域' : ''}</span>
           </div>
         )}
 
@@ -388,8 +571,8 @@ export function KgPage() {
               {(() => {
                 const types = new Map<string, number>();
                 for (const e of simLinks) {
-                  const s = String(typeof e.source === 'object' ? e.source.id : e.source);
-                  const t = String(typeof e.target === 'object' ? e.target.id : e.target);
+                  const s = endId(e.source);
+                  const t = endId(e.target);
                   if (s !== selected.id && t !== selected.id) continue;
                   const other = s === selected.id ? t : s;
                   types.set(byId.get(other)?.type ?? '?', (types.get(byId.get(other)?.type ?? '?') ?? 0) + 1);
