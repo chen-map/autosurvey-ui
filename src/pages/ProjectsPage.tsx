@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import type { Project, ProjectStatus } from '@/types';
+import type { Project } from '@/types';
 import { listProjects } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -9,10 +9,12 @@ import { Input } from '@/components/ui/Input';
 import { WorkflowProgress } from '@/components/WorkflowProgress';
 import { FileText, Network, ListChecks, ShieldCheck } from 'lucide-react';
 
-const statusBadge: Record<ProjectStatus, { variant: 'info' | 'ok' | 'neutral'; label: string }> = {
+// status 含后端可能派生的 failed（有失败阶段）；未知状态回退 draft，避免 ProjectCard 崩白屏
+const statusBadge: Record<string, { variant: 'info' | 'ok' | 'neutral' | 'danger'; label: string }> = {
   running: { variant: 'info', label: '运行中' },
   completed: { variant: 'ok', label: '已完成' },
   draft: { variant: 'neutral', label: '草稿' },
+  failed: { variant: 'danger', label: '有失败阶段' },
 };
 
 function Stat({ icon: Icon, value, label }: { icon: typeof FileText; value: string; label: string }) {
@@ -27,7 +29,7 @@ function Stat({ icon: Icon, value, label }: { icon: typeof FileText; value: stri
 
 function ProjectCard({ p }: { p: Project }) {
   const navigate = useNavigate();
-  const s = statusBadge[p.status];
+  const s = statusBadge[p.status] ?? statusBadge.draft;
   const claims = (p.stats ?? { claims: { verified: 0 } }).claims;
   const claimsText =
     claims.verified + claims.needsRevision + claims.shouldRemove > 0

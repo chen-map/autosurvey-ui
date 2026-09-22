@@ -175,7 +175,9 @@ def run_pipeline_with(phases: list[dict[str, Any]], cfg: dict[str, Any],
         entry = next(p for p in state["phases"] if p["id"] == pid)
         if resume and entry["status"] == "done":
             continue
-        status = run_phase(phase, cfg, workspace, state)
+        # 必须透传 state_file：run_phase 默认值是 w1_state.json，
+        # 漏传会让 W2 的阶段进度全部写进 W1 状态文件（实测覆盖事故）
+        status = run_phase(phase, cfg, workspace, state, state_file)
         if status == "failed":
             state["current"] = None
             save_state(workspace, state, state_file)

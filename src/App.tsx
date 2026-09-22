@@ -1,3 +1,4 @@
+import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/store/auth';
 import type { ReactNode } from 'react';
@@ -23,10 +24,36 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return user ? children : <Navigate to="/login" replace />;
 }
 
+// 全局错误边界：渲染异常兜底显示（否则 React 18 直接卸载整树 → 无声白屏）
+class ErrorBoundary extends React.Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('App 渲染异常', error, info.componentStack);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 40, fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+          <h2 style={{ marginBottom: 12 }}>页面渲染异常</h2>
+          <div>{String(this.state.error.stack || this.state.error.message || this.state.error)}</div>
+          <button style={{ marginTop: 16 }} onClick={() => { this.setState({ error: null }); location.hash = '#/projects'; location.reload(); }}>
+            返回项目列表
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
     // HashRouter：GitHub Pages 无 SPA 回退，哈希路由免 404
     <HashRouter>
+      <ErrorBoundary>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
@@ -55,6 +82,7 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/projects" replace />} />
       </Routes>
+      </ErrorBoundary>
     </HashRouter>
   );
 }
