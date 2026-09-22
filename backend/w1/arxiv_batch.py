@@ -164,16 +164,34 @@ def _curl_fetch(url: str, args: argparse.Namespace) -> tuple[int, bytes]:
     """curl 子进程抓取。返回 (http_code, body)；传输层失败抛 OSError。
 
     -o - 正文进 stdout、-w 状态码紧随其后，故 stdout = body + 3 位状态码。
+    连接超时与总时长分离：大 PDF 走代理可能远超 request-timeout，
+    总时长放宽到 300s——否则 curl 掐断后仍回 200 + 半个文件（实测 40/100 截断的根因）。
+    非零退出码（18=部分传输 / 28=超时）必须抛错走重试，不能吞。
     """
-    cmd = ["curl", "-sS", "-L", "--max-time", str(args.request_timeout),
+    cmd = ["curl", "-sS", "-L",
+           "--connect-timeout", str(args.request_timeout), "--max-time", "300",
            "-A", user_agent(args), "-H", "Accept: */*", "-o", "-", "-w",
            "%{http_code}", url]
     proc = subprocess.run(cmd, capture_output=True)
     out = proc.stdout
+    if proc.returncode != 0:
+        detail = proc.stderr.decode("utf-8", errors="replace").strip()
+        raise OSError(detail.splitlines()[-1][:200] if detail else f"curl 退出码 {proc.returncode}")
     if len(out) >= 3 and out[-3:].isdigit():
         return int(out[-3:]), out[:-3]
-    detail = proc.stderr.decode("utf-8", errors="replace").strip()
-    raise OSError(detail.splitlines()[-1][:200] if detail else f"curl 退出码 {proc.returncode}")
+    raise OSError(f"curl 无状态码输出（退出码 {proc.returncode}）")
+
+
+# PDF 完整性尾标：规范 PDF 以 %%EOF 结束；截断文件（curl 超时残尸）会缺尾标
+def _tail_ok(blob_or_path: bytes | Path) -> bool:
+    if isinstance(blob_or_path, Path):
+        size = blob_or_path.stat().st_size
+        with open(blob_or_path, "rb") as fh:
+            fh.seek(max(0, size - 2048))
+            tail = fh.read()
+    else:
+        tail = blob_or_path[-2048:]
+    return b"%%EOF" in tail
 
 
 def _urllib_fetch(url: str, args: argparse.Namespace, opener) -> bytes:
@@ -256,7 +274,8 @@ def main() -> int:
 
         dest = out_dir / safe_filename(record_id, title)
         entry["file"] = dest.name
-        if not args.force and dest.exists() and dest.stat().st_size > 1024 and dest.read_bytes()[:4] == PDF_MAGIC:
+        if not args.force and dest.exists() and dest.stat().st_size > 1024 \
+                and dest.read_bytes()[:4] == PDF_MAGIC and _tail_ok(dest):
             stats["cached"] += 1
             entry["status"] = "cached"
             stats["results"].append(entry)
@@ -286,7 +305,10 @@ def main() -> int:
                         entry["version_fallback"] = True
                         continue
                     raise
-            if blob[:4] != PDF_MAGIC or len(blob) < MIN_PDF_BYTES:
+            if blob[:4] != PDF_MAGIC or len(blob) < MIN_PDF_BYTES or not _tail_ok(blob):
+                entry["status"] = "invalid_content"
+                entry["bytes"] = len(blob)
+                stats["failed"] += 1
                 entry["status"] = "invalid_content"
                 entry["bytes"] = len(blob)
                 stats["failed"] += 1
