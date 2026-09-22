@@ -36,6 +36,14 @@ def main() -> int:
     kept = [r for r in rows if r["_relevant"] == "true"]
     dropped = [r for r in rows if r["_relevant"] != "true"]
 
+    # 评分降序（同分按年份新→旧）：下游 download_prep --limit N 截断的是
+    # 得分最高的 Top-N，而非输入顺序的前 N
+    def year_key(r: dict) -> int:
+        y = str(r.get("year", "")).strip()
+        return int(y) if y.isdigit() else 0
+
+    kept.sort(key=lambda r: (-int(r["_score"]), -year_key(r)))
+
     # PRISMA 漏斗
     funnel = [
         {"stage": "检索总量", "count": len(rows)},
