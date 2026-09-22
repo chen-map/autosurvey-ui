@@ -114,6 +114,8 @@ def create_project(body: dict):
     ws.mkdir(parents=True, exist_ok=True)
     cfg = {
         "project_id": pid, "title": body.get("title", ""),
+        "topic": body.get("title", ""),                 # phase_defs P4 筛选主题
+        "domain_tags": body.get("field_tags", []),      # phase_defs P1 关键词领域
         "field_tags": body.get("field_tags", []),
         "description": body.get("description", ""),
         "platforms": body.get("platforms", []),
@@ -122,7 +124,11 @@ def create_project(body: dict):
         "prescore": body.get("prescore", 0.25),
         "year_range": body.get("year_range", [2020, 2026]),
         "seed_dir": body.get("seed_dir", ""), "local_dir": body.get("local_dir", ""),
-        "llm": body.get("llm", {}), "scripts_root": body.get("scripts_root", ""),
+        "llm": body.get("llm", {}),
+        # 存量脚本根目录：前端契约不含此字段，默认本地 autoSurvey_v2（可用 AS_SCRIPTS_ROOT 覆盖）
+        "scripts_root": body.get("scripts_root") or os.environ.get(
+            "AS_SCRIPTS_ROOT",
+            "C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2"),
         "workspace": str(ws),
         "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
@@ -492,7 +498,63 @@ def list_projects():
                     "llm": c.get("llm", {}),
                     "updated_at": c.get("updated_at", ""),
                 })
-    return {"projects": projects}
+    # 前端 Project 类型（camelCase 裸数组）：id/fieldTags/status/createdAt/updatedAt + stats
+    conn = get_db()
+    kg_stats = {}
+    for pr in projects:
+        n = conn.execute("SELECT COUNT(*) c FROM corpus_papers WHERE project_id=? AND status='downloaded'",
+                         (pr["project_id"],)).fetchone()["c"]
+        kgj = WORKSPACE / pr["project_id"] / "w1" / "knowledge_graph" / "paper_kg.json"
+        edges = 0
+        if kgj.exists():
+            try:
+                edges = len(json.loads(kgj.read_text(encoding="utf-8")).get("edges", []))
+            except Exception:
+                edges = 0
+        kg_stats[pr["project_id"]] = {"papers": n, "kgEdges": edges}
+    conn.close()
+
+    def _wf(pid: str, wid: str, name: str, state_file: str, total: int) -> dict:
+        sp = WORKSPACE / pid / "w1" / state_file
+        prog, status = 0, "pending"
+        if sp.exists():
+            try:
+                ph = [q.get("status") for q in json.loads(sp.read_text(encoding="utf-8")).get("phases", [])]
+                prog = round(100 * sum(1 for x in ph if x == "done") / max(total, 1))
+                status = "running" if "running" in ph else ("failed" if "failed" in ph else ("completed" if all(x == "done" for x in ph) else "draft"))
+            except Exception:
+                pass
+        return {"id": wid, "name": name, "status": status, "progress": prog}
+
+    wf_summaries = {}
+    for pr in projects:
+        pid = pr["project_id"]
+        wf_summaries[pid] = [
+            _wf(pid, "W1", "语料库构建", "w1_state.json", 6),
+            _wf(pid, "W2", "事实记忆(KG)", "w2_state.json", 4),
+            {"id": "W3", "name": "框架与RQ", "status": "pending", "progress": 0},
+            {"id": "W4", "name": "RQ证据", "status": "pending", "progress": 0},
+            {"id": "W5", "name": "综述写作", "status": "pending", "progress": 0},
+        ]
+
+    return [{
+        "id": pr["project_id"],
+        "title": pr["title"],
+        "fieldTags": pr["field_tags"],
+        "description": pr["description"],
+        "status": pr["status"],
+        "searchCap": pr["search_cap"],
+        "corpusCap": pr["corpus_cap"],
+        "yearRange": pr["year_range"],
+        "updatedAt": pr["updated_at"],
+        "stats": {
+            "papers": kg_stats[pr["project_id"]]["papers"],
+            "kgEdges": kg_stats[pr["project_id"]]["kgEdges"],
+            "rqs": 0,
+            "claims": {"verified": 0, "needsRevision": 0, "shouldRemove": 0},
+        },
+        "workflows": wf_summaries.get(pr["project_id"], []),
+    } for pr in projects]
 
 
 if __name__ == "__main__":

@@ -17,7 +17,8 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
     """按配置渲染 W2 四个 Phase 的执行步骤。cwd = workspace（相对路径布局前提）。"""
     scripts = cfg["scripts_root"].rstrip("/") + "/workflow_2_factual_memory_construction"
     kg_scripts = scripts + "/paper-cards-kg-builder/scripts"
-    pdf_dir = cfg.get("w2_pdf_dir", "papers")  # W1-P6 下载产物目录
+    ws = cfg.get("workspace_rel", "retrieval_workspace")  # 与 W1 同一相对布局
+    pdf_dir = cfg.get("w2_pdf_dir", f"{ws}/papers")  # W1-P6 下载产物目录
     max_pairs = int(cfg.get("w2_max_pairs", 0))          # 0 = 全部论文对（主参考默认）
     min_confidence = float(cfg.get("w2_min_confidence", 0.4))
     max_text_chars = int(cfg.get("w2_max_text_chars", 16000))

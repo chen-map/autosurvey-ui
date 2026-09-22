@@ -47,7 +47,7 @@ def arxiv_id_of(record: dict) -> str:
     return ""
 
 
-def prep(input_csv: Path, out_dir: Path) -> dict:
+def prep(input_csv: Path, out_dir: Path, *, limit: int = 0) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     ready: list[dict] = []
     no_doi: list[dict] = []
@@ -79,6 +79,11 @@ def prep(input_csv: Path, out_dir: Path) -> dict:
             else:
                 no_doi.append(rec)
 
+    # 最终保留上限： DOI 锚定清单在前（用户裁决），超出部分不进入下载
+    if limit > 0 and len(ready) > limit:
+        no_doi = no_doi + ready[limit:]
+        ready = ready[:limit]
+
     def dump(path: Path, rows: list[dict], fields: list[str]) -> None:
         with open(path, "w", encoding="utf-8", newline="") as f:
             w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
@@ -91,6 +96,7 @@ def prep(input_csv: Path, out_dir: Path) -> dict:
 
     stats = {
         "input": n_in, "with_doi": len(ready), "no_doi": len(no_doi),
+        "limit_applied": limit if limit and n_in > limit else 0,
         "arxiv_doi_injected": n_injected, "duplicates_removed": n_dedup,
     }
     (out_dir / "prep_stats.json").write_text(
@@ -102,8 +108,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="W1-P6 DOI 锚定预处理")
     ap.add_argument("--input", required=True)
     ap.add_argument("--out-dir", required=True)
+    ap.add_argument("--limit", type=int, default=0, help="最终保留上限（corpus_cap），0=不限")
     args = ap.parse_args()
-    stats = prep(Path(args.input), Path(args.out_dir))
+    stats = prep(Path(args.input), Path(args.out_dir), limit=args.limit)
     print(f"[download_prep] {json.dumps(stats, ensure_ascii=False)}")
 
 

@@ -28,7 +28,7 @@ function Stat({ icon: Icon, value, label }: { icon: typeof FileText; value: stri
 function ProjectCard({ p }: { p: Project }) {
   const navigate = useNavigate();
   const s = statusBadge[p.status];
-  const claims = p.stats.claims;
+  const claims = (p.stats ?? { claims: { verified: 0 } }).claims;
   const claimsText =
     claims.verified + claims.needsRevision + claims.shouldRemove > 0
       ? `${claims.verified + claims.needsRevision + claims.shouldRemove} 条`
@@ -54,7 +54,7 @@ function ProjectCard({ p }: { p: Project }) {
         ))}
       </div>
 
-      <WorkflowProgress workflows={p.workflows} />
+      <WorkflowProgress workflows={p.workflows ?? []} />
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line/60 pt-3">
         <Stat icon={FileText} value={String(p.stats.papers)} label="论文" />

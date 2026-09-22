@@ -48,6 +48,15 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--output", f"{ws}/raw_results/"]},
             ],
             "outputs": [f"{ws}/raw_results/"],
+            # arXiv 合规补充源：OAI-PMH 增量元数据（Retry-After 退避 + 日限额 + 合规 UA），经 P3 归一合流
+            "steps_tail": [
+                {"script": str(HERE / "arxiv_oai.py"),
+                 "args": ["--set", cfg.get("oai_sets", "cs"),
+                          "--from", f"{year_from}-01-01",
+                          "--out", f"{ws}/raw_results/arxiv_oai_results.csv",
+                          "--max-records", str(cfg.get("oai_max_records", 800)),
+                          "--contact-email", cfg.get("contact_email", "researcher@example.com")]},
+            ],
         },
         {
             "id": "W1-P3",
@@ -98,7 +107,8 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                 # DOI 锚定预处理（用户裁决：不用 DOI 会跑偏）——消毒/补 arXiv DOI/去重/无 DOI 分流
                 {"script": str(HERE / "download_prep.py"),
                  "args": ["--input", f"{ws}/snowball/snowball_candidates.csv",
-                          "--out-dir", f"{ws}/download/"]},
+                          "--out-dir", f"{ws}/download/",
+                          "--limit", str(cfg.get("corpus_cap", 500))]},
                 {"script": f"{scripts}/paper_downloader/download_papers.py",
                  "args": ["--input", f"{ws}/download/download_ready.csv",
                           "--output", f"{ws}/papers/", "--no-scihub", "--skip-existing",
