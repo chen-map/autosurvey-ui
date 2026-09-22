@@ -8,6 +8,7 @@ import type { Project } from '@/types';
 import type {
   PipelineRun, PaperRecord, PrismaLevel, RQBundle,
   OutlineNode, ReviewRound, AgentRun, UserRecord,
+  WorkflowRun, PhaseState,
 } from '@/types/data';
 import { MOCK_PROJECTS } from '@/mock/data';
 import { getPipeline as getPipelineData, PAPERS, PRISMA } from '@/mock/detail';
@@ -160,10 +161,91 @@ export async function startRun(projectId: string, workflow: 'w1' | 'w2' = 'w1'):
   await delay(200);
 }
 
+// 后端 /run 返回 runner 的裸状态文件（phases 平铺），这里适配成前端 PipelineRun 契约
+const WORKFLOW_META: Record<'w1' | 'w2', { id: string; name: string }> = {
+  w1: { id: 'W1', name: '语料构建（检索 → 筛选 → 下载 → 入库）' },
+  w2: { id: 'W2', name: '事实记忆构建（解析 → 提取 → 筛选 → KG）' },
+};
+
+interface RawPhase {
+  id: string;
+  name?: string;
+  status?: string;
+  duration_sec?: number;
+  ended_at?: string;
+  started_at?: string;
+  note?: string;
+}
+
+function aggregateStatus(phases: { status: PhaseState['status'] }[]): PhaseState['status'] {
+  if (!phases.length) return 'pending';
+  if (phases.some((p) => p.status === 'failed')) return 'failed';
+  if (phases.some((p) => p.status === 'running')) return 'running';
+  if (phases.every((p) => p.status === 'done')) return 'done';
+  return 'pending';
+}
+
 export async function getPipeline(projectId: string, workflow: 'w1' | 'w2' = 'w1'): Promise<PipelineRun> {
-  if (!USE_MOCK) return realFetch<PipelineRun>(`/projects/${projectId}/run?workflow=${workflow}`);
-  await delay();
-  return getPipelineData(projectId);
+  if (USE_MOCK) {
+    await delay();
+    return getPipelineData(projectId);
+  }
+  const raw = await realFetch<{ project_id: string; started_at: string; updated_at: string; phases: RawPhase[] }>(
+    `/projects/${projectId}/run?workflow=${workflow}`,
+  );
+  const meta = WORKFLOW_META[workflow];
+  const phases: PhaseState[] = (raw.phases ?? []).map((p) => ({
+    id: p.id,
+    name: p.name ?? p.id,
+    status: (p.status ?? 'pending') as PhaseState['status'],
+    durationSec: p.duration_sec,
+  }));
+  const wf: WorkflowRun = {
+    id: meta.id,
+    name: meta.name,
+    status: aggregateStatus(phases),
+    progress: phases.length ? Math.round((phases.filter((p) => p.status === 'done').length / phases.length) * 100) : 0,
+    phases,
+  };
+  // 指标：语料（成功下载）与 KG（论文/边）尽力取数，缺哪个都不阻塞页面
+  let papers = 0;
+  let edges = 0;
+  let kgPapers = 0;
+  const [corpus, kg] = await Promise.all([
+    getCorpus(projectId).catch(() => null),
+    getKg(projectId).catch(() => null),
+  ]);
+  if (corpus) {
+    const done = corpus.funnel?.find((f) => f.stage === '成功下载');
+    papers = done?.count ?? 0;
+  }
+  if (kg) {
+    kgPapers = kg.paperCount ?? kg.nodes.filter((n) => n.type.toLowerCase() === 'paper').length;
+    edges = kg.edges.length;
+    if (workflow === 'w2') papers = kgPapers;
+  }
+  const logs = (raw.phases ?? [])
+    .map((p) => ({
+      t: p.ended_at || p.started_at || raw.started_at,
+      phase: p.id,
+      line:
+        (p.status === 'done' ? `✅ ${p.id} 完成` : p.status === 'failed' ? `❌ ${p.id} 失败` : `⏳ ${p.id} ${p.status ?? 'pending'}`) +
+        (p.duration_sec != null ? ` · ${Math.round(p.duration_sec)}s` : '') +
+        (p.note ? ` · ${p.note}` : ''),
+    }))
+    .reverse();
+  const startedMs = Date.parse(String(raw.started_at).replace(' ', 'T'));
+  const updatedMs = Date.parse(String(raw.updated_at || raw.started_at).replace(' ', 'T'));
+  const elapsedSec = Number.isFinite(startedMs) && Number.isFinite(updatedMs) ? Math.max(0, (updatedMs - startedMs) / 1000) : 0;
+  return {
+    id: meta.id,
+    projectId,
+    startedAt: raw.started_at,
+    elapsedSec,
+    metrics: { papers, pairs: Math.round((papers * (papers - 1)) / 2), edges },
+    workflows: [wf],
+    logs,
+  };
 }
 
 // ---- KG 图谱（W2 产物，Obsidian 风格力导向图数据） ----

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Play, Terminal, FileCode2, Bot } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import { Play, Terminal, FileCode2, Bot, AlertTriangle } from 'lucide-react';
 import type { AgentRun } from '@/types/data';
-import { getAgentRun } from '@/services/api';
+import { getAgentRun, getKg, USE_MOCK } from '@/services/api';
+import type { KgGraphData } from '@/services/api';
 import { readLlmConfig, llmConfigured, chatCompletion } from '@/lib/llm';
-import { USE_MOCK } from '@/services/api';
+import { TYPE_LABELS, type KgType } from '@/mock/kg';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -20,14 +21,53 @@ export function AgentPage() {
   const [visibleSteps, setVisibleSteps] = useState(0);
   const [realAnswer, setRealAnswer] = useState('');
   const [agentErr, setAgentErr] = useState('');
+  const [kg, setKg] = useState<KgGraphData | null>(null);
+  const [kgLoaded, setKgLoaded] = useState(false);
 
   useEffect(() => {
     let alive = true;
     getAgentRun().then((r) => alive && setPreset(r));
+    // W2 真实 KG：Agent 分析的数据底座（主参考 §3.4 单 RQ 分析）
+    if (!USE_MOCK) {
+      getKg(projectId)
+        .then((d) => { if (alive) { setKg(d); setKgLoaded(true); } })
+        .catch(() => { if (alive) setKgLoaded(true); });
+    } else {
+      setKgLoaded(true);
+    }
     return () => {
       alive = false;
     };
   }, [projectId]);
+
+  // 真实 KG 统计：喂给分析 Agent 的概览（数据层全量，提示词取统计 + 高连接概念采样）
+  const kgStats = useMemo(() => {
+    if (!kg || !kg.nodes.length) return null;
+    const deg = new Map<string, number>();
+    for (const e of kg.edges) {
+      deg.set(e.source, (deg.get(e.source) ?? 0) + 1);
+      deg.set(e.target, (deg.get(e.target) ?? 0) + 1);
+    }
+    const byType: Record<string, number> = {};
+    for (const n of kg.nodes) byType[n.type] = (byType[n.type] ?? 0) + 1;
+    const papers = kg.nodes.filter((n) => n.type.toLowerCase() === 'paper');
+    const concepts = kg.nodes.filter((n) => n.type.toLowerCase() !== 'paper');
+    const top = [...concepts]
+      .sort((a, b) => (deg.get(b.id) ?? 0) - (deg.get(a.id) ?? 0))
+      .slice(0, 30);
+    const typeSummary = Object.entries(byType)
+      .filter(([t]) => t.toLowerCase() !== 'paper')
+      .map(([t, c]) => `${TYPE_LABELS[t as KgType] ?? t} ${c}`)
+      .join(' · ');
+    return {
+      papers: kg.paperCount ?? papers.length,
+      nodeCount: kg.nodes.length,
+      edgeCount: kg.edges.length,
+      typeSummary,
+      topConcepts: top.map((n) => `${n.label}［${TYPE_LABELS[n.type as KgType] ?? n.type}·度${deg.get(n.id) ?? 0}］`),
+      paperSample: papers.slice(0, 20).map((p) => p.label),
+    };
+  }, [kg]);
 
   const run = async () => {
     if (!rq.trim()) return;
@@ -39,13 +79,17 @@ export function AgentPage() {
 
     if (!USE_MOCK || llmConfigured(cfg)) {
       // 真实模式：统一 LLM 执行器（url + apikey + model）
+      const overview = kgStats
+        ? `本项目 W2 知识图谱真实产物：
+- 规模：${kgStats.papers} 篇论文，${kgStats.nodeCount} 个概念节点（${kgStats.typeSummary}），${kgStats.edgeCount} 条关系边
+- 高连接概念（度数 Top）：${kgStats.topConcepts.join('；')}
+- 论文样本：${kgStats.paperSample.slice(0, 12).join('；')}`
+        : 'KG 概览：162 篇论文、645 概念节点、313 关系边（含 contradicts 矛盾边）。';
       try {
         const sys = '你是学术知识图谱分析 Agent。基于给定 KG 概览回答研究问题，输出结构化分析：结论先行、每条判断标注依据（论文/节点）、给出 2-3 条后续分析建议，使用 markdown。';
         const answer = await chatCompletion(cfg, [
           { role: 'system', content: sys },
-          { role: 'user', content: `研究问题：${rq}
-
-KG 概览：162 篇论文、645 概念节点、313 关系边（含 contradicts 矛盾边）。` },
+          { role: 'user', content: `研究问题：${rq}\n\n${overview}` },
         ], { maxTokens: 1800 });
         setRealAnswer(answer);
       } catch (e) {
@@ -77,6 +121,22 @@ KG 概览：162 篇论文、645 概念节点、313 关系边（含 contradicts �
           <Bot size={16} className="text-t3" />
           KG 分析 Agent（LLM 驱动 · 37 Skills）
         </div>
+        {/* W2 KG 数据底座状态 */}
+        {!USE_MOCK && kgLoaded && (
+          kgStats ? (
+            <div className="mt-2.5 flex flex-wrap items-center gap-2 rounded-lg border border-ok/30 bg-ok/5 px-3 py-2 text-[12.5px] text-t2">
+              <Badge variant="ok" withDot>KG 已接入</Badge>
+              <span>{kgStats.papers} 篇论文 · {kgStats.nodeCount} 概念节点 · {kgStats.edgeCount} 关系边</span>
+              <span className="text-t3">{kgStats.typeSummary}</span>
+            </div>
+          ) : (
+            <div className="mt-2.5 flex flex-wrap items-center gap-2 rounded-lg border border-warn-fg/30 bg-warn/10 px-3 py-2 text-[12.5px] text-t2">
+              <AlertTriangle size={14} className="text-warn-fg" />
+              该项目还没有 W2 知识图谱——Agent 将无真实数据可分析。
+              <Link to={`/projects/${projectId}/kg`} className="text-info-fg hover:underline">去 KG 页启动 W2 →</Link>
+            </div>
+          )
+        )}
         <textarea
           value={rq}
           onChange={(e) => setRq(e.target.value)}
@@ -85,8 +145,10 @@ KG 概览：162 篇论文、645 概念节点、313 关系边（含 contradicts �
           className="mt-3 w-full resize-none rounded-lg border border-line bg-page px-3 py-2.5 text-[14px] text-t1 placeholder:text-t3 focus:border-ink focus:outline-none"
         />
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-[12px] text-t3">Agent 将自动从 37 个分析 Skill 中选择最优策略，多轮调用 KG 原子工具（≤30 轮）</span>
-          <Button onClick={run} disabled={phase === 'selecting' || running || !rq.trim()}>
+          <span className="text-[12px] text-t3">
+            {kgStats ? 'Agent 将基于本项目 W2 真实图谱进行结构化分析' : 'Agent 将自动从 37 个分析 Skill 中选择最优策略，多轮调用 KG 原子工具（≤30 轮）'}
+          </span>
+          <Button onClick={run} disabled={phase === 'selecting' || running || !rq.trim() || (!USE_MOCK && kgLoaded && !kgStats)}>
             <Play size={14} />
             {phase === 'idle' ? '发起分析' : running ? '分析中…' : phase === 'selecting' ? '选择 Skill…' : '重新分析'}
           </Button>
