@@ -108,6 +108,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                 {"script": str(HERE / "download_prep.py"),
                  "args": ["--input", f"{ws}/snowball/snowball_candidates.csv",
                           "--out-dir", f"{ws}/download/",
+                          "--scores", f"{ws}/screening/screened_records.csv",
                           "--limit", str(cfg.get("corpus_cap", 500))]},
                 # arXiv 批量直连先行（限速 5s/篇 + 全局冷却 + 断点续传）：
                 # OAI 收割的记录带官方 DOI，走 export.arxiv.org 一次到位；
