@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Improving the effectiveness of agricultural extension services in supporting farmers to adapt to climate change Insights from northeastern Ghana
+Authors  : 
+Year     : 2021
+DOI      : 10.1016/j.crm.2021.100304
+URL      : https://openalex.org/W3145653601
+Venue    : Climate Risk Management
+Source DB: openalex
+
+Abstract:
+The importance of extension services in helping smallholder farmers to address the many challenges of agricultural production cannot be over-emphasized. However, relatively few studies have been conducted that investigate how the capacities of agricultural extension agents can be built to more effectively assist smallholder farmers in managing climate risks and impacts. As climate change is a key threat to smallholder food production, addressing this issue is increasingly important. This paper aims to identify how agricultural extension agents in Ghana can better support smallholder farmers in navigating and addressing the effects of climate change on food production. It asks: (i) what are the sources of information used by agricultural extension agents in Ghana’s Upper East region? (ii) what are the capacity building needs of agricultural extension agents for effective communication of climate information for building resilient agricultural systems? (iii) what are the key barriers to successful extension outcomes for climate change adaptation? The paper uses a mixed methods approach including three regional stakeholder workshops, expert interviews and surveys with 32 agricultural extension agents in northeastern Ghana. Results addressing question (i) indicated that radios and television are the dominant sources of climate information for agricultural extension agents in the Upper East region. Findings targeting question (ii) identified capacity building needs such as developing extension agents’ technical skills, improving communication skills, improving knowledge and use of climate smart agricultural interventions such as soil moisture conservation methods, and training on information communication technologies (ICT) to deliver extension advice on climate change. Other needs included developing skills in field demonstration and project monitoring and evaluation. Addressing question (iii), key barriers confronted by agricultural extension agents in the delivery of extension on climate change included lack of transportation facilities for extension agents, lack of appropriate extension materials, high agricultural extension agent to farmer ratios, and inadequate funds to implement adaptation practices. Wider barriers reducing the effectiveness of extension efforts included farmer resistance to change and complex land tenure arrangements that do not allow investment. Periodic workshops should be organised for agricultural extension agents on the use of ICT to deliver extension services, whilst encouraging the use of audio-visuals in extension delivery. These efforts should be supported by regular assessments of extension agents’ capacity building needs.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S2212096321000334)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0057_improving_the_effectiveness_of_agricultural_extension_servic.pdf

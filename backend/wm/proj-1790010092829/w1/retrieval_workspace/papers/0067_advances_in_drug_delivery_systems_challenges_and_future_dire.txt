@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Advances in drug delivery systems, challenges and future directions
+Authors  : 
+Year     : 2023
+DOI      : 10.1016/j.heliyon.2023.e17488
+URL      : https://openalex.org/W4381847987
+Venue    : Heliyon
+Source DB: openalex
+
+Abstract:
+Advances in molecular pharmacology and an improved understanding of the mechanism of most diseases have created the need to specifically target the cells involved in the initiation and progression of diseases. This is especially true for most life-threatening diseases requiring therapeutic agents which have numerous side effects, thus requiring accurate tissue targeting to minimize systemic exposure. Recent drug delivery systems (DDS) are formulated using advanced technology to accelerate systemic drug delivery to the specific target site, maximizing therapeutic efficacy and minimizing off-target accumulation in the body. As a result, they play an important role in disease management and treatment. Recent DDS offer greater advantages when compared to conventional drug delivery systems due to their enhanced performance, automation, precision, and efficacy. They are made of nanomaterials or miniaturized devices with multifunctional components that are biocompatible, biodegradable, and have high viscoelasticity with an extended circulating half-life. This review, therefore, provides a comprehensive insight into the history and technological advancement of drug delivery systems. It updates the most recent drug delivery systems, their therapeutic applications, challenges associated with their use, and future directions for improved performance and use.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S2405844023046960)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0067_advances_in_drug_delivery_systems_challenges_and_future_dire.pdf

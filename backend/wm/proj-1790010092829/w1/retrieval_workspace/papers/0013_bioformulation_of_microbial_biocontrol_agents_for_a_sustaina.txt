@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Bioformulation of Microbial Biocontrol Agents for a Sustainable Agriculture
+Authors  : 
+Year     : 2020
+DOI      : 10.1007/978-3-030-53238-3_16
+URL      : https://openalex.org/W3119367981
+Venue    : Progress in biological control
+Source DB: openalex
+
+Abstract:
+Abstract The application of microbial based biopesticides has become a sustainable alternative to the use of chemicals to prevent yield losses due to plant pathogens. However, microbial based biopesticides are often unsuccessfully formulated and do not meet the demanding regulatory standards required by the agencies, which hinders their commercialization. Hence, an outline on the approaches to attain more effective formulations might be useful for the development of future more effective products. With this aim, this chapter reports the current state of biocontrol strategies and describes the principles of microbial biocontrol formulations. Emphasis is placed on techniques and tools available for the development and characterisation of microbial products. To provide glimpses on the possible formulations, the different existing additives, carriers, inoculation techniques and formulation types are exhaustively reviewed. Finally, requirements and principles for efficacy evaluation of plant protection products in the European Union are included (see Chaps. 10.1007/978-3-030-53238-3_11 , 10.1007/978-3-030-53238-3_18 and 10.1007/978-3-030-53238-3_19 ).
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://link.springer.com/chapter/10.1007/978-3-030-53238-3_16)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0013_bioformulation_of_microbial_biocontrol_agents_for_a_sustaina.pdf

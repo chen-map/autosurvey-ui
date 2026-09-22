@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Renewable energy integration and microgrid energy trading using multi-agent deep reinforcement learning
+Authors  : 
+Year     : 2022
+DOI      : 10.1016/j.apenergy.2022.119151
+URL      : https://openalex.org/W3215351807
+Venue    : Applied Energy
+Source DB: openalex
+
+Abstract:
+To reduce global greenhouse gas emissions, the world must find intelligent solutions to maximise the utilisation of carbon-free renewable energy sources. In this paper, multi-agent reinforcement learning is used to control a microgrid in a mixed cooperative and competitive setting. The agents observe fluctuating energy demand, dynamic wholesale energy prices, and intermittent renewable energy sources to control a hybrid energy storage system to maximise the utilisation of the renewables to reduce the energy costs of the grid. In addition, an aggregator agent trades with external microgrids competing against one another and the aggregator to reduce their own energy bills. For this, the algorithm deep deterministic policy gradients (DDPG) and multi-agent DDPG (MADDPG) are used to compare the use of a single global controller versus multiple distributed agents, along with the single and multi-agent variants of distributional DDPG (D3PG) and twin delayed DDPG (TD3). The research found it is significantly more profitable for the primary microgrid to sell energy on its own terms rather than selling back to the utility grid, and is also beneficial for the external microgrids as they also reduce their own energy bills. The methods that produced the greatest profits were the multi-agent approaches where each agent has its own reward function based on the principle of marginal contribution from game theory. The multi-agent approaches were better able to evaluate their performance controlling individual components of the environment which allowed them to develop their own unique policies for the different types of energy storage system.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S0306261922005256)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0037_renewable_energy_integration_and_microgrid_energy_trading_us.pdf

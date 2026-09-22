@@ -1,0 +1,46 @@
+[
+  {
+    "source_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "source_type": "Paper",
+    "target_id": "metric_metric_accuracy_f676b93ef9",
+    "target_type": "Metric",
+    "edge_type": "measured_by",
+    "confidence": 0.95,
+    "evidence": "Proportion of correct predictions among total predictions.",
+    "context_paper_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "created_at": "2026-09-22 02:50:48"
+  },
+  {
+    "source_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "source_type": "Paper",
+    "target_id": "metric_metric_f1_score_f4f1d4b1e3",
+    "target_type": "Metric",
+    "edge_type": "measured_by",
+    "confidence": 0.95,
+    "evidence": "Harmonic mean of precision and recall.",
+    "context_paper_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "created_at": "2026-09-22 02:50:48"
+  },
+  {
+    "source_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "source_type": "Paper",
+    "target_id": "metric_metric_precision_8d7fae0de9",
+    "target_type": "Metric",
+    "edge_type": "measured_by",
+    "confidence": 0.95,
+    "evidence": "Proportion of true positive predictions among all positive predictions.",
+    "context_paper_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "created_at": "2026-09-22 02:50:48"
+  },
+  {
+    "source_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "source_type": "Paper",
+    "target_id": "metric_metric_recall_9429ac9e55",
+    "target_type": "Metric",
+    "edge_type": "measured_by",
+    "confidence": 0.95,
+    "evidence": "Proportion of true positive predictions among all actual positives.",
+    "context_paper_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "created_at": "2026-09-22 02:50:48"
+  }
+]

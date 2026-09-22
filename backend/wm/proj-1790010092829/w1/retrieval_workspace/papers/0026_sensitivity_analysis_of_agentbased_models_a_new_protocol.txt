@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Sensitivity analysis of agent-based models a new protocol
+Authors  : 
+Year     : 2022
+DOI      : 10.1007/s10588-021-09358-5
+URL      : https://openalex.org/W4206721495
+Venue    : Computational and Mathematical Organization Theory
+Source DB: openalex
+
+Abstract:
+Abstract Agent-based models (ABMs) are increasingly used in the management sciences. Though useful, ABMs are often critiqued: it is hard to discern why they produce the results they do and whether other assumptions would yield similar results. To help researchers address such critiques, we propose a systematic approach to conducting sensitivity analyses of ABMs. Our approach deals with a feature that can complicate sensitivity analyses: most ABMs include important non-parametric elements, while most sensitivity analysis methods are designed for parametric elements only. The approach moves from charting out the elements of an ABM through identifying the goal of the sensitivity analysis to specifying a method for the analysis. We focus on four common goals of sensitivity analysis: determining whether results are robust, which elements have the greatest impact on outcomes, how elements interact to shape outcomes, and which direction outcomes move when elements change. For the first three goals, we suggest a combination of randomized finite change indices calculation through a factorial design. For direction of change, we propose a modification of individual conditional expectation (ICE) plots to account for the stochastic nature of the ABM response. We illustrate our approach using the Garbage Can Model, a classic ABM that examines how organizations make decisions.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://link.springer.com/10.1007/s10588-021-09358-5)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0026_sensitivity_analysis_of_agentbased_models_a_new_protocol.pdf

@@ -1,0 +1,33 @@
+{
+  "project_id": "proj-1790010092829",
+  "title": "LLM Agent 安全综述 W12 全链路",
+  "topic": "LLM Agent 安全综述 W12 全链路",
+  "domain_tags": [
+    "LLM 安全",
+    "智能体"
+  ],
+  "field_tags": [
+    "LLM 安全",
+    "智能体"
+  ],
+  "description": "大语言模型智能体的安全攻击与防御综述",
+  "platforms": [
+    "arXiv",
+    "OpenAlex",
+    "Semantic Scholar"
+  ],
+  "search_cap": 300,
+  "corpus_cap": 60,
+  "prescore": 0.25,
+  "year_range": [
+    2020,
+    2026
+  ],
+  "seed_dir": "seeds",
+  "local_dir": "",
+  "llm": {},
+  "scripts_root": "C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2",
+  "workspace": "C:\\Users\\85864\\.zcode\\workspace\\default\\autosurvey-ui\\backend\\wm\\proj-1790010092829\\w1",
+  "created_at": "2026-09-22 01:01:32",
+  "w2_max_pairs": 24
+}

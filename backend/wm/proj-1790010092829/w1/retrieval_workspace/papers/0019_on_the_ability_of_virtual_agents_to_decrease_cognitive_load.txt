@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : On the ability of virtual agents to decrease cognitive load an experimental study
+Authors  : 
+Year     : 2020
+DOI      : 10.1007/s10257-020-00471-7
+URL      : https://openalex.org/W3036413616
+Venue    : Information Systems and e-Business Management
+Source DB: openalex
+
+Abstract:
+Abstract When attempting to solve a problem, humans call upon cognitive resources. These resources are limited, and the degree of their utilisation is described as cognitive load. While the number of parameters to be taken into account and to be processed by modern-day knowledge workers increases, their cognitive resources do not. Research shows that too high a load can increase stress and failure rates and decrease the work satisfaction and performance of employees. It is thus in the interest of organisations to reduce the cognitive load of their employees and keep it at a moderate level. One way to achieve this may be the application of virtual assistants (VAs), software programs, that can be addressed via voice or text commands and respond to the users’ input. This study uses a laboratory experiment with N = 91 participants comparing two groups in their ability to solve a task. One group was able to make use of a VA while the other could not. Besides task performance, the cognitive load of the participants was measured. Results show that (a) cognitive load is negatively related to task performance, (b) the group using the VA performed better at the task and (c) the group using the VA had a lower cognitive load. These findings show that VAs are a viable way to support employees and can increase their performance. It adds to the growing field of IS research on VAs by expanding the field for the concept of cognitive load.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://link.springer.com/10.1007/s10257-020-00471-7)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0019_on_the_ability_of_virtual_agents_to_decrease_cognitive_load.pdf

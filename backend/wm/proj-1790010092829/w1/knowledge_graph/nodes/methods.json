@@ -1,0 +1,47 @@
+[
+  {
+    "node_id": "method_method_agent_eligibility_estimation_aee_c931c01be5",
+    "node_type": "Method",
+    "canonical_name": "Agent Eligibility Estimation (AEE)",
+    "description": "Computes security scores for data requests based on multiple security parameters to assess agent behavior.",
+    "origin_paper_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "created_at": "2026-09-22 02:50:48",
+    "label": "Agent Eligibility Estimation (AEE)"
+  },
+  {
+    "node_id": "method_method_agent_empowerment_framework_aligned_with_full_cyber_offense_defen_3e48746496",
+    "node_type": "Method",
+    "canonical_name": "Agent-empowerment framework aligned with full cyber offense–defense lifecycle",
+    "description": "The first agent-empowerment framework aligned with the full cyber offense–defense lifecycle, covering pre-exploitation, initial access & execution, post-exploitation, identification, protection & detection, and response & recovery.",
+    "origin_paper_id": "0023_llm_agents_security_duality_a_comprehensive_survey_of_selfse",
+    "created_at": "2026-09-22 02:50:48",
+    "label": "Agent-empowerment framework aligned with full cyber offense–defense lifecycle"
+  },
+  {
+    "node_id": "method_method_structured_literature_review_methodology_6f88630df8",
+    "node_type": "Method",
+    "canonical_name": "Structured literature review methodology",
+    "description": "A structured literature review methodology guided by formal research questions to synthesize existing research, identify critical gaps, and delineate future research trajectories.",
+    "origin_paper_id": "0023_llm_agents_security_duality_a_comprehensive_survey_of_selfse",
+    "created_at": "2026-09-22 02:50:48",
+    "label": "Structured literature review methodology"
+  },
+  {
+    "node_id": "method_method_taxonomy_organized_by_threat_sources_2935c12886",
+    "node_type": "Method",
+    "canonical_name": "Taxonomy organized by threat sources",
+    "description": "A taxonomy of LLM agent security threats organized by threat sources, including endogenous, exogenous, and interaction threats.",
+    "origin_paper_id": "0023_llm_agents_security_duality_a_comprehensive_survey_of_selfse",
+    "created_at": "2026-09-22 02:50:48",
+    "label": "Taxonomy organized by threat sources"
+  },
+  {
+    "node_id": "method_method_xgboost_classifier_based_malicious_agent_prediction_xc_map_c538563237",
+    "node_type": "Method",
+    "canonical_name": "XGBoost Classifier-based Malicious Agent Prediction (XC-MAP)",
+    "description": "Uses XGBoost machine learning classification to predict malicious agents proactively based on features from AEE.",
+    "origin_paper_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "created_at": "2026-09-22 02:50:48",
+    "label": "XGBoost Classifier-based Malicious Agent Prediction (XC-MAP)"
+  }
+]

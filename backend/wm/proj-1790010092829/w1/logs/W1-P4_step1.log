@@ -1,0 +1,4 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w1\simple_screen.py --input retrieval_workspace/normalized/unified_records.csv --topic LLM Agent 安全综述 W12 全链路 --output-dir retrieval_workspace/screening/
+筛选完成: 697 → 646 (排除了 51 篇不相关)
+结果: retrieval_workspace\screening\screened_records.csv

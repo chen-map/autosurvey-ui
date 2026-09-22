@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Economic forecasting with an agent-based model
+Authors  : 
+Year     : 2022
+DOI      : 10.1016/j.euroecorev.2022.104306
+URL      : https://openalex.org/W4306386204
+Venue    : European Economic Review
+Source DB: openalex
+
+Abstract:
+We develop the first agent-based model (ABM) that can compete with benchmark VAR and DSGE models in out-of-sample forecasting of macro variables. Our ABM for a small open economy uses micro and macro data from national accounts, sector accounts, input–output tables, government statistics, and census and business demography data. The model incorporates all economic activities as classified by the European System of Accounts (ESA 2010) and includes all economic sectors populated with millions of heterogeneous agents. In addition to being a competitive model framework for forecasts of aggregate variables, the detailed structure of the ABM allows for a breakdown into sector-level forecasts. Using this detailed structure, we demonstrate the ABM by forecasting the medium-run macroeconomic effects of lockdown measures taken in Austria to combat the COVID-19 pandemic. Potential applications of the model include stress-testing and predicting the effects of monetary or fiscal macroeconomic policies.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S0014292122001891)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0062_economic_forecasting_with_an_agentbased_model.pdf

@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : The complexity of the intangible digital economy an agent-based model
+Authors  : 
+Year     : 2020
+DOI      : 10.1016/j.jbusres.2020.03.041
+URL      : https://openalex.org/W2990445980
+Venue    : Journal of Business Research
+Source DB: openalex
+
+Abstract:
+During the last decades, we have witnessed a strong development of intangible digital technologies. Software, artificial intelligence and algorithms are increasingly affecting both production systems and our lives; economists have started to figure out the long-run complex economic implications of this new technological wave. In this paper, we address this question through the agent-based modelling approach. In particular, we enrich the macroeconomic model Eurace with the concept of intangible digital technology and investigate its effects both at the micro and macro level. Results show the emergence of the relevant stylized facts observed in the business domain, such as increasing returns, winner-take-most phenomena and market lock-in. At the macro level, our main finding is an increasing unemployment level, since the sizeable decrease of the employment rate in the mass-production system, provided by the higher productivity of digital assets, is usually not counterbalanced by the new jobs created in the digital sector.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S0148296320301946)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0076_the_complexity_of_the_intangible_digital_economy_an_agentbas.pdf

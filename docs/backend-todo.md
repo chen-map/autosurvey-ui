@@ -138,6 +138,17 @@ W3 实际写出 `analyze_report/` 下的产物，前端 RQ 树/专页的每个�
 - **消费**：`/api/llm/chat` 带 `useCase`；W2 经 llm_wrap `--use-case`（P1=w2.extract，P3=w2.relation）
 - **UI**：个人中心「按 AI 使用点细分」矩阵——逐环节覆盖模型名与可选 Key
 
+## 7.9 arXiv 合规采集 + W12 全链路实测（已实现）
+
+- **OAI-PMH 采集器** `w1/arxiv_oai.py` 挂 W1-P2 steps_tail：增量元数据（Retry-After 退避、
+  合规 UA、日限额 2000、resumptionToken 分页），产出同 schema CSV 注入官方 DOI，经 P3 合流。
+  清单见 docs/arxiv-compliance.md
+- **corpus_cap 截断**：download_prep `--limit`——最终保留上限约束下载量（超额部分进 no_doi 分流）
+- **scripts_root 兜底**：createProject 不传时用 AS_SCRIPTS_ROOT / 本地默认路径
+- **list 端点形状修复**：返回前端 Project 同构（camelCase + stats + workflows 摘要）
+- **W12 全链路实测**：新建项目 → P1 22s → P2 176s（712 条）→ P3 7s → P4 → P5（S2 限流降级）
+  → P6 786s（60 截断：2 下载 + 58 占位 + 586 分流）→ 646 条入本地库 → W2 全绿 → 真 KG 上图
+
 ## 8. 基础设施（部署阶段）
 
 - ECS（放既有 VPC 交换机）+ 弹性公网 IP + 安全组 80/443

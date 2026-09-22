@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Sanitizing agents for virus inactivation and disinfection
+Authors  : 
+Year     : 2020
+DOI      : 10.1002/viw2.16
+URL      : https://openalex.org/W3028391983
+Venue    : Open Research (University of Surrey)
+Source DB: openalex
+
+Abstract:
+Viral epidemics develop from the emergence of new variants of infectious viruses. The lack of effective antiviral treatments for the new viral infections coupled with rapid community spread of the infection often result in major human and financial loss. Viral transmissions can occur via close human-to-human contact or via contacting a contaminated surface. Thus, careful disinfection or sanitization is essential to curtail viral spread. A myriad of disinfectants/sanitizing agents/biocidal agents are available that can inactivate viruses, but their effectiveness is dependent upon many factors such as concentration of agent, reaction time, temperature, and organic load. In this work, we review common commercially available disinfectants agents available on the market and evaluate their effectiveness under various application conditions. In addition, this work also seeks to debunk common myths about viral inactivation and highlight new exciting advances in the development of potential sanitizing agents.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve returned HTTP 403
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0011_sanitizing_agents_for_virus_inactivation_and_disinfection.pdf

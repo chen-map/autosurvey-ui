@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Advances in the agent-based modeling of economic and social behavior
+Authors  : 
+Year     : 2021
+DOI      : 10.1007/s43546-021-00103-3
+URL      : https://openalex.org/W3127065574
+Venue    : SN Business & Economics
+Source DB: openalex
+
+Abstract:
+In this review we discuss advances in the agent-based modeling of economic and social systems. We show the state of the art of the heuristic design of agents and how behavioral economics and laboratory experiments have improved the modeling of agent behavior. We further discuss how economic networks and social systems can be modeled and we discuss novel methodology and data sources. Lastly, we present an overview of estimation techniques to calibrate and validate agent-based models and show avenues for future research.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://link.springer.com/10.1007/s43546-021-00103-3)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0034_advances_in_the_agentbased_modeling_of_economic_and_social_b.pdf

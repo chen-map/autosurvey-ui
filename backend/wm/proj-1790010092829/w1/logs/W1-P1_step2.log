@@ -1,0 +1,29 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_1_corpus_construction/golden_set_builder/keyword_analyzer.py --input retrieval_workspace/golden_set/seed_papers.csv --domain LLM 安全 / 智能体 --output retrieval_workspace/golden_set/keyword_analysis --top-n 30
+Loading seed papers from: retrieval_workspace/golden_set/seed_papers.csv
+  Loaded 2 papers
+Extracting text corpus...
+Computing TF-IDF keywords (top 30)...
+Computing frequency keywords (top 30)...
+Merging rankings...
+Building search strings...
+Saving keyword analysis report to: retrieval_workspace\golden_set\keyword_analysis/keyword_analysis.md
+Saving search strings to: retrieval_workspace\golden_set\keyword_analysis/search_strings.md
+
+=== Keyword Analysis Summary ===
+Top 10 keywords (combined ranking):
+   1. security                       (TF-IDF: 0.6414, freq: 10)
+   2. agents                         (TF-IDF: 0.3296, freq: 8)
+   3. agent                          (TF-IDF: 0.3000, freq: 6)
+   4. llm                            (TF-IDF: 0.2601, freq: 5)
+   5. agentic                        (TF-IDF: 0.2202, freq: 3)
+   6. execution                      (TF-IDF: 0.1404, freq: 3)
+   7. language                       (TF-IDF: 0.1301, freq: 3)
+   8. ai                             (TF-IDF: 0.2306, freq: 0)
+   9. domain                         (TF-IDF: 0.2202, freq: 0)
+  10. audit                          (TF-IDF: 0.0000, freq: 5)
+
+Primary search string:
+  ("security") AND ("agents") AND ("agent")
+
+Outputs saved to: retrieval_workspace\golden_set\keyword_analysis/

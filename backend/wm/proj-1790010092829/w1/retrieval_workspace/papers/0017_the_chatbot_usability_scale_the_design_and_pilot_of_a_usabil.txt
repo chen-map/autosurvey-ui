@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : The Chatbot Usability Scale the Design and Pilot of a Usability Scale for Interaction with AI-Based Conversational Agents
+Authors  : 
+Year     : 2021
+DOI      : 10.1007/s00779-021-01582-9
+URL      : https://openalex.org/W3187911027
+Venue    : Personal and Ubiquitous Computing
+Source DB: openalex
+
+Abstract:
+Abstract Standardised tools to assess a user’s satisfaction with the experience of using chatbots and conversational agents are currently unavailable. This work describes four studies, including a systematic literature review, with an overall sample of 141 participants in the survey (experts and novices), focus group sessions and testing of chatbots to (i) define attributes to assess the quality of interaction with chatbots and (ii) the designing and piloting a new scale to measure satisfaction after the experience with chatbots. Two instruments were developed: (i) A diagnostic tool in the form of a checklist (BOT-Check). This tool is a development of previous works which can be used reliably to check the quality of a chatbots experience in line with commonplace principles. (ii) A 15-item questionnaire (BOT Usability Scale, BUS-15) with estimated reliability between .76 and .87 distributed in five factors. BUS-15 strongly correlates with UMUX-LITE by enabling designers to consider a broader range of aspects usually not considered in satisfaction tools for non-conversational agents, e.g. conversational efficiency and accessibility, quality of the chatbot’s functionality and so on. Despite the convincing psychometric properties, BUS-15 requires further testing and validation. Designers can use it as a tool to assess products, thus building independent databases for future evaluation of its reliability, validity and sensitivity.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://link.springer.com/10.1007/s00779-021-01582-9)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0017_the_chatbot_usability_scale_the_design_and_pilot_of_a_usabil.pdf

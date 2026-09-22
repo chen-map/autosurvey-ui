@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Theoretical evaluation of the hydrolysis of conventional nerve agents and novichok agents
+Authors  : 
+Year     : 2021
+DOI      : 10.1016/j.cplett.2021.139116
+URL      : https://openalex.org/W3206765800
+Venue    : Chemical Physics Letters
+Source DB: openalex
+
+Abstract:
+
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S0009261421007995)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0056_theoretical_evaluation_of_the_hydrolysis_of_conventional_ner.pdf

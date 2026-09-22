@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Trends in lipid-modifying agent use in 83 countries
+Authors  : 
+Year     : 2021
+DOI      : 10.1016/j.atherosclerosis.2021.05.016
+URL      : https://openalex.org/W3166824932
+Venue    : Atherosclerosis
+Source DB: openalex
+
+Abstract:
+BACKGROUND AND AIMS: Lipid-modifying agents (LMAs) are increasingly used to reduce lipid levels and prevent cardiovascular events but the magnitude of their consumption in different world regions is unknown. We aimed to describe recent global trends in LMA consumption and to explore the relationship between country-level LMA consumption and cholesterol concentrations. METHODS: This cross-sectional and ecological study used monthly pharmaceutical sales data from January 2008 to December 2018 for 83 countries from the IQVIA Multinational Integrated Data Analysis System and total and non-high-density lipoprotein (non-HDL) cholesterol concentrations from the NCD Risk Factor Collaboration. Compound annual growth rate (CAGR) was used to assess changes in LMA consumption over time. RESULTS: From 2008 to 2018, use of LMAs increased from 7468 to 11,197 standard units per 1000 inhabitants per year (CAGR 4.13%). An estimated 173 million people used LMAs in 2018. Statins were the most used class of LMA and their market share increased in 75% of countries between 2008 and 2018. From 2013 to 2018, consumption of low-density lipoprotein lowering therapies increased (statins 3.99%; ezetimibe 4.01%; proprotein convertase subtilisin/kexin type 9 (PCSK9) inhibitors 104.47%). Limited evidence supports a clear relationship between country-level changes in LMA consumption and mean total and non-HDL cholesterol concentrations in 2008 versus 2018. CONCLUSIONS: Since 2008, global access to LMAs, especially statins, has improved. In line with international lipid guideline recommendations, recent trends indicate growth in the use of statins, ezetimibe, and PCSK9 inhibitors. Country-level patterns of LMA use and total and non-HDL cholesterol varied considerably.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S0021915021002525)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0042_trends_in_lipidmodifying_agent_use_in_83_countries.pdf

@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Scalable multi-agent reinforcement learning for distributed control of residential energy flexibility
+Authors  : 
+Year     : 2022
+DOI      : 10.1016/j.apenergy.2022.118825
+URL      : https://openalex.org/W4220906859
+Venue    : Applied Energy
+Source DB: openalex
+
+Abstract:
+This paper proposes a novel scalable type of multi-agent reinforcement learning-based coordination for distributed residential energy. Cooperating agents learn to control the flexibility offered by electric vehicles, space heating and flexible loads in a partially observable stochastic environment. In the standard independent Q-learning approach, the coordination performance of agents under partial observability drops at scale in stochastic environments. Here, the novel combination of learning from off-line convex optimisations on historical data and isolating marginal contributions to total rewards in reward signals increases stability and performance at scale. Using fixed-size Q-tables, prosumers are able to assess their marginal impact on total system objectives without sharing personal data either with each other or with a central coordinator. Case studies are used to assess the fitness of different combinations of exploration sources, reward definitions, and multi-agent learning frameworks. It is demonstrated that the proposed strategies create value at individual and system levels thanks to reductions in the costs of energy imports, losses, distribution network congestion, battery depreciation and greenhouse gas emissions.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S0306261922002689)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0036_scalable_multiagent_reinforcement_learning_for_distributed_c.pdf

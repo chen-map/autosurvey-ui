@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Designing Personality-Adaptive Conversational Agents for Mental Health Care
+Authors  : 
+Year     : 2022
+DOI      : 10.1007/s10796-022-10254-9
+URL      : https://openalex.org/W4214810114
+Venue    : Information Systems Frontiers
+Source DB: openalex
+
+Abstract:
+Millions of people experience mental health issues each year, increasing the necessity for health-related services. One emerging technology with the potential to help address the resulting shortage in health care providers and other barriers to treatment access are conversational agents (CAs). CAs are software-based systems designed to interact with humans through natural language. However, CAs do not live up to their full potential yet because they are unable to capture dynamic human behavior to an adequate extent to provide responses tailored to users' personalities. To address this problem, we conducted a design science research (DSR) project to design personality-adaptive conversational agents (PACAs). Following an iterative and multi-step approach, we derive and formulate six design principles for PACAs for the domain of mental health care. The results of our evaluation with psychologists and psychiatrists suggest that PACAs can be a promising source of mental health support. With our design principles, we contribute to the body of design knowledge for CAs and provide guidance for practitioners who intend to design PACAs. Instantiating the principles may improve interaction with users who seek support for mental health issues.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://link.springer.com/10.1007/s10796-022-10254-9)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0028_designing_personalityadaptive_conversational_agents_for_ment.pdf

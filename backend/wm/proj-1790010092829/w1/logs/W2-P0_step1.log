@@ -1,0 +1,23 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/pdf_batch_parser/parse_pdfs.py --pdf-dir papers --out-dir paper_cards/parsed --log paper_cards/parsed/PARSE_LOG.csv
+Traceback (most recent call last):
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\pdf_batch_parser\parse_pdfs.py", line 463, in <module>
+    main(args.pdf_dir, args.out_dir, args.meta_csv, args.log)
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_2_factual_memory_construction\pdf_batch_parser\parse_pdfs.py", line 366, in main
+    pdf_files = sorted(f for f in os.listdir(pdf_dir) if f.lower().endswith(".pdf"))
+                                  ~~~~~~~~~~^^^^^^^^^
+FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'papers'
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/pdf_batch_parser/parse_pdfs.py --pdf-dir retrieval_workspace/papers --out-dir paper_cards/parsed --log paper_cards/parsed/PARSE_LOG.csv
+共发现 2 篇 PDF，开始解析...
+
+  解析: 0023_llm_agents_security_duality_a_comprehensive_survey_of_selfse.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+OK
+  解析: 0025_maids_malicious_agent_identificationbased_data_security_mode.pdf ...   [WARN] opendataloader-pdf 未安装，尝试 pymupdf 回退
+OK
+
+解析完成：2/2 篇成功。
+日志：paper_cards/parsed/PARSE_LOG.csv
+输出：paper_cards/parsed/

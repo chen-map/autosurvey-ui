@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Engineering Robust Ag‐Decorated Polydopamine Nano‐Photothermal Platforms to Combat Bacterial Infection and Prompt Wound Healing
+Authors  : 
+Year     : 2022
+DOI      : 10.1002/advs.202106015
+URL      : https://openalex.org/W4212772261
+Venue    : Advanced Science
+Source DB: openalex
+
+Abstract:
+Polydopamine (PDA) nanoparticles have emerged as an attractive biomimetic photothermal agent in photothermal antibacterial therapy due to their ease of synthesis, good biodegradability, long-term safety, and excellent photostability. However, the therapeutic effects of PDA nanoparticles are generally limited by the low photothermal conversion efficiency (PCE). Herein, PDA@Ag nanoparticles are synthesized via growing Ag on the surface of PDA nanoparticles and then encapsulated into a cationic guar gum (CG) hydrogel network. The optimized CG/PDA@Ag platform exhibits a high PCE (38.2%), which is more than two times higher than that of pure PDA (16.6%). More importantly, the formulated CG/PDA@Ag hydrogel with many active groups can capture and kill bacteria through effective interactions between hydrogel and bacteria, thereby benefiting the antibacterial effect. As anticipated, the designed CG/PDA@Ag system combined the advantages of PDA@Ag nanoparticles (high PCE) and hydrogel (preventing aggregation of PDA@Ag nanoparticles and possessing inherent antibacterial ability) is demonstrated to have superior antibacterial efficacy both in vitro and in vivo. This study develops a facile approach to boost the PCE of PDA for photothermal antibacterial therapy, providing a significant step forward in advancing the application of PDA nano-photothermal agents.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve returned HTTP 403
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0005_engineering_robust_agdecorated_polydopamine_nanophotothermal.pdf

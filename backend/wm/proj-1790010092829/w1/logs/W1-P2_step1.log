@@ -1,0 +1,67 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_1_corpus_construction/multi_database_searcher/search_databases.py --db all --query-file retrieval_workspace/golden_set/keyword_analysis/search_strings.md --start-year 2020 --end-year 2026 --max-results 300 --output retrieval_workspace/raw_results/
+INFO: Loaded settings from C:\Users\85864\Documents\xwechat_files\wxid_4wveq34o7nag22_eb4c\msg\file\2026-09\autoSurvey_v2\autoSurvey_v2\workflow_1_corpus_construction\key_settings.py
+INFO: Loading search strings from: retrieval_workspace/golden_set/keyword_analysis/search_strings.md
+INFO: Searching openalex...
+INFO:   Saved 300 records to retrieval_workspace\raw_results\openalex_results.csv
+INFO: Searching semantic_scholar...
+WARNING: Semantic Scholar 429, backing off 5s (attempt 1/3)
+WARNING: Semantic Scholar 429, backing off 10s (attempt 2/3)
+WARNING: Semantic Scholar request failed: 429 Client Error:  for url: https://api.semanticscholar.org/graph/v1/paper/search?query=security+agents+agent+llm&fields=title%2Cauthors%2Cyear%2CexternalIds%2Cabstract%2Cvenue%2CopenAccessPdf&offset=0&limit=100&year=2020-2026
+INFO:   Saved 0 records to retrieval_workspace\raw_results\semantic_scholar_results.csv
+INFO: semantic_scholar: primary 0 条，降级用 secondary 宽松式重检索
+INFO: Searching semantic_scholar...
+WARNING: Semantic Scholar 429, backing off 5s (attempt 1/3)
+WARNING: Semantic Scholar 429, backing off 10s (attempt 2/3)
+WARNING: Semantic Scholar request failed: 429 Client Error:  for url: https://api.semanticscholar.org/graph/v1/paper/search?query=%28%22security%22+OR+%22agents%22+OR+%22agent%22+OR+%22llm%22+OR+%22agentic%22+OR+%22execution%22+OR+%22language%22+OR+%22ai%22+OR+%22domain%22+OR+%22audit%22+OR+%22robustness%22+OR+%22moving%22+OR+%22domains%22+OR+%22software%22+OR+%22esaa-security%22%29+AND+%28%22LLM%22%29&fields=title%2Cauthors%2Cyear%2CexternalIds%2Cabstract%2Cvenue%2CopenAccessPdf&offset=0&limit=100&year=2020-2026
+INFO:   Saved 0 records to retrieval_workspace\raw_results\semantic_scholar_results.csv
+INFO: Searching arxiv...
+INFO: Requesting page (first: True, try: 0): https://export.arxiv.org/api/query?search_query=all%3Asecurity+AND+all%3Aagents+AND+all%3Aagent&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=100
+INFO: Got first page: 100 of 4833 total results
+INFO: Sleeping: 2.974482 seconds
+INFO: Requesting page (first: False, try: 0): https://export.arxiv.org/api/query?search_query=all%3Asecurity+AND+all%3Aagents+AND+all%3Aagent&id_list=&sortBy=relevance&sortOrder=descending&start=100&max_results=100
+INFO: Sleeping: 2.978209 seconds
+INFO: Requesting page (first: False, try: 0): https://export.arxiv.org/api/query?search_query=all%3Asecurity+AND+all%3Aagents+AND+all%3Aagent&id_list=&sortBy=relevance&sortOrder=descending&start=200&max_results=100
+INFO:   Saved 287 records to retrieval_workspace\raw_results\arxiv_results.csv
+INFO: Searching acm...
+WARNING: ACM DL did not return JSON. Scraping unavailable in this context. Skipping.
+INFO:   Saved 0 records to retrieval_workspace\raw_results\acm_results.csv
+INFO: acm: primary 0 条，降级用 secondary 宽松式重检索
+INFO: Searching acm...
+WARNING: ACM DL did not return JSON. Scraping unavailable in this context. Skipping.
+INFO:   Saved 0 records to retrieval_workspace\raw_results\acm_results.csv
+INFO: Searching ieee...
+WARNING: IEEE Xplore request failed: HTTPSConnectionPool(host='ieeexploreapi.ieee.org', port=443): Read timed out.
+INFO:   Saved 125 records to retrieval_workspace\raw_results\ieee_results.csv
+INFO: Searching springer...
+WARNING: SPRINGER_API_KEY not set. Skipping Springer search.
+INFO:   Saved 0 records to retrieval_workspace\raw_results\springer_results.csv
+INFO: springer: primary 0 条，降级用 secondary 宽松式重检索
+INFO: Searching springer...
+WARNING: SPRINGER_API_KEY not set. Skipping Springer search.
+INFO:   Saved 0 records to retrieval_workspace\raw_results\springer_results.csv
+INFO: Searching elsevier...
+WARNING: ELSEVIER_API_KEY not set. Skipping Elsevier search.
+INFO:   Saved 0 records to retrieval_workspace\raw_results\elsevier_results.csv
+INFO: elsevier: primary 0 条，降级用 secondary 宽松式重检索
+INFO: Searching elsevier...
+WARNING: ELSEVIER_API_KEY not set. Skipping Elsevier search.
+INFO:   Saved 0 records to retrieval_workspace\raw_results\elsevier_results.csv
+INFO: Searching google_scholar...
+WARNING: scholarly package not installed. Skipping Google Scholar. Install with: pip install scholarly
+INFO:   Saved 0 records to retrieval_workspace\raw_results\google_scholar_results.csv
+INFO: google_scholar: primary 0 条，降级用 secondary 宽松式重检索
+INFO: Searching google_scholar...
+WARNING: scholarly package not installed. Skipping Google Scholar. Install with: pip install scholarly
+INFO:   Saved 0 records to retrieval_workspace\raw_results\google_scholar_results.csv
+
+=== Multi-Database Search Summary ===
+  openalex                 :   300 records
+  semantic_scholar         :     0 records
+  arxiv                    :   287 records
+  acm                      :     0 records
+  ieee                     :   125 records
+  springer                 :     0 records
+  elsevier                 :     0 records
+  google_scholar           :     0 records
+  TOTAL                    :   712 records

@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : ENIGMA An explainable digital twin security solution for cyber–physical systems
+Authors  : 
+Year     : 2023
+DOI      : 10.1016/j.compind.2023.103961
+URL      : https://openalex.org/W4380982224
+Venue    : Computers in Industry
+Source DB: openalex
+
+Abstract:
+Digital Twins (DTs), being the virtual replicas of their physical counterparts, share valuable knowledge of the underlying physical processes and act as data acquisition and dissemination sources to Cyber–Physical System (CPS). Moreover, without obstructing the ongoing operations, DTs also provide an assessment platform for evaluating the operational behavior and security of the CPS. Therefore, they become a potential source of data breaches and a broad attack surface for attackers to launch covert attacks. To detect and mitigate security loopholes in DTs, one of the potential solutions is to leverage a gamification approach that can assess the security level of DTs while providing security analysts with a controlled and supportive virtual training environment. Artificial Intelligence/Machine Learning (AI/ML)-based approaches can complement the idea of security orchestration and automation in the gamification approach. However, AI/ML-based DTs security solutions are generally constrained by the lack of transparency of AI operations, which results in less confidence in the decisions made by the AI models. To address the explainable security challenges of DTs, this article proposes a gamification approach called sEcuriNg dIgital twins through GaMification Approach (ENIGMA). While leveraging DTs as an offensive security platform, ENIGMA provides gaming scenarios to assess DTs’ security and train security analysts. The game players within ENIGMA are humans (the attacker team) and AI agents (the defender team). Furthermore, ENIGMA is supported by an eXplainable AI (XAI)-based DT security assessment model that explains the decisions made based on the SHAP values by the AI model on attack vectors for the defender team, i.e., the AI agent. The SHAP values illustrate the contribution of different features towards predicting the outcome of attack vectors. This explanation can help security analysts to take security measures based on reasoned and trustworthy decisions. Finally, experimental validation has been carried out to demonstrate the viability of ENIGMA.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S0166361523001112)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0053_enigma_an_explainable_digital_twin_security_solution_for_cyb.pdf

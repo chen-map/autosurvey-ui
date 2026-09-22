@@ -1,0 +1,653 @@
+# PRISMA 筛选日志
+
+检索总量: 697
+关键词命中: 646
+排除: 51
+
+## 保留论文
+- Estimated Research and Development Investment Needed to Bring a New Medicine to Market, 2009-2018
+- Enhanced SDN Security Using Mobile Agent
+- Surface Modification of a MXene by an Aminosilane Coupling Agent
+- Polymeric Hydrogels—A Promising Platform in Enhancing Water Security for a Sustainable Future
+- Engineering Robust Ag‐Decorated Polydopamine Nano‐Photothermal Platforms to Combat Bacterial Infection and Prompt Wound Healing
+- An AI Agent for Fully Automated Multi‐Omic Analyses
+- Supramolecular Sensing of Chemical Warfare Agents
+- Carbon Dots: A Bright Future as Anticounterfeiting Encoding Agents
+- Sanitizing agents for virus inactivation and disinfection
+- Explainable Agents for Less Bias in Human-Agent Decision Making
+- Bioformulation of Microbial Biocontrol Agents for a Sustainable Agriculture
+- Agentic AI
+- Agent-based manufacturing — review and expert evaluation
+- Drug repurposing strategies in the development of potential antifungal agents
+- The Chatbot Usability Scale: the Design and Pilot of a Usability Scale for Interaction with AI-Based Conversational Agents
+- On the ability of virtual agents to decrease cognitive load: an experimental study
+- Agent programming in the cognitive era
+- Multi-agent reinforcement learning for resources allocation optimization: a survey
+- Agentic AI: a comprehensive survey of architectures, applications, and future directions
+- LLM agents security duality: a comprehensive survey of self-security and empowered cybersecurity
+- MAIDS: Malicious Agent Identification-based Data Security Model for Cloud Environments
+- Sensitivity analysis of agent-based models: a new protocol
+- Interacting with educational chatbots: A systematic review
+- Designing Personality-Adaptive Conversational Agents for Mental Health Care
+- On the Integration of Agents and Digital Twins in Healthcare
+- Secure communication between UAVs using a method based on smart agents in unmanned aerial vehicles
+- A survey on large language model based autonomous agents
+- Advances in the agent-based modeling of economic and social behavior
+- Multi-agent reinforcement learning for autonomous vehicles: a survey
+- Scalable multi-agent reinforcement learning for distributed control of residential energy flexibility
+- Renewable energy integration and microgrid energy trading using multi-agent deep reinforcement learning
+- Energy management for demand response in networked greenhouses with multi-agent deep reinforcement learning
+- A multi-agent reinforcement learning method for distribution system restoration considering dynamic network reconfiguration
+- An overview on multi-agent consensus under adversarial attacks
+- The role of agentic AI in shaping a smart future: A systematic review
+- Trends in lipid-modifying agent use in 83 countries
+- Resilient output regulation in heterogeneous networked systems under Byzantine agents
+- Encryption–decryption-based consensus control for multi-agent systems: Handling actuator faults
+- Trichoderma as biocontrol agent against pests: New uses for a mycoparasite
+- Exploring the plant-derived bioactive substances as antidiabetic agent: An extensive review
+- Molecular engineered optical probes for chemical warfare agents and their mimics: Advances, challenges and perspectives
+- Improving multi-target cooperative tracking guidance for UAV swarms using multi-agent reinforcement learning
+- A survey on intelligent agents and multi-agents for irrigation scheduling
+- ENIGMA: An explainable digital twin security solution for cyber–physical systems
+- Security-preserving multi-agent coordination for complex temporal logic tasks
+- Theoretical evaluation of the hydrolysis of conventional nerve agents and novichok agents
+- Improving the effectiveness of agricultural extension services in supporting farmers to adapt to climate change: Insights from northeastern Ghana
+- A multi-agent game based joint planning approach for electricity-gas integrated energy systems considering wind power uncertainty
+- Economic forecasting with an agent-based model
+- Chatlaw: A Multi-Agent Legal Assistant based on a Role-Aligned Mixture-of-Experts Architecture
+- Impact of climate smart agriculture on food security: An agent-based analysis
+- Federated intelligence of anomaly detection agent in IoTMD-enabled Diabetes Management Control System
+- Advances in drug delivery systems, challenges and future directions
+- Modeling adoption of intelligent agents in medical imaging
+- Discovery and development of safe-in-man broad-spectrum antiviral agents
+- AI Agents vs. Agentic AI: A Conceptual taxonomy, applications and challenges
+- Distributed adaptive security consensus control for a class of multi-agent systems under network decay and intermittent attacks
+- Cooperative control for cyber–physical multi-agent networked control systems with unknown false data-injection and replay cyber-attacks
+- A global perspective of entomopathogens as microbial biocontrol agents of insect pests
+- The complexity of the intangible digital economy: an agent-based model
+- Sustainable food security decision-making: An agent-based modelling approach.
+- An evolutionary analysis of green finance sustainability based on multi-agent game
+- Energy security in community energy systems: An agent-based modelling approach
+- Agent-based modelling and flood risk management: A compendious literature review
+- Agent architecture of an intelligent medical system based on federated learning and blockchain technology
+- Attention based multi-agent intrusion detection systems using reinforcement learning
+- Quantitative easing with heterogeneous agents
+- A Knowledge-Based Multi-Agent Framework for Security Control Recommendation
+- Security control of multi-agent systems under false data injection attacks
+- Adaptive event-triggered consensus control of linear multi-agent systems with cyber attacks
+- Finite-time consensus control for multi-agent systems with full-state constraints and actuator failures
+- The cardiovascular effects of air pollution: Prevention and reversal by pharmacological agents
+- LLMs and generative agent-based models for complex systems research
+- Peer-to-peer energy sharing and trading of renewable energy in smart communities ─ trading pricing models, decision-making and agent-based collaboration
+- Agent-based modelling for market acceptance of electric vehicles: Evidence from China
+- Virtual agents and flow experience: An empirical examination of AI-powered chatbots
+- Transforming cybersecurity with agentic AI to combat emerging cyber threats
+- Residual antimicrobial agents in food originating from animals
+- Recent advances on portable sensing and biosensing assays applied for detection of main chemical and biological pollutant agents in water samples: A critical review
+- Visual and Rapid Detection of Nerve Agent Mimics in Gas and Solution Phase by a Simple Fluorescent Probe
+- Metal–Organic Framework- and Polyoxometalate-Based Sorbents for the Uptake and Destruction of Chemical Warfare Agents
+- Polyphenols from Brown Seaweeds as a Potential Antimicrobial Agent in Animal Feeds
+- Plasmonic MOF Thin Films with Raman Internal Standard for Fast and Ultrasensitive SERS Detection of Chemical Warfare Agents in Ambient Air
+- Next-generation anti-VEGF agents for diabetic macular oedema
+- Fluxing of mantle carbon as a physical agent for metallogenic fertilization of the crust
+- Controllable synthesis of conjugated microporous polymer films for ultrasensitive detection of chemical warfare agents
+- Interfacial engineered superelastic metal-organic framework aerogels with van-der-Waals barrier channels for nerve agents decomposition
+- Internet of medical things and blockchain-enabled patient-centric agent through SDN for remote patient monitoring in 5G network
+- Health-focused conversational agents in person-centered care: a review of apps
+- Systematic review and meta-analysis of AI-based conversational agents for promoting mental health and well-being
+- Criticality analysis of a country’s transport network via an agent-based supply chain model
+- Fabrication of a microcapsule extinguishing agent with a core–shell structure for lithium-ion battery fire safety
+- Fluorescent probes for the detection of chemical warfare agents
+- Recent advances in fluorescent and colorimetric chemosensors for the detection of chemical warfare agents: a legacy of the 21st century
+- A review of large language models and autonomous agents in chemistry
+- Ring oscillator as confusion – diffusion agent: a complete TRNG drove image security
+- Coordinated flexible energy and self‐healing management according to the multi‐agent system‐based restoration scheme in active distribution network
+- Resveratrol: A Vital Therapeutic Agent with Multiple Health Benefits
+- The Use and Promise of Conversational Agents in Digital Health
+- Large language models empowered agent-based modeling and simulation: a survey and perspectives
+- A coupled human–natural system analysis of freshwater security under climate and population change
+- A survey on fault-tolerant consensus control of multi-agent systems: trends, methodologies and prospects
+- Philanthropic foundations as agents of environmental governance: a research agenda
+- The Wagner Group in Africa: Russia’s Quasi-State Agent of Influence
+- AI Agents and Agentic Systems: Redefining Global it Management
+- Is this the end? Resilience, ontological security, and the crisis of the liberal international order
+- Conversational Artificial Intelligence in Psychotherapy: A New Therapeutic Tool or Agent?
+- Security, privacy, and healthcare-related conversational agents: a scoping review
+- An autonomous GIS agent framework for geospatial data retrieval
+- Silver nanoparticles as potential antiviral agents against African swine fever virus
+- Actinobacteria as a source of biofertilizer/biocontrol agents for bio-organic agriculture
+- Conversational health agents: a personalized large language model-powered agent framework
+- Food and nutrition security under global trade: a relation-driven agent-based global trade model
+- Could an artificial-intelligence agent pass an introductory physics course?
+- Developing a service quality scale for artificial intelligence service agents
+- A Comprehensive Security Framework for the Model Context Protocol (MCP) in Multi-Agent AI Systems
+- A Machine Learning Security Framework for Iot Systems
+- Dummy-Based Approach for Protecting Mobile Agents Against Malicious Destination Machines
+- SPADE 3: Supporting the New Generation of Multi-Agent Systems
+- Systematic Mapping Study of Security in Multi-Embedded-Agent Systems
+- Multi-Dimensional Trust Quantification by Artificial Agents Through Evidential Fuzzy Multi-Criteria Decision Making
+- AI-Based Conversational Agents: A Scoping Review From Technologies to Future Directions
+- Security of Multi-Agent Cyber-Physical Systems: A Survey
+- On the Security of Distributed Multi-Agent K-Means Clustering With Local Differential Privacy
+- DAWN: Designing Distributed Agents in a Worldwide Network
+- Beyond Connectivity via Artificial Intelligence Agents Enabling Perceptive, Adaptive, and Anticipatory 6G Networks
+- LLM-Based Intelligent Agents for Cybersecurity: A Tutorial and Survey of Automated Vulnerability Discovery
+- Key Technologies for Security with different Performance Parameters in Mobile Agent System
+- Multi-Agent Software Architecture for Distributed Virtual Reality Systems
+- Research on Security Enhancement Methods for Adversarial Robust Large Language Model Intelligent Agents for Medical Decision-Making Tasks
+- Privacy-Preserving Multi-Agent Time-Varying Formation Control Under Multi-Rate Sampling Mechanism
+- Agent Capability Negotiation and Binding Protocol (ACNBP)
+- Company Security Assesment with Agent Based Simulation
+- Distributed event-triggered cloud predictive control for consensus of multi-agent systems under DoS attacks
+- Observer-Based Consensus Security Control for Multi-Agent Systems Under FDI Attacks
+- COALESCE: Economic and Security Dynamics of Skill-Based Task Outsourcing Among Team of Autonomous LLM Agents
+- Enforcing Data Security Posture Management In AI Agents Through Policy-Aware APIS
+- From Things into Clouds – and back
+- Demonstration of the Multi-Agent Reinforcement Learning Testbed for Cognitive Radio Applications
+- A Multi-Agent Reinforcement Learning Testbed for Cognitive Radio Applications
+- Reimagining the Data Landscape: A Multi-Agent Paradigm for Data Interfacing
+- Design and Application of Multi-Agent System for Power Network Security Based on MBSE
+- Incentive Contract Design for Insurance Agents Based on a Multi-Task Principal-Agent Model
+- A Cloud Security Framework Based on Trust Model and Mobile Agent
+- Beyond the Chatbox: An Exploratory Case Study of Autonomous Computer-Use Agents
+- Autonomous Security Orchestration for Cloud-Native Environments Using Multi-Agent Systems
+- Applications of Multi-Agent Reinforcement Learning in Future Internet: A Comprehensive Survey
+- A Survey on Semantic Communication Networks: Architecture, Security, and Privacy
+- Large Model-Based Agents: State-of-the-Art, Cooperation Paradigms, Security and Privacy, and Future Trends
+- Dynamic Re-Configuration of Conversationally Initiated Automated Negotiations
+- Cryptographic Strength of Encryption in a Multi-Agent System
+- Scalable Quantification of the Value of Information for Multi-Agent Communications and Control Co-design
+- Security Analysis of Wireless Sensor Networks Using SIEM and Multi-agent Approach
+- AdverSAR: Adversarial Search and Rescue via Multi-Agent Reinforcement Learning
+- Developing Hybrid Privacy Channels in Cloud Architecture using Several Agents
+- Research on interacted response technology of cyber security protection devices based on deep reinforcement learning oriented to new generation of power system
+- MAVAudit-Graph: A Multi-Agent System for Autonomous UAV Security Testing
+- Agent Name Service (ANS): A Universal Directory for Secure AI Agent Discovery and Interoperability
+- LLM-Powered Autonomous Security Agents for Next-Generation Cyber Defence
+- The Adaptive AI SOC Agent – Moving Beyond Linear Playbooks with Cognitive Reasoning
+- Taxonomy of Multi-Agent Systems Attacks and their Defense Tactics in Certifying Security of Cyber Physical Systems
+- Construction and Application of University Agent Space Based on Ecosystem Theory
+- Developing an Agent-Based Simulation Model for Predicting Technology Acceptance at Border Crossing Points
+- Cognitive AI Agents for Self-Adaptive Security and Compliance Automation in Software Engineering Pipelines
+- Critical Analysis of Custom AI agents Vs. Generic agents for Integration with Existing Systems and Improvement of Data Privacy and Security to deliver efficiency in terms of Cost and Complexity of Use Cases
+- AI Agent Security: Vulnerability Analysis, Protective Measures and Challenges
+- Security Reinforcement Learning Guided by Finite Deterministic Automata
+- Agent Technology for Data Analytics of Gene Expression Data: A Literature Review
+- Harnessing the Power of Machine Learning in Multi-Agent Systems for B2C E-Commerce Optimization
+- Distributed Intelligence for the Internet of Things Cybersecurity: A Comparative Review of Multi Agent Systems
+- A Multi Agent-Based Security Protocol for Securing Password Management Application
+- Distributed Multi-Agent AI Systems: Scalability, Challenges, and Applications
+- Interoperability model between heterogeneous MAS platforms based on mobile agent and reinforcement learning
+- A Lattice-Based Post-Quantum Framework for SecureInter-Agent Coordination in Decentralised Clinical Data Ecosystems
+- A Scalable Agent Architecture
+- A Multi-Agent GenAI Framework for Ethical Cloud Security Automation
+- A Comprehensive Survey on Secure and Graphenhanced Multi-Agent Reinforcement Learning for Scalable HetNet Resource Allocation
+- A Survey of Research on Network Security Management Model
+- Agent-based security protection model of secret-related carrier intelligent management and control
+- Improving Spam Detection with a Multi-Agent Debate Framework
+- Integrated Framework for Secure Communication among Multiple Agents using MCP and A2A
+- AI-Driven Multi-Agent System for Real-Time Security Analysis of Software Releases
+- Intelligent E-Commerce Marketing System Based on Mobile Multi Agent
+- Security Constrained Deep Reinforcement Learning on Automatic Control of Process Industry
+- Methods and intelligent mechanisms for constructing cyberattack detection components on distance-learning systems
+- Learning to Communicate in Multi-Agent Reinforcement Learning for Autonomous Cyber Defence
+- Confidence-Based Trustscoring System for Identification of Secure Agent Platforms
+- CognitiveShield-IoT: A Self-Evolving AI-Agent Driven Security Architecture for Adaptive and Resilient IoT Ecosystems
+- Intelligent Security Monitoring Architecture with AI-Powered Agents for Autonomous Threat Prevention and Compliance Enforcement
+- Multi-Agent AI Chatbot for Proactive Threat Detection and Automated Incident Response in Hybrid Cloud Environments
+- Swarm Intelligence and Multi-Agent IDS for Large-Scale Cyber-Physical Security
+- Black-Box Adversarial Robustness Testing with Partial Observation for Multi-Agent Reinforcement Learning
+- Autonomous Multi-Agent Cyber Defense for Mitigating AI-Generated Threats
+- AI Agents: A Comprehensive Review of Evolution, Architectures, Applications, and Future Directions
+- Mobile Agents Authentication in Healthcare System Based on Stern Brocot Tree
+- Are Autonomous Agents the Inevitable Future of Decentralized Finance? A Review and Forward Outlook
+- Whispers of Wealth: A Systematic Red-Teaming Study of the Agent Payments Protocol (AP2)
+- Semantic Manipulation Attacks in Agentic AI Systems with Agent-to-Agent Communication and Model-Context-Protocol–Based Tool Invocation
+- A Smart Approach using Multi–agent System for Big Data Security
+- Exploring the Roles of Agents and Multi-Agent in Improving Mobile Ad Hoc Networks
+- A Self-Adaptive Agent-Based Dynamic Processes Simulation Modelling Framework
+- Automated CVE Triage: Ai-Agent Framework for Scalable Vulnerability Triaging and Security Automation
+- Survey on Security Concepts to Adapt Flexible Manufacturing and Operations Management based upon Multi-Agent Systems
+- Decentralized Multi-Agent System with Trust-Aware Communication
+- Research on Multi-agent Path Planning Algorithm Based on Large Language Model
+- Physical Safety and Cyber Security Analysis of Multi-Agent Systems: A Survey of Recent Advances
+- Adaptive Memory Event-Triggered Observer-Based Control for Nonlinear Multi-Agent Systems Under DoS Attacks
+- Blockchain-Enabled Task Offloading With Energy Harvesting in Multi-UAV-Assisted IoT Networks: A Multi-Agent DRL Approach
+- Securing Multi-Agent GIS Systems: Risk Evaluation and Prompt Hardening Optimization
+- Multi-Agent Motion Planning From Signal Temporal Logic Specifications
+- Investigation Of Secure Mobile Agents As A Tool In Intrusion Detection Systems
+- Resource-Limited APT Defense Scheme for IoT Device Security Based on Multi-Agent Reinforcement Learning
+- Training Autonomous Cyber Defense Agents: Challenges & Opportunities in Military Networks
+- Development of a Multi-Agent System for Space Debris Detection
+- Research on Security Control of Multi Agent Systems Based on State Estimation
+- Security of Internet of Agents: Attacks and Countermeasures
+- A Trusted Agent Strategy in Decentralized Network Environments
+- The Secure Agents in Hybrid Cloud Cybersecurity
+- Agent-Based Software Testing: A Definition and Systematic Mapping Study
+- Do Agents Behave Aligned with Human Instructions? - An Automated Assessment Approach
+- Securing Agentic AI Systems -- A Multilayer Security Framework
+- Security of AI Agents
+- Evaluating Autonomous Computational Agents for Complex Logic and Security-Oriented Task Environments
+- Verifiable Multi-Agent Multi-Task Assignment
+- Machine Learning Approaches for Information Security of Agent-Based Swarm Systems in the Digital Industry
+- Secure by Design: Quantifying Architectural Resilience and the Agents Rule of two
+- On the Robustness of Cooperative Multi-Agent Reinforcement Learning
+- When AI Agents Fail in Production: Security Lessons for Builders
+- Observer-Based Event-Triggered Composite Anti-Disturbance Control for Multi-Agent Systems Under Multiple Disturbances and Stochastic FDIAs
+- Secure Bearing-Based Target Localization for Multi-Agent Networks Against Malicious Agents
+- Distributed Event-Triggered Output-Feedback Time-Varying Formation Fault-Tolerant Control for Nonlinear Multi-Agent Systems
+- Multi-Agent Deep Reinforcement Learning-Based Trajectory Planning for Multi-UAV Assisted Mobile Edge Computing
+- Advancing Security and Trust in WSNs: A Federated Multi-Agent Deep Reinforcement Learning Approach
+- Distributed Fault-Tolerant Consensus Tracking Control of Multi-Agent Systems Under Fixed and Switching Topologies
+- Secure Encoding Strategy for Consensus of Multi-Agent Systems in the Presence of Eavesdropper
+- PrivacyAsst: Safeguarding User Privacy in Tool-Using Large Language Model Agents
+- Privacy-Preserving Consensus of Double-Integrator Multi-Agent Systems With Input Constraints
+- Distributed Adaptive Sampled-Data Security Tracking Control for Uncertain Heterogeneous Multi-Agents Systems Under DoS Attacks
+- An Automatic Cost Learning Framework for Image Steganography Using Deep Reinforcement Learning
+- Safe Exploration in Wireless Security: A Safe Reinforcement Learning Algorithm With Hierarchical Structure
+- Wrongdoing Monitor: A Graph-Based Behavioral Anomaly Detection in Cyber Security
+- Grey-Box Adversarial Attack on Communication in Communicative Multi-Agent Reinforcement Learning
+- Protecting an Autonomous Delivery Agent Against a Vision-Guided Adversary: Algorithms and Experimental Results
+- Joint Secure Offloading and Resource Allocation for Vehicular Edge Computing Network: A Multi-Agent Deep Reinforcement Learning Approach
+- MASK: Multi-Agent Collaboration for Optimizing Adversarial Attacks on Multi-Agent Systems
+- Multi-Agent Coordinated Close-in Jamming for Disabling a Rogue Drone
+- Consortium Blockchain-Based Spectrum Trading for Network Slicing in 5G RAN: A Multi-Agent Deep Reinforcement Learning Approach
+- LMAgent: A Large-scale Multimodal Agents Society for Multi-user Simulation
+- Federated Multiagent Deep Reinforcement Learning Approach via Physics-Informed Reward for Multimicrogrid Energy Management
+- Fuzzy Observer-Based Consensus Tracking Control for Fractional-Order Multi-Agent Systems Under Cyber-Attacks and Its Application to Electronic Circuits
+- A Privacy-Preserving Scheme Based on Attribute and Homomorphic Encryption for Trustworthy Multi-Agent Data Management in Intelligence Edge Networking
+- Multi-Agent Based Autonomic Network Management Architecture
+- Privacy-Preserving Distributed Optimal Consensus of High-Order Nonlinear Multi-Agent Systems
+- Security of LLM Agents: A Case Study Approach
+- Multi-Agent Based Attack-Resilient System Integrity Protection for Smart Grid
+- Peer-to-Peer Control for Networked Microgrids: Multi-Layer and Multi-Agent Architecture Design
+- Data-Driven Multi-Agent Deep Reinforcement Learning for Distribution System Decentralized Voltage Control With High Penetration of PVs
+- Peer-to-Peer Energy Trading and Energy Conversion in Interconnected Multi-Energy Microgrids Using Multi-Agent Deep Reinforcement Learning
+- A Cooperative Hierarchical Multi-Agent System for EV Charging Scheduling in Presence of Multiple Charging Stations
+- Attention Enabled Multi-Agent DRL for Decentralized Volt-VAR Control of Active Distribution System Using PV Inverters and SVCs
+- Multi-Agent Deep Reinforcement Learning to Manage Connected Autonomous Vehicles at Tomorrow's Intersections
+- Energy Efficient Computation Offloading in Aerial Edge Networks With Multi-Agent Cooperation
+- Modeling Methods Complex Computer Systems
+- Techniques for Accelerating Algebraic Operations in Agent-based Information Security Systems
+- Search on Asymmetric DCOPs by Strategic Agents
+- A game theoretical approach to self-assembly in swarm robotics
+- Identifying Correlates of Emergent Behaviors in Agent-Based Simulation Models Using Inverse Reinforcement Learning
+- Security Consensus Control for Multi-Agent PDE Systems under Deception Attacks and Actuator Faults
+- Innovations in Edible Packaging Films, Coatings, and Antimicrobial Agents for Applications in Food Industry
+- The community health worker as service extender, cultural broker and social change agent: a critical interpretive synthesis of roles, intent and accountability
+- Not Some Random Agent
+- Neuroevolution of self-interpretable agents
+- Voice in Human–Agent Interaction
+- Explainable Embodied Agents Through Social Cues
+- Designing Human-Agent Collaborations: Commitment, responsiveness, and support
+- The Handbook on Socially Interactive Agents
+- Harms from Increasingly Agentic Algorithmic Systems
+- Advancing the Search Frontier with AI Agents
+- Designing Heterogeneous LLM Agents for Financial Sentiment Analysis
+- Evaluation and Benchmarking of LLM Agents: A Survey
+- Contextual Agent Security: A Policy for Every Purpose
+- Demystifying LLM-Based Software Engineering Agents
+- AI Agents Under Threat: A Survey of Key Security Challenges and Future Pathways
+- Large Language Models for Cyber Security: A Systematic Literature Review
+- The Emerged Security and Privacy of LLM Agent: A Survey with Case Studies
+- AgentBound: Securing Execution Boundaries of AI Agents
+- AgentLSD: Evaluating AI Security Agents Under Adversarial Task Contamination
+- Local Adaptation: Causal Agents of Selection and Adaptive Trait Divergence
+- The Current Status of Latency Reversing Agents for HIV-1 Remission
+- A Smart Agent Design for Cyber Security Based on Honeypot and Machine Learning
+- Data sovereignty: A review
+- Trichoderma: a multifunctional agent in plant health and microbiome interactions
+- Emerging agents that target signaling pathways in cancer stem cells
+- Secure and efficient cloudlet networks: blockchain integration with agent-based proof of trust mechanism
+- Mobile Agent Security using Multilevel Secret Sharing with Changeable Threshold Based on Chinese Remainder Theorem
+- ACE: A Security Architecture for LLM-Integrated App Systems
+- Natural protective agents and their applications as bio-preservatives in the food industry
+- Delivering the Smart Grid: Challenges for Autonomous Agents and Multi-Agent Systems Research
+- Bi-Level Actor-Critic for Multi-Agent Coordination
+- Agentic Large Language Models, a Survey
+- Deep Learning Multi-Agent Model for Phishing Cyber-attack Detection
+- Comprehensive overview of multi-agent systems for controlling smart grids
+- The ODD Protocol for Describing Agent-Based and Other Simulation Models: A Second Update to Improve Clarity, Replication, and Structural Realism
+- Using Machine Learning for Agent Specifications in Agent-Based Models and Simulations: A Critical Review and Guidelines
+- Application of Intelligent Multi Agent Based Systems For E-Healthcare Security
+- Bot-Adversarial Dialogue for Safe Conversational Agents
+- Character-LLM: A Trainable Agent for Role-Playing
+- InjecAgent: Benchmarking Indirect Prompt Injections in Tool-Integrated Large Language Model Agents
+- RecMind: Large Language Model Powered Agent For Recommendation
+- The Effectiveness of Artificial Intelligence Conversational Agents in Health Care: Systematic Review
+- Voice-Based Conversational Agents for the Prevention and Management of Chronic and Mental Health Conditions: Systematic Literature Review
+- Factors Influencing the Acceptability, Acceptance, and Adoption of Conversational Agents in Health Care: Integrative Review
+- Observer-Based Security Consensus of Multi-agent Systems with DoS Attack and Unknown Input Disturbance
+- Cooperative Control of Multi-Agent Systems with Information Security under Dynamic Event-Triggered Mechanism
+- Proficiency-Driven Decision-Making for Networks of Autonomous Agents
+- A Generic Blue Agent Training Framework for Autonomous Cyber Operations
+- Distributed cooperative control of autonomous multi-agent UAV systems using smooth control
+- Biological control agents: mechanisms of action, selection, formulation and challenges in agriculture
+- Review on Recent Progress in Magnetic Nanoparticles: Synthesis, Characterization, and Diverse Applications
+- Streptomyces as a promising biological control agents for plant pathogens
+- Plant growth-promoting microorganisms as biocontrol agents of plant diseases: Mechanisms, challenges and future perspectives
+- Simulating Small-Scale Agricultural Adaptation Decisions in Response to Drought Risk: An Empirical Agent-Based Model for Semi-Arid Kenya
+- Integrating Behavioral Theories in Agent-Based Models for Agricultural Drought Risk Assessments
+- A Research Landscape of Agentic AI and Large Language Models: Applications, Challenges and Future Directions
+- Yeasts as a Potential Biological Agent in Plant Disease Protection and Yield Improvement—A Short Review
+- Fusarium Fungi Pathogens, Identification, Adverse Effects, Disease Management, and Global Food Security: A Review of the Latest Research
+- Fc Engineering Strategies to Advance IgA Antibodies as Therapeutic Agents
+- Design and Synthesis of Novel Antimicrobial Agents
+- Plasmonic Sensors for Monitoring Biological and Chemical Threat Agents
+- A Survey on UAV Control with Multi-Agent Reinforcement Learning
+- Integrating Artificial Intelligence Agents with the Internet of Things for Enhanced Environmental Monitoring: Applications in Water Quality and Climate Data
+- A Review of Multi-Agent Reinforcement Learning Algorithms
+- Intrusion Detection System for the Internet of Things Based on Blockchain and Multi-Agent Systems
+- A Survey of Multi-Agent Systems for Smartgrids
+- AI Agents Meet Blockchain: A Survey on Secure and Scalable Collaboration for Multi-Agents
+- The Rise of Agentic AI: A Review of Definitions, Frameworks, Architectures, Applications, Evaluation Metrics, and Challenges
+- Toward Robust Security Orchestration and Automated Response in Security Operations Centers with a Hyper-Automation Approach Using Agentic Artificial Intelligence
+- AI-Powered Educational Agents: Opportunities, Innovations, and Ethical Challenges
+- AI-Augmented SOC: A Survey of LLMs and Agents for Security Automation
+- Application of Nanotechnology in Extinguishing Agents
+- Actinobacteria as Effective Biocontrol Agents against Plant Pathogens, an Overview on Their Role in Eliciting Plant Defense
+- Bacteria as Biological Control Agents of Plant Diseases
+- Bacillus Species: Excellent Biocontrol Agents against Tomato Diseases
+- Bioactive Secondary Metabolites from Trichoderma spp. against Phytopathogenic Fungi
+- The Significance of Bacillus spp. in Disease Suppression and Growth Promotion of Field and Vegetable Crops
+- Biofertilizers and Biocontrol Agents for Agriculture: How to Identify and Develop New Potent Microbial Strains and Traits
+- Bacterial and Fungal Biocontrol Agents for Plant Disease Protection: Journey from Lab to Field, Current Status, Challenges, and Global Perspectives
+- Green Synthesis of Gold and Silver Nanoparticles from Plant Extracts and Their Possible Applications as Antimicrobial Agents in the Agricultural Area
+- Selection of Endophytic Beauveria bassiana as a Dual Biocontrol Agent of Tomato Pathogens and Pests
+- The Fight against Plant-Parasitic Nematodes: Current Status of Bacterial and Fungal Biocontrol Agents
+- Multi-Agent Systems and Complex Networks: Review and Applications in Systems Engineering
+- MAFC: Multi-Agent Fog Computing Model for Healthcare Critical Tasks Management
+- Conversational Agents: Goals, Technologies, Vision and Challenges
+- Multi-Agent Systems for Resource Allocation and Scheduling in a Smart Grid
+- A Comprehensive Survey on Multi-Agent Reinforcement Learning for Connected and Automated Vehicles
+- LLM Agents for Smart City Management: Enhancing Decision Support Through Multi-Agent AI Systems
+- A Conceptual Model Proposal: Universities as Culture Change Agents for Sustainable Development
+- Blockchain-Based Securing of Data Exchange in a Power Transmission System Considering Congestion Management and Social Welfare
+- Trichoderma: Advent of Versatile Biocontrol Agent, Its Secrets and Insights into Mechanism of Biocontrol Potential
+- Multi-Agent Reinforcement Learning Framework in SDN-IoT for Transient Load Detection and Prevention
+- Mycotoxin Occurrence, Toxicity, and Detoxifying Agents in Pig Production with an Emphasis on Deoxynivalenol
+- Evaluating Large Language Models Trained on Code
+- Improving alignment of dialogue agents via targeted human judgements
+- CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society
+- Multi-Agent Collaboration: Harnessing the Power of Intelligent LLM Agents
+- ChatDev: Communicative Agents for Software Development
+- AIKernel Semantic DSL Compiler and Deterministic Agent Execution Architecture
+- A Survey on Large Language Model based Autonomous Agents
+- Cognitive Architectures for Language Agents
+- The Rise and Potential of Large Language Model Based Agents: A Survey
+- Personal LLM Agents: Insights and Survey about the Capability, Efficiency and Security
+- Agent Laboratory: Using LLM Agents as Research Assistants
+- Tackling the Algorithmic Control Crisis -- the Technical, Legal, and Ethical Challenges of Research into Algorithmic Agents
+- AI Agents with Decentralized Identifiers and Verifiable Credentials
+- A Survey on Multi Agent System and Its Applications in Power System Engineering
+- Unleashing the Power of Multi-Agent Deep Learning: Cyber-Attack Detection in IoT
+- Central Banks as Agents of Economic Development
+- Artificial intelligence and multi agent based distributed ledger system for better privacy and security of electronic healthcare records
+- Caging the Agents: A Zero Trust Security Architecture for Autonomous AI in Healthcare
+- SoK: Trading Agents or Market Crashers? Dissecting Robustness and Security Failures in Academic Financial LLM Trading Schemes
+- Adaptive Adversaries: A Multi-Turn, Multi-LLM Benchmark for LLM Agent Security
+- Agents at Risk: How Users Unwittingly Undermine LLM Safety
+- Towards Quantum-Secure Authentication and Key Agreement via Abstract Multi-Agent Interaction
+- Private Agent-Based Modeling
+- NAAMSE: Framework for Evolutionary Security Evaluation of Agents
+- ESAA-Security: An Event-Sourced, Verifiable Architecture for Agent-Assisted Security Audits of AI-Generated Code
+- CapSeal: Capability-Sealed Secret Mediation for Secure Agent Execution
+- Adapting Under Fire: Multi-Agent Reinforcement Learning for Adversarial Drift in Network Security
+- Building Browser Agents: Architecture, Security, and Practical Solutions
+- Multi-Agent Reinforcement Learning for Maritime Operational Technology Cyber Security
+- SkCC: Portable and Secure Skill Compilation for Cross-Framework LLM Agents
+- Can Open-Source LLM Agents Replace Static Application Security Testing Tools? An Empirical Assessment
+- Autoreflection: How Agentic Strange Loops Turn Human Culture into AI Infrastructure
+- The Meta-Agent Challenge: Are Current Agents Capable of Autonomous Agent Development?
+- Sola-Visibility-ISPM: Benchmarking Agentic AI for Identity Security Posture Management Visibility
+- AutoSafeCoder: A Multi-Agent Framework for Securing LLM Code Generation through Static Analysis and Fuzz Testing
+- Cryptographically verifiable authorization for autonomous AI agents: A falsifiable hypothesis and proof-of-concept
+- ClawLess: A Security Model of AI Agents
+- Cross-Agent Campaign Attribution: Linking Asynchronous Attacks Across LLM Agents
+- SoK: Security of Autonomous LLM Agents in Agentic Commerce
+- Watch Out for Your Agents! Investigating Backdoor Threats to LLM-Based Agents
+- Zombie Agents: Persistent Control of Self-Evolving LLM Agents via Self-Reinforcing Injections
+- Agent Skills for Large Language Models: Architecture, Acquisition, Security, and the Path Forward
+- Open Challenges in Multi-Agent Security: Towards Secure Systems of Interacting AI Agents
+- Agent Audit: A Security Analysis System for LLM Agent Applications
+- Breaking Agent Backbones: Evaluating the Security of Backbone LLMs in AI Agents
+- A Survey on Agentic Security: Applications, Threats and Defenses
+- Agent Security is a Systems Problem
+- LLM Agents Should Employ Security Principles
+- Thought Virus: Viral Misalignment via Subliminal Prompting in Multi-Agent Systems
+- A Framework for Formalizing LLM Agent Security
+- Agent Security Bench (ASB): Formalizing and Benchmarking Attacks and Defenses in LLM-based Agents
+- Bounded Agents: Delegation Security for Multi-Agent AI Systems
+- Agentic JWT: A Secure Delegation Protocol for Autonomous AI Agents
+- GradingAttack: Exposing Security Vulnerabilities in LLM Based Educational Grading Agents
+- Towards Unifying Quantitative Security Benchmarking for Multi Agent Systems
+- Formal Security Analysis of Agent Protocol Composition
+- The Balkanization of Execution-Security Research for AI Coding Agents: Isolation, Access Control, and Time-of-Check-to-Time-of-Use Vulnerabilities
+- Progent: Securing AI Agents with Privilege Control
+- BlockA2A: Towards Secure and Verifiable Agent-to-Agent Interoperability
+- Architecture Matters for Multi-Agent Security
+- SeClaw: Spec-Driven Security Task Synthesis for Evaluating Autonomous Agents
+- ZeroDayBench: Evaluating LLM Agents on Unseen Zero-Day Vulnerabilities for Cyberdefense
+- From Assistants to Adversaries: Exploring the Security Risks of Mobile LLM Agents
+- Control at Stake: Evaluating the Security Landscape of LLM-Driven Email Agents
+- SAGA: A Security Architecture for Governing AI Agentic Systems
+- Towards Secure Agent Skills: Architecture, Threat Taxonomy, and Security Analysis
+- SkillTester: Benchmarking Utility and Security of Agent Skills
+- Linguistic Firewall: Geometry as Defense in Multi-Agent Systems Routing
+- Securing the AI Agent: A Unified Framework for Multi-Layer Agent Red Teaming
+- Toward Securing AI Agents Like Operating Systems
+- Systems Security Foundations for Agentic Computing
+- MRMMIA: Membership Inference Attacks on Memory in Chat Agents
+- WebTrap Park: An Automated Platform for Systematic Security Evaluation of Web Agents
+- Sentinel Agents for Secure and Trustworthy Agentic AI in Multi-Agent Systems
+- Evaluating Skills, Not Just Agents: Agentic Continuous Evaluation of Skills
+- Toward Secure AI-Powered Penetration Testing Agents: Security Threats, Guardrails, and Architectural Perspectives
+- InterSAGE: The Secure and Verifiable Interoperability Protocol for An Internet of Agents
+- Reframing LLM Agent Security as an Agent-Human Interaction Problem
+- WASP: Benchmarking Web Agent Security Against Prompt Injection Attacks
+- Securing AI Agents with Information-Flow Control
+- AgentCanary: A Security Evaluation Framework for Autonomous AI Agents in Real Executable Environments
+- SecureWebArena: A Holistic Security Evaluation Benchmark for LVLM-based Web Agents
+- From Secure Agentic AI to Secure Agentic Web: Challenges, Threats, and Future Directions
+- Concepts for Securing Agentic AI Coding and the Terok Environment
+- Know Your Agent: Reconnaissance-Driven Pentesting of AI Agents
+- Security Risks in Tool-Enabled AI Agents: A Systematic Analysis of Privileged Execution Environments
+- DoomArena: A framework for Testing AI Agents Against Evolving Security Threats
+- Autoformalization of Agent Instructions into Policy-as-Code
+- The Attack and Defense Landscape of Agentic AI: A Comprehensive Survey
+- A Survey of LLM-Driven AI Agent Communication: Protocols, Security Risks, and Defense Countermeasures
+- LlamaFirewall: An open source guardrail system for building secure AI agents
+- AgentGuard: Repurposing Agentic Orchestrator for Safety Evaluation of Tool Orchestration
+- Toward Secure LLM Agents: Threat Surfaces, Attacks, Defenses, and Evaluation
+- SEVerA: Verified Synthesis of Self-Evolving Agents
+- Securing Generative AI Agentic Workflows: Risks, Mitigation, and a Proposed Firewall Architecture
+- Security Considerations for Artificial Intelligence Agents
+- False Prophets: On the Security of World Models in Agentic Systems
+- From LLMs to Agents: A Comparative Evaluation of LLMs and LLM-based Agents in Security Patch Detection
+- Optimizing Agent Planning for Security and Autonomy
+- WebSP-Eval: Evaluating Web Agents on Website Security and Privacy Tasks
+- MCPShield: A Security Cognition Layer for Adaptive Trust Calibration in Model Context Protocol Agents
+- Security awareness in LLM agents: the NDAI zone case
+- RAS-Eval: A Comprehensive Benchmark for Security Evaluation of LLM Agents in Real-World Environments
+- The PBSAI Governance Ecosystem: A Multi-Agent AI Reference Architecture for Securing Enterprise AI Estates
+- Provably Secure Agent Guardrail
+- SkillProbe: Security Auditing for Emerging Agent Skill Marketplaces via Multi-Agent Collaboration
+- Les Dissonances: Cross-Tool Harvesting and Polluting in Pool-of-Tools Empowered LLM Agents
+- Transferable Self-Evolving Playbooks for Agentic Security Auditing
+- MAPS: A Multilingual Benchmark for Agent Performance and Security
+- Trust but Verify? Uncovering the Security Debt of Autonomous Coding Agents
+- Security Considerations for Multi-agent Systems
+- SAMEP: A Secure Protocol for Persistent Context Sharing Across AI Agents
+- Dissecting Adversarial Robustness of Multimodal LM Agents
+- Securing LLM Agents Need Intent-to-Execution Integrity
+- ANX: Protocol-First Design for AI Agent Interaction with a Supporting 3EX Decoupled Architecture
+- Copy-on-Write Scoring: Application-Specific Agent Evaluations
+- LLM-Based Agents for Software and Systems Security: Approaches, Applications, and Assessment
+- Security in the Age of AI Teammates: An Empirical Study of Agentic Pull Requests on GitHub
+- Secure Autonomous Agent Payments: Verifying Authenticity and Intent in a Trustless Environment
+- SPEAR: An Engineering Case Study of Multi-Agent Coordination for Smart Contract Auditing
+- Agent Skill Security: Threat Models, Attacks, Defenses, and Evaluation
+- Agent-Fence: Mapping Security Vulnerabilities Across Deep Research Agents
+- ASEval: Automated Trajectory-Level Security Testing for Autonomous Agents
+- Multi-Agent Security Tax: Trading Off Security and Collaboration Capabilities in Multi-Agent Systems
+- Poisoned Playbooks: Demystifying Knowledge Poisoning Effects on AI Security Agents
+- Poster: ClawdGo: Endogenous Security Awareness Training for Autonomous AI Agents
+- MAGIQ: A Post-Quantum Multi-Agentic AI Governance System with Provable Security
+- Untrusted Content Masking for Web Agents with Security Guarantees
+- Re-Evaluating EVMBench: Are AI Agents Ready for Smart Contract Security?
+- StealthBench: Measuring Operational Stealth in Autonomous Offensive-Security Agents
+- SGTO-MAS: Secure Gorilla Troops Optimization for Multi-Agent LLM Systems
+- ChainCaps: Composition-Safe Tool-Using Agents via Monotonic Capability Attenuation
+- AgentRFC: Security Design Principles and Conformance Testing for Agent Protocols
+- A Systematization of Security Vulnerabilities in Computer Use Agents
+- The Aegis Protocol: A Foundational Security Framework for Autonomous AI Agents
+- Securing LLM-Agent Long-Term Memory Against Poisoning: Non-Malleable, Origin-Bound Authority with Machine-Checked Guarantees
+- Why Trust Your Agent? Empirical Security Gains from TRiSM-Guided Agentic Workflows in Healthcare
+- Defensible Design for OpenClaw: Securing Autonomous Tool-Invoking Agents
+- SkillGuard: A Permission-Centric Framework for Agent Skill Security
+- Building A Secure Agentic AI Application Leveraging A2A Protocol
+- A cybersecurity AI agent selection and decision support framework
+- Tracking the Behavioral Trajectories of Adapting Agents
+- Rethinking Agent Security as a Networking Problem
+- Post Quantum Secure Command and Control of Mobile Agents : Inserting quantum-resistant encryption schemes in the Secure Robot Operating System
+- Formalizing the Safety, Security, and Functional Properties of Agentic AI Systems
+- Secure and Efficient Access Control for Computer-Use Agents via Context Space
+- Beyond Handcrafted Security: Towards Self-Evolving Defense for LLM Agents
+- From Thinker to Society: Security in Hierarchical Autonomy Evolution of AI Agents
+- CTFusion: A CTF-based Benchmark for LLM Agent Evaluation
+- Taming OpenClaw: Security Analysis and Mitigation of Autonomous LLM Agent Threats
+- NASimEmu: Network Attack Simulator & Emulator for Training Agents Generalizing to Novel Scenarios
+- AttackGNN: Red-Teaming GNNs in Hardware Security Using Reinforcement Learning
+- Red-Teaming Coding Agents from a Tool-Invocation Perspective: An Empirical Security Assessment
+- Aegis: Towards Governance, Integrity, and Security of AI Voice Agents
+- Don't Make Models Guess Security and Safety: Symbolic Guardrails for Domain-Specific AI Agents
+- A Safety and Security Framework for Real-World Agentic Systems
+- Security Threats in Agentic AI System
+- The Ethics of Autonomous AI Agents for Offensive Security
+- "Do Not Mention This to the User": Detecting and Understanding Malicious Agent Skills in the Wild
+- Securing Agentic AI: A Comprehensive Threat Model and Mitigation Framework for Generative AI Agents
+- Security Threat Modeling for Emerging AI-Agent Protocols: A Comparative Analysis of MCP, A2A, Agora, and ANP
+- Asymmetric Goal Drift in Coding Agents Under Value Conflict
+- Uncovering Security Threats and Architecting Defenses in Autonomous Agents: A Case Study of OpenClaw
+- The Authorization-Execution Gap Is a Major Safety and Security Problem in Open-World Agents
+- Identity Management for Agentic AI: The new frontier of authorization, authentication, and security for an AI agent world
+- SoK: When Safe Agents Fail Together: The Security of Multi Agent LLM Systems
+- Securing Agentic AI: From Per-Action Checks to Trajectory Assurance
+- SecRepoBench: Benchmarking Code Agents for Secure Code Completion in Real-World Repositories
+- Design Patterns for Securing LLM Agents against Prompt Injections
+- Agent Security Needs Redefinition through a Holistic Framework
+- Measuring Safety Alignment Effects in Autonomous Security Agents
+- Seven Security Challenges in Cross-domain Multi-agent LLM Systems
+- QASecClaw: A Multi-Agent LLM Approach for False Positive Reduction in Static Application Security Testing
+- In-Context Autonomous Network Incident Response: An End-to-End Large Language Model Agent Approach
+- Securing GenAI Multi-Agent Systems Against Tool Squatting: A Zero Trust Registry-Based Approach
+- Swarm-Driven Multi-Agent Reasoning for Smart City Security
+- Trusted Credentials, Untrusted Behavior: Benchmarking LLM-Agent Security in High-Performance Computing
+- Mind the Web: The Security of Web Use Agents
+- Quantum-Secure-By-Construction (QSC): A Paradigm Shift For Post-Quantum Agentic Intelligence
+- Blind Gods and Broken Screens: Architecting a Secure, Intent-Centric Mobile Agent Operating System
+- A2AS: Agentic AI Runtime Security and Self-Defense
+- AgentDyn: Are Your Agent Security Defenses Deployable in Real-World Dynamic Environments?
+- D-CIPHER: Dynamic Collaborative Intelligent Multi-Agent System with Planner and Heterogeneous Executors for Offensive Security
+- Developing Optimal Causal Cyber-Defence Agents via Cyber Security Simulation
+- Hackphyr: A Local Fine-Tuned LLM Agent for Network Security Environments
+- Architecting Secure AI Agents: Perspectives on System-Level Defenses Against Indirect Prompt Injection Attacks
+- Memory poisoning and secure multi-agent systems
+- ExploitGym: Can AI Agents Turn Security Vulnerabilities into Real Attacks?
+- What Does It Take to Detect an AI Agent? Minimal Feature Sets for Behavioral Detection under Browser Automation
+- ToolHazard: Scaling Adversarial Environments for Security Evaluation and Alignment of LLM-based Agents
+- AgentCrypt: Advancing Privacy and (Secure) Computation in AI Agent Collaboration
+- SIR-Bench: Evaluating Investigation Depth in Security Incident Response Agents
+- The Prover Is the Judge: Verified Security Software from AI Coding Agents in Ada/SPARK
+- Securing Multi-Tool AI Agent Chains With Dynamic, Real-Time Compositional Policies
+- EVMbench: Evaluating AI Agents on Smart Contract Security
+- MACGen: Toward Functionally Correct and Secure Code Generation via Multi-Agent Collaboration
+- A Comparative Evaluation of AI Agent Security Guardrails
+- DRIFT: Dynamic Rule-Based Defense with Injection Isolation for Securing LLM Agents
+- Adversarial Testing of Automated Program Repair Agents for Security Vulnerabilities
+- ADR: An Agentic Detection System for Enterprise Agentic AI Security
+- AgentRiskBOM: A Risk-Scoping Security Bill of Materials for Agentic AI Systems
+- Governing Dynamic Capabilities: Cryptographic Binding and Reproducibility Verification for AI Agent Tool Use
+- ScopeJudge: Cost-Aware Pre-Execution Gating for Offensive Security Agents
+- Hierarchical Agentic Incident Response with Digital-Twin-Validated Attack Inference
+- Benign in Isolation, Harmful in Composition: Security Risks in Agent Skill Ecosystems
+- Agent Name Service (ANS): A Proof-of-Concept Trust Layer for Secure AI Agent Discovery, Identity, and Governance in Kubernetes
+- Securing AI Agents Against Prompt Injection Attacks
+- SafeHarness: Lifecycle-Integrated Security Architecture for LLM-based Agent Deployment
+- Agent Skills in the Wild: An Empirical Study of Security Vulnerabilities at Scale
+- Cybersecurity AI: The World's Top AI Agent for Security Capture-the-Flag (CTF)
+- (Don't) Trust, but (Don't) Verify: Developers' Attention to Security in AI-Generated Code
+- AgenticOS: An Intent-Oriented Secure Operating System Architecture for Autonomous AI Agents
+- What If Prompt Injection Never Left? Rethinking Agent Security through Cross-Session Stored Prompt Injection
+- SAFARI: Scaling Long Horizon Agentic Fault Attribution via Active Investigation
+- CONTINUITY: Security-Context Contracts for Composable LLM Agent Controls
+- Security Attack and Defense Strategies for Autonomous Agent Frameworks: A Layered Review with OpenClaw as a Case Study
+- SEC-bench: Automated Benchmarking of LLM Agents on Real-World Software Security Tasks
+- How Do LLM Agents Actually Get the Flag? Trace-Level Provenance for Agentic Offensive Security Evaluation
+- Vulnerability Localization Benchmark: Measuring Agentic Security Analysis at Repository Scale
+- OpenClaw PRISM: A Zero-Fork, Defense-in-Depth Runtime Security Layer for Tool-Augmented LLM Agents
+- Beyond the Mandate: A Systematic Security Analysis of the Agent Payments Protocol (AP2)
+- TraceAegis: Securing LLM-Based Agents via Hierarchical and Behavioral Anomaly Detection
+- Security in a Workflow: Exploring Role-Based Agentic Architectures for Vulnerability Handling
+- SkillShield: Prompt-Space Security Skills for LLM Coding Agents
+- Dynamic Capability Scoping for Enterprise AI Agents: A Synthetic Dataset and Three-Source Permission Architecture
+- Security of OpenClaw Agents: Fundamentals, Attacks, and Countermeasures
+- Artificial Intelligence as the New Hacker: Developing Agents for Offensive Security
+- A Systematic Survey of Security Threats and Defenses in LLM-Based AI Agents: A Layered Attack Surface Framework
+- CIBER: A Comprehensive Benchmark for Security Evaluation of Code Interpreter Agents
+- Beyond Context Sharing: A Unified Agent Communication Protocol (ACP) for Secure, Federated, and Autonomous Agent-to-Agent (A2A) Orchestration
+- AgenticSCR: An Autonomous Agentic Secure Code Review for Immature Vulnerabilities Detection
+- When Developer Aid Becomes Security Debt: A Systematic Analysis of Insecure Behaviors in LLM Coding Agents
+- SV-LLM: An Agentic Approach for SoC Security Verification using Large Language Models
+- Context Matters: Repository-Aware Security Analysis of the Agent Skill Ecosystem
+- A Formal Security Framework for MCP-Based AI Agents: Threat Taxonomy, Verification Models, and Defense Mechanisms
+- TRiSM for Agentic AI: A Review of Trust, Risk, and Security Management in LLM-based Agentic Multi-Agent Systems
+- Securing Agentic AI: Threat Modeling and Risk Analysis for Network Monitoring Agentic AI System
+- Towards Effective Offensive Security LLM Agents: Hyperparameter Tuning, LLM as a Judge, and a Lightweight CTF Benchmark
+- Agentic Incident Response through Digital Twin-Enhanced Multiscale Planning
+- AgentSentinel: An End-to-End and Real-Time Security Defense Framework for Computer-Use Agents
+- AgentWard: A Lifecycle Security Architecture for Autonomous AI Agents
+- RedTeamLLM: an Agentic AI framework for offensive security
+- Agent Data Injection Attacks are Realistic Threats to AI Agents
+- Penetration Testing of Agentic AI: A Comparative Security Analysis Across Models and Frameworks
+- Alignment Contracts for Agentic Security Systems
+- Hybrid Analysis for Secure MCP Tool Use in LLM Agents
+- AgenticCyOps: Securing Multi-Agentic AI Integration in Enterprise Cyber Operations
+- ClawSentry: A Progressive Multi-Tier Security Monitor for Safeguarding Autonomous LLM Agents
+- Quantigence: A Multi-Agent Framework for Post-Quantum Security Analysis on Commodity Hardware
+- Extending the OWASP Multi-Agentic System Threat Modeling Guide: Insights from Multi-Agent Security Research
+- ASTRIDE: A Security Threat Modeling Platform for Agentic-AI Applications
+- Bridging AI and Software Security: A Comparative Vulnerability Assessment of LLM Agent Deployment Paradigms
+- SoK: Security and Privacy of AI Agents for Blockchain
+- A Security Analysis of Long-Horizon Agentic AI Systems: Threats, Evaluation, and Framework Development
+- Auto-Policy, not Auto-Skill: Compiled Agent Skills for the Physical World
+- Securing AI Agents in Cyber-Physical Systems: A Survey of Environmental Interactions, Deepfake Threats, and Defenses
+- Runtime Skill Audit: Targeted Runtime Probing for Agent Skill Security
+- Beyond End-to-End Success: Diagnosing Failures in Long-Horizon Security LLM Agents
+- Security, privacy, and agentic AI in a regulatory view: From definitions and distinctions to provisions and reflections
+- Human Society-Inspired Approaches to Agentic AI Security: The 4C Framework
+- Understanding and Evaluating Claw-like Agent Security Through a Computer-Systems Lens
+- Agent libOS: A Runtime Substrate for Capability-Controlled Self-Evolving LLM Agents
+- CTI-REALM: Benchmark to Evaluate Agent Performance on Security Detection Rule Generation Capabilities
+- Measuring the Security of Mobile LLM Agents under Adversarial Prompts from Untrusted Third-Party Channels
+- A Survey on the Safety and Security Threats of Computer-Using Agents: JARVIS or Ultron?
+- Autonomous Cyber Defense in Connected Vehicles: A Multi-Agent Approach to V2X Security
+- Twin Agent: Context Residual Compression for Privilege Separated Agents
+- TraceGrant: A Contract-Governed Security Framework for the Task-Effect Lifecycle of Networked LLM Agents
+- Co-RedTeam: Orchestrated Security Discovery and Exploitation with LLM Agents
+- Firewalls to Secure Dynamic LLM Agentic Networks
+- Beyond Success Rate: Cost-Aware Evaluation of Offensive and Defensive Security Agents
+- Measuring Security Without Fooling Ourselves: Why Benchmarking Agents Is Hard
+- AttriGuard: Defeating Indirect Prompt Injection in LLM Agents via Causal Attribution of Tool Invocations
+- SecureVibeBench: Benchmarking Secure Vibe Coding of AI Agents via Reconstructing Vulnerability-Introducing Scenarios
+- Situating AI Agents in their World: Aspective Agentic AI for Dynamic Partially Observable Information Systems
+- Securing Multi-Agent Systems Against Corruptions via Node Contribution Backpropagation
+- A Security Analysis of the OpenClaw AI Agent Framework
+- Securing Retrieval-Augmented Generation: A Taxonomy of Attacks, Defenses, and Future Directions
+- SCGAgent: Recreating the Benefits of Reasoning Models for Secure Code Generation with Agentic Workflows
+- Your Harness is Not Secure: Benchmarking Real-world Threat of Command Line Interface Agent
+- Evaluating Frontier AI Agents as Autonomous Clinical Security Auditors
+- Intellicise Wireless Networks Meet Agentic AI: A Security and Privacy Perspective
+- AgentSys: Secure and Dynamic LLM Agents Through Explicit Hierarchical Memory Management
+- Terrarium: Revisiting the Blackboard for Multi-Agent Safety, Privacy, and Security Studies
+- Architecting Resilient LLM Agents: A Guide to Secure Plan-then-Execute Implementations

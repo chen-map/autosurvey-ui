@@ -1,0 +1,9 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py --use-case w2.candidate --target C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/select_candidate_objects.py --input knowledge_graph/structured_papers.jsonl --out knowledge_graph/candidate_structured_papers.jsonl
+{"llm_wrap": true, "use_case": "w2.candidate"}
+{"llm_wrap": true, "base_url": "https://api.deepseek.com/v1", "model": ["deepseek-chat"], "key_from_db": true}
+{
+  "out": "knowledge_graph/candidate_structured_papers.jsonl",
+  "papers": 2,
+  "llm_used": true
+}

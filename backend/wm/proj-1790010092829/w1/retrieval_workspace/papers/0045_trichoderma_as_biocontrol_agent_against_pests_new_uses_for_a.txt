@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Trichoderma as biocontrol agent against pests New uses for a mycoparasite
+Authors  : 
+Year     : 2021
+DOI      : 10.1016/j.biocontrol.2021.104634
+URL      : https://openalex.org/W3158345945
+Venue    : Biological Control
+Source DB: openalex
+
+Abstract:
+Insects are the main pest in agricultural systems, causing significant losses in crop productivity and storage. During the last decades the control of pest insects has been carried out through the uncontrolled and massive use of chemical insecticides, very harmful to the environment and health, which requires the development of new efficient and safe alternatives. Numerous fungal species have been described as entomopathogens of insect pests, as well as plant endophytic fungi. In this sense, Trichoderma is a genus of filamentous fungi widely studied and used as a biocontrol agent in agriculture on pathogenic fungi due to its ability to parasitize them (mycoparasitism), among other mechanisms of action. In recent years, the possibility of using Trichoderma as a biocontrol agent for insect pest has been considered, both directly and indirectly. The studies carried out to date have reported that Trichoderma is capable of controlling insect pest directly through parasitism and the production of insecticidal secondary metabolites, antifeedant compounds and repellent metabolites. And indirectly through the activation of systemic plant defensive responses, the attraction of natural enemies or the parasitism of insect-symbiotic microorganisms. Therefore, the use of Trichoderma in agriculture is not only effective against plant pathogens, but also against insect pests, representing a future alternative in the development of sustainable agriculture.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S1049964421001043)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0045_trichoderma_as_biocontrol_agent_against_pests_new_uses_for_a.pdf

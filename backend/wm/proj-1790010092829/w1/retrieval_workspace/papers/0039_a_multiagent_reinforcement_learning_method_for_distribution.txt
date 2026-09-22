@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : A multi-agent reinforcement learning method for distribution system restoration considering dynamic network reconfiguration
+Authors  : 
+Year     : 2024
+DOI      : 10.1016/j.apenergy.2024.123625
+URL      : https://openalex.org/W4400009570
+Venue    : Applied Energy
+Source DB: openalex
+
+Abstract:
+
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S0306261924010080)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0039_a_multiagent_reinforcement_learning_method_for_distribution.pdf

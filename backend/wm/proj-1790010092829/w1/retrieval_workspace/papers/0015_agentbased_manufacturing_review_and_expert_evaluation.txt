@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Agent-based manufacturing — review and expert evaluation
+Authors  : 
+Year     : 2023
+DOI      : 10.1007/s00170-023-11517-8
+URL      : https://openalex.org/W4379536815
+Venue    : The International Journal of Advanced Manufacturing Technology
+Source DB: openalex
+
+Abstract:
+Abstract The advent of smart manufacturing and the exposure to a new generation of technological enablers have revolutionized the way manufacturing process is carried out. Cyber-Physical Production Systems (CPPS) are introduced as main actors of this manufacturing shift. They are characterized for having high levels of communication, integration and computational capabilities that led them to a certain level of autonomy. Despite the high expectations and vision of CPPS, it still remains an exploratory topic. Multi-Agent Systems (MAS) have been widely used by software engineers to solve traditional computing problems, e.g., banking transactions. Because of their high levels of distribution and autonomous capabilities, MAS have been considered by the research community as a good solution to design and implement CPPS. This work first introduces a collection of requirements and characteristics of smart manufacturing. A comprehensive review of various research applications is presented to understand the current state of the art and the application of agent technology in manufacturing. Considering the smart manufacturing requirements and current research application, a SWOT analysis was formulated which identifies pros and cons of the implementation of agents in industry. The SWOT analysis was further validated by an industrial expert evaluation and the main findings and discussion of the results are presented.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://link.springer.com/10.1007/s00170-023-11517-8)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0015_agentbased_manufacturing_review_and_expert_evaluation.pdf

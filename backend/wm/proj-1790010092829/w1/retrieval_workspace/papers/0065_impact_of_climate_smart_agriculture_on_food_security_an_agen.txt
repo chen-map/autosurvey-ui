@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Impact of climate smart agriculture on food security An agent-based analysis
+Authors  : 
+Year     : 2022
+DOI      : 10.1016/j.foodpol.2022.102304
+URL      : https://openalex.org/W4283701927
+Venue    : Food Policy
+Source DB: openalex
+
+Abstract:
+
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S0306919222000811)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0065_impact_of_climate_smart_agriculture_on_food_security_an_agen.pdf

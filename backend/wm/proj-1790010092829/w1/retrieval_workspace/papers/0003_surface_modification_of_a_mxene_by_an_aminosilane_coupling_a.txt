@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Surface Modification of a MXene by an Aminosilane Coupling Agent
+Authors  : 
+Year     : 2020
+DOI      : 10.1002/admi.201902008
+URL      : https://openalex.org/W3003790969
+Venue    : Advanced Materials Interfaces
+Source DB: openalex
+
+Abstract:
+Abstract MXenes, two‐dimensional (2D) transition metal carbides and/or nitrides, possess surface termination groups such as hydroxyl, oxygen, and fluorine, which are available for surface functionalization. Their surface chemistry is critical in many applications. This article reports amine functionalization of Ti 3 C 2 T x MXene surface with [3‐(2‐aminoethylamino)‐propyl]trimethoxysilane (AEAPTMS). Characterization techniques such as X‐ray photoelectron spectroscopy verify the success of the surface functionalization and confirm that the silane coupling agent bonds to Ti 3 C 2 T x surface both physically and chemically. The functionalization changes the MXene surface charge from −35 to +25 mV at neutral pH, which allows for in situ preparation of self‐assembled films. Further, surface charge measurements of the functionalized MXene at different pH values show that the functionalized MXene has an isoelectric point at a pH around 10.7, and the highest reported positive surface charge of +62 mV at a pH of 2.58. Furthermore, the existence of a mixture of different orientations of AEAPTMS and the simultaneous presence of protonated and free amine groups on the surface of Ti 3 C 2 T x are demonstrated. The availability of free amine groups on the surface potentially permits the fabrication of crosslinked electrically conductive MXene/epoxy composites, dye adsorbents, high‐performance membranes, and drug carriers. Surface modifications of this type are applicable to many other MXenes.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve returned HTTP 403
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0003_surface_modification_of_a_mxene_by_an_aminosilane_coupling_a.pdf

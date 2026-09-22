@@ -1,0 +1,38 @@
+[
+  {
+    "node_id": "problem_problem_data_breaches_by_malicious_agents_in_cloud_environments_b067d1e928",
+    "node_type": "Problem",
+    "canonical_name": "Data breaches by malicious agents in cloud environments",
+    "description": "Malicious agents may gain unauthorized access to outsourced data, leading to data leakage and misuse.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-22 02:50:48",
+    "label": "Data breaches by malicious agents in cloud environments"
+  },
+  {
+    "node_id": "problem_problem_llm_agents_empowered_cybersecurity_8a987c2409",
+    "node_type": "Problem",
+    "canonical_name": "LLM agents empowered cybersecurity",
+    "description": "The role of LLM agents in empowering the cybersecurity lifecycle across offense and defense.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-22 02:50:48",
+    "label": "LLM agents empowered cybersecurity"
+  },
+  {
+    "node_id": "problem_problem_llm_agents_self_security_threats_31187f9f5f",
+    "node_type": "Problem",
+    "canonical_name": "LLM agents self-security threats",
+    "description": "Threats to LLM agents themselves, including endogenous, exogenous, and interaction threats, and corresponding mitigation strategies.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-22 02:50:48",
+    "label": "LLM agents self-security threats"
+  },
+  {
+    "node_id": "problem_problem_reactive_identification_of_malicious_agents_6f7e902c53",
+    "node_type": "Problem",
+    "canonical_name": "Reactive identification of malicious agents",
+    "description": "Existing approaches identify malicious agents only after a data leak occurs, which is inadequate for real-time protection.",
+    "origin_paper_id": null,
+    "created_at": "2026-09-22 02:50:48",
+    "label": "Reactive identification of malicious agents"
+  }
+]

@@ -1,0 +1,46 @@
+[
+  {
+    "source_id": "0023_llm_agents_security_duality_a_comprehensive_survey_of_selfse",
+    "source_type": "Paper",
+    "target_id": "problem_problem_llm_agents_empowered_cybersecurity_8a987c2409",
+    "target_type": "Problem",
+    "edge_type": "addresses",
+    "confidence": 0.95,
+    "evidence": "The role of LLM agents in empowering the cybersecurity lifecycle across offense and defense.",
+    "context_paper_id": "0023_llm_agents_security_duality_a_comprehensive_survey_of_selfse",
+    "created_at": "2026-09-22 02:50:48"
+  },
+  {
+    "source_id": "0023_llm_agents_security_duality_a_comprehensive_survey_of_selfse",
+    "source_type": "Paper",
+    "target_id": "problem_problem_llm_agents_self_security_threats_31187f9f5f",
+    "target_type": "Problem",
+    "edge_type": "addresses",
+    "confidence": 0.95,
+    "evidence": "Threats to LLM agents themselves, including endogenous, exogenous, and interaction threats, and corresponding mitigation strategies.",
+    "context_paper_id": "0023_llm_agents_security_duality_a_comprehensive_survey_of_selfse",
+    "created_at": "2026-09-22 02:50:48"
+  },
+  {
+    "source_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "source_type": "Paper",
+    "target_id": "problem_problem_data_breaches_by_malicious_agents_in_cloud_environments_b067d1e928",
+    "target_type": "Problem",
+    "edge_type": "addresses",
+    "confidence": 0.95,
+    "evidence": "Malicious agents may gain unauthorized access to outsourced data, leading to data leakage and misuse.",
+    "context_paper_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "created_at": "2026-09-22 02:50:48"
+  },
+  {
+    "source_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "source_type": "Paper",
+    "target_id": "problem_problem_reactive_identification_of_malicious_agents_6f7e902c53",
+    "target_type": "Problem",
+    "edge_type": "addresses",
+    "confidence": 0.9,
+    "evidence": "Existing approaches identify malicious agents only after a data leak occurs, which is inadequate for real-time protection.",
+    "context_paper_id": "0025_maids_malicious_agent_identificationbased_data_security_mode",
+    "created_at": "2026-09-22 02:50:48"
+  }
+]

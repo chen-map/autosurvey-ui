@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Enhanced SDN Security Using Mobile Agent
+Authors  : 
+Year     : 2024
+DOI      : 10.1002/9781394272303.ch3
+URL      : https://ieeexplore.ieee.org/document/10666478/
+Venue    : Creative Approaches Towards Development of Computing and Multidisciplinary IT Solutions for Society
+Source DB: ieee
+
+Abstract:
+Summary <p>In the next&#x2010;generation trend, Software&#x2010;Defined Networking (SDN) is a revolutionary paradigm of network technology that enables advanced network features such as centralized network flow and programmability to facilitate network deployment which is more adaptable, scalable, controllable, and cost&#x2010;effective. The deployment of SDN in production networks is still a goal, and much work remains in SDN security for this vision to become a reality.</p> <p>This study introduces SDN security by exploiting SDN capabilities to improve security and pursue a safer SDN architecture. In addition to emerging technologies, such as machine learning algorithms, cloud services, and virtualized network functions. A Mobile Agent is a promising technology for network security, with the ability to reduce latency and network traffic, execute directly on a destination computer, and dynamically deploy both code and data. The implementation of a Mobile Agent for the networking methodology is an approach that dramatically improves the security of SDN.</p>
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve returned HTTP 403
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0002_enhanced_sdn_security_using_mobile_agent.pdf

@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Interacting with educational chatbots A systematic review
+Authors  : 
+Year     : 2022
+DOI      : 10.1007/s10639-022-11177-3
+URL      : https://openalex.org/W4284991798
+Venue    : Education and Information Technologies
+Source DB: openalex
+
+Abstract:
+Abstract Chatbots hold the promise of revolutionizing education by engaging learners, personalizing learning activities, supporting educators, and developing deep insight into learners’ behavior. However, there is a lack of studies that analyze the recent evidence-based chatbot-learner interaction design techniques applied in education. This study presents a systematic review of 36 papers to understand, compare, and reflect on recent attempts to utilize chatbots in education using seven dimensions: educational field, platform, design principles, the role of chatbots, interaction styles, evidence, and limitations. The results show that the chatbots were mainly designed on a web platform to teach computer science, language, general education, and a few other fields such as engineering and mathematics. Further, more than half of the chatbots were used as teaching agents, while more than a third were peer agents. Most of the chatbots used a predetermined conversational path, and more than a quarter utilized a personalized learning approach that catered to students’ learning needs, while other chatbots used experiential and collaborative learning besides other design principles. Moreover, more than a third of the chatbots were evaluated with experiments, and the results primarily point to improved learning and subjective satisfaction. Challenges and limitations include inadequate or insufficient dataset training and a lack of reliance on usability heuristics. Future studies should explore the effect of chatbot personality and localization on subjective satisfaction and learning effectiveness.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://link.springer.com/10.1007/s10639-022-11177-3)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0027_interacting_with_educational_chatbots_a_systematic_review.pdf

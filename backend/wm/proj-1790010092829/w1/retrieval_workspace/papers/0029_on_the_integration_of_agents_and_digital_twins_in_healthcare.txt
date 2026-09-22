@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : On the Integration of Agents and Digital Twins in Healthcare
+Authors  : 
+Year     : 2020
+DOI      : 10.1007/s10916-020-01623-5
+URL      : https://openalex.org/W3047581883
+Venue    : Journal of Medical Systems
+Source DB: openalex
+
+Abstract:
+A digital twin is a digital representation of a physical asset reproducing its data model, its behaviour and its communication with other physical assets. Digital twins act as a digital replica for the physical object or process they represent, providing nearly real-time monitoring and evaluation without being in close proximity. Although most of their concrete applications can be found mainly in the industrial context, healthcare represents another relevant area where digital twins can have a disruptive impact. The main research question tackled by this paper is about the integration of digital twins with agents and Multi-Agent Systems (MAS) technologies in healthcare. After providing an overview of the application of digital twins in healthcare, in this paper, we discuss our vision about agent-based digital twins, and we present a first case study, about the application of agent-based digital twins to the management of severe traumas.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://link.springer.com/10.1007/s10916-020-01623-5)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0029_on_the_integration_of_agents_and_digital_twins_in_healthcare.pdf

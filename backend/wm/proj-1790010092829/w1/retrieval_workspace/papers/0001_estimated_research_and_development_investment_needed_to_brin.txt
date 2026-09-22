@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Estimated Research and Development Investment Needed to Bring a New Medicine to Market, 2009-2018
+Authors  : 
+Year     : 2020
+DOI      : 10.1001/jama.2020.1166
+URL      : https://openalex.org/W3009999522
+Venue    : JAMA
+Source DB: openalex
+
+Abstract:
+IMPORTANCE: The mean cost of developing a new drug has been the subject of debate, with recent estimates ranging from $314 million to $2.8 billion. OBJECTIVE: To estimate the research and development investment required to bring a new therapeutic agent to market, using publicly available data. DESIGN AND SETTING: Data were analyzed on new therapeutic agents approved by the US Food and Drug Administration (FDA) between 2009 and 2018 to estimate the research and development expenditure required to bring a new medicine to market. Data were accessed from the US Securities and Exchange Commission, Drugs@FDA database, and ClinicalTrials.gov, alongside published data on clinical trial success rates. EXPOSURES: Conduct of preclinical and clinical studies of new therapeutic agents. MAIN OUTCOMES AND MEASURES: Median and mean research and development spending on new therapeutic agents approved by the FDA, capitalized at a real cost of capital rate (the required rate of return for an investor) of 10.5% per year, with bootstrapped CIs. All amounts were reported in 2018 US dollars. RESULTS: The FDA approved 355 new drugs and biologics over the study period. Research and development expenditures were available for 63 (18%) products, developed by 47 different companies. After accounting for the costs of failed trials, the median capitalized research and development investment to bring a new drug to market was estimated at $985.3 million (95% CI, $683.6 million-$1228.9 million), and the mean investment was estimated at $1335.9 million (95% CI, $1042.5 million-$1637.5 million) in the base case analysis. Median estimates by therapeutic area (for areas with ≥5 drugs) ranged from $765.9 million (95% CI, $323.0 million-$1473.5 million) for nervous system agents to $2771.6 million (95% CI, $2051.8 million-$5366.2 million) for antineoplastic and immunomodulating agents. Data were mainly accessible for smaller firms, orphan drugs, products in certain therapeutic areas, first-in-class drugs, therapeutic agents that received accelerated approval, and products approved between 2014 and 2018. Results varied in sensitivity analyses using different estimates of clinical trial success rates, preclinical expenditures, and cost of capital. CONCLUSIONS AND RELEVANCE: This study provides an estimate of research and development costs for new therapeutic agents based on publicly available data. Differences from previous studies may reflect the spectrum of products analyzed, the restricted availability of data in the public domain, and differences in underlying assumptions in the cost calculations.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve returned HTTP 403
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0001_estimated_research_and_development_investment_needed_to_brin.pdf

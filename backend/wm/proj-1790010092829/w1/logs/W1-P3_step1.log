@@ -1,0 +1,31 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_1_corpus_construction/record_normalizer/normalize_and_dedup.py --input retrieval_workspace/raw_results/ --output retrieval_workspace/normalized/ --title-threshold 0.90 --golden-set retrieval_workspace/golden_set/seed_papers.csv
+Loading raw results...
+  Loaded     0 records from acm
+  Loaded   287 records from arxiv
+  Loaded     0 records from elsevier
+  Loaded     0 records from google_scholar
+  Loaded   125 records from ieee
+  Loaded   300 records from openalex
+  Loaded     0 records from semantic_scholar
+  Loaded     0 records from springer
+  Total loaded: 712
+
+Deduplicating by DOI...
+  DOI dedup: removed 4 duplicates, 708 records remain
+
+Deduplicating by fuzzy title...
+  Title fuzzy dedup: removed 11 duplicates, 697 records remain
+
+Marking golden set papers...
+  Golden set: 0/2 seed papers found in corpus
+  WARNING: 2 seed papers not found in corpus
+
+Saved unified records to: retrieval_workspace\normalized\unified_records.csv
+Saved dedup report to: retrieval_workspace\normalized\dedup_report.md
+
+=== Summary ===
+  Before dedup : 712
+  After dedup  : 697
+  Removed total: 15
+  Golden set coverage: 0/2

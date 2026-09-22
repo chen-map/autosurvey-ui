@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Improving multi-target cooperative tracking guidance for UAV swarms using multi-agent reinforcement learning
+Authors  : 
+Year     : 2021
+DOI      : 10.1016/j.cja.2021.09.008
+URL      : https://openalex.org/W3209575760
+Venue    : Chinese Journal of Aeronautics
+Source DB: openalex
+
+Abstract:
+Multi-Target Tracking Guidance (MTTG) in unknown environments has great potential values in applications for Unmanned Aerial Vehicle (UAV) swarms. Although Multi-Agent Deep Reinforcement Learning (MADRL) is a promising technique for learning cooperation, most of the existing methods cannot scale well to decentralized UAV swarms due to their computational complexity or global information requirement. This paper proposes a decentralized MADRL method using the maximum reciprocal reward to learn cooperative tracking policies for UAV swarms. This method reshapes each UAV's reward with a regularization term that is defined as the dot product of the reward vector of all neighbor UAVs and the corresponding dependency vector between the UAV and the neighbors. And the dependence between UAVs can be directly captured by the Pointwise Mutual Information (PMI) neural network without complicated aggregation statistics. Then, the experience sharing Reciprocal Reward Multi-Agent Actor-Critic (MAAC-R) algorithm is proposed to learn the cooperative sharing policy for all homogeneous UAVs. Experiments demonstrate that the proposed algorithm can improve the UAVs’ cooperation more effectively than the baseline algorithms, and can stimulate a rich form of cooperative tracking behaviors of UAV swarms. Besides, the learned policy can better scale to other scenarios with more UAVs and targets.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S1000936121003423)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0048_improving_multitarget_cooperative_tracking_guidance_for_uav.pdf

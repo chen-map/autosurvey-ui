@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Drug repurposing strategies in the development of potential antifungal agents
+Authors  : 
+Year     : 2021
+DOI      : 10.1007/s00253-021-11407-7
+URL      : https://openalex.org/W3173203950
+Venue    : Applied Microbiology and Biotechnology
+Source DB: openalex
+
+Abstract:
+
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://link.springer.com/10.1007/s00253-021-11407-7)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0016_drug_repurposing_strategies_in_the_development_of_potential.pdf

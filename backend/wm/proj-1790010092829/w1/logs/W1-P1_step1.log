@@ -1,0 +1,16 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe /workflow_1_corpus_construction/golden_set_builder/extract_seed_metadata.py --input seeds --output retrieval_workspace/golden_set/seed_papers.csv
+C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe: can't open file 'C:\\workflow_1_corpus_construction\\golden_set_builder\\extract_seed_metadata.py': [Errno 2] No such file or directory
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_1_corpus_construction/golden_set_builder/extract_seed_metadata.py --input seeds --output retrieval_workspace/golden_set/seed_papers.csv
+Found 2 PDFs in seeds
+Output: retrieval_workspace\golden_set\seed_papers.csv
+
+  Processing: 0001_sok_trading_agents_or_market_crashers_dissecting_robustness.pdf ...   [WARN] opendataloader-pdf not installed, trying pymupdf
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+OK (title: SoK: Trading Agents or Market Crashers? Dissecting Robustnes...)
+  Processing: 0005_esaasecurity_an_eventsourced_verifiable_architecture_for_age.pdf ...   [WARN] opendataloader-pdf not installed, trying pymupdf
+OK (title: ESAA-Security: An Event-Sourced, Verifiable Architecture for...)
+
+Extraction complete: 2/2 papers with titles
+Output: retrieval_workspace\golden_set\seed_papers.csv

@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Modeling adoption of intelligent agents in medical imaging
+Authors  : 
+Year     : 2022
+DOI      : 10.1016/j.ijhcs.2022.102922
+URL      : https://openalex.org/W4294051415
+Venue    : International Journal of Human-Computer Studies
+Source DB: openalex
+
+Abstract:
+
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S1071581922001422)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0068_modeling_adoption_of_intelligent_agents_in_medical_imaging.pdf

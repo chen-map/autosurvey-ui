@@ -1,0 +1,59 @@
+
+$ C:\Users\85864\AppData\Local\Programs\Python\Python314\python.exe C:\Users\85864\.zcode\workspace\default\autosurvey-ui\backend\w2\llm_wrap.py --use-case w2.relation --target C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/build_paper_kg.py --input knowledge_graph/candidate_structured_papers.jsonl --out-db knowledge_graph/paper_kg.db --out-json knowledge_graph/paper_kg.json --workflow2-assets-dir knowledge_graph --max-pairs 24 --min-confidence 0.4
+{"llm_wrap": true, "use_case": "w2.relation"}
+{"llm_wrap": true, "base_url": "https://api.deepseek.com/v1", "model": ["deepseek-chat"], "key_from_db": true}
+[prescore] Scoring 1 candidate pairs via LLM (threshold=0.25, cached=0)
+[prescore] 0025_maids_malicious_agent_identificationbased_data_security_mode -> 0023_llm_agents_security_duality_a_comprehensive_survey_of_selfse: is_related=False, confidence=0.90, reason=Paper A proposes an XGBoost-based malicious agent detection model for cloud data
+[prescore] 0/1 pairs passed (threshold=0.25, newly scored=1)
+[paper-pair-relations] start: 0/0 (100.0%), prescore_passed=0/1, reused=0, generated=0, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+[paper-pair-relations] completed: 0/0 (100.0%), prescore_passed=0/1, reused=0, generated=0, edges=0, progress=knowledge_graph\paper_pair_relations.progress.json
+{
+  "db": "knowledge_graph/paper_kg.db",
+  "json": "knowledge_graph/paper_kg.json",
+  "workflow2_assets_dir": "knowledge_graph",
+  "workflow2_assets": {
+    "out_dir": "knowledge_graph",
+    "node_files": {
+      "papers.json": 2,
+      "assumptions_constraints.json": 0,
+      "datasets_benchmarks.json": 0,
+      "limitations.json": 4,
+      "methods.json": 5,
+      "metrics.json": 4,
+      "problems.json": 4
+    },
+    "edge_files": {
+      "addresses": 4,
+      "proposes": 5,
+      "targets": 7,
+      "requires": 0,
+      "relaxes": 0,
+      "evaluated_on": 0,
+      "measured_by": 4,
+      "has_limitation": 4,
+      "extends": 0,
+      "compares_with": 0,
+      "contradicts": 0,
+      "supports": 0
+    },
+    "papers": 2,
+    "nodes": 17,
+    "edges": 24
+  },
+  "papers": 2,
+  "nodes": 17,
+  "edges": 24,
+  "prescore_enabled": true,
+  "prescore_threshold": 0.25,
+  "prescore_checkpoint": "knowledge_graph\\paper_pair_prescore.checkpoint.jsonl",
+  "paper_pair_candidates_total": 1,
+  "paper_pair_prescore_passed": 0,
+  "paper_pair_candidates": 0,
+  "paper_pair_candidates_capped": true,
+  "paper_pair_relations_from_checkpoint": 0,
+  "paper_pair_relations_generated": 0,
+  "paper_pair_relation_edges": 0,
+  "relation_checkpoint": "knowledge_graph\\paper_pair_relations.checkpoint.jsonl",
+  "relation_progress": "knowledge_graph\\paper_pair_relations.progress.json",
+  "llm_used": true
+}

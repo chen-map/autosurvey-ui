@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : Exploring the plant-derived bioactive substances as antidiabetic agent An extensive review
+Authors  : 
+Year     : 2022
+DOI      : 10.1016/j.biopha.2022.113217
+URL      : https://openalex.org/W4281780639
+Venue    : Biomedicine & Pharmacotherapy
+Source DB: openalex
+
+Abstract:
+Diabetes mellitus (DM) is a metabolic syndrome. Diabetes has become more common in recent years. Chemically generated drugs are used to lessen the effects of DM and its following repercussions due to unpleasant side effects such as weight gain, gastrointestinal issues, and heart failure. On the other hand, medicinal plants could be a good source of anti-diabetic medications. This article aims to determine any plant matrix's positive potential. Food restriction, physical activity, and the use of antidiabetic plant-derived chemicals are all being promoted as effective ways to manage diabetes because they are less expensive and have fewer or no side effects. This review focuses on antidiabetic plants, along with their bioactive constituent, chemically characterization, and plant-based diets for diabetes management. There is minimal scientific data about the mechanism of action of the plant-based product has been found. The purpose of this article is to highlight anti-diabetic plants and plant-derived bioactive compounds that have anti-diabetic properties. It also provides researchers with data that may be used to build future strategies, such as identifying promising bioactive molecules to make diabetes management easier.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve: no PDF found on landing page (https://linkinghub.elsevier.com/retrieve/pii/S0753332222006060)
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0046_exploring_the_plantderived_bioactive_substances_as_antidiabe.pdf

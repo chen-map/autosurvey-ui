@@ -1,0 +1,22 @@
+=== PAPER METADATA (Download Failed) ===
+Title    : An AI Agent for Fully Automated Multi‐Omic Analyses
+Authors  : 
+Year     : 2024
+DOI      : 10.1002/advs.202407094
+URL      : https://openalex.org/W4403099947
+Venue    : Advanced Science
+Source DB: openalex
+
+Abstract:
+With the fast-growing and evolving omics data, the demand for streamlined and adaptable tools to handle bioinformatics analysis continues to grow. In response to this need, Automated Bioinformatics Analysis (AutoBA) is introduced, an autonomous AI agent designed explicitly for fully automated multi-omic analyses based on large language models (LLMs). AutoBA simplifies the analytical process by requiring minimal user input while delivering detailed step-by-step plans for various bioinformatics tasks. AutoBA's unique capacity to self-design analysis processes based on input data variations further underscores its versatility. Compared with online bioinformatic services, AutoBA offers multiple LLM backends, with options for both online and local usage, prioritizing data security and user privacy. In comparison to ChatGPT and open-source LLMs, an automated code repair (ACR) mechanism in AutoBA is designed to improve its stability in automated end-to-end bioinformatics analysis tasks. Moreover, different from the predefined pipeline, AutoBA has adaptability in sync with emerging bioinformatics tools. Overall, AutoBA represents an advanced and convenient tool, offering robustness and adaptability for conventional multi-omic analyses.
+
+=== DOWNLOAD ATTEMPTS ===
+1. direct_url: URL does not appear to be a direct PDF link
+2. arxiv: No arXiv ID found in DOI or URL
+3. unpaywall: Unpaywall API returned HTTP 422
+4. doi_resolve: DOI resolve returned HTTP 403
+5. publisher_oa: Publisher OA: tried 2 patterns, none succeeded
+
+=== MANUAL RETRIEVAL ===
+Please download the PDF manually and replace this file.
+Suggested filename: 0006_an_ai_agent_for_fully_automated_multiomic_analyses.pdf
