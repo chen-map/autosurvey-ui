@@ -402,12 +402,13 @@ export function NewProjectPage() {
                 <span className="tabular-nums text-t2">{corpusCap} 篇</span>
               </div>
               <input
-                type="range" min={100} max={Math.min(searchCap, 500)} step={50} value={corpusCap}
+                type="range" min={100} max={Math.min(searchCap, 2000)} step={50} value={corpusCap}
                 onChange={(e) => setCorpusCapClamped(Number(e.target.value))}
                 className="mt-2 w-full accent-black"
               />
               <p className="mt-1 text-[12.5px] text-t3">
-                筛选后进入语料库的规模（默认 500），直接决定 W2 KG 构建耗时：500 篇 ≈ 13 万论文对 ≈ 3–4h
+                筛选后进入语料库的规模（默认 500），直接决定 W2 KG 构建耗时：500 篇 ≈ 13 万论文对 ≈ 3–4h。
+                下载侧按 5s/篇合规限速：1000 篇 arXiv ≈ 1.5–2h，断点续传可中断重跑
               </p>
             </div>
             <div>
