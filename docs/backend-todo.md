@@ -148,6 +148,13 @@ W3 实际写出 `analyze_report/` 下的产物，前端 RQ 树/专页的每个�
 - **list 端点形状修复**：返回前端 Project 同构（camelCase + stats + workflows 摘要）
 - **W12 全链路实测**：新建项目 → P1 22s → P2 176s（712 条）→ P3 7s → P4 → P5（S2 限流降级）
   → P6 786s（60 截断：2 下载 + 58 占位 + 586 分流）→ 646 条入本地库 → W2 全绿 → 真 KG 上图
+- **P6 arXiv 批量直连**（2026-09-22，解决"2/60 成功率"）：新增 `w1/arxiv_batch.py` 挂 P6
+  （prep 之后、旧五级链之前）。共享节流状态（5s/篇）+ 全局冷却 + 断点续传 + `%PDF` 校验 +
+  **curl 首选三级通道**（curl 直连 → urllib 代理 → urllib 直连；实测 arXiv CDN 按 TLS
+  指纹过滤 python-urllib，缓存未命中即 406）。30 篇真数据实测 30/30 全成功。
+  同日修复 OAI 收割器：记录为无前缀裸标签 `<arXiv>`（原正则按 `<arXiv:arXiv>` 写导致
+  每页 0 条无限翻库）+ authors 按 author/keyname 结构化解析 + 重试上限 6 次 + 连续空页
+  熔断 + `Accept` 头。详见 docs/arxiv-compliance.md
 
 ## 8. 基础设施（部署阶段）
 

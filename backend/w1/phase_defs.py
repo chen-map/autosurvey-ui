@@ -109,6 +109,15 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                  "args": ["--input", f"{ws}/snowball/snowball_candidates.csv",
                           "--out-dir", f"{ws}/download/",
                           "--limit", str(cfg.get("corpus_cap", 500))]},
+                # arXiv 批量直连先行（限速 5s/篇 + 全局冷却 + 断点续传）：
+                # OAI 收割的记录带官方 DOI，走 export.arxiv.org 一次到位；
+                # 剩余无 arXiv ID / 失败的才交给下面五级降级链兜底
+                {"script": str(HERE / "arxiv_batch.py"),
+                 "args": ["--input", f"{ws}/download/download_ready.csv",
+                          "--out-dir", f"{ws}/papers/",
+                          "--stats-out", f"{ws}/download/arxiv_batch_stats.json",
+                          "--min-interval-sec", str(cfg.get("arxiv_dl_min_interval", 5.0)),
+                          "--contact-email", cfg.get("contact_email", "researcher@example.com")]},
                 {"script": f"{scripts}/paper_downloader/download_papers.py",
                  "args": ["--input", f"{ws}/download/download_ready.csv",
                           "--output", f"{ws}/papers/", "--no-scihub", "--skip-existing",
@@ -116,6 +125,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--unpaywall-email", cfg.get("unpaywall_email", "autosurvey@example.com")]},
             ],
             "outputs": [f"{ws}/download/prep_stats.json",
+                        f"{ws}/download/arxiv_batch_stats.json",
                         f"{ws}/papers/download_report.md"],
             # 下载完成 → 入本地库（用户裁决：语料页从 corpus_papers 表读）
             "steps_tail": [
