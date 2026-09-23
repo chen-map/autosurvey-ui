@@ -464,6 +464,65 @@ def get_kg(pid: str):
             "paperCount": len(data.get("papers", []))}
 
 
+@app.get("/api/projects/{pid}/rqs")
+def get_rqs(pid: str):
+    """RQ 体系：读 W3 产物 analyze_report/rq_evidence_matrix.json → 前端 RQBundle 契约。"""
+    matrix_path = _wm(pid) / "analyze_report" / "rq_evidence_matrix.json"
+    if not matrix_path.exists():
+        raise HTTPException(404, f"W3 not run for {pid}（analyze_report 缺失）")
+    m = json.loads(matrix_path.read_text(encoding="utf-8"))
+
+    def _level(ans: dict, n_papers: int) -> str:
+        if ans.get("intercept") or n_papers < 2:
+            return "blocked"
+        score = float(ans.get("answerability_score") or 0)
+        return "strong" if score >= 0.85 or n_papers >= 3 else "weak"
+
+    macros: dict[str, dict] = {}
+    order: list[str] = []
+    for e in m.get("sub_rq_matrix", []):
+        rq_id = e.get("rq_id") or ""
+        if rq_id not in macros:
+            macros[rq_id] = {"id": rq_id, "text": e.get("rq_text", ""), "subs": []}
+            order.append(rq_id)
+        ans = e.get("answerability") or {}
+        qp = e.get("query_plan") or {}
+        sec = e.get("section_assignment") or {}
+        paper_ids = e.get("paper_ids_ranked") or []
+        subs = macros[rq_id]["subs"]
+        subs.append({
+            "id": e.get("sub_rq_id"),
+            "text": e.get("sub_rq_text", ""),
+            "score": float(ans.get("answerability_score") or 0),
+            "level": _level(ans, len(paper_ids)),
+            "paperIds": paper_ids,
+            "kgNodeCount": len(e.get("node_ids") or []),
+            "kgEdgeCount": len(e.get("edge_ids") or []),
+            "section": (sec.get("subsection_id") or "").replace("section_", "").replace("_", "."),
+            "summary": qp.get("intent_summary", ""),
+            "query": {
+                "queryIntent": qp.get("intent_summary", ""),
+                "focusTerms": qp.get("focus_terms") or [],
+                "nodeTypes": qp.get("node_type_hints") or [],
+                "edgeTypes": qp.get("edge_type_hints") or [],
+                "candidatePaths": [str(p) for p in (qp.get("path_patterns") or [])][:6],
+            },
+            "revisionNote": e.get("recommended_action", ""),
+        })
+    macros_list = [macros[k] for k in order]
+    n_papers = sum(len(s.get("paperIds") or []) for mc in macros_list for s in mc["subs"])
+    return {
+        "macros": macros_list,
+        "matrix": {"frozenAt": m.get("generated_at", "")},
+        "overallAnswer": "",
+        "claims": [],
+        "evidencePapers": [],
+        "evidenceGaps": [],
+        "stats": {"macros": len(macros_list), "subs": sum(len(x["subs"]) for x in macros_list),
+                  "paperMentions": n_papers},
+    }
+
+
 @app.get("/api/projects")
 def list_projects():
     projects = []
