@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 LLM_WRAP = str(Path(__file__).resolve().parent / "llm_wrap.py")
+HERE = Path(__file__).resolve().parent
 
 
 def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
@@ -33,6 +34,11 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                  "args": ["--pdf-dir", pdf_dir,
                           "--out-dir", "paper_cards/parsed",
                           "--log", "paper_cards/parsed/PARSE_LOG.csv"]},
+            ],
+            # 章节定位提取（会议纪要方向 2）：写 text 字段智能摘要，P1 优先消费，paper_text 保留
+            "steps_tail": [
+                {"script": str(HERE / "section_digest.py"),
+                 "args": ["--cards-dir", "paper_cards/parsed"]},
             ],
             "outputs": ["paper_cards/parsed/PARSE_LOG.csv"],
         },
@@ -74,6 +80,8 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--input", "knowledge_graph/candidate_structured_papers.jsonl",
                           "--out-db", "knowledge_graph/paper_kg.db",
                           "--out-json", "knowledge_graph/paper_kg.json",
+                          # 引用索引 + Intro 摘录的原料（References 回填后有料，citation_hint 生效）
+                          "--paper-cards-dir", "paper_cards/parsed",
                           "--workflow2-assets-dir", "knowledge_graph",
                           "--max-pairs", str(max_pairs),
                           "--min-confidence", str(min_confidence)]},

@@ -89,8 +89,10 @@ def main() -> int:
 
     con = sqlite3.connect(str(db_path))
     for drop, (keep, alias) in drop_to_keep.items():
-        con.execute("UPDATE edges SET source_id=? WHERE source_id=?", (keep, drop))
-        con.execute("UPDATE edges SET target_id=? WHERE target_id=?", (keep, drop))
+        # 唯一约束冲突（两节点本有相同边）时忽略该行，随后删除指向被并节点的残余边
+        con.execute("UPDATE OR IGNORE edges SET source_id=? WHERE source_id=?", (keep, drop))
+        con.execute("UPDATE OR IGNORE edges SET target_id=? WHERE target_id=?", (keep, drop))
+        con.execute("DELETE FROM edges WHERE source_id=? OR target_id=?", (drop, drop))
         if alias:
             con.execute("INSERT OR REPLACE INTO node_aliases (alias_lower, node_id, alias_display) VALUES (?,?,?)",
                         (alias.lower(), keep, alias))
