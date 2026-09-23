@@ -192,3 +192,12 @@ W3 实际写出 `analyze_report/` 下的产物，前端 RQ 树/专页的每个�
 | 6 | 三层分析架构（原子操作/Skill/RQ 分类层） | 与主参考 §3.4 L1/L2/L3 同构；Agent 页当前仍是"概览塞给 LLM"，未到 L1/L2/L3 | Agent 页 + W3 registry | 大 | 登记；Agent 升级吃 W3 registry 为前置 |
 | 7 | Problem/Solution 双域 Skill 体系 + 自上而下/自下而上构建 | 未开始（SKILL 体系属设备领域主线，控制台承接展示） | Skill 库建设 | 大 | 登记 |
 
+
+## 10. RQ 证据页数据质量三项根因（2026-09-23 用户质询登记）
+
+| # | 问题 | 根因 | 处置 |
+|---|---|---|---|
+| 1 | 语料全是 2019/2020 年（"穿越"） | OAI `from` 过滤的是 **datestamp（最后更新日）**，展示的 year 是原始提交年——2019 提交 2020 更新的论文全部入选；且 ListRecords 按从旧到新翻页，截断前 2000 条天然偏向旧文 | 待裁决：① 收割量提到 6000+ 并在归一/筛选按 `year>=year_from` 硬过滤 + 年份权重；或 ② 改用按提交年切片的 harvest 策略 |
+| 2 | 证据论文缺作者/DOI/arXiv 号 | /rqs 端点最初未回填 evidencePapers | **已修**：端点从 paper_cards + download_ready.csv 拼装 authors/arXivId/DOI（100/100 覆盖），前端证据行两行式渲染，DOI 可点 |
+| 3 | 引用次数不对 | 无引用数数据源（Semantic Scholar 需 API Key；当前未接） | 待裁决：配 S2 API Key 后按批量端点回填 citations（100 篇 1 次调用） |
+| 4 | 5/12 Sub-RQ blocked | 语料为关键词筛的随机子集，部分 RQ 主题（如特定方法范式对比）在语料中天然无支撑；反思修订一轮后 strong 5→7 | 选项：再一轮 P5/P6 修订 / S2 滚雪球扩语料 / 人工收窄 RQ |

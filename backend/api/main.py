@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import re
 import os
 import csv
 import subprocess
@@ -511,12 +512,47 @@ def get_rqs(pid: str):
         })
     macros_list = [macros[k] for k in order]
     n_papers = sum(len(s.get("paperIds") or []) for mc in macros_list for s in mc["subs"])
+
+    # 证据论文元数据：卡片（作者/年份/venue/url）+ download_ready.csv（DOI）
+    cards_dir = _wm(pid) / "paper_cards" / "parsed"
+    doi_by_rid: dict[int, str] = {}
+    ready_csv = _wm(pid) / "retrieval_workspace" / "download" / "download_ready.csv"
+    if ready_csv.exists():
+        import csv as _csv
+        with open(ready_csv, encoding="utf-8-sig", newline="") as fh:
+            for row in _csv.DictReader(fh):
+                try:
+                    doi_by_rid[int(row.get("record_id", 0))] = (row.get("doi") or "").strip()
+                except ValueError:
+                    continue
+    evidence = []
+    for cf in sorted(cards_dir.glob("*.json")) if cards_dir.exists() else []:
+        try:
+            c = json.loads(cf.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        pid_str = str(c.get("paper_id") or cf.stem)
+        authors = c.get("authors")
+        if isinstance(authors, list):
+            authors = "; ".join(map(str, authors))
+        url = str(c.get("url") or "")
+        mx = re.search(r"arxiv\.org/(?:abs|pdf)/([^\s/?#]+)", url)
+        arxiv_id = mx.group(1) if mx else ""
+        rid = "".join(ch for ch in pid_str[:4] if ch.isdigit())
+        doi = doi_by_rid.get(int(rid), "") if rid else ""
+        evidence.append({
+            "id": pid_str, "title": c.get("title", ""), "venue": c.get("venue", ""),
+            "year": c.get("year"), "authors": (authors or "")[:300],
+            "arxivId": arxiv_id, "doi": doi,
+        })
+    ev_by_id = {e["id"]: e for e in evidence}
+
     return {
         "macros": macros_list,
         "matrix": {"frozenAt": m.get("generated_at", "")},
         "overallAnswer": "",
         "claims": [],
-        "evidencePapers": [],
+        "evidencePapers": evidence,
         "evidenceGaps": [],
         "stats": {"macros": len(macros_list), "subs": sum(len(x["subs"]) for x in macros_list),
                   "paperMentions": n_papers},
