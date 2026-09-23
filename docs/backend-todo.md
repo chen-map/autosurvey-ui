@@ -177,3 +177,18 @@ W3 实际写出 `analyze_report/` 下的产物，前端 RQ 树/专页的每个�
 - ECS（放既有 VPC 交换机）+ 弹性公网 IP + 安全组 80/443
 - nginx 反代 `/api/*` → FastAPI 流水线包装层；托管前端 dist 静态产物
 - 长任务状态推送：轮询起步，预留 SSE
+
+## 9. W2/W3 优化 backlog（2026-09-23 会议纪要登记，处置决议：只登记；轻微改动可尝试；改文件类型/存储格式暂不动）
+
+纪要全文归档：docs/references/W2W3优化方向会议纪要.md。逐项现状对照：
+
+| # | 方向 | 本控制台现状 | 涉及面 | 风险级 | 处置 |
+|---|---|---|---|---|---|
+| 1 | 候选对生成与 Pre-score 精细化 | 已有同构三阶段：概念评分选对（select_paper_pairs，已改共享概念评分）→ LLM Pre-score（chat_json is_related/confidence）→ 关系生成；100 篇实测 18/300 相关 | build_paper_kg.py / 章节级文本供给 | 中 | 登记；章节分区域解析待做 |
+| 2 | 结构化对象定义校验（章节定位提取） | 现状为整篇前 16000 字符喂 LLM（--max-text-chars）；卡已有 sections 字段可供定位 | parse_pdfs / build_structured_papers | 中 | 登记；sections 定位提取可试点 |
+| 3 | Related Work 引用关系双向解析 | **已诊断**：100 卡中仅 31 张有 references 字段且全部 ≤50 字符（解析层空壳）→ build_citation_index 无米下锅，citation_hint 形同虚设 | parse_pdfs（解析层修复） | 中大 | 登记（引用提取修复涉及解析器，待裁决后做） |
+| 4 | KG 存储格式升级（图数据库） | 已有 paper_kg.db（SQLite，query_rq_evidence 已用 SQL 查询）+ JSON + Graphml 三形态；"JSON grep"痛点主要在前端/展示侧 | 存储层迁移 | **大（用户明确暂不动）** | 登记；"OpenCBOC"名称存疑，候选调研对象：Neo4j / TuGraph / NebulaGraph，调研后再裁决 |
+| 5 | 节点 AutoMerge | 完全缺失。885 节点 canonical_name 精确重复仅 2 对，但语义同义（GCN vs Graph Convolutional Network）未测——轻量尝试：merge 建议报告脚本（只读分析，产出候选对供人工确认，不动数据） | 新增独立脚本 + 未来名词表 MD | 低（已试点） | **已试点** kg_merge_suggest.py |
+| 6 | 三层分析架构（原子操作/Skill/RQ 分类层） | 与主参考 §3.4 L1/L2/L3 同构；Agent 页当前仍是"概览塞给 LLM"，未到 L1/L2/L3 | Agent 页 + W3 registry | 大 | 登记；Agent 升级吃 W3 registry 为前置 |
+| 7 | Problem/Solution 双域 Skill 体系 + 自上而下/自下而上构建 | 未开始（SKILL 体系属设备领域主线，控制台承接展示） | Skill 库建设 | 大 | 登记 |
+
