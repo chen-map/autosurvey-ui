@@ -48,8 +48,15 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--output", f"{ws}/raw_results/"]},
             ],
             "outputs": [f"{ws}/raw_results/"],
-            # arXiv 合规补充源：OAI-PMH 增量元数据（Retry-After 退避 + 日限额 + 合规 UA），经 P3 归一合流
+            # arXiv 主题检索（检索式 + 提交年区间 + 新文优先）：真正"查论文"，解决 OAI 全量切片的年份偏斜与不相关
             "steps_tail": [
+                {"script": str(HERE / "arxiv_search.py"),
+                 "args": ["--keywords", ",".join([cfg.get("topic", "")] + cfg.get("domain_tags", [])),
+                          "--year-from", str(year_from), "--year-to", str(year_to),
+                          "--max-records", str(cfg.get("search_max_records", 1000)),
+                          "--out", f"{ws}/raw_results/arxiv_search_results.csv",
+                          "--contact-email", cfg.get("contact_email", "researcher@example.com")]},
+                # OAI-PMH 增量补充源（Retry-After 退避 + 日限额 + 合规 UA），经 P3 归一合流
                 {"script": str(HERE / "arxiv_oai.py"),
                  "args": ["--set", cfg.get("oai_sets", "cs"),
                           "--from", f"{year_from}-01-01",
@@ -84,6 +91,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                 {"script": str(HERE / "simple_screen.py"),
                  "args": ["--input", f"{ws}/normalized/unified_records.csv",
                           "--topic", cfg.get("topic", ""),
+                          "--min-year", str(year_from),
                           "--output-dir", f"{ws}/screening/"]},
             ],
             "outputs": [f"{ws}/screening/screened_records.csv", f"{ws}/screening/screening_log.md"],

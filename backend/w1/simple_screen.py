@@ -16,6 +16,7 @@ def main() -> int:
     parser.add_argument("--input", required=True, help="unified_records.csv")
     parser.add_argument("--topic", required=True)
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--min-year", type=int, default=0, help="年份硬过滤（year_range 下限），0=不过滤")
     args = parser.parse_args()
 
     stop = {"的", "与", "和", "在", "及", "for", "and", "the", "of", "a", "in", "to"}
@@ -65,6 +66,13 @@ def main() -> int:
         r["_relevant"] = "true" if present else "false"
 
     kept = [r for r in rows if r["_relevant"] == "true"]
+    if args.min_year > 0:
+        def _y(r: dict) -> int:
+            y = str(r.get("year", "")).strip()
+            return int(y) if y.isdigit() else 0
+        n0 = len(kept)
+        kept = [r for r in kept if _y(r) >= args.min_year]
+        print(f"年份过滤 >= {args.min_year}: {n0} → {len(kept)}")
     dropped = [r for r in rows if r["_relevant"] != "true"]
 
     # 评分降序（同分按年份新→旧）：下游 download_prep --limit N 截断的是
