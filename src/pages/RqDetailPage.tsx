@@ -372,10 +372,21 @@ function SubPage({ sub, macro, bundle }: { sub: SubRQ; macro: MacroRQ; bundle: N
             <li key={r.id} className="anim-rise flex items-baseline gap-2 rounded-lg bg-page px-3 py-2 text-[13px]" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}>
               <span className="shrink-0 font-mono text-[11px] text-t3">[{i + 1}]</span>
               {r.paper ? (
-                <>
-                  <span className="min-w-0 flex-1 truncate text-t1" title={r.paper.title}>{r.paper.title}</span>
-                  <span className="shrink-0 text-[12px] text-t3">{r.paper.venue} {r.paper.year}</span>
-                </>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <span className="min-w-0 flex-1 truncate text-t1" title={r.paper.title}>{r.paper.title}</span>
+                    <span className="shrink-0 text-[12px] text-t3">{r.paper.venue} {r.paper.year}</span>
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] text-t3">
+                    {r.paper.authors && <span className="truncate" title={r.paper.authors}>{r.paper.authors}</span>}
+                    {r.paper.arxivId && <span className="font-mono">arXiv:{r.paper.arxivId}</span>}
+                    {r.paper.doi && (
+                      <a className="font-mono text-info-fg hover:underline" href={`https://doi.org/${r.paper.doi}`} target="_blank" rel="noreferrer">
+                        DOI:{r.paper.doi}
+                      </a>
+                    )}
+                  </div>
+                </div>
               ) : (
                 <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-t3">{r.id}</span>
               )}

@@ -118,7 +118,12 @@ export interface Claim {
   note?: string;
 }
 
-export interface EvidencePaper { id: string; title: string; venue: string; year: number }
+export interface EvidencePaper {
+  id: string; title: string; venue: string; year: number;
+  authors?: string;   // 卡片作者（W3 证据增强）
+  arxivId?: string;   // arXiv 编号（url 解析）
+  doi?: string;       // download_ready.csv 锚定 DOI
+}
 
 export interface RQBundle {
   macros: MacroRQ[];
