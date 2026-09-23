@@ -155,7 +155,7 @@ export function KgPage() {
   const hoverRef = useRef<string | null>(null);
   const dragRef = useRef<string | null>(null);
   const panRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
-  const movedRef = useRef(false);
+  const downPtRef = useRef<{ x: number; y: number } | null>(null);  // down 点，用于位移阈值判定点击
   const sizeRef = useRef(size);
   sizeRef.current = size;
   const nodesRef = useRef(simNodes);
@@ -372,8 +372,8 @@ export function KgPage() {
   // 指针交互：节点拖拽 / 空白平移 / 点选 / 悬停
   const onPointerDown = (e: React.PointerEvent) => {
     const rect = wrapRef.current!.getBoundingClientRect();
+    downPtRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     const hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
-    movedRef.current = false;
     if (hit) {
       dragRef.current = hit.id;
       (e.target as Element).setPointerCapture(e.pointerId);
@@ -385,7 +385,6 @@ export function KgPage() {
     const rect = wrapRef.current!.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
     if (dragRef.current) {
-      movedRef.current = true;
       const n = byId.get(dragRef.current);
       if (n) {
         const view = viewRef.current;
@@ -396,7 +395,6 @@ export function KgPage() {
       return;
     }
     if (panRef.current) {
-      movedRef.current = true;
       const { sx, sy, ox, oy } = panRef.current;
       viewRef.current = { ...viewRef.current, x: ox + (e.clientX - sx), y: oy + (e.clientY - sy) };
       requestDraw();
@@ -414,7 +412,6 @@ export function KgPage() {
   };
   const onPointerUp = (e: React.PointerEvent) => {
     const dragId = dragRef.current;
-    const wasPan = panRef.current != null;
     dragRef.current = null;
     panRef.current = null;
     if (dragId != null) {
@@ -422,11 +419,15 @@ export function KgPage() {
       if (n) { n.fx = undefined; n.fy = undefined; }
       reheat();
     }
-    // 拖拽/平移过就不算点击；否则按命中切换选中
-    if (movedRef.current) return;
+    // 位移 <=4px 视为点击（手抖/合成事件的小位移不吞点击），否则是拖拽/平移
+    const d0 = downPtRef.current;
+    downPtRef.current = null;
+    if (!d0) return;
     const rect = wrapRef.current!.getBoundingClientRect();
-    const hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
-    if (hit || wasPan) setSelectedId((s) => (hit ? (s === hit.id ? null : hit.id) : null));
+    const dx = e.clientX - rect.left - d0.x, dy = e.clientY - rect.top - d0.y;
+    if (dx * dx + dy * dy > 16) return;
+    const hit = hitTest(d0.x, d0.y);
+    setSelectedId((s) => (hit ? (s === hit.id ? null : hit.id) : null));
     requestDraw();
   };
   const onWheel = (e: React.WheelEvent) => {
@@ -441,6 +442,50 @@ export function KgPage() {
   };
 
   const selected = selectedId ? byId.get(selectedId) : null;
+
+  // InternAtlas 式详情面板：选中节点的关系行（关系类型 → 对端节点，可点击跳转）
+  const PANEL_W = 340;
+  const EDGE_LABELS: Record<string, string> = {
+    addresses: '解决问题', proposes: '提出方法', targets: '作用于', evaluated_on: '评测于',
+    measured_by: '度量于', has_limitation: '存在局限', requires: '依赖', relaxes: '放宽',
+    constrains: '约束', related: '相关', contradicts: '矛盾', supports: '支持',
+    uses_component: '使用组件', extends: '扩展', compares_with: '对比',
+  };
+  const relations = useMemo(() => {
+    if (!selectedId) return [];
+    const out: { type: string; dir: 'out' | 'in'; id: string; label: string; nodeType: KgType }[] = [];
+    for (const e of simLinks) {
+      const s = endId(e.source);
+      const t = endId(e.target);
+      if (s === selectedId) out.push({ type: e.type, dir: 'out', id: t, label: byId.get(t)?.label ?? t, nodeType: byId.get(t)?.type ?? 'method' });
+      else if (t === selectedId) out.push({ type: e.type, dir: 'in', id: s, label: byId.get(s)?.label ?? s, nodeType: byId.get(s)?.type ?? 'method' });
+    }
+    return out;
+  }, [selectedId, simLinks, byId]);
+
+  // 把某节点居中（面板展开时给右侧面板让位）
+  // 调试/测试钩子：按标签子串选中并居中（window.__kg.select('...')）
+  useEffect(() => {
+    (window as unknown as { __kg: unknown }).__kg = {
+      select: (label: string) => {
+        const n = simNodes.find((x) => x.label.toLowerCase().includes(label.toLowerCase()));
+        if (n) { setSelectedId(n.id); focusOn(n.id); }
+        return n?.label ?? null;
+      },
+      nodes: simNodes.length,
+    };
+  });
+
+  const focusOn = useCallback((id: string) => {
+    const n = byId.get(id);
+    if (!n || n.x == null || n.y == null) return;
+    const el = wrapRef.current;
+    if (!el) return;
+    const w = el.clientWidth, h = el.clientHeight;
+    const k = Math.max(viewRef.current.k, 1.1);
+    viewRef.current = { k, x: (w - PANEL_W) / 2 - n.x * k, y: h / 2 - n.y * k };
+    requestDraw();
+  }, [byId, requestDraw]);
   const showModeToggle = bigGraph;
 
   return (
@@ -504,6 +549,11 @@ export function KgPage() {
         className="relative h-[560px] touch-none select-none overflow-hidden rounded-xl border border-line/60 bg-page"
         style={{ backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.055) 1px, transparent 1px)', backgroundSize: '22px 22px' }}
         onWheel={onWheel}
+        onDoubleClick={(e) => {
+          const rect = wrapRef.current!.getBoundingClientRect();
+          const hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
+          if (hit) { setSelectedId(hit.id); focusOn(hit.id); }
+        }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -545,40 +595,57 @@ export function KgPage() {
             <span className="flex items-center gap-1"><span className="h-0.5 w-4" style={{ background: '#b9bec4' }} />结构关系</span>
             <span className="flex items-center gap-1"><span className="h-0.5 w-4" style={{ background: '#2e7d32' }} />支持</span>
             <span className="flex items-center gap-1"><span className="h-0.5 w-4" style={{ background: '#e53935' }} />矛盾</span>
-            <span className="text-t3">滚轮缩放 · 拖拽平移 · 点选查看{mode === 'overview' ? ' · 点节点展开邻域' : ''}</span>
+            <span className="text-t3">滚轮缩放 · 拖拽平移 · 点选详情{mode === 'overview' ? ' · 点节点展开邻域' : ''} · 双击居中</span>
           </div>
         )}
 
-        {/* 右下：点选详情 */}
+        {/* 右侧：InternAtlas 式节点详情抽屉 */}
         {selected && (
-          <Card className="absolute bottom-3 right-3 w-72 p-4 shadow-s2">
-            <div className="flex items-start justify-between gap-2">
+          <Card className="absolute bottom-3 right-3 top-3 flex w-[340px] flex-col overflow-hidden p-0 shadow-s2">
+            <div className="flex items-start justify-between gap-2 border-b border-line/60 px-4 py-3">
               <Badge variant="neutral">
                 <span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: TYPE_COLORS[selected.type] }} />
                 {TYPE_LABELS[selected.type]}
               </Badge>
-              <button type="button" className="text-t3 hover:text-t1" onClick={() => setSelectedId(null)}>
-                <X size={14} />
-              </button>
+              <div className="flex items-center gap-1">
+                <button type="button" title="在图谱中居中" className="text-t3 hover:text-t1" onClick={() => focusOn(selected.id)}>
+                  <ZoomIn size={14} />
+                </button>
+                <button type="button" title="关闭" className="text-t3 hover:text-t1" onClick={() => setSelectedId(null)}>
+                  <X size={14} />
+                </button>
+              </div>
             </div>
-            <div className="mt-2 text-[14px] font-medium leading-5">{selected.label}</div>
-            {selected.description && (
-              <p className="mt-1.5 text-[12.5px] leading-5 text-t3">{selected.description}</p>
-            )}
-            <div className="mt-2.5 flex items-center gap-2 text-[12px] text-t3">
-              <ZoomIn size={12} />
-              连接度 {selected.degree} ·
-              {(() => {
-                const types = new Map<string, number>();
-                for (const e of simLinks) {
-                  const s = endId(e.source);
-                  const t = endId(e.target);
-                  if (s !== selected.id && t !== selected.id) continue;
-                  const other = s === selected.id ? t : s;
-                  types.set(byId.get(other)?.type ?? '?', (types.get(byId.get(other)?.type ?? '?') ?? 0) + 1);
-                }
-                return [...types.entries()].map(([t, n]) => ` ${TYPE_LABELS[t as KgType] ?? t}×${n}`).join(' ·');
-              })()}
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+              <div className="text-[15px] font-semibold leading-6">{selected.label}</div>
+              <div className="mt-2 rounded-lg border border-line/60 bg-page px-3 py-2 font-mono text-[11.5px] leading-5 text-t2">
+                <div>NODE ID&nbsp;&nbsp;{selected.id.slice(0, 34)}{selected.id.length > 34 ? '…' : ''}</div>
+                <div>连接度&nbsp;&nbsp;&nbsp;{selected.degree}</div>
+                <div>关系数&nbsp;&nbsp;&nbsp;{relations.length}</div>
+              </div>
+              {selected.description && (
+                <p className="mt-3 text-[12.5px] leading-5 text-t2">{selected.description}</p>
+              )}
+              <div className="mt-4 text-[12.5px] font-medium text-t2">关系（{relations.length}）</div>
+              <div className="mt-2 space-y-1">
+                {relations.length === 0 && <div className="text-[12px] text-t3">暂无关系边</div>}
+                {relations.map((r, i) => (
+                  <button
+                    key={`${r.dir}-${r.type}-${r.id}-${i}`}
+                    type="button"
+                    onClick={() => { setSelectedId(r.id); focusOn(r.id); }}
+                    className="flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-1.5 text-left transition-colors hover:border-line/60 hover:bg-page"
+                  >
+                    <span className="w-20 shrink-0 font-mono text-[10.5px] uppercase text-t3">
+                      {EDGE_LABELS[r.type] ?? r.type}
+                    </span>
+                    <span className={r.dir === 'out' ? 'text-t3' : 'text-t3 rotate-180'}>{r.dir === 'out' ? '→' : '←'}</span>
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: TYPE_COLORS[r.nodeType] }} />
+                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-t1">{r.label}</span>
+                    <span className="shrink-0 text-[11px] text-t3">{TYPE_LABELS[r.nodeType]}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </Card>
         )}
