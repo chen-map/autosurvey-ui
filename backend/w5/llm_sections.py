@@ -75,7 +75,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="W5-P3 LLM 正文撰写")
     ap.add_argument("--staging", default="retrieval_workspace/w5_workspace")
     ap.add_argument("--sections-dir", default="survey_paper/sections")
-    ap.add_argument("--use-case", default="w5.write")
+    ap.add_argument("--use-case", default="w5")
     ap.add_argument("--out-manifest", default="survey_paper/sections/llm_written.json")
     args = ap.parse_args()
 

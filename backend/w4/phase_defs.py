@@ -58,7 +58,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
 
     extract_steps = [
         {"script": f"{scripts}/rq_evidence_extractor/extract_rq_evidence.py",
-         "env": llm_env("w4.evidence"),
+         "env": llm_env("w4"),
          "args": ["--rq-id", rq,
                   "--evidence-matrix", f"{ar}/rq_evidence_matrix.json",
                   "--query-registry", f"{ar}/rq_query_registry.json",
@@ -72,7 +72,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
 
     synth_steps = [
         {"script": f"{scripts}/rq_answer_synthesizer/synthesize_rq_answer.py",
-         "env": llm_env("w4.synthesize"),
+         "env": llm_env("w4"),
          "args": ["--evidence-pool", f"{wm}/{rq_dir(rq)}/evidence_pool.json",
                   "--design-report", f"{ar}/design_report.md",
                   "--output", f"{wm}/{rq_dir(rq)}/"]}
@@ -83,7 +83,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
 
     check_steps = [
         {"script": f"{scripts}/answer_claim_checker/check_answer_claims.py",
-         "env": llm_env("w4.check"),
+         "env": llm_env("w4"),
          "args": ["--rq-answer", f"{wm}/{rq_dir(rq)}/rq_answer.json",
                   "--evidence-pool", f"{wm}/{rq_dir(rq)}/evidence_pool.json",
                   "--output", f"{wm}/{rq_dir(rq)}/"]}
