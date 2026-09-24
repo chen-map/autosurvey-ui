@@ -60,6 +60,15 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 
 def _wm(pid: str) -> Path:
+    """解析项目工作区路径。优先查 projects 表（按用户隔离的新项目），回退旧布局。"""
+    try:
+        conn = get_db()
+        row = conn.execute("SELECT workspace_rel FROM projects WHERE project_id=?", (pid,)).fetchone()
+        conn.close()
+        if row:
+            return WORKSPACE / row["workspace_rel"]
+    except Exception:
+        pass
     return WORKSPACE / pid / "w1"
 
 
@@ -108,10 +117,12 @@ def health():
 
 
 @app.post("/api/projects")
-def create_project(body: dict):
-    """创建项目并写入 w1_config.json。"""
+def create_project(body: dict, user: dict = Depends(_me)):
+    """创建项目并写入 w1_config.json（绑定当前登录用户）。"""
     pid = f"proj-{int(time.time() * 1000)}"
-    ws = WORKSPACE / pid / "w1"
+    uid = user["user_id"]
+    workspace_rel = f"u{uid}/{pid}/w1"
+    ws = WORKSPACE / workspace_rel
     ws.mkdir(parents=True, exist_ok=True)
     cfg = {
         "project_id": pid, "title": body.get("title", ""),
@@ -131,10 +142,19 @@ def create_project(body: dict):
             "AS_SCRIPTS_ROOT",
             "C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2"),
         "workspace": str(ws),
+        "workspace_rel": workspace_rel,
         "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
     (ws / "w1_config.json").write_text(
         json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 项目归属写入 DB
+    conn = get_db()
+    conn.execute(
+        "INSERT OR REPLACE INTO projects (project_id, user_id, title, workspace_rel) VALUES (?,?,?,?)",
+        (pid, uid, body.get("title", ""), workspace_rel),
+    )
+    conn.commit()
+    conn.close()
     return {"project_id": pid}
 
 
@@ -150,7 +170,7 @@ def start_run(pid: str, workflow: str = "w1"):
 
 
 @app.get("/api/projects/{pid}/run")
-def get_run(pid: str, workflow: str = "w1"):
+def get_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
     state_path = WORKSPACE / pid / "w1" / f"{workflow}_state.json"
     if not state_path.exists():
         raise HTTPException(404, f"run not found for {pid}")
@@ -158,7 +178,7 @@ def get_run(pid: str, workflow: str = "w1"):
 
 
 @app.post("/api/projects/{pid}/phases/{phase_id}/retry")
-def retry_phase(pid: str, phase_id: str, workflow: str = "w1"):
+def retry_phase(pid: str, phase_id: str, workflow: str = "w1", user: dict = Depends(_me)):
     state_path = WORKSPACE / pid / "w1" / f"{workflow}_state.json"
     if not state_path.exists():
         raise HTTPException(404, f"run not found for {pid}")
@@ -173,7 +193,7 @@ def retry_phase(pid: str, phase_id: str, workflow: str = "w1"):
 
 
 @app.get("/api/projects/{pid}/corpus")
-def get_corpus(pid: str):
+def get_corpus(pid: str, user: dict = Depends(_me)):
     """语料库页：W1 下载产物（corpus_papers 表）+ PRISMA 漏斗计数。
 
     数据来源：W1-P6 完成后 corpus_ingest.py 落库；漏斗前两级从 W1 中间产物 CSV 计数。
@@ -442,7 +462,7 @@ def put_library(body: dict = Body(...), user: dict = Depends(_me)):
 
 
 @app.get("/api/projects/{pid}/kg")
-def get_kg(pid: str):
+def get_kg(pid: str, user: dict = Depends(_me)):
     """KG 图谱数据：读 W2-P3 产物 paper_kg.json（{papers, nodes, edges}）。"""
     p = _wm(pid) / "knowledge_graph" / "paper_kg.json"
     if not p.exists():
@@ -466,7 +486,7 @@ def get_kg(pid: str):
 
 
 @app.get("/api/projects/{pid}/rqs")
-def get_rqs(pid: str):
+def get_rqs(pid: str, user: dict = Depends(_me)):
     """RQ 体系：读 W3 产物 analyze_report/rq_evidence_matrix.json → 前端 RQBundle 契约。"""
     matrix_path = _wm(pid) / "analyze_report" / "rq_evidence_matrix.json"
     if not matrix_path.exists():
@@ -568,13 +588,21 @@ if _dist_dir.exists():
 
 
 @app.get("/api/projects")
-def list_projects():
+def list_projects(user: dict = Depends(_me)):
+    # 按用户过滤：只返回该用户的项目
+    conn = get_db()
+    user_pids = {r["project_id"] for r in conn.execute(
+        "SELECT project_id FROM projects WHERE user_id=?", (user["user_id"],)).fetchall()}
+    conn.close()
+
     projects = []
     if WORKSPACE.exists():
         for d in sorted(WORKSPACE.iterdir()):
             cfg_path = d / "w1" / "w1_config.json"
             if cfg_path.exists():
                 c = json.loads(cfg_path.read_text(encoding="utf-8"))
+                if c.get("project_id", d.name) not in user_pids:
+                    continue
                 state_path = d / "w1" / "w1_state.json"
                 status = "draft"
                 if state_path.exists():
@@ -607,7 +635,7 @@ def list_projects():
     for pr in projects:
         n = conn.execute("SELECT COUNT(*) c FROM corpus_papers WHERE project_id=? AND status='downloaded'",
                          (pr["project_id"],)).fetchone()["c"]
-        kgj = WORKSPACE / pr["project_id"] / "w1" / "knowledge_graph" / "paper_kg.json"
+        kgj = _wm(pr["project_id"]) / "knowledge_graph" / "paper_kg.json"
         edges = 0
         if kgj.exists():
             try:
@@ -618,7 +646,7 @@ def list_projects():
     conn.close()
 
     def _wf(pid: str, wid: str, name: str, state_file: str, total: int) -> dict:
-        sp = WORKSPACE / pid / "w1" / state_file
+        sp = _wm(pid) / state_file
         prog, status = 0, "pending"
         if sp.exists():
             try:
