@@ -118,6 +118,7 @@ DEMO DATA 徽标常驻；403 页；上传非 PDF 行内报错；空项目/无论
 ## 变更记录
 | 日期 | 变更 | 影响面 | 提出人 |
 |---|---|---|---|
+| 2026-09-24 | **服务器部署完成（222.20.126.64，人工验收环境就绪）**。Ubuntu 24.04 + Python3.12 venv + nohup uvicorn 0.0.0.0:8000（前后端同端口，FastAPI StaticFiles 托管 dist）。部署物：repo/dist/legacy 三 tar 包 + bootstrap.sh（SFTP 上传 → 解包/venv/依赖/shim/启动）。**服务器为全新环境**：人工走一遍 = 注册账号 → 个人中心配 DeepSeek Key → 新建项目 → W1-W5 逐个跑。注意：服务器 arXiv 直连 200（比本机顺畅）；LLM 配置需在服务器 UI 重新保存（Fernet 主密钥独立）| deploy/bootstrap.sh、restart.sh、requirements 补依赖、api/main.py 静态托管 | 用户 |
 | 2026-09-24 | **W5-P3 LLM 正文撰写落地**（用户裁决：摘要/引言等叙事段落要让 LLM 写，质量后调；W2/W4 产物是大头）。新增 w5/llm_sections.py：按 W5 装配顺序逐章调用 LLM——RQ 章节（3-6）各喂对应工作记忆（rq_answer/维度/共识/gaps），摘要汇总四 RQ 整体答案；引用强制 \cite{paper_id} 与 references.bib 键对齐（短键前缀唯一匹配自动展开）。修复：索引路径翻倍（rq_answer_path 含 working_memory/ 前缀）。实跑：5 节全部 LLM 化（deepseek），摘要已从记忆安全示范文变为 GNN 可解释性真实综述摘要，0 未解析引用 | w5/llm_sections.py（新）、phase_defs（W5-P3） | 用户 |
 | 2026-09-24 | **W5 部署完成（结构打通，正文为存量示范文——已被 W5-P3 替换）**。存量 run_workflow5.py 是无 LLM 的确定性 LaTeX 装配器（1030 行）：消费 W3 大纲/矩阵 + W4 工作记忆 + 结构化论文 → IEEE 综述（main.tex + 9 sections + tables/figures + references.bib 65 条/41 被引 + 自审报告）。接入方案：w5/stage_workspace.py 装配工作台（本项目布局 → 存量期望布局 + PAPER_INDEX.csv 生成）+ w5/phase_defs 两 Phase（装配/成文）。**前置补齐**：W4 新增 P2B 阶段（build_working_memory + generate_answer_claims per RQ——W5 输入契约，漏跑导致 payloads KeyError）。**全流水线 W1→W5 五条工作流全部真实跑通** | backend/w5/stage_workspace.py、w5/phase_defs.py（新）、backend/w4/phase_defs.py（P2B）、runner/后端/前端扩 w5 | 用户 |
 |---|---|---|---|
