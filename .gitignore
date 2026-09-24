@@ -12,3 +12,4 @@ autosurvey.db
 backend/.master_key
 backend/out/
 backend/payload.json
+autosurvey.db
