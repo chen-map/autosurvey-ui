@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -20,10 +21,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-STATE_FILES = {"w1": "w1_state.json", "w2": "w2_state.json", "w3": "w3_state.json"}
+STATE_FILES = {"w1": "w1_state.json", "w2": "w2_state.json", "w3": "w3_state.json", "w4": "w4_state.json"}
 WORKFLOW_DIRS = {"w1": Path(__file__).resolve().parent,
                  "w2": Path(__file__).resolve().parents[1] / "w2",
-                 "w3": Path(__file__).resolve().parents[1] / "w3"}
+                 "w3": Path(__file__).resolve().parents[1] / "w3",
+                 "w4": Path(__file__).resolve().parents[1] / "w4"}
 STEP_TIMEOUT_SEC = 3600
 
 
@@ -66,13 +68,19 @@ def init_state(workspace: Path, phases: list[dict[str, Any]], project_id: str,
 
 
 def run_step(step: dict[str, Any], log_path: Path, timeout: int, cwd: Path) -> int:
-    """调起单个存量脚本；以 workspace 为工作目录（GUIDE 相对路径布局的前提），输出重定向到独立日志。"""
+    """调起单个存量脚本；以 workspace 为工作目录（GUIDE 相对路径布局的前提），输出重定向到独立日志。
+
+    step["env"]（可选 dict）按键合并进进程环境——跨工作流 LLM 配置注入用
+    （W4 脚本以别名加载 kg_common，llm_wrap 补丁不可达，须走环境变量）。
+    """
     cmd = [sys.executable, step["script"], *step["args"]]
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ)
+    env.update({k: str(v) for k, v in (step.get("env") or {}).items()})
     with log_path.open("ab") as log:
         log.write(f"\n$ {' '.join(cmd)}\n".encode("utf-8"))
         log.flush()
-        proc = subprocess.run(cmd, cwd=cwd, stdout=log, stderr=subprocess.STDOUT, timeout=timeout)
+        proc = subprocess.run(cmd, cwd=cwd, stdout=log, stderr=subprocess.STDOUT, timeout=timeout, env=env)
     return proc.returncode
 
 
