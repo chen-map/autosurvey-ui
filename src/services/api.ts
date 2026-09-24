@@ -75,9 +75,10 @@ export interface NewProjectInput {
 }
 export async function createProject(input: NewProjectInput): Promise<Project> {
   if (!USE_MOCK) {
+    const token = getToken();
     const res = await fetch(`${API}/projects`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify({
         title: input.title,
         field_tags: input.fieldTags,
@@ -89,6 +90,7 @@ export async function createProject(input: NewProjectInput): Promise<Project> {
         local_dir: input.localDir ?? '',
       }),
     });
+    if (res.status === 401) throw new Error('未登录或会话过期，请重新登录');
     if (!res.ok) throw new Error(`createProject 失败: ${res.status}`);
     const data = await res.json();
     return { id: data.project_id, title: input.title, fieldTags: input.fieldTags,
@@ -154,7 +156,12 @@ export async function login(username: string, password: string): Promise<LoginRe
 // ---- pipeline ----
 export async function startRun(projectId: string, workflow: 'w1' | 'w2' | 'w3' | 'w4' | 'w5' = 'w1'): Promise<void> {
   if (!USE_MOCK) {
-    const res = await fetch(`${API}/projects/${projectId}/run?workflow=${workflow}`, { method: 'POST' });
+    const token = getToken();
+    const res = await fetch(`${API}/projects/${projectId}/run?workflow=${workflow}`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (res.status === 401) throw new Error('未登录或会话过期，请重新登录');
     if (!res.ok) throw new Error(`startRun 失败: ${res.status}`);
     return;
   }
