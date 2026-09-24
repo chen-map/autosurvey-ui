@@ -5,3 +5,7 @@ pydantic>=2.6
 requests>=2.31
 rapidfuzz>=3.6
 pytest>=8.0
+cryptography>=42.0
+PyMuPDF>=1.24
+pdfminer.six>=20231228
+python-multipart>=0.0.9
