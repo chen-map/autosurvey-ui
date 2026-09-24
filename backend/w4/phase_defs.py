@@ -112,6 +112,27 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "outputs": p2_outputs,
         },
         {
+            "id": "W4-P2B",
+            "name": "工作记忆装配 + answer_claims 生成（W5 消费契约）",
+            "optional": False,
+            "steps": [
+                step for rq in rq_ids
+                for step in [
+                    {"script": f"{scripts}/working_memory_builder/build_working_memory.py",
+                     "env": llm_env("w4.memory"),
+                     "args": ["--evidence-pool", f"{wm}/{rq_dir(rq)}/evidence_pool.json",
+                              "--design-report", f"{ar}/design_report.md",
+                              "--output", f"{wm}/{rq_dir(rq)}/"]},
+                    {"script": f"{scripts}/answer_claim_generator/generate_answer_claims.py",
+                     "env": llm_env("w4.claims"),
+                     "args": ["--working-memory", f"{wm}/{rq_dir(rq)}/working_memory.json",
+                              "--output", f"{wm}/{rq_dir(rq)}/"]},
+                ]
+            ],
+            "outputs": [f"{wm}/{rq_dir(rq)}/working_memory.json" for rq in rq_ids]
+                       + [f"{wm}/{rq_dir(rq)}/answer_claims.json" for rq in rq_ids],
+        },
+        {
             "id": "W4-P3",
             "name": "claim 四维核查 + 汇总索引",
             "optional": False,
