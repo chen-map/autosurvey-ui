@@ -47,4 +47,17 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                         f"{paper_out}/references.bib",
                         f"{paper_out}/WORKFLOW5_SELF_REVIEW.md"],
         },
+        {
+            "id": "W5-P3",
+            "name": "LLM 正文撰写（渲染 W2/W4 真实产物）",
+            "optional": False,
+            "steps": [
+                {"script": str(HERE / "llm_sections.py"),
+                 "args": ["--staging", staging,
+                          "--sections-dir", f"{paper_out}/sections",
+                          "--use-case", "w5.write",
+                          "--out-manifest", f"{paper_out}/sections/llm_written.json"]},
+            ],
+            "outputs": [f"{paper_out}/sections/llm_written.json"],
+        },
     ]
