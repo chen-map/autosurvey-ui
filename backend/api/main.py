@@ -141,7 +141,7 @@ def create_project(body: dict):
 @app.post("/api/projects/{pid}/run")
 def start_run(pid: str, workflow: str = "w1"):
     """启动（或续跑）工作流。创建后项目为 draft，由此端点显式启动；--resume 跳过已完成 Phase。"""
-    if workflow not in ("w1", "w2", "w3", "w4"):
+    if workflow not in ("w1", "w2", "w3", "w4", "w5"):
         raise HTTPException(400, f"unknown workflow: {workflow}")
     if _read_config(pid) is None:
         raise HTTPException(404, f"project not found: {pid}")

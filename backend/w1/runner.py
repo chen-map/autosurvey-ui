@@ -21,11 +21,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-STATE_FILES = {"w1": "w1_state.json", "w2": "w2_state.json", "w3": "w3_state.json", "w4": "w4_state.json"}
+STATE_FILES = {"w1": "w1_state.json", "w2": "w2_state.json", "w3": "w3_state.json", "w4": "w4_state.json", "w5": "w5_state.json"}
 WORKFLOW_DIRS = {"w1": Path(__file__).resolve().parent,
                  "w2": Path(__file__).resolve().parents[1] / "w2",
                  "w3": Path(__file__).resolve().parents[1] / "w3",
-                 "w4": Path(__file__).resolve().parents[1] / "w4"}
+                 "w4": Path(__file__).resolve().parents[1] / "w4",
+                 "w5": Path(__file__).resolve().parents[1] / "w5"}
 STEP_TIMEOUT_SEC = 3600
 
 
