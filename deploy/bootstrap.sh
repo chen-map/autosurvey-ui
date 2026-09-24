@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# AutoSurvey 服务器端引导脚本（Ubuntu 24.04 测试通过）
-# 用法: 在解压后的 asv-deploy 目录里  bash bootstrap.sh
+# AutoSurvey 服务器引导脚本 v2（Ubuntu 24.04 测试路径）
+# 前置：本目录下有 asv-repo.tar.gz / asv-dist.tar.gz / asv-legacy.tar.gz
+# 用法: bash bootstrap.sh
 set -e
 cd "$(dirname "$0")"
 
@@ -8,22 +9,26 @@ APP_DIR="$HOME/asv-app"
 ASV="$HOME/autoSurvey_v2"
 ENV_DIR="$HOME/asv-env"
 
-echo "== 1. 目录布局"
+echo "== 1. 解包"
+rm -rf "$APP_DIR/repo"
+mkdir -p "$APP_DIR/repo" "$ASV"
+tar -xzf asv-repo.tar.gz -C "$APP_DIR/repo"
+mkdir -p "$APP_DIR/repo/dist" && tar -xzf asv-dist.tar.gz -C "$APP_DIR/repo/dist"
+tar -xzf asv-legacy.tar.gz -C "$ASV"
+
+echo "== 2. 布局"
 mkdir -p "$APP_DIR"
-cp -r repo/backend "$APP_DIR/"
-cp -r repo/dist "$APP_DIR/"
-cp -r autoSurvey_v2 "$HOME/"
+cp -r "$APP_DIR/repo/backend" "$APP_DIR/" 2>/dev/null || true
 mkdir -p "$HOME/skills/auto_survey_skills/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts"
 cp "$ASV/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/kg_common.py" \
    "$HOME/skills/auto_survey_skills/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/kg_common.py"
-echo "   app=$APP_DIR  scripts=$ASV  shim=$HOME/skills/..."
 
-echo "== 2. Python 虚拟环境 + 依赖"
-python3 -m venv "$ENV_DIR" 2>/dev/null || pip3 install --user virtualenv
+echo "== 3. 虚拟环境 + 依赖"
+python3 -m venv "$ENV_DIR" 2>/dev/null || (pip3 install --user virtualenv -q && python3 -m virtualenv "$ENV_DIR")
 "$ENV_DIR/bin/pip" install --upgrade pip -q
 "$ENV_DIR/bin/pip" install -r "$APP_DIR/backend/requirements.txt" -q
 
-echo "== 3. kg_common shim（env 注入 LLM 配置）"
+echo "== 4. kg_common shim（env 注入 LLM 配置）"
 cat > "$HOME/skills/auto_survey_skills/workflow_2_factual_memory_construction/paper-cards-kg-builder/scripts/kg_common.py" << 'SHIM'
 """kg_common 转发 shim（服务器部署版）。AS_LLM_* 环境变量覆盖默认配置。"""
 import importlib.util
@@ -42,15 +47,14 @@ for _k in [k for k in dir(_m) if not k.startswith("__")]:
     globals()[_k] = getattr(_m, _k)
 SHIM
 
-echo "== 4. 启动（0.0.0.0:8000，nohup 后台）"
+echo "== 5. 启动（0.0.0.0:8000）"
 cd "$APP_DIR/backend"
 pkill -f "uvicorn api.main:app" 2>/dev/null || true
 sleep 1
 AS_SCRIPTS_ROOT="$ASV" nohup "$ENV_DIR/bin/python" -m uvicorn api.main:app --host 0.0.0.0 --port 8000 > "$APP_DIR/uvicorn.log" 2>&1 &
-sleep 6
+sleep 8
 curl -s -o /dev/null -w "health: %{http_code}\n" http://127.0.0.1:8000/api/health
 curl -s -o /dev/null -w "frontend: %{http_code}\n" http://127.0.0.1:8000/
 
-echo "== 完成。访问 http://$(hostname -I | awk '{print $1}'):8000/"
-echo "   演示账号 demo/123456（首次登录后请注册自己的账号）"
-echo "   日志: $APP_DIR/uvicorn.log | 重启: bash $APP_DIR/restart.sh"
+echo "== 完成。局域网访问 http://$(hostname -I | awk '{print $1}'):8000/"
+echo "   演示账号 demo/123456。日志: $APP_DIR/uvicorn.log；重启: bash $APP_DIR/restart.sh（可从 deploy 包补传）"
