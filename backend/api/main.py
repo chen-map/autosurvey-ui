@@ -582,13 +582,6 @@ def get_rqs(pid: str, user: dict = Depends(_me)):
     }
 
 
-# 前端静态托管（dist 由 vite build 产出；挂在 API 路由之后作兜底）
-from fastapi.staticfiles import StaticFiles  # noqa: E402
-
-_dist_dir = Path(__file__).resolve().parents[2] / "dist"
-if _dist_dir.exists():
-    app.mount("/", StaticFiles(directory=str(_dist_dir), html=True), name="frontend")
-
 
 @app.get("/api/projects")
 def list_projects(user: dict = Depends(_me)):
@@ -689,6 +682,14 @@ def list_projects(user: dict = Depends(_me)):
         },
         "workflows": wf_summaries.get(pr["project_id"], []),
     } for pr in projects]
+
+
+# 前端静态托管：必须在所有 API 路由注册完之后，否则 Mount("/") 会抢在 API 路由之前匹配
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+
+_dist_dir = Path(__file__).resolve().parents[2] / "dist"
+if _dist_dir.exists():
+    app.mount("/", StaticFiles(directory=str(_dist_dir), html=True), name="frontend")
 
 
 if __name__ == "__main__":
