@@ -9,3 +9,6 @@ autoSurvey_v2/
 backend/_refine_block.txt
 __pycache__/
 autosurvey.db
+backend/.master_key
+backend/out/
+backend/payload.json
