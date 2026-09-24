@@ -59,6 +59,15 @@ app.add_middleware(
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _me(authorization: str = Header(default="")) -> dict:
+    """从 Authorization header 解析当前登录用户（须在所有需要认证的端点之前定义）。"""
+    token = authorization.removeprefix("Bearer ").strip()
+    user = get_current_user(token)
+    if not user:
+        raise HTTPException(401, "未登录或会话过期")
+    return user
+
+
 def _wm(pid: str) -> Path:
     """解析项目工作区路径。优先查 projects 表（按用户隔离的新项目），回退旧布局。"""
     try:
@@ -243,12 +252,6 @@ def get_corpus(pid: str, user: dict = Depends(_me)):
     return {"papers": papers, "funnel": funnel}
 
 
-def _me(authorization: str = Header(default="")) -> dict:
-    token = authorization.removeprefix("Bearer ").strip()
-    user = get_current_user(token)
-    if not user:
-        raise HTTPException(401, "未登录或会话过期")
-    return user
 
 
 # ---- 个人 API Key（Fernet 加密 at rest，接口只回掩码） ----
