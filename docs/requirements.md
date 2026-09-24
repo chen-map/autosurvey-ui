@@ -120,6 +120,8 @@ DEMO DATA 徽标常驻；403 页；上传非 PDF 行内报错；空项目/无论
 |---|---|---|---|
 | 日期 | 变更 | 影响面 | 提出人 |
 |---|---|---|---|
+| 2026-09-24 | **W1 检索质量修复 + 全链重跑（质变）**（用户质询：年份穿越/不相关/blocked 多，判定"W1 没好好查论文"——成立）。根因链：① 检索错位——OAI-PMH 是增量同步工具（set=cs 全量切片与查询无关），从旧到新翻页+截断 → 全是 2019/2020 老文；② P6 输入绕过筛选——P5 滚雪球候选为未筛全量，P4 相关性评分被绕过。修复：新增 w1/arxiv_search.py（arXiv 官方检索 API，**检索式 + sortBy=relevance + submittedDate 年份硬过滤**，curl -g + 百分号编码，3s 限速）；simple_screen 加 --min-year；**P6 输入改回筛选通过集**（评分 Top-N 正源）。全链重跑验证：检索 200 条年份均衡（2020:15→2026:22）；筛选 2200→784；**W2 提取 758 节点、Pre-score 210/300 通过、论文对关系 210 条/54 边（基线 18 条/1 边，50 倍）**；AutoMerge 12 组；**W3 strong 5→9、blocked 5→2、总支撑 110 篇次**。前端 RQ 页/KG 页真数据实时生效。途中修：section_digest json 导入、AutoMerge 唯一约束（UPDATE OR IGNORE+备份恢复重放）、点击位移阈值 | w1/arxiv_search.py（新）、simple_screen、phase_defs、kg_merge_execute、KgPage | 用户 || 日期 | 变更 | 影响面 | 提出人 |
+|---|---|---|---|
 | 2026-09-23 | **章节定位提取 + Pre-score 精细化落地**（用户授权：先备份再开工）。① 章节定位提取：利用 kg_common 字段别名链（text 优先于 paper_text），新增 w2/section_digest.py 给每卡写章节智能摘要（引言3000/方法5000/实验3500/结论2000 预算，无命中回退原文），挂 W2-P0 steps_tail，存量零改动；100/100 卡生效（5.7万字论文→5.8k 定位摘要）。② Pre-score 精细化（存量补丁，备份 build_paper_kg.py.bak）：prescore 提示词注入双方 Introduction 摘录（新增 build_intro_index）+ 标题共享词 shared_terms；W2-P3 补传 --paper-cards-dir（references 回填后 citation_hint 首次有料）。③ 重跑实测：KG 更聚焦（885→758 节点，每篇 7.6 对象）；prescore 变严格（21 对 True、3 对高置信通过——"同话题非方法学相关"误报被压掉）；AutoMerge 重放 3 组；**W3 重落地 strong 5→7**（blocked 维持 5，成员洗牌，需语料扩充或再一轮修订）。途中修：section_digest json 导入/键不一致、AutoMerge 唯一约束冲突（UPDATE OR IGNORE + 恢复备份重放） | w2/section_digest.py（新）、w2/kg_merge_execute.py（约束修复）、存量 build_paper_kg.py（已备份补丁）、w2/phase_defs.py | 用户 |
 | 日期 | 变更 | 影响面 | 提出人 |
 |---|---|---|---|

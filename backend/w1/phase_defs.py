@@ -114,7 +114,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "steps": [
                 # DOI 锚定预处理（用户裁决：不用 DOI 会跑偏）——消毒/补 arXiv DOI/去重/无 DOI 分流
                 {"script": str(HERE / "download_prep.py"),
-                 "args": ["--input", f"{ws}/snowball/snowball_candidates.csv",
+                 "args": ["--input", f"{ws}/screening/screened_records.csv",  # P4 筛选通过集为语料正源（评分 Top-N）；滚雪球全量候选会绕过相关性筛选
                           "--out-dir", f"{ws}/download/",
                           "--scores", f"{ws}/screening/screened_records.csv",
                           "--limit", str(cfg.get("corpus_cap", 500))]},
