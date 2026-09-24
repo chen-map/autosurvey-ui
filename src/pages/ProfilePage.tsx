@@ -95,9 +95,10 @@ export function ProfilePage() {
     setLlmKeyEdited(false);
   };
 
-  // AI 使用点细分（会议裁决：不同环节可用不同 AI）；真实模式从目录端点拉取
+  // AI 使用点细分：每个 WF 可独立配置 baseUrl / apiKey / model
   const [catalog, setCatalog] = useState<UseCaseRow[]>([]);
-  const [ovr, setOvr] = useState<Record<string, { model: string; apiKey: string }>>({});
+  const [ovr, setOvr] = useState<Record<string, { baseUrl: string; model: string; apiKey: string }>>({});
+  const [expanded, setExpanded] = useState<string | null>(null);
   const loadCatalog = () => {
     if (USE_MOCK) return;
     const API = import.meta.env.VITE_API_BASE ?? '/api';
@@ -109,16 +110,21 @@ export function ProfilePage() {
   };
   const saveOverride = async (uc: UseCaseRow) => {
     const e = ovr[uc.id];
-    if (!e?.model.trim()) return;
+    if (!e) return;
     const API = import.meta.env.VITE_API_BASE ?? '/api';
     const token = localStorage.getItem('as.token') ?? '';
     await fetch(`${API}/me/llm-config`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ useCase: uc.id, baseUrl: uc.baseUrl || llm.baseUrl, model: e.model.trim(), apiKey: e.apiKey.trim() }),
+      body: JSON.stringify({
+        useCase: uc.id,
+        baseUrl: e.baseUrl || uc.baseUrl || llm.baseUrl,
+        model: e.model || uc.model,
+        apiKey: e.apiKey || '',
+        provider: (uc as any).provider || 'openai',
+      }),
     });
-    setOvr((o) => ({ ...o, [uc.id]: { model: '', apiKey: '' } }));
-    setSavedTip(uc.label);
+    setSavedTip(`${uc.label} 已保存`);
     setTimeout(() => setSavedTip(''), 1500);
     loadCatalog();
   };
@@ -269,33 +275,42 @@ export function ProfilePage() {
           </p>
           <div className="mt-3 space-y-2">
             {catalog.filter((c) => c.id !== 'default').map((uc) => {
-              const e = ovr[uc.id] ?? { model: '', apiKey: '' };
+              const e = ovr[uc.id] ?? { baseUrl: uc.baseUrl || '', model: uc.model || '', apiKey: '' };
+              const isOpen = expanded === uc.id;
               return (
-                <div key={uc.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-line/60 px-3 py-2">
-                  <span className={cn('h-2 w-2 shrink-0 rounded-full', uc.configured ? 'bg-ok' : 'bg-line')} />
-                  <span className="w-32 shrink-0 text-[13px] text-t1">{uc.label}</span>
-                  <span className="hidden w-44 shrink-0 text-[11.5px] text-t3 md:block">{uc.stage}</span>
-                  <span className="shrink-0 font-mono text-[11.5px] text-t3">{uc.configured ? uc.model : '跟随默认'}</span>
-                  <div className="ml-auto flex flex-1 items-center justify-end gap-1.5">
-                    <Input
-                      value={e.model}
-                      onChange={(ev) => setOvr((o) => ({ ...o, [uc.id]: { ...e, model: ev.target.value } }))}
-                      placeholder="覆盖模型名"
-                      className="w-36"
-                      autoComplete="off"
-                    />
-                    <Input
-                      type="password"
-                      value={e.apiKey}
-                      onChange={(ev) => setOvr((o) => ({ ...o, [uc.id]: { ...e, apiKey: ev.target.value } }))}
-                      placeholder="可选换 Key"
-                      className="w-28"
-                      autoComplete="off"
-                    />
-                    <Button size="sm" variant="secondary" onClick={() => void saveOverride(uc)} disabled={!e.model.trim()}>
-                      保存
-                    </Button>
-                  </div>
+                <div key={uc.id} className="rounded-lg border border-line/60 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setExpanded(isOpen ? null : uc.id)}
+                    className={cn('flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors',
+                      isOpen ? 'bg-page' : 'hover:bg-page/50')}
+                  >
+                    <span className={cn('h-2 w-2 shrink-0 rounded-full', uc.configured ? 'bg-ok' : 'bg-line')} />
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{uc.label}</span>
+                    <span className="shrink-0 font-mono text-[11px] text-t3">{uc.configured ? uc.model : '跟随默认'}</span>
+                    <span className={cn('shrink-0 text-t3 transition-transform', isOpen && 'rotate-90')}>›</span>
+                  </button>
+                  {isOpen && (
+                    <div className="space-y-2 border-t border-line/40 bg-page/50 px-3 py-3">
+                      <div className="grid gap-2 md:grid-cols-3">
+                        <div>
+                          <div className="mb-1 text-[11px] text-t3">接口地址</div>
+                          <Input value={e.baseUrl} onChange={(ev) => setOvr((o) => ({ ...o, [uc.id]: { ...e, baseUrl: ev.target.value } }))} placeholder="https://api.deepseek.com/v1" className="text-[12px]" autoComplete="off" />
+                        </div>
+                        <div>
+                          <div className="mb-1 text-[11px] text-t3">API Key</div>
+                          <Input type="password" value={e.apiKey} onChange={(ev) => setOvr((o) => ({ ...o, [uc.id]: { ...e, apiKey: ev.target.value } }))} placeholder="sk-…（留空继承默认）" className="text-[12px]" autoComplete="off" />
+                        </div>
+                        <div>
+                          <div className="mb-1 text-[11px] text-t3">模型</div>
+                          <Input value={e.model} onChange={(ev) => setOvr((o) => ({ ...o, [uc.id]: { ...e, model: ev.target.value } }))} placeholder="deepseek-chat" className="text-[12px]" autoComplete="off" />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <Button size="sm" variant="secondary" onClick={() => void saveOverride(uc)}>保存</Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
