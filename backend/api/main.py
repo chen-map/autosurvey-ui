@@ -562,7 +562,7 @@ def get_rqs(pid: str):
 # 前端静态托管（dist 由 vite build 产出；挂在 API 路由之后作兜底）
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
-_dist_dir = Path(__file__).resolve().parents[1] / "dist"
+_dist_dir = Path(__file__).resolve().parents[2] / "dist"
 if _dist_dir.exists():
     app.mount("/", StaticFiles(directory=str(_dist_dir), html=True), name="frontend")
 
