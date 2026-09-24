@@ -34,6 +34,7 @@ export function ProfilePage() {
   const [keys, setKeys] = useState<Record<string, string>>(readKeys);
   const [show, setShow] = useState<Record<string, boolean>>({});
   const [savedTip, setSavedTip] = useState('');
+  const [keyErr, setKeyErr] = useState('');
 
   const { fields, goal }: { fields: string[]; goal: string } = useMemo(() => {
     try {
@@ -59,7 +60,11 @@ export function ProfilePage() {
     // 真实模式：后端加密存储，回写掩码；演示模式：仅本地
     pushKeyToBackend(platform, value)
       .then((masked) => setKeys(masked))
-      .catch(() => setKeys((k) => ({ ...k, [platform]: `${value.slice(0, 4)}••••（未同步，后端不可达）` })));
+      .catch((e: Error) => {
+        setKeyErr(e.message || '后端不可达');
+        setKeys((k) => ({ ...k, [platform]: `${value.slice(0, 4)}••••（未同步）` }));
+        setTimeout(() => setKeyErr(''), 4000);
+      });
   };
 
   // 统一 LLM 执行器配置（url + apikey + model）
@@ -167,6 +172,9 @@ export function ProfilePage() {
           订阅制论文平台需要机构/API Key 才会真实返回数据。Key 只保存在你的浏览器中；
           后端接入后改为服务端加密存储，接口只回传掩码（见 backend-todo.md §6）。
         </p>
+        {keyErr && (
+          <div className="mt-3 rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-[12.5px] text-danger">{keyErr}</div>
+        )}
         <div className="mt-4 space-y-3">
           {PAID_PLATFORMS.map((p) => {
             const visible = !!show[p];
