@@ -24,6 +24,16 @@ CREATE TABLE IF NOT EXISTS projects (
     created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- 登录会话持久化（后端重启不丢会话）
+CREATE TABLE IF NOT EXISTS sessions (
+    token TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    username TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'researcher',
+    created_at TEXT DEFAULT (datetime('now')),
+    expires_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS api_keys (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id),
