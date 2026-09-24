@@ -47,6 +47,7 @@ export async function pushKeyToBackend(platform: string, key: string): Promise<R
       method: 'PUT', headers: authHeaders(),
       body: JSON.stringify({ platform, key: key.trim() }),
     });
+    if (res.status === 401) throw new Error('未登录或会话过期——请先在右上角登录');
     if (!res.ok) throw new Error(`保存失败 ${res.status}`);
   }
   return syncKeysFromBackend();
