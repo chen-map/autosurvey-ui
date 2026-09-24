@@ -48,7 +48,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": False,
             "steps": [
                 {"script": LLM_WRAP,
-                 "args": ["--use-case", "w2.extract",
+                 "args": ["--use-case", "w2",
                           "--target", f"{kg_scripts}/build_structured_papers.py",
                           "--input", "paper_cards/parsed",
                           "--out", "knowledge_graph/structured_papers.jsonl",
@@ -62,7 +62,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": True,  # 主参考：可选过滤；全量进 KG 可跳过
             "steps": [
                 {"script": LLM_WRAP,
-                 "args": ["--use-case", "w2.candidate",
+                 "args": ["--use-case", "w2",
                           "--target", f"{kg_scripts}/select_candidate_objects.py",
                           "--input", "knowledge_graph/structured_papers.jsonl",
                           "--out", "knowledge_graph/candidate_structured_papers.jsonl"]},
@@ -75,7 +75,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": False,
             "steps": [
                 {"script": LLM_WRAP,
-                 "args": ["--use-case", "w2.relation",
+                 "args": ["--use-case", "w2",
                           "--target", f"{kg_scripts}/build_paper_kg.py",
                           "--input", "knowledge_graph/candidate_structured_papers.jsonl",
                           "--out-db", "knowledge_graph/paper_kg.db",

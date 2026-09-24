@@ -46,6 +46,8 @@ def _seed_demo_user():
                      ("demo", hash_password("123456"), "admin"))
         conn.commit()
     conn.close()
+    from db.database import _migrate_llm_provider
+    _migrate_llm_provider()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173",
@@ -293,26 +295,21 @@ def delete_api_key(platform: str, user: dict = Depends(_me)):
     return {"ok": True}
 
 
-# ---- LLM 接入配置（按使用点细分：环节专属 → default 兜底；Fernet 加密存储） ----
+# ---- LLM 接入配置（按 WF 独立配置 + 可选细粒度覆盖；Fernet 加密存储） ----
 
+# 按 5 大 WF + Agent + 方向精炼组织，每个 WF 内可细粒度覆盖
 LLM_USE_CASES = [
-    {"id": "default", "label": "全局默认", "stage": "所有未单独配置的环节"},
-    {"id": "w2.extract", "label": "W2 结构化提取", "stage": "W2-P1 六类对象提取"},
-    {"id": "w2.relation", "label": "W2 论文对关系", "stage": "W2-P3 关系判断（量大，可用便宜模型）"},
-    {"id": "w2.candidate", "label": "W2 候选筛选", "stage": "W2-P2 低质量条目过滤"},
-    {"id": "w1.screen", "label": "W1 筛选判断", "stage": "W1-P4 decision/reason 列"},
-    {"id": "w3.gap", "label": "W3 Gap 分析", "stage": "W3-P1"},
-    {"id": "w3.design", "label": "W3 RQ 设计", "stage": "W3-P2"},
-    {"id": "w4.extract", "label": "W4 证据抽取", "stage": "W4-P1"},
-    {"id": "w4.answer", "label": "W4 答案综合", "stage": "W4-P2"},
-    {"id": "w4.claim", "label": "W4 声明核查", "stage": "W4-P3"},
-    {"id": "agent.kg", "label": "Agent 单 RQ 分析", "stage": "Agent 页"},
-    {"id": "direction.refine", "label": "方向精炼", "stage": "研究方向页"},
+    {"id": "default", "label": "全局默认", "wf": "所有", "stage": "未单独配置的环节自动继承此配置"},
+    {"id": "w1", "label": "W1 语料构建", "wf": "W1", "stage": "检索 · 筛选 · 下载 · 入库"},
+    {"id": "w2", "label": "W2 事实记忆", "wf": "W2", "stage": "解析 · 六类提取 · KG 构建"},
+    {"id": "w3", "label": "W3 框架与RQ", "wf": "W3", "stage": "Gap · RQ 设计 · 证据矩阵 · 评审"},
+    {"id": "w4", "label": "W4 工作记忆", "wf": "W4", "stage": "证据抽取 · 答案综合 · claim 核查"},
+    {"id": "w5", "label": "W5 综述写作", "wf": "W5", "stage": "大纲 → LaTeX 全文"},
 ]
 
 
 def resolve_llm(user_id: int, use_case: str = "default") -> tuple[str, str, str]:
-    """解析链：环节专属行（Key 可解密且非空）→ default 行。返回 (base, key, model)。"""
+    """解析链：环节专属行（Key 可解密且非空）→ default 行。返回 (base, key, model, provider)。"""
     from db.crypto import decrypt
 
     conn = get_db()
@@ -325,14 +322,16 @@ def resolve_llm(user_id: int, use_case: str = "default") -> tuple[str, str, str]
             continue
         key = decrypt(r["api_key_encrypted"])
         if r["base_url"] and key and r["model"]:
-            return r["base_url"], key, r["model"]
-    return "", "", ""
+            provider = r["provider"] if "provider" in r.keys() else "openai"
+            return r["base_url"], key, r["model"], provider
+    return "", "", "", "openai"
 
 class LlmConfigIn(BaseModel):
     baseUrl: str = ""
     apiKey: str = ""
     model: str = ""
     useCase: str = "default"
+    provider: str = "openai"  # openai | anthropic
 
 
 @app.get("/api/me/llm-catalog")
@@ -347,9 +346,11 @@ def get_llm_catalog(user: dict = Depends(_me)):
         r = rows.get(uc["id"])
         key = decrypt(r["api_key_encrypted"]) if r else ""
         ok = bool(r and r["base_url"] and key and r["model"])
+        provider = r["provider"] if r and "provider" in r.keys() else "openai"
         out.append({**uc, "configured": ok, "baseUrl": r["base_url"] if r else "",
                     "model": r["model"] if r else "",
-                    "apiKeyMasked": mask_key(key) if key else ""})
+                    "apiKeyMasked": mask_key(key) if key else "",
+                    "provider": provider})
     return {"useCases": out}
 
 
@@ -383,10 +384,10 @@ def put_llm_config(body: LlmConfigIn, user: dict = Depends(_me)):
                              (user["user_id"],)).fetchone()
             key_enc = d["api_key_encrypted"] if d else ""
     conn.execute(
-        "INSERT INTO llm_configs (user_id, use_case, base_url, api_key_encrypted, model) VALUES (?,?,?,?,?) "
+        "INSERT INTO llm_configs (user_id, use_case, base_url, api_key_encrypted, model, provider) VALUES (?,?,?,?,?,?) "
         "ON CONFLICT(user_id, use_case) DO UPDATE SET base_url=excluded.base_url, "
-        "api_key_encrypted=excluded.api_key_encrypted, model=excluded.model, updated_at=datetime('now')",
-        (user["user_id"], use_case, body.baseUrl.strip(), key_enc, body.model.strip()))
+        "api_key_encrypted=excluded.api_key_encrypted, model=excluded.model, provider=excluded.provider, updated_at=datetime('now')",
+        (user["user_id"], use_case, body.baseUrl.strip(), key_enc, body.model.strip(), body.provider))
     conn.commit()
     conn.close()
     return {"ok": True}

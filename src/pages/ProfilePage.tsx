@@ -97,7 +97,7 @@ export function ProfilePage() {
 
   // AI 使用点细分：每个 WF 可独立配置 baseUrl / apiKey / model
   const [catalog, setCatalog] = useState<UseCaseRow[]>([]);
-  const [ovr, setOvr] = useState<Record<string, { baseUrl: string; model: string; apiKey: string }>>({});
+  const [ovr, setOvr] = useState<Record<string, { baseUrl: string; model: string; apiKey: string; provider: string }>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
   const loadCatalog = () => {
     if (USE_MOCK) return;
@@ -108,27 +108,6 @@ export function ProfilePage() {
       .then((d) => setCatalog(d.useCases ?? []))
       .catch(() => {});
   };
-  const saveOverride = async (uc: UseCaseRow) => {
-    const e = ovr[uc.id];
-    if (!e) return;
-    const API = import.meta.env.VITE_API_BASE ?? '/api';
-    const token = localStorage.getItem('as.token') ?? '';
-    await fetch(`${API}/me/llm-config`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify({
-        useCase: uc.id,
-        baseUrl: e.baseUrl || uc.baseUrl || llm.baseUrl,
-        model: e.model || uc.model,
-        apiKey: e.apiKey || '',
-        provider: (uc as any).provider || 'openai',
-      }),
-    });
-    setSavedTip(`${uc.label} 已保存`);
-    setTimeout(() => setSavedTip(''), 1500);
-    loadCatalog();
-  };
-
   // 真实模式：挂载时从后端拉掩码 Key 与 LLM 配置
   useEffect(() => {
     loadCatalog();
@@ -267,16 +246,17 @@ export function ProfilePage() {
         {/* AI 使用点细分矩阵 */}
         <div className="mt-5 border-t border-line/60 pt-4">
           <div className="flex items-center gap-2 text-[13.5px] font-medium">
-            按 AI 使用点细分
-            <Badge variant={USE_MOCK ? 'warn' : 'neutral'}>{USE_MOCK ? '真实模式可用' : `${catalog.filter((c) => c.id !== 'default' && c.configured).length} 个环节已单独配置`}</Badge>
+            按 WF 独立配置模型
+            <Badge variant="neutral">{catalog.filter(c => c.id !== 'default').length} 个工作流</Badge>
           </div>
           <p className="mt-1 text-[12px] leading-5 text-t3">
-            会议裁决：不同环节可用不同 AI。未单独配置的环节自动回退到全局默认；量大且机械的环节（如论文对关系判断）建议配置便宜模型。
+            每个工作流可独立配置接口地址 / API Key / 模型，未配置的自动继承全局默认。支持 OpenAI 兼容协议（DeepSeek / Moonshot / 通义 / Ollama）与 Anthropic 协议。
           </p>
           <div className="mt-3 space-y-2">
-            {catalog.filter((c) => c.id !== 'default').map((uc) => {
-              const e = ovr[uc.id] ?? { baseUrl: uc.baseUrl || '', model: uc.model || '', apiKey: '' };
+            {catalog.filter(c => c.id !== 'default').map(uc => {
+              const e = ovr[uc.id] ?? { baseUrl: '', model: '', apiKey: '', provider: 'openai' };
               const isOpen = expanded === uc.id;
+              const isConfigured = uc.configured;
               return (
                 <div key={uc.id} className="rounded-lg border border-line/60 overflow-hidden">
                   <button
@@ -285,40 +265,45 @@ export function ProfilePage() {
                     className={cn('flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors',
                       isOpen ? 'bg-page' : 'hover:bg-page/50')}
                   >
-                    <span className={cn('h-2 w-2 shrink-0 rounded-full', uc.configured ? 'bg-ok' : 'bg-line')} />
+                    <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', isConfigured ? 'bg-ok' : 'bg-line')} />
                     <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{uc.label}</span>
-                    <span className="shrink-0 font-mono text-[11px] text-t3">{uc.configured ? uc.model : '跟随默认'}</span>
+                    <span className="shrink-0 text-[11px] text-t3">{isConfigured ? uc.model : '继承默认'}</span>
                     <span className={cn('shrink-0 text-t3 transition-transform', isOpen && 'rotate-90')}>›</span>
                   </button>
                   {isOpen && (
                     <div className="space-y-2 border-t border-line/40 bg-page/50 px-3 py-3">
-                      <div className="grid gap-2 md:grid-cols-3">
-                        <div>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        <div className="md:col-span-2">
                           <div className="mb-1 text-[11px] text-t3">接口地址</div>
-                          <Input value={e.baseUrl} onChange={(ev) => setOvr((o) => ({ ...o, [uc.id]: { ...e, baseUrl: ev.target.value } }))} placeholder="https://api.deepseek.com/v1" className="text-[12px]" autoComplete="off" />
+                          <Input value={e.baseUrl} onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, baseUrl: ev.target.value}}))} placeholder="留空继承全局默认" className="text-[12px]" autoComplete="off" />
                         </div>
                         <div>
                           <div className="mb-1 text-[11px] text-t3">API Key</div>
-                          <Input type="password" value={e.apiKey} onChange={(ev) => setOvr((o) => ({ ...o, [uc.id]: { ...e, apiKey: ev.target.value } }))} placeholder="sk-…（留空继承默认）" className="text-[12px]" autoComplete="off" />
+                          <Input type="password" value={e.apiKey} onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, apiKey: ev.target.value}}))} placeholder="留空继承默认" className="text-[12px]" autoComplete="off" />
                         </div>
                         <div>
                           <div className="mb-1 text-[11px] text-t3">模型</div>
-                          <Input value={e.model} onChange={(ev) => setOvr((o) => ({ ...o, [uc.id]: { ...e, model: ev.target.value } }))} placeholder="deepseek-chat" className="text-[12px]" autoComplete="off" />
+                          <Input value={e.model} onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, model: ev.target.value}}))} placeholder="deepseek-chat" className="text-[12px]" autoComplete="off" />
                         </div>
                       </div>
                       <div className="flex justify-end">
-                        <Button size="sm" variant="secondary" onClick={() => void saveOverride(uc)}>保存</Button>
+                        <Button size="sm" variant="secondary"
+                          onClick={() => {
+                            const API2 = import.meta.env.VITE_API_BASE ?? '/api';
+                            const token = localStorage.getItem('as.token') ?? '';
+                            fetch(API2 + '/me/llm-config', {
+                              method: 'PUT',
+                              headers: {'Content-Type': 'application/json', Authorization: `Bearer ${token}`},
+                              body: JSON.stringify({ useCase: uc.id, baseUrl: e.baseUrl, apiKey: e.apiKey, model: e.model, provider: e.provider })
+                            }).then(() => { setSavedTip(uc.label); loadCatalog(); });
+                          }}
+                        >保存</Button>
                       </div>
                     </div>
                   )}
                 </div>
               );
             })}
-            {USE_MOCK && (
-              <div className="rounded-lg bg-page px-3 py-2 text-[12px] text-t3">
-                演示模式无后端目录。真实模式下此处列出 10 个 AI 使用点（W1 筛选 / W2 提取与关系 / W3 / W4 / Agent / 方向精炼），可逐环节覆盖模型与 Key。
-              </div>
-            )}
           </div>
         </div>
       </Card>
