@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Upload, X, Lock } from 'lucide-react';
-import { createProject, startRun } from '@/services/api';
+import { createProject, startRun, USE_MOCK } from '@/services/api';
 import { readApiKeys } from '@/lib/apikeys';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -125,20 +125,31 @@ export function NewProjectPage() {
     setCustomTag('');
   };
 
-  const fakeUpload = (setter: typeof setSeeds) => (e: ChangeEvent<HTMLInputElement>) => {
-    const names = Array.from(e.target.files ?? []).map((f) => f.name);
-    if (names.some((n) => !n.toLowerCase().endsWith('.pdf'))) {
-      // 行内校验提示由下方红字展示（此处简单标记）
-      setter((s) => [...s, ...names.filter((n) => n.toLowerCase().endsWith('.pdf'))]);
+  const fakeUpload = (setter: typeof setSeeds) => async (e: ChangeEvent<HTMLInputElement>) => {
+    const fs = Array.from(e.target.files ?? []).filter((f) => f.name.toLowerCase().endsWith('.pdf'));
+    if (!fs.length) return;
+    if (USE_MOCK) { setter((s) => [...s, ...fs.map((f) => f.name)]); return; }
+    // 真实模式：PDF 上传到后端暂存区，createProject 时移入项目 seeds/
+    const fd = new FormData();
+    fs.forEach((f) => fd.append('files', f));
+    const API = import.meta.env.VITE_API_BASE ?? '/api';
+    const token = localStorage.getItem('as.token') ?? '';
+    const res = await fetch(`${API}/uploads/seeds`, {
+      method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd,
+    });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({ detail: '上传失败' }));
+      alert(`种子上传失败：${d.detail ?? res.status}`);
       return;
     }
-    setter((s) => [...s, ...names]);
+    const d = await res.json();
+    setter((s) => [...new Set([...s, ...(d.files ?? [])])]);
   };
 
   const create = async () => {
     setCreating(true);
     localStorage.setItem(LS_LAST_FIELDS, JSON.stringify(tags)); // 记住本次领域组合，下次自动预选
-    const p = await createProject({ title, fieldTags: tags, description });
+    const p = await createProject({ title, fieldTags: tags, description, seedFiles: seeds });
     try {
       await startRun(p.id); // 真实模式：创建即启动 W1；启动失败不阻断，可在流水线页手动启动
     } catch {
