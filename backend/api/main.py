@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -127,14 +127,48 @@ def health():
     return {"status": "ok", "workspace": str(WORKSPACE)}
 
 
+@app.post("/api/uploads/seeds")
+async def upload_seeds(files: list[UploadFile] = File(...), user: dict = Depends(_me)):
+    """种子论文上传：暂存到用户暂存区，createProject 时移入项目 workspace/seeds。"""
+    staged = WORKSPACE / f"u{user['user_id']}" / "_staged_seeds"
+    staged.mkdir(parents=True, exist_ok=True)
+    saved = []
+    for f in files:
+        name = Path(f.filename or "seed.pdf").name
+        if not name.lower().endswith(".pdf"):
+            continue
+        data = await f.read()
+        if len(data) < 1024 or data[:4] != b"%PDF":
+            raise HTTPException(400, f"{name} 不是有效的 PDF 文件")
+        (staged / name).write_bytes(data)
+        saved.append(name)
+    if not saved:
+        raise HTTPException(400, "没有有效的 PDF 文件")
+    return {"ok": True, "files": saved}
+
+
 @app.post("/api/projects")
 def create_project(body: dict, user: dict = Depends(_me)):
-    """创建项目并写入 w1_config.json（绑定当前登录用户）。"""
+    """创建项目并写入 w1_config.json（绑定当前登录用户）。
+    body.seed_files: 已上传种子文件的文件名列表（经 /api/uploads/seeds 预先上传）。
+    """
     pid = f"proj-{int(time.time() * 1000)}"
     uid = user["user_id"]
     workspace_rel = f"u{uid}/{pid}/w1"
     ws = WORKSPACE / workspace_rel
     ws.mkdir(parents=True, exist_ok=True)
+    # 种子目录：把用户上传的种子 PDF 从暂存区移入项目 workspace
+    seed_dir = ""
+    staged = WORKSPACE / f"u{uid}" / "_staged_seeds"
+    seed_files = body.get("seed_files") or []
+    if seed_files:
+        seed_dir = str(ws / "seeds")
+        (ws / "seeds").mkdir(parents=True, exist_ok=True)
+        import shutil as _shutil
+        for name in seed_files:
+            src = staged / Path(name).name
+            if src.exists():
+                _shutil.move(str(src), str(ws / "seeds" / Path(name).name))
     cfg = {
         "project_id": pid, "title": body.get("title", ""),
         "topic": body.get("title", ""),                 # phase_defs P4 筛选主题
@@ -146,7 +180,7 @@ def create_project(body: dict, user: dict = Depends(_me)):
         "corpus_cap": body.get("corpus_cap", 500),
         "prescore": body.get("prescore", 0.25),
         "year_range": body.get("year_range", [2020, 2026]),
-        "seed_dir": body.get("seed_dir", ""), "local_dir": body.get("local_dir", ""),
+        "seed_dir": seed_dir, "local_dir": body.get("local_dir", ""),
         "llm": body.get("llm", {}),
         # 存量脚本根目录：前端契约不含此字段，默认本地 autoSurvey_v2（可用 AS_SCRIPTS_ROOT 覆盖）
         "scripts_root": body.get("scripts_root") or os.environ.get(
