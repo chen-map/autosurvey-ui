@@ -151,13 +151,19 @@ export function NewProjectPage() {
           ],
         }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.detail ?? `HTTP ${res.status}`);
+      }
       const d = await res.json();
-      const text: string = d.choices?.[0]?.message?.content ?? '';
-      const m = text.match(/\[[\s\S]*?\]/);
-      const arr = m ? JSON.parse(m[0]) : [];
-      const kws = arr.map((x: unknown) => String(x).trim().toLowerCase()).filter(Boolean).slice(0, 8);
-      if (!kws.length) throw new Error('LLM 未返回有效关键词');
+      const text: string = d.choices?.[0]?.message?.content ?? d.content ?? '';
+      // 宽容解析：剥 ``` 围栏后取首个 JSON 数组
+      const cleaned = text.replace(/```[a-z]*\n?/gi, '');
+      const m = cleaned.match(/\[[\s\S]*?\]/);
+      let arr: unknown[] = [];
+      if (m) { try { arr = JSON.parse(m[0]); } catch { /* fallthrough */ } }
+      const kws = arr.map((x: unknown) => String(x).trim().toLowerCase().replace(/^["']|["']$/g, '')).filter(Boolean).slice(0, 8);
+      if (!kws.length) throw new Error(`LLM 返回无法解析：${text.slice(0, 80) || '(空响应)'}`);
       setKeywords(kws);
       setKwInput(kws.join(', '));
     } catch (e) {
