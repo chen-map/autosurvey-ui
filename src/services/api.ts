@@ -247,8 +247,10 @@ export async function getPipeline(projectId: string, workflow: 'w1' | 'w2' | 'w3
     }))
     .reverse();
   const startedMs = Date.parse(String(raw.started_at).replace(' ', 'T'));
-  const updatedMs = Date.parse(String(raw.updated_at || raw.started_at).replace(' ', 'T'));
-  const elapsedSec = Number.isFinite(startedMs) && Number.isFinite(updatedMs) ? Math.max(0, (updatedMs - startedMs) / 1000) : 0;
+  // running 时以当前时间计（runner 只在阶段边界写盘，updated_at 会冻结）
+  const isRunning = wf.status === 'running';
+  const endMs = isRunning ? Date.now() : Date.parse(String(raw.updated_at || raw.started_at).replace(' ', 'T'));
+  const elapsedSec = Number.isFinite(startedMs) && Number.isFinite(endMs) ? Math.max(0, (endMs - startedMs) / 1000) : 0;
   return {
     id: meta.id,
     projectId,
