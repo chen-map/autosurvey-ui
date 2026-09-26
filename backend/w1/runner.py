@@ -81,7 +81,8 @@ def run_step(step: dict[str, Any], log_path: Path, timeout: int, cwd: Path) -> i
     with log_path.open("ab") as log:
         log.write(f"\n$ {' '.join(cmd)}\n".encode("utf-8"))
         log.flush()
-        proc = subprocess.run(cmd, cwd=cwd, stdout=log, stderr=subprocess.STDOUT, timeout=timeout, env=env)
+        step_timeout = int(step.get("timeout") or timeout)
+        proc = subprocess.run(cmd, cwd=cwd, stdout=log, stderr=subprocess.STDOUT, timeout=step_timeout, env=env)
     return proc.returncode
 
 
