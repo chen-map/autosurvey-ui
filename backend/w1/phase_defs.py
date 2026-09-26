@@ -90,7 +90,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "steps": [
                 {"script": str(HERE / "simple_screen.py"),
                  "args": ["--input", f"{ws}/normalized/unified_records.csv",
-                          "--topic", cfg.get("topic", ""),
+                          "--topic", f"{cfg.get('topic', '')} {' '.join(cfg.get('domain_tags', []))}",
                           "--min-year", str(year_from),
                           "--output-dir", f"{ws}/screening/"]},
             ],

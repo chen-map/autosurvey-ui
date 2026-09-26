@@ -20,7 +20,9 @@ def main() -> int:
     args = parser.parse_args()
 
     stop = {"的", "与", "和", "在", "及", "for", "and", "the", "of", "a", "in", "to"}
-    words = {w.lower().strip() for w in args.topic.replace("：", " ").replace("，", " ").split() if len(w.strip()) >= 2 and w.lower().strip() not in stop}
+    # 中英混合分词：中文主题（如"LLM安全综述"）抽 ASCII 词元（llm），中文词原样保留
+    raw_words = re.findall(r"[a-z0-9]+|[一-鿿]+", args.topic.lower())
+    words = {w for w in raw_words if len(w) >= 2 and w not in stop}
 
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
