@@ -128,3 +128,13 @@ def init_db():
     conn.executescript(SCHEMA)
     conn.commit()
     conn.close()
+
+
+def _migrate_llm_provider():
+    try:
+        conn = get_db()
+        conn.execute("ALTER TABLE llm_configs ADD COLUMN provider TEXT DEFAULT 'openai'")
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass  # 列已存在
