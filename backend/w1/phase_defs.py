@@ -126,12 +126,14 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                 # OAI 收割的记录带官方 DOI，走 export.arxiv.org 一次到位；
                 # 剩余无 arXiv ID / 失败的才交给下面五级降级链兜底
                 {"script": str(HERE / "arxiv_batch.py"),
+                 "timeout": 14400,   # 500 篇 × 5s 限速 + 传输 ≈ 1-2h，超时会被掐死（实测教训）
                  "args": ["--input", f"{ws}/download/download_ready.csv",
                           "--out-dir", f"{ws}/papers/",
                           "--stats-out", f"{ws}/download/arxiv_batch_stats.json",
                           "--min-interval-sec", str(cfg.get("arxiv_dl_min_interval", 5.0)),
                           "--contact-email", cfg.get("contact_email", "researcher@example.com")]},
                 {"script": f"{scripts}/paper_downloader/download_papers.py",
+                 "timeout": 14400,   # 旧链兜底逐篇慢，同样放宽
                  "args": ["--input", f"{ws}/download/download_ready.csv",
                           "--output", f"{ws}/papers/", "--no-scihub", "--skip-existing",
                           "--delay", "2",
