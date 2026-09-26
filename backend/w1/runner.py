@@ -188,6 +188,19 @@ def run_pipeline_with(phases: list[dict[str, Any]], cfg: dict[str, Any],
         # 必须透传 state_file：run_phase 默认值是 w1_state.json，
         # 漏传会让 W2 的阶段进度全部写进 W1 状态文件（实测覆盖事故）
         status = run_phase(phase, cfg, workspace, state, state_file)
+        if status == "failed" and phase.get("optional"):
+            # 可选阶段降级：执行声明的 degrade 动作（补产物 + 记录原因），继续后续阶段
+            dg = phase.get("degrade") or {}
+            for src, dst in dg.get("copy", []):
+                src_p, dst_p = workspace / src, workspace / dst
+                if src_p.exists() and not dst_p.exists():
+                    dst_p.parent.mkdir(parents=True, exist_ok=True)
+                    dst_p.write_text(src_p.read_text(encoding="utf-8-sig"), encoding="utf-8")
+            entry = next(pp for pp in state["phases"] if pp["id"] == pid)
+            entry["status"] = "skipped"
+            entry["note"] = dg.get("note", "可选阶段失败，已降级跳过")
+            save_state(workspace, state, state_file)
+            continue
         if status == "failed":
             state["current"] = None
             save_state(workspace, state, state_file)
