@@ -375,7 +375,7 @@ LLM_USE_CASES = [
 ]
 
 
-def resolve_llm(user_id: int, use_case: str = "default") -> tuple[str, str, str]:
+def resolve_llm(user_id: int, use_case: str = "default") -> tuple[str, str, str, str]:
     """解析链：环节专属行（Key 可解密且非空）→ default 行。返回 (base, key, model, provider)。"""
     from db.crypto import decrypt
 
@@ -470,7 +470,7 @@ class ChatIn(BaseModel):
 @app.post("/api/llm/chat")
 def llm_chat(body: ChatIn, user: dict = Depends(_me)):
     """服务端 LLM 代理：解密用户存储的 url+apikey+model 调用，明文 Key 永不回传浏览器。"""
-    base, key, model = resolve_llm(user["user_id"], getattr(body, "useCase", "default") or "default")
+    base, key, model, _provider = resolve_llm(user["user_id"], getattr(body, "useCase", "default") or "default")
     if not (base and key and model):
         raise HTTPException(400, "未配置 LLM（个人中心填写 url + apikey + model）")
     try:
