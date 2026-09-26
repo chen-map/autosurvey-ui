@@ -99,7 +99,11 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
         {
             "id": "W1-P5",
             "name": "滚雪球扩展",
-            "optional": False,
+            "optional": True,   # S2 无 Key 时被 429 限流，允许降级跳过
+            "degrade": {
+                "note": "S2 无 API Key 限流降级：评分筛选种子直通（跳过引文扩展）",
+                "copy": [[f"{ws}/screening/screened_records.csv", f"{ws}/snowball/snowball_candidates.csv"]],
+            },
             "steps": [
                 {"script": f"{scripts}/snowball_searcher/snowball_search.py",
                  "args": ["--direction", "both", "--input", f"{ws}/normalized/unified_records.csv",
