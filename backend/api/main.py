@@ -246,7 +246,7 @@ def start_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
 @app.get("/api/projects/{pid}/run")
 def get_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
     _own_project(pid, user)
-    state_path = WORKSPACE / pid / "w1" / f"{workflow}_state.json"
+    state_path = _wm(pid) / f"{workflow}_state.json"
     if not state_path.exists():
         raise HTTPException(404, f"run not found for {pid}")
     return json.loads(state_path.read_text(encoding="utf-8"))
@@ -255,7 +255,7 @@ def get_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
 @app.post("/api/projects/{pid}/phases/{phase_id}/retry")
 def retry_phase(pid: str, phase_id: str, workflow: str = "w1", user: dict = Depends(_me)):
     _own_project(pid, user)
-    state_path = WORKSPACE / pid / "w1" / f"{workflow}_state.json"
+    state_path = _wm(pid) / f"{workflow}_state.json"
     if not state_path.exists():
         raise HTTPException(404, f"run not found for {pid}")
     state = json.loads(state_path.read_text(encoding="utf-8"))
