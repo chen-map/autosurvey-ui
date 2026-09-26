@@ -51,7 +51,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             # arXiv 主题检索（检索式 + 提交年区间 + 新文优先）：真正"查论文"，解决 OAI 全量切片的年份偏斜与不相关
             "steps_tail": [
                 {"script": str(HERE / "arxiv_search.py"),
-                 "args": ["--keywords", ",".join([cfg.get("topic", "")] + cfg.get("domain_tags", [])),
+                 "args": ["--keywords", ",".join(cfg.get("search_keywords") or ([cfg.get("topic", "")] + cfg.get("domain_tags", []))),
                           "--year-from", str(year_from), "--year-to", str(year_to),
                           "--max-records", str(cfg.get("search_max_records", 1000)),
                           "--out", f"{ws}/raw_results/arxiv_search_results.csv",
@@ -90,7 +90,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "steps": [
                 {"script": str(HERE / "simple_screen.py"),
                  "args": ["--input", f"{ws}/normalized/unified_records.csv",
-                          "--topic", f"{cfg.get('topic', '')} {' '.join(cfg.get('domain_tags', []))}",
+                          "--topic", " ".join(cfg.get("search_keywords") or [cfg.get('topic', '')] + cfg.get('domain_tags', [])),
                           "--min-year", str(year_from),
                           "--output-dir", f"{ws}/screening/"]},
             ],

@@ -49,6 +49,10 @@ export function NewProjectPage() {
   const [seeds, setSeeds] = useState<string[]>([]);
   const [description, setDescription] = useState('');
   const [locals, setLocals] = useState<string[]>([]);
+  const [kwInput, setKwInput] = useState('');           // 手动检索词输入（推荐英文）
+  const [keywords, setKeywords] = useState<string[]>([]); // 最终检索词（AI 生成或手动）
+  const [kwGenerating, setKwGenerating] = useState(false);
+  const [kwErr, setKwErr] = useState('');
 
   const [prescore, setPrescore] = useState(0.25);
   const [stage, setStage] = useState('标准（六阶段全开）');
@@ -125,6 +129,42 @@ export function NewProjectPage() {
     setCustomTag('');
   };
 
+  // 模式一：LLM 理解中文主题+描述 → 生成英文检索词
+  const generateKeywords = async () => {
+    if (!title.trim()) { setKwErr('请先填写综述主题'); return; }
+    setKwGenerating(true); setKwErr('');
+    try {
+      const API = import.meta.env.VITE_API_BASE ?? '/api';
+      const token = localStorage.getItem('as.token') ?? '';
+      const res = await fetch(`${API}/llm/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          useCase: 'default',
+          temperature: 0.2,
+          maxTokens: 600,
+          messages: [
+            { role: 'system', content: 'You extract English academic search keywords for a literature survey. Given a Chinese or English survey topic and description, return ONLY a JSON array of 5-8 English search keyword phrases (e.g. ["llm agent security","prompt injection attack"]). No explanation.' },
+            { role: 'user', content: `主题：${title}
+领域标签：${tags.join(', ') || '无'}
+描述：${description || '无'}` },
+          ],
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json();
+      const text: string = d.choices?.[0]?.message?.content ?? '';
+      const m = text.match(/\[[\s\S]*?\]/);
+      const arr = m ? JSON.parse(m[0]) : [];
+      const kws = arr.map((x: unknown) => String(x).trim().toLowerCase()).filter(Boolean).slice(0, 8);
+      if (!kws.length) throw new Error('LLM 未返回有效关键词');
+      setKeywords(kws);
+      setKwInput(kws.join(', '));
+    } catch (e) {
+      setKwErr(e instanceof Error ? e.message : '生成失败');
+    } finally { setKwGenerating(false); }
+  };
+
   const fakeUpload = (setter: typeof setSeeds) => async (e: ChangeEvent<HTMLInputElement>) => {
     const fs = Array.from(e.target.files ?? []).filter((f) => f.name.toLowerCase().endsWith('.pdf'));
     if (!fs.length) return;
@@ -149,7 +189,7 @@ export function NewProjectPage() {
   const create = async () => {
     setCreating(true);
     localStorage.setItem(LS_LAST_FIELDS, JSON.stringify(tags)); // 记住本次领域组合，下次自动预选
-    const p = await createProject({ title, fieldTags: tags, description, seedFiles: seeds });
+    const p = await createProject({ title, fieldTags: tags, description, seedFiles: seeds, searchKeywords: keywords });
     try {
       await startRun(p.id); // 真实模式：创建即启动 W1；启动失败不阻断，可在流水线页手动启动
     } catch {
@@ -158,7 +198,7 @@ export function NewProjectPage() {
     navigate(`/projects/${p.id}/pipeline`);
   };
 
-  const canNext = [tags.length > 0, title.trim().length > 0 && seeds.length > 0, true, true][step];
+  const canNext = [tags.length > 0, title.trim().length > 0 && seeds.length > 0 && keywords.length > 0, true, true][step];
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-8">
@@ -284,13 +324,44 @@ export function NewProjectPage() {
             )}
             <div>
               <div className="text-[14px] font-medium">综述主题 <span className="text-danger">*</span></div>
-              <p className="mt-1 text-[12.5px] text-t3">输入完整的研究主题或选题关键词，获得更好的生成效果</p>
+              <p className="mt-1 text-[12.5px] text-t3">
+                支持中文或英文。中文主题请用下方「AI 生成英文检索词」——检索与筛选在英文语料上进行，英文关键词直接决定语料质量
+              </p>
               <Input
                 className="mt-2"
                 placeholder="例如：大语言模型 Agent 安全攻击与防御综述"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
+            </div>
+            {/* 检索关键词（模式一 AI 生成 / 模式二手动英文直填） */}
+            <div className="rounded-lg border border-line/60 p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-[13.5px] font-medium">检索关键词（英文） <span className="text-danger">*</span></div>
+                <Button size="sm" variant="secondary" onClick={() => void generateKeywords()} disabled={kwGenerating || !title.trim()}>
+                  {kwGenerating ? '生成中…' : 'AI 生成英文检索词'}
+                </Button>
+              </div>
+              <p className="mt-1 text-[12px] leading-5 text-t3">
+                方式一：中文主题 + 描述交给 LLM 理解并翻译为英文检索词（推荐）；方式二：直接输入英文关键词（英文效果最佳），逗号分隔
+              </p>
+              <Input
+                className="mt-2"
+                placeholder="例如：llm agent security, prompt injection, memory poisoning, defense"
+                value={kwInput}
+                onChange={(e) => {
+                  setKwInput(e.target.value);
+                  setKeywords(e.target.value.split(/[,，;；]/).map((x) => x.trim().toLowerCase()).filter(Boolean));
+                }}
+              />
+              {kwErr && <div className="mt-1.5 text-[12px] text-danger">{kwErr}</div>}
+              {keywords.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {keywords.map((k) => (
+                    <span key={k} className="rounded-full bg-ink/5 px-2 py-0.5 font-mono text-[11.5px] text-t2">{k}</span>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <div className="text-[14px] font-medium">领域描述 / 研究目标</div>

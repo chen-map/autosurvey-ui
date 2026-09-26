@@ -209,6 +209,7 @@ def create_project(body: dict, user: dict = Depends(_me)):
         "prescore": body.get("prescore", 0.25),
         "year_range": body.get("year_range", [2020, 2026]),
         "seed_dir": seed_dir, "local_dir": body.get("local_dir", ""),
+        "search_keywords": body.get("search_keywords", []),  # LLM 生成或用户直填的英文检索词
         "llm": body.get("llm", {}),
         # 存量脚本根目录：前端契约不含此字段，默认本地 autoSurvey_v2（可用 AS_SCRIPTS_ROOT 覆盖）
         "scripts_root": body.get("scripts_root") or os.environ.get(
