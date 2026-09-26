@@ -90,6 +90,14 @@ def _me(authorization: str = Header(default="")) -> dict:
     return user
 
 
+def _own_project(pid: str, user: dict) -> None:
+    """项目归属校验：pid 不属于当前用户 → 404（不泄露存在性）。"""
+    conn = get_db()
+    row = conn.execute("SELECT user_id FROM projects WHERE project_id=?", (pid,)).fetchone()
+    conn.close()
+    if row is None or row["user_id"] != user["user_id"]:
+        raise HTTPException(404, "project not found")
+
 def _wm(pid: str) -> Path:
     """解析项目工作区路径。优先查 projects 表（按用户隔离的新项目），回退旧布局。"""
     try:
@@ -225,6 +233,7 @@ def create_project(body: dict, user: dict = Depends(_me)):
 
 @app.post("/api/projects/{pid}/run")
 def start_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
+    _own_project(pid, user)
     """启动（或续跑）工作流。创建后项目为 draft，由此端点显式启动；--resume 跳过已完成 Phase。"""
     if workflow not in ("w1", "w2", "w3", "w4", "w5"):
         raise HTTPException(400, f"unknown workflow: {workflow}")
@@ -236,6 +245,7 @@ def start_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
 
 @app.get("/api/projects/{pid}/run")
 def get_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
+    _own_project(pid, user)
     state_path = WORKSPACE / pid / "w1" / f"{workflow}_state.json"
     if not state_path.exists():
         raise HTTPException(404, f"run not found for {pid}")
@@ -244,6 +254,7 @@ def get_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
 
 @app.post("/api/projects/{pid}/phases/{phase_id}/retry")
 def retry_phase(pid: str, phase_id: str, workflow: str = "w1", user: dict = Depends(_me)):
+    _own_project(pid, user)
     state_path = WORKSPACE / pid / "w1" / f"{workflow}_state.json"
     if not state_path.exists():
         raise HTTPException(404, f"run not found for {pid}")
@@ -259,6 +270,7 @@ def retry_phase(pid: str, phase_id: str, workflow: str = "w1", user: dict = Depe
 
 @app.get("/api/projects/{pid}/corpus")
 def get_corpus(pid: str, user: dict = Depends(_me)):
+    _own_project(pid, user)
     """语料库页：W1 下载产物（corpus_papers 表）+ PRISMA 漏斗计数。
 
     数据来源：W1-P6 完成后 corpus_ingest.py 落库；漏斗前两级从 W1 中间产物 CSV 计数。
@@ -521,6 +533,7 @@ def put_library(body: dict = Body(...), user: dict = Depends(_me)):
 
 @app.get("/api/projects/{pid}/kg")
 def get_kg(pid: str, user: dict = Depends(_me)):
+    _own_project(pid, user)
     """KG 图谱数据：读 W2-P3 产物 paper_kg.json（{papers, nodes, edges}）。"""
     p = _wm(pid) / "knowledge_graph" / "paper_kg.json"
     if not p.exists():
@@ -545,6 +558,7 @@ def get_kg(pid: str, user: dict = Depends(_me)):
 
 @app.get("/api/projects/{pid}/rqs")
 def get_rqs(pid: str, user: dict = Depends(_me)):
+    _own_project(pid, user)
     """RQ 体系：读 W3 产物 analyze_report/rq_evidence_matrix.json → 前端 RQBundle 契约。"""
     matrix_path = _wm(pid) / "analyze_report" / "rq_evidence_matrix.json"
     if not matrix_path.exists():
