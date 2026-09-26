@@ -48,6 +48,26 @@ def _seed_demo_user():
     conn.close()
     from db.database import _migrate_llm_provider
     _migrate_llm_provider()
+    # 旧项目迁移：把文件系统里存在但 projects 表没有的项目归属到首个用户（demo）
+    conn = get_db()
+    first_uid = conn.execute("SELECT id FROM users ORDER BY id LIMIT 1").fetchone()
+    if first_uid:
+        uid = first_uid["id"]
+        for d in WORKSPACE.iterdir():
+            if not d.is_dir() or d.name.startswith("u"):
+                continue
+            cfg = d / "w1" / "w1_config.json"
+            if cfg.exists():
+                try:
+                    c = json.loads(cfg.read_text(encoding="utf-8"))
+                    pid = c.get("project_id", d.name)
+                    conn.execute(
+                        "INSERT OR IGNORE INTO projects (project_id, user_id, title, workspace_rel) VALUES (?,?,?,?)",
+                        (pid, uid, c.get("title", d.name), f"{d.name}/w1"))
+                except Exception:
+                    pass
+        conn.commit()
+    conn.close()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173",
