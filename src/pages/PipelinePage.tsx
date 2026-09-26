@@ -8,12 +8,14 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
+// skipped：可选阶段降级跳过（runner optional 机制）；未知状态一律回退 pending，防 undefined 崩溃
 const statusStyle: Record<string, { dot: string; label: string }> = {
   pending: { dot: 'bg-line', label: '待执行' },
   running: { dot: 'bg-run animate-pulse', label: '运行中' },
   done: { dot: 'bg-ok', label: '完成' },
   failed: { dot: 'bg-danger', label: '失败' },
   checkpoint: { dot: 'bg-warn-fg', label: 'checkpoint' },
+  skipped: { dot: 'bg-warn-fg', label: '已降级跳过' },
 };
 
 function Stat({ icon: Icon, value, label }: { icon: typeof FileText; value: string; label: string }) {
@@ -185,7 +187,7 @@ export function PipelinePage() {
 }
 
 function PhaseChip({ phase, rerunning, onRerun }: { phase: PhaseState; rerunning?: boolean; onRerun: () => void }) {
-  const st = statusStyle[phase.status];
+  const st = statusStyle[phase.status] ?? statusStyle.pending;
   const failedLike = phase.status === 'failed' || phase.status === 'checkpoint';
   return (
     <div className={cn(
