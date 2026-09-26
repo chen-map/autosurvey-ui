@@ -182,8 +182,8 @@ def create_project(body: dict, user: dict = Depends(_me)):
     """
     pid = f"proj-{int(time.time() * 1000)}"
     uid = user["user_id"]
-    workspace_rel = f"u{uid}/{pid}/w1"
-    ws = WORKSPACE / workspace_rel
+    table_rel = f"u{uid}/{pid}/w1"      # projects 表用：相对 WORKSPACE 基目录
+    ws = WORKSPACE / table_rel
     ws.mkdir(parents=True, exist_ok=True)
     # 种子目录：把用户上传的种子 PDF 从暂存区移入项目 workspace
     seed_dir = ""
@@ -215,7 +215,7 @@ def create_project(body: dict, user: dict = Depends(_me)):
             "AS_SCRIPTS_ROOT",
             "C:/Users/85864/Documents/xwechat_files/wxid_4wveq34o7nag22_eb4c/msg/file/2026-09/autoSurvey_v2/autoSurvey_v2"),
         "workspace": str(ws),
-        "workspace_rel": workspace_rel,
+        "workspace_rel": "retrieval_workspace",  # phase_defs 契约：相对 workspace 的输出目录
         "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
     (ws / "w1_config.json").write_text(
@@ -224,7 +224,7 @@ def create_project(body: dict, user: dict = Depends(_me)):
     conn = get_db()
     conn.execute(
         "INSERT OR REPLACE INTO projects (project_id, user_id, title, workspace_rel) VALUES (?,?,?,?)",
-        (pid, uid, body.get("title", ""), workspace_rel),
+        (pid, uid, body.get("title", ""), table_rel),
     )
     conn.commit()
     conn.close()
