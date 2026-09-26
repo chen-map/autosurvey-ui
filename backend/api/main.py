@@ -655,46 +655,72 @@ def get_rqs(pid: str, user: dict = Depends(_me)):
 
 @app.get("/api/projects")
 def list_projects(user: dict = Depends(_me)):
-    # 按用户过滤：只返回该用户的项目
+    """以 projects 表为准（表驱动），目录扫描只作旧数据兜底。"""
     conn = get_db()
     user_pids = {r["project_id"] for r in conn.execute(
         "SELECT project_id FROM projects WHERE user_id=?", (user["user_id"],)).fetchall()}
     conn.close()
 
     projects = []
+    seen: set[str] = set()
+
+    def _load_project(cfg_path: Path, fallback_id: str) -> None:
+        c = json.loads(cfg_path.read_text(encoding="utf-8"))
+        pid = c.get("project_id", fallback_id)
+        if pid in seen:
+            return
+        seen.add(pid)
+        state_path = cfg_path.parent / "w1_state.json"
+        status = "draft"
+        if state_path.exists():
+            st = json.loads(state_path.read_text(encoding="utf-8"))
+            statuses = [p.get("status") for p in st.get("phases", [])]
+            if "running" in statuses:
+                status = "running"
+            elif statuses and all(x == "done" for x in statuses if x):
+                status = "completed"
+            elif "failed" in statuses:
+                status = "failed"
+        projects.append({
+            "project_id": pid,
+            "title": c.get("title", fallback_id),
+            "status": status,
+            "field_tags": c.get("field_tags", []),
+            "description": c.get("description", ""),
+            "search_cap": c.get("search_cap", 2000),
+            "corpus_cap": c.get("corpus_cap", 500),
+            "prescore": c.get("prescore", 0.25),
+            "year_range": c.get("year_range", [2020, 2026]),
+            "seed_dir": c.get("seed_dir", ""),
+            "local_dir": c.get("local_dir", ""),
+            "llm": c.get("llm", {}),
+            "updated_at": c.get("created_at", ""),
+        })
+
+    # 1) 表驱动：新布局项目（u{uid}/{pid}/w1）
+    for pid in sorted(user_pids):
+        cfg_path = _wm(pid) / "w1_config.json"
+        if cfg_path.exists():
+            _load_project(cfg_path, pid)
+
+    # 2) 旧布局兜底：表里没有但目录存在的（补登记）
     if WORKSPACE.exists():
         for d in sorted(WORKSPACE.iterdir()):
             cfg_path = d / "w1" / "w1_config.json"
             if cfg_path.exists():
                 c = json.loads(cfg_path.read_text(encoding="utf-8"))
-                if c.get("project_id", d.name) not in user_pids:
+                pid = c.get("project_id", d.name)
+                if pid not in user_pids:
                     continue
-                state_path = d / "w1" / "w1_state.json"
-                status = "draft"
-                if state_path.exists():
-                    s = json.loads(state_path.read_text(encoding="utf-8"))
-                    statuses = [p.get("status") for p in s.get("phases", [])]
-                    if "running" in statuses:
-                        status = "running"
-                    elif all(x == "done" for x in statuses if x):
-                        status = "completed"
-                    elif "failed" in statuses:
-                        status = "failed"
-                projects.append({
-                    "project_id": c.get("project_id", d.name),
-                    "title": c.get("title", d.name),
-                    "status": status,
-                    "field_tags": c.get("field_tags", []),
-                    "description": c.get("description", ""),
-                    "search_cap": c.get("search_cap", 2000),
-                    "corpus_cap": c.get("corpus_cap", 500),
-                    "prescore": c.get("prescore", 0.25),
-                    "year_range": c.get("year_range", [2020, 2026]),
-                    "seed_dir": c.get("seed_dir", ""),
-                    "local_dir": c.get("local_dir", ""),
-                    "llm": c.get("llm", {}),
-                    "updated_at": c.get("updated_at", ""),
-                })
+                if pid not in seen:
+                    _load_project(cfg_path, pid)
+                # 补登记进表（此后走表驱动）
+                conn = get_db()
+                conn.execute(
+                    "INSERT OR IGNORE INTO projects (project_id, user_id, title, workspace_rel) VALUES (?,?,?,?)",
+                    (pid, user["user_id"], c.get("title", d.name), f"{d.name}/w1"))
+                conn.commit()
+                conn.close()
     # 前端 Project 类型（camelCase 裸数组）：id/fieldTags/status/createdAt/updatedAt + stats
     conn = get_db()
     kg_stats = {}
