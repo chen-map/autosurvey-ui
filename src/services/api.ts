@@ -65,6 +65,7 @@ export async function getProject(id: string): Promise<Project | undefined> {
 // ---- createProject ----
 export interface NewProjectInput {
   seedFiles?: string[];
+  searchKeywords?: string[];
   title: string;
   fieldTags: string[];
   description?: string;
@@ -90,6 +91,7 @@ export async function createProject(input: NewProjectInput): Promise<Project> {
         prescore: input.prescore ?? 0.25,
         local_dir: input.localDir ?? '',
         seed_files: input.seedFiles ?? [],
+        search_keywords: input.searchKeywords ?? [],
       }),
     });
     if (res.status === 401) throw new Error('未登录或会话过期，请重新登录');
