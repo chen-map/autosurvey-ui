@@ -37,7 +37,8 @@ function OutlineTree({ nodes, depth = 0, rqHref }: { nodes: OutlineNode[]; depth
 
 export function ReportPage() {
   const { projectId = '' } = useParams();
-  const API = import.meta.env.VITE_API_BASE ?? '/api';
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfState, setPdfState] = useState<'loading' | 'ready' | 'missing' | 'error'>('loading');
   const [data, setData] = useState<{ outline: OutlineNode[]; reviews: { round: number; date: string; verdict: string; improvements: string[] }[] } | null>(null);
 
   useEffect(() => {
@@ -45,6 +46,32 @@ export function ReportPage() {
     getReport(projectId).then((d) => alive && setData(d)).catch(() => alive && setData({ outline: [], reviews: [] }));
     return () => {
       alive = false;
+    };
+  }, [projectId]);
+
+  // PDF 需带 Authorization 拉取 → blob URL（iframe/open 无法自定义 header）
+  useEffect(() => {
+    let alive = true;
+    let objectUrl: string | null = null;
+    const API = import.meta.env.VITE_API_BASE ?? '/api';
+    const token = localStorage.getItem('as.token') ?? '';
+    setPdfState('loading');
+    fetch(`${API}/projects/${projectId}/survey-pdf`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((r) => {
+        if (r.status === 404) { setPdfState('missing'); throw new Error('missing'); }
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.blob();
+      })
+      .then((b) => {
+        if (!alive) { URL.revokeObjectURL(URL.createObjectURL(b)); return; }
+        objectUrl = URL.createObjectURL(b);
+        setPdfUrl(objectUrl);
+        setPdfState('ready');
+      })
+      .catch(() => { if (alive) setPdfState('error'); });
+    return () => {
+      alive = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [projectId]);
 
@@ -72,17 +99,27 @@ export function ReportPage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => window.open(`${API}/projects/${projectId}/survey-pdf`, '_blank')}
+              disabled={pdfState !== 'ready'}
+              onClick={() => pdfUrl && window.open(pdfUrl, '_blank')}
             >
               <Download size={13} />
               新窗口打开 / 下载
             </Button>
           </div>
-          <iframe
-            src={`${API}/projects/${projectId}/survey-pdf#view=FitH`}
-            className="h-[760px] w-full border-0 bg-black/5"
-            title="Survey PDF Preview"
-          />
+          {pdfState === 'loading' && (
+            <div className="flex h-[760px] items-center justify-center text-[13px] text-t3">PDF 加载中…</div>
+          )}
+          {pdfState === 'missing' && (
+            <div className="flex h-[760px] flex-col items-center justify-center gap-3 text-center">
+              <p className="text-[14px] text-t2">综述 PDF 尚未编译</p>
+              <p className="max-w-sm text-[12.5px] leading-5 text-t3">
+                到流水线页 W5 标签确认 W5-P4（编译综述 PDF）已完成——未安装 tectonic 时该阶段会跳过。
+              </p>
+            </div>
+          )}
+          {pdfState === 'ready' && pdfUrl && (
+            <iframe src={`${pdfUrl}#view=FitH`} className="h-[760px] w-full border-0 bg-black/5" title="Survey PDF Preview" />
+          )}
         </Card>
 
         {/* 审查轮次 */}
