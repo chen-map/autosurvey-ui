@@ -1,10 +1,13 @@
 """SQLite 连接 + 全表 schema（加密数据库）。"""
 from __future__ import annotations
 
+import os
 import sqlite3
 from pathlib import Path
 
 DB_PATH = Path(__file__).resolve().parents[2] / "autosurvey.db"
+# 用户数据分区基目录（单一事实源：api/main.py 与 api/auth.py 共用）
+WORKSPACE = Path(os.environ.get("AS_WORKSPACE", str(Path(__file__).resolve().parents[1] / "wm")))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (

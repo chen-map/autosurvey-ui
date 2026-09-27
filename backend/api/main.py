@@ -19,15 +19,14 @@ from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
-from db.database import get_db, init_db
+from db.database import get_db, init_db, WORKSPACE
 from db.crypto import encrypt, decrypt, mask_key
-from api.auth import router as auth_router, get_current_user
+from api.auth import router as auth_router, get_current_user, provision_user_partition
 from fastapi import Header
 from fastapi import Body
 import requests as _requests
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-WORKSPACE = Path(os.environ.get("AS_WORKSPACE", str(BACKEND_DIR / "wm")))
 RUNNER = BACKEND_DIR / "w1" / "runner.py"
 
 app = FastAPI(title="AutoSurvey Pipeline API", version="0.3.0")
@@ -48,6 +47,11 @@ def _seed_demo_user():
     conn.close()
     from db.database import _migrate_llm_provider
     _migrate_llm_provider()
+    # 存量用户分区补齐（注册即建分区机制上线前注册的老用户）
+    conn = get_db()
+    for u in conn.execute("SELECT id FROM users").fetchall():
+        provision_user_partition(u["id"])
+    conn.close()
     # 旧项目迁移：把文件系统里存在但 projects 表没有的项目归属到首个用户（demo）
     conn = get_db()
     first_uid = conn.execute("SELECT id FROM users ORDER BY id LIMIT 1").fetchone()

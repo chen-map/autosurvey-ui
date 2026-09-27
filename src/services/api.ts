@@ -166,6 +166,26 @@ export async function login(username: string, password: string): Promise<LoginRe
   return { ok: false, message: '账号或密码不正确' };
 }
 
+// ---- register（注册成功即自动登录） ----
+export async function register(username: string, password: string): Promise<LoginResult> {
+  if (!USE_MOCK) {
+    try {
+      const r = await fetch(`${API}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return { ok: false, message: d.detail ?? `注册失败 (${r.status})` };
+      return login(username, password); // 注册即建数据分区，随后自动登录
+    } catch {
+      return { ok: false, message: '后端不可达，请确认已启动 FastAPI' };
+    }
+  }
+  await delay(320);
+  return { ok: true, username, role: 'researcher' };
+}
+
 // ---- pipeline ----
 export async function startRun(projectId: string, workflow: 'w1' | 'w2' | 'w3' | 'w4' | 'w5' = 'w1'): Promise<void> {
   if (!USE_MOCK) {
