@@ -22,3 +22,5 @@ backend/wm/
 server.log
 uvicorn_*.log
 backend/server.log
+autosurvey.db-shm
+autosurvey.db-wal
