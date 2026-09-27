@@ -222,7 +222,7 @@ export function DirectionPage() {
 
   // ---- 新建/编辑表单 ----
   const openNew = () => setForm({ ...EMPTY_FORM });
-  const openEdit = (d: Direction) => setForm({ id: d.id, title: d.title, fields: [...d.fields], goal: d.goal });
+  const openEdit = (d: Direction) => setForm({ id: d.id, title: d.title, fields: Array.isArray(d.fields) ? [...d.fields] : [], goal: d.goal });
   const saveForm = () => {
     if (!form || !form.title.trim()) return;
     const now = new Date().toLocaleString();
@@ -289,7 +289,7 @@ export function DirectionPage() {
                     {activeId === d.id && <Badge variant="ok" withDot>默认预选</Badge>}
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-1">
-                    {d.fields.map((f) => <Badge key={f} variant="info">{f}</Badge>)}
+                    {(Array.isArray(d.fields) ? d.fields : []).map((f) => <Badge key={f} variant="info">{f}</Badge>)}
                   </div>
                   {d.goal && <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-t2">{d.goal}</p>}
                   <div className="mt-1.5 text-[11px] text-t3">更新于 {d.updatedAt}</div>

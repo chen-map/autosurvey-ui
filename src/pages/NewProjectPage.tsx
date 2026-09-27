@@ -313,7 +313,7 @@ export function NewProjectPage() {
                       onClick={() => {
                         // 整方向带入：标题 + 领域标签 + 研究目标（领域描述）
                         setTitle(d.title);
-                        setTags(d.fields);
+                        setTags(Array.isArray(d.fields) ? d.fields : []);
                         setDescription(d.goal ?? '');
                       }}
                       className={cn(

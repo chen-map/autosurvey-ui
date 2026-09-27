@@ -764,9 +764,9 @@ def list_projects(user: dict = Depends(_me)):
         wf_summaries[pid] = [
             _wf(pid, "W1", "语料库构建", "w1_state.json", 6),
             _wf(pid, "W2", "事实记忆(KG)", "w2_state.json", 4),
-            {"id": "W3", "name": "框架与RQ", "status": "pending", "progress": 0},
-            {"id": "W4", "name": "RQ证据", "status": "pending", "progress": 0},
-            {"id": "W5", "name": "综述写作", "status": "pending", "progress": 0},
+            _wf(pid, "W3", "框架与RQ", "w3_state.json", 7),
+            _wf(pid, "W4", "RQ证据", "w4_state.json", 4),
+            _wf(pid, "W5", "综述写作", "w5_state.json", 3),
         ]
 
     return [{
