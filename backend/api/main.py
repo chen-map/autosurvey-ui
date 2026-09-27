@@ -662,6 +662,60 @@ def get_rqs(pid: str, user: dict = Depends(_me)):
 
 
 
+@app.get("/api/projects/{pid}/report")
+def get_project_report(pid: str, user: dict = Depends(_me)):
+    """报告页：W3 大纲（OutlineNode 树）+ W3 两轮评审/W5 自审（ReviewRound）。"""
+    _own_project(pid, user)
+    ar = _wm(pid) / "analyze_report"
+    if not (ar / "survey_outline.json").exists():
+        raise HTTPException(404, f"W3 not run for {pid}（大纲缺失）")
+
+    outline_data = json.loads((ar / "survey_outline.json").read_text(encoding="utf-8"))
+    outline = []
+    for sec in outline_data.get("sections", []):
+        subs = []
+        for sub in sec.get("subsections", []):
+            subs.append({
+                "id": sub.get("subsection_id", ""),
+                "title": sub.get("subsection_title", ""),
+                "rq": sub.get("sub_rq", ""),
+                "papers": len(sub.get("paper_ids") or []),
+            })
+        outline.append({
+            "id": sec.get("section_id", ""),
+            "title": sec.get("title", ""),
+            "rq": sec.get("macro_rq", ""),
+            "papers": sum(x["papers"] for x in subs) or len(sec.get("paper_ids") or []),
+            "children": subs,
+        })
+
+    def _bullets(md_path: Path) -> list[str]:
+        out = []
+        try:
+            for line in md_path.read_text(encoding="utf-8").splitlines():
+                t = line.strip()
+                if t.startswith(("- ", "* ")) and len(t) > 4:
+                    out.append(t.lstrip("-* ").strip())
+        except OSError:
+            pass
+        return out[:12]
+
+    reviews = []
+    for i, name in enumerate(["review/main_round1.md", "review/main_round2.md", "WORKFLOW5_SELF_REVIEW.md"], 1):
+        f = _wm(pid) / "analyze_report" / name if "SELF" in name else ar / name
+        if not f.exists():
+            continue
+        text = f.read_text(encoding="utf-8")
+        verdict = "已完成"
+        for key in ("可交付", "需返工", "pass", "needs_revision", "No missing"):
+            if key in text:
+                verdict = key
+                break
+        reviews.append({"round": i, "date": text[:0] or "", "verdict": verdict, "improvements": _bullets(f)})
+
+    return {"outline": outline, "reviews": reviews}
+
+
 @app.get("/api/projects")
 def list_projects(user: dict = Depends(_me)):
     """以 projects 表为准（表驱动），目录扫描只作旧数据兜底。"""

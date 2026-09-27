@@ -298,8 +298,8 @@ export async function getRQBundle(projectId: string): Promise<RQBundle | null> {
   return RQ_BUNDLES[projectId] ?? null;
 }
 
-export async function getReport(): Promise<{ outline: OutlineNode[]; reviews: ReviewRound[] }> {
-  if (!USE_MOCK) return realFetch<{ outline: OutlineNode[]; reviews: ReviewRound[] }>('/projects/report');
+export async function getReport(projectId: string): Promise<{ outline: OutlineNode[]; reviews: ReviewRound[] }> {
+  if (!USE_MOCK) return realFetch<{ outline: OutlineNode[]; reviews: ReviewRound[] }>(`/projects/${projectId}/report`);
   await delay();
   return { outline: OUTLINE, reviews: REVIEW_ROUNDS };
 }

@@ -41,7 +41,7 @@ export function ReportPage() {
 
   useEffect(() => {
     let alive = true;
-    getReport().then((d) => alive && setData(d));
+    getReport(projectId).then((d) => alive && setData(d)).catch(() => alive && setData({ outline: [], reviews: [] }));
     return () => {
       alive = false;
     };
