@@ -14,3 +14,5 @@ backend/out/
 backend/payload.json
 autosurvey.db
 .master_key
+backend/tools/tectonic.exe
+backend/tools/tectonic.zip
