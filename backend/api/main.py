@@ -270,18 +270,27 @@ def retry_phase(pid: str, phase_id: str, workflow: str = "w1", user: dict = Depe
 
 
 @app.get("/api/projects/{pid}/corpus")
-def get_corpus(pid: str, user: dict = Depends(_me)):
+def get_corpus(pid: str, user: dict = Depends(_me), page: int = 1, page_size: int = 50,
+               status: str = ""):
     _own_project(pid, user)
-    """语料库页：W1 下载产物（corpus_papers 表）+ PRISMA 漏斗计数。
+    """语料库页：分页返回（大语料不全量加载）；漏斗计数走 SQL 聚合。
 
-    数据来源：W1-P6 完成后 corpus_ingest.py 落库；漏斗前两级从 W1 中间产物 CSV 计数。
+    page 从 1 起；status 可选过滤（downloaded/failed/no_doi）。
     """
     if _read_config(pid) is None:
         raise HTTPException(404, f"project not found: {pid}")
     init_db()
+    page, page_size = max(1, page), min(max(1, page_size), 200)
+    where = "project_id=?" + (" AND status=?" if status else "")
+    args = (pid, status) if status else (pid,)
+
     conn = get_db()
+    total = conn.execute(f"SELECT COUNT(*) c FROM corpus_papers WHERE {where}", args).fetchone()["c"]
     rows = [dict(r) for r in conn.execute(
-        "SELECT * FROM corpus_papers WHERE project_id=? ORDER BY id", (pid,)).fetchall()]
+        f"SELECT id, doi, title, venue, year, status, pdf_path FROM corpus_papers WHERE {where} ORDER BY id LIMIT ? OFFSET ?",
+        args + (page_size, (page - 1) * page_size)).fetchall()]
+    status_counts = {r["status"]: r["c"] for r in conn.execute(
+        f"SELECT status, COUNT(*) c FROM corpus_papers WHERE {where} GROUP BY status", args).fetchall()}
     conn.close()
 
     papers = [{
@@ -292,7 +301,7 @@ def get_corpus(pid: str, user: dict = Depends(_me)):
         "year": int(r["year"] or 0),
         "citations": 0,
         "stage": "已纳入" if r["status"] == "downloaded" else "可获取性",
-        "abstract": r["abstract"],
+        "abstract": "",
         "status": r["status"],
         "pdfPath": r["pdf_path"],
         "card": {"problems": [], "methods": [], "datasets": [], "metrics": [], "limitations": [], "assumptions": []},
@@ -310,15 +319,15 @@ def get_corpus(pid: str, user: dict = Depends(_me)):
          "note": "W1-P3 归一去重后候选"},
         {"stage": "筛选纳入", "count": _csv_count("retrieval_workspace/screening/screened_records.csv"),
          "note": "W1-P4 筛选通过"},
-        {"stage": "下载就绪", "count": len(rows), "note": "DOI 锚定 + 无 DOI 分流合计"},
-        {"stage": "成功下载", "count": sum(1 for r in rows if r["status"] == "downloaded"),
+        {"stage": "下载就绪", "count": total, "note": "DOI 锚定 + 无 DOI 分流合计"},
+        {"stage": "成功下载", "count": status_counts.get("downloaded", 0),
          "note": "PDF 落盘（magic bytes 校验通过）"},
-        {"stage": "下载失败", "count": sum(1 for r in rows if r["status"] == "failed"),
+        {"stage": "下载失败", "count": status_counts.get("failed", 0),
          "note": "占位 txt 含手动下载指引"},
-        {"stage": "无 DOI 分流", "count": sum(1 for r in rows if r["status"] == "no_doi"),
+        {"stage": "无 DOI 分流", "count": status_counts.get("no_doi", 0),
          "note": "不进下载器，走人工/本地合并"},
     ]
-    return {"papers": papers, "funnel": funnel}
+    return {"papers": papers, "funnel": funnel, "total": total, "page": page, "pageSize": page_size}
 
 
 

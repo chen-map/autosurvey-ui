@@ -20,27 +20,29 @@ export function CorpusPage() {
   const { projectId = '' } = useParams();
   const { items: libItems, toggleSave } = useLibrary();
   const savedIdx = useMemo(() => new Set(libItems.map((i) => i.paperIdx)), [libItems]);
-  const [data, setData] = useState<{ papers: PaperRecord[]; funnel: PrismaLevel[] } | null>(null);
+  const [data, setData] = useState<{ papers: PaperRecord[]; funnel: PrismaLevel[]; total: number; page: number; pageSize: number } | null>(null);
   const [query, setQuery] = useState('');
   const [stage, setStage] = useState<'ALL' | ScreenStage>('ALL');
+  const [page, setPage] = useState(1);
+  const [, setReload] = useState(0);
   const [active, setActive] = useState<PaperRecord | null>(null);
 
   useEffect(() => {
     let alive = true;
-    getCorpus(projectId).then((d) => alive && setData(d));
+    // 后端分页：stage 过滤映射到 status 参数；query 仍在前端当前页内过滤
+    const status = stage === 'ALL' ? '' : stage === '已纳入' ? 'downloaded' : '';
+    getCorpus(projectId, { page, pageSize: 50, status }).then((d) => alive && setData(d));
     return () => {
       alive = false;
     };
-  }, [projectId]);
+  }, [projectId, page, stage, reload]);
 
   const shown = useMemo(() => {
-    const list = (data?.papers ?? []).filter(
-      (p) =>
-        (stage === 'ALL' || p.stage === stage) &&
-        (p.title.toLowerCase().includes(query.toLowerCase()) || p.authors.toLowerCase().includes(query.toLowerCase())),
+    const q = query.toLowerCase();
+    return (data?.papers ?? []).filter(
+      (p) => p.title.toLowerCase().includes(q) || p.authors.toLowerCase().includes(q),
     );
-    return list;
-  }, [data, query, stage]);
+  }, [data, query]);
 
   if (!data) return <div className="py-16 text-center text-[13px] text-t3">加载中…</div>;
   const max = Math.max(...data.funnel.map((f) => f.count));
@@ -137,8 +139,31 @@ export function CorpusPage() {
               )}
             </tbody>
           </table>
-          <div className="px-4 py-2.5 text-[12px] text-t3">
-            Showing {shown.length} out of {data.papers.length} papers
+          <div className="flex items-center justify-between px-4 py-2.5 text-[12px] text-t3">
+            <span>
+              第 {data.page} 页 · 本页 {shown.length} 篇 · 共 {data.total} 篇
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={data.page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                上一页
+              </Button>
+              <span className="tabular-nums">
+                {data.page} / {Math.max(1, Math.ceil(data.total / data.pageSize))}
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={data.page >= Math.ceil(data.total / data.pageSize)}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                下一页
+              </Button>
+            </div>
           </div>
         </Card>
       </div>

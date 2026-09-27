@@ -277,10 +277,19 @@ export async function getKg(projectId: string): Promise<KgGraphData> {
   return MOCK_KG_GRAPH;
 }
 
-export async function getCorpus(projectId: string): Promise<{ papers: PaperRecord[]; funnel: PrismaLevel[] }> {
-  if (!USE_MOCK) return realFetch<{ papers: PaperRecord[]; funnel: PrismaLevel[] }>(`/projects/${projectId}/corpus`);
+export async function getCorpus(
+  projectId: string,
+  opts: { page?: number; pageSize?: number; status?: string } = {},
+): Promise<{ papers: PaperRecord[]; funnel: PrismaLevel[]; total: number; page: number; pageSize: number }> {
+  if (!USE_MOCK) {
+    const q = new URLSearchParams();
+    if (opts.page) q.set('page', String(opts.page));
+    if (opts.pageSize) q.set('page_size', String(opts.pageSize));
+    if (opts.status) q.set('status', opts.status);
+    return realFetch(`/projects/${projectId}/corpus?${q.toString()}`);
+  }
   await delay();
-  return { papers: PAPERS, funnel: PRISMA };
+  return { papers: PAPERS, funnel: PRISMA, total: PAPERS.length, page: 1, pageSize: PAPERS.length };
 }
 
 export async function getRQBundle(projectId: string): Promise<RQBundle | null> {
