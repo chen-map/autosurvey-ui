@@ -1,12 +1,16 @@
 import type { WorkflowSummary } from '@/types';
 import { cn } from '@/lib/utils';
 
+// completed/draft：后端 _wf 对项目卡摘要用的状态词（区别于流水线页的 done/pending）
 const statusColor: Record<string, string> = {
   done: 'var(--ok)',
+  completed: 'var(--ok)',
   running: 'var(--run)',
   checkpoint: 'var(--warn-fg)',
+  skipped: 'var(--warn-fg)',
   failed: 'var(--danger)',
   pending: 'var(--border)',
+  draft: 'var(--border)',
 };
 
 // 5W 分段进度（流水线监控的迷你版；完整版 B3 在里程碑 4）
