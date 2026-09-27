@@ -24,7 +24,9 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build
+      # Pages 是公开演示站（无后端），强制 mock 模式——覆盖 .env.production 的 VITE_USE_MOCK=0
+      # （真实系统部署在服务器，见 docs；勿删此 env，否则演示站全站"后端不可达"）
+      - run: VITE_USE_MOCK=1 npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
