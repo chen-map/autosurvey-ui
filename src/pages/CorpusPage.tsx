@@ -24,8 +24,7 @@ export function CorpusPage() {
   const [query, setQuery] = useState('');
   const [stage, setStage] = useState<'ALL' | ScreenStage>('ALL');
   const [page, setPage] = useState(1);
-  const [, setReload] = useState(0);
-  const [active, setActive] = useState<PaperRecord | null>(null);
+    const [active, setActive] = useState<PaperRecord | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -35,7 +34,7 @@ export function CorpusPage() {
     return () => {
       alive = false;
     };
-  }, [projectId, page, stage, reload]);
+  }, [projectId, page, stage]);
 
   const shown = useMemo(() => {
     const q = query.toLowerCase();
