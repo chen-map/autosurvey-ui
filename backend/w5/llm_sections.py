@@ -136,11 +136,11 @@ def main() -> int:
                     continue
                 cands = [bk for bk in bib_keys if bk.startswith(k)]
                 out_keys.append(cands[0] if len(cands) == 1 else k)
-            return "\cite{" + ",".join(out_keys) + "}"
+            return "\\cite{" + ",".join(out_keys) + "}"
 
         for sec in manifest["sections"]:
             f = sections_dir / sec
-            f.write_text(re.sub(r"\cite\{([^}]*)\}", expand, f.read_text(encoding="utf-8")), encoding="utf-8")
+            f.write_text(re.sub(r"\\cite\{([^}]*)\}", expand, f.read_text(encoding="utf-8")), encoding="utf-8")
 
     Path(args.out_manifest).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out_manifest).write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
