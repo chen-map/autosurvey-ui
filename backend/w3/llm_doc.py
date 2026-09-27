@@ -168,13 +168,19 @@ def main() -> int:
     print(f"[llm_doc] task={args.task} model={model} base={base_url}", flush=True)
     content = chat(base_url, api_key, model, system, user)
     written = write_files(out_dir, content)
-    # 兜底：review 的 LLM 偶发忽略 FILE 分节（输出落 main.md），综合报告必检，拷贝补位
-    if args.task == "review" and "main.md" in written:
-        main_doc = out_dir / "main.md"
+    # 兜底：review 输出常被截断（3 份只写出部分）——综合报告必检，多级汇编补位
+    if args.task == "review" and not (out_dir / "survey_research_report.md").exists():
         report = out_dir / "survey_research_report.md"
-        if not report.exists():
-            report.write_text(main_doc.read_text(encoding="utf-8"), encoding="utf-8")
-            written.append("survey_research_report.md（自 main.md 兜底）")
+        parts: list[str] = []
+        for name in ("review/main_round1.md", "review/main_round2.md", "main.md"):
+            f = out_dir / name
+            if f.exists():
+                parts.append(f.read_text(encoding="utf-8"))
+        if parts:
+            header = "# 综合报告（由可用审查产物汇编——单次生成被截断的降级输出）\n\n"
+            sep = "\n\n---\n\n"
+            report.write_text(header + sep.join(parts), encoding="utf-8")
+            written.append("survey_research_report.md（汇编兜底）")
     print(f"[llm_doc] 产出: {written}", flush=True)
     return 0
 
