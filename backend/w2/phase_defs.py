@@ -60,6 +60,10 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "id": "W2-P2",
             "name": "候选对象筛选",
             "optional": True,  # 主参考：可选过滤；全量进 KG 可跳过
+            "degrade": {
+                "note": "LLM 候选筛选失败降级：P1 全量结构化结果直接进 KG（主参考：全量进 KG 可跳过筛选）",
+                "copy": [["knowledge_graph/structured_papers.jsonl", "knowledge_graph/candidate_structured_papers.jsonl"]],
+            },
             "steps": [
                 {"script": LLM_WRAP,
                  "args": ["--use-case", "w2",
