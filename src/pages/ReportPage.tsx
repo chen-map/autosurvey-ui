@@ -37,6 +37,7 @@ function OutlineTree({ nodes, depth = 0, rqHref }: { nodes: OutlineNode[]; depth
 
 export function ReportPage() {
   const { projectId = '' } = useParams();
+  const API = import.meta.env.VITE_API_BASE ?? '/api';
   const [data, setData] = useState<{ outline: OutlineNode[]; reviews: { round: number; date: string; verdict: string; improvements: string[] }[] } | null>(null);
 
   useEffect(() => {
@@ -64,37 +65,24 @@ export function ReportPage() {
       </Card>
 
       <div className="space-y-5">
-        {/* PDF 预览（mock：合成论文首页） */}
+        {/* 综述论文 PDF 预览（W5-P4 tectonic 编译产物） */}
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-line/60 px-4 py-2.5">
-            <span className="text-[13px] font-medium">main.pdf 预览</span>
-            <Button variant="secondary" size="sm">
+            <span className="text-[13px] font-medium">综述论文 main.pdf（真实编译产物）</span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => window.open(`${API}/projects/${projectId}/survey-pdf`, '_blank')}
+            >
               <Download size={13} />
-              下载 PDF
+              新窗口打开 / 下载
             </Button>
           </div>
-          <div className="flex justify-center bg-black/5 p-6">
-            {/* 合成论文首页（真实 PDF 由 W5 产出后经 /report/pdf 提供） */}
-            <div className="w-full max-w-[520px] rounded bg-card p-8 shadow-s2">
-              <div className="text-center text-[17px] font-bold leading-6">Interpretability of Graph Neural Networks: A Survey</div>
-              <div className="mt-2 text-center text-[11px] text-t3">Anonymous · AutoSurvey v3 · 21 pages</div>
-              <div className="mt-5 text-[12px] font-semibold">Abstract</div>
-              <div className="mt-1 space-y-1.5">
-                {[92, 100, 96, 88, 97, 64].map((w, i) => (
-                  <div key={i} className="h-2 rounded bg-black/10" style={{ width: `${w}%` }} />
-                ))}
-              </div>
-              <div className="mt-4 text-[12px] font-semibold">1 Introduction</div>
-              <div className="mt-1 space-y-1.5">
-                {[100, 94, 98, 70].map((w, i) => (
-                  <div key={i} className="h-2 rounded bg-black/10" style={{ width: `${w}%` }} />
-                ))}
-              </div>
-              <div className="mt-4 rounded border border-dashed border-line px-3 py-2 text-center text-[11px] text-t3">
-                Fig. 1 Taxonomy overview（W5-P2 图表能力待后端增强）
-              </div>
-            </div>
-          </div>
+          <iframe
+            src={`${API}/projects/${projectId}/survey-pdf#view=FitH`}
+            className="h-[760px] w-full border-0 bg-black/5"
+            title="Survey PDF Preview"
+          />
         </Card>
 
         {/* 审查轮次 */}

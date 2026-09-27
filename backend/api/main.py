@@ -662,6 +662,17 @@ def get_rqs(pid: str, user: dict = Depends(_me)):
 
 
 
+@app.get("/api/projects/{pid}/survey-pdf")
+def get_survey_pdf(pid: str, user: dict = Depends(_me)):
+    """W5 综述论文 PDF 预览（浏览器原生查看器）。"""
+    _own_project(pid, user)
+    pdf = _wm(pid) / "survey_paper" / "main.pdf"
+    if not pdf.exists():
+        raise HTTPException(404, f"survey PDF not compiled for {pid}")
+    from fastapi.responses import FileResponse
+    return FileResponse(str(pdf), media_type="application/pdf", filename=f"{pid}-survey.pdf")
+
+
 @app.get("/api/projects/{pid}/report")
 def get_project_report(pid: str, user: dict = Depends(_me)):
     """报告页：W3 大纲（OutlineNode 树）+ W3 两轮评审/W5 自审（ReviewRound）。"""
