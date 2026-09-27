@@ -1,7 +1,7 @@
 // 业务数据类型（API 契约的一部分，见 docs/requirements.md 数据需求）
 import type { ProjectStatus } from './index';
 
-export type PhaseStatus = 'pending' | 'running' | 'done' | 'failed' | 'checkpoint';
+export type PhaseStatus = 'pending' | 'running' | 'done' | 'failed' | 'checkpoint' | 'skipped';
 
 export interface PhaseState {
   id: string; // 如 W2-P3

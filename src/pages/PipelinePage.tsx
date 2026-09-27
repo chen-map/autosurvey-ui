@@ -50,7 +50,6 @@ export function PipelinePage() {
   const [notStarted, setNotStarted] = useState(false);
   const [starting, setStarting] = useState(false);
   const [logPhase, setLogPhase] = useState('ALL');
-  const [reruns, setReruns] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let alive = true;
@@ -142,7 +141,7 @@ export function PipelinePage() {
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
                   {w.phases.map((p) => (
-                    <PhaseChip key={p.id} phase={p} rerunning={reruns[p.id]} onRerun={() => setReruns((s) => ({ ...s, [p.id]: true }))} />
+                    <PhaseChip key={p.id} phase={p} projectId={projectId} workflow={workflow} />
                   ))}
                 </div>
               </Card>
@@ -186,9 +185,21 @@ export function PipelinePage() {
   );
 }
 
-function PhaseChip({ phase, rerunning, onRerun }: { phase: PhaseState; rerunning?: boolean; onRerun: () => void }) {
+function PhaseChip({ phase, projectId, workflow, onRetried }: { phase: PhaseState; projectId: string; workflow: string; rerunning?: boolean; onRetried?: () => void }) {
   const st = statusStyle[phase.status] ?? statusStyle.pending;
-  const failedLike = phase.status === 'failed' || phase.status === 'checkpoint';
+  const failedLike = phase.status === 'failed' || phase.status === 'checkpoint' || phase.status === 'skipped';
+  const [retrying, setRetrying] = useState(false);
+  const retry = async () => {
+    setRetrying(true);
+    try {
+      const API = import.meta.env.VITE_API_BASE ?? '/api';
+      const token = localStorage.getItem('as.token') ?? '';
+      await fetch(`${API}/projects/${projectId}/phases/${phase.id}/retry?workflow=${workflow}`, {
+        method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      onRetried?.();
+    } finally { setRetrying(false); }
+  };
   return (
     <div className={cn(
       'group flex items-center justify-between gap-2 rounded-lg border border-line/60 px-3 py-2 transition-colors',
@@ -206,8 +217,8 @@ function PhaseChip({ phase, rerunning, onRerun }: { phase: PhaseState; rerunning
         </div>
       </div>
       {failedLike && (
-        <Button variant="ghost" size="sm" className="shrink-0 px-2" title="从 checkpoint 重跑" onClick={onRerun}>
-          <RotateCcw size={13} className={rerunning ? 'animate-spin' : ''} />
+        <Button variant="ghost" size="sm" className="shrink-0 px-2" title="重跑该阶段（从 checkpoint 断点续传）" onClick={() => void retry()} disabled={retrying}>
+          <RotateCcw size={13} className={retrying ? 'animate-spin' : ''} />
         </Button>
       )}
     </div>
