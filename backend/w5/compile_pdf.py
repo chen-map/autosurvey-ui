@@ -29,6 +29,7 @@ def main() -> int:
     args = ap.parse_args()
 
     paper_dir = Path(args.paper_dir)
+    sys.path.insert(0, str(HERE))
     tex = paper_dir / "main.tex"
     if not tex.exists():
         print(f"[compile_pdf] {tex} 不存在，跳过")
@@ -43,6 +44,13 @@ def main() -> int:
     if pdf.exists() and pdf.stat().st_mtime > tex.stat().st_mtime:
         print(f"[compile_pdf] main.pdf 已是最新（{pdf.stat().st_size // 1024}KB），跳过")
         return 0
+
+    # 真实数据统计图（年份/KG 分布）替换流水线自评图
+    try:
+        import real_figures  # noqa: PLC0415
+        real_figures.main()
+    except Exception as exc:  # matplotlib 缺失等 → 跳过图，继续编译
+        print(f"[compile_pdf] real_figures 跳过: {exc}", flush=True)
 
     print(f"[compile_pdf] 编译 {tex} → main.pdf（首次运行会联网拉取宏包）", flush=True)
     try:
