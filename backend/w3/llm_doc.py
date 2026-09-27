@@ -127,20 +127,46 @@ def main() -> int:
                 f"KG 规模：{stats}\n\n== gap_summary ==\n{gap}\n\n== 相关综述报告（节选）==\n{related}\n\n"
                 f"== KG 领域摘要 ==\n{kg_summary}")
     else:  # review
+        # 治本改造：三份文件三次独立调用——单次输出预算（~8K token）装不下三份评审，
+        # 必然截断（实测 P7 只写出 round1）。每次调用输出量控制在预算内。
         files = ["gap_summary.md", "design_report.md", "rq_query_report.md", "survey_outline.md"]
         ctx = "\n\n".join(f"== {f} ==\n{read_text(out_dir / f, 5000)}" for f in files)
-        system = (
-            "你是综述设计评审专家（Report Review）。对以上 Workflow 3 设计包做两轮独立审查："
-            "第一轮聚焦一致性与证据充分性（gap↔RQ 对齐、answerability 弱项是否已处理、大纲与证据结构一致），"
-            "第二轮聚焦可用性（Workflow 4/5 能否直接消费）。每轮给出问题清单与处置建议；"
-            "最后汇总为最终综合报告（结论：可交付 / 需返工 + 理由）。\n"
-            "输出三份 markdown（=== FILE: === 分节）：\n"
-            "=== FILE: analyze_report/review/main_round1.md ===\n"
-            "=== FILE: analyze_report/review/main_round2.md ===\n"
-            "=== FILE: analyze_report/survey_research_report.md ===\n"
-            "全部用中文。"
-        )
-        user = f"综述主题：{args.domain or '（见文档）'}\n\n{ctx}"
+        domain_line = f"综述主题：{args.domain or '（见文档）'}"
+
+        review_dir = out_dir / "review"
+        review_dir.mkdir(parents=True, exist_ok=True)
+        written: list[str] = []
+
+        round1 = chat(base_url, api_key, model,
+            "你是综述设计评审专家，执行第一轮审查：聚焦一致性与证据充分性"
+            "（gap↔RQ 对齐、answerability 弱项是否已处理、大纲与证据结构一致）。"
+            "输出问题清单与处置建议，中文 markdown，直接输出正文。",
+            f"{domain_line}\n\n{ctx}", max_tokens=3500)
+        (review_dir / "main_round1.md").write_text(round1.strip() + "\n", encoding="utf-8")
+        written.append("review/main_round1.md")
+        print(f"[llm_doc] review round1 完成（{len(round1)} 字符）", flush=True)
+
+        round2 = chat(base_url, api_key, model,
+            "你是综述设计评审专家，执行第二轮独立审查：聚焦可用性——Workflow 4/5 能否直接消费"
+            "这些设计产物（证据矩阵完整性、工作记忆接口、大纲可执行性）。"
+            "输出问题清单与处置建议，中文 markdown，直接输出正文。",
+            f"{domain_line}\n\n第一轮审查结论（供参考，避免重复）：\n{round1[:3000]}\n\n{ctx}",
+            max_tokens=3500)
+        (review_dir / "main_round2.md").write_text(round2.strip() + "\n", encoding="utf-8")
+        written.append("review/main_round2.md")
+        print(f"[llm_doc] review round2 完成（{len(round2)} 字符）", flush=True)
+
+        report = chat(base_url, api_key, model,
+            "你是综述设计评审组长，基于两轮独立审查产出最终综合报告：结论（可交付 / 需返工）+ 理由 + "
+            "关键遗留问题清单。中文 markdown，直接输出正文。",
+            f"{domain_line}\n\n== 第一轮审查 ==\n{round1[:3000]}\n\n== 第二轮审查 ==\n{round2[:3000]}",
+            max_tokens=2500)
+        (out_dir / "survey_research_report.md").write_text(report.strip() + "\n", encoding="utf-8")
+        written.append("survey_research_report.md")
+        print(f"[llm_doc] review 综合报告完成（{len(report)} 字符）", flush=True)
+
+        print(f"[llm_doc] 产出: {written}", flush=True)
+        return 0
 
     if args.task == "revise":
         # 反思修订：单文件直写（不拆分），只改被拦截的 Sub-RQ
