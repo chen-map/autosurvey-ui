@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/store/auth';
 import { login as apiLogin, register as apiRegister } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 type Mode = 'login' | 'register';
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export function LoginPage() {
   const { user, login } = useAuth();
@@ -14,6 +16,7 @@ export function LoginPage() {
   const [username, setUsername] = useState('demo');
   const [password, setPassword] = useState('123456');
   const [confirm, setConfirm] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -27,6 +30,7 @@ export function LoginPage() {
       setUsername('');
       setPassword('');
       setConfirm('');
+      setEmail('');
     } else {
       setUsername('demo');
       setPassword('123456');
@@ -53,12 +57,16 @@ export function LoginPage() {
         setError('两次输入的密码不一致');
         return;
       }
+      if (!EMAIL_RE.test(email.trim())) {
+        setError('请输入有效的邮箱地址（用于找回密码）');
+        return;
+      }
     }
     setLoading(true);
     const res =
       mode === 'login'
         ? await apiLogin(username, password)
-        : await apiRegister(username.trim(), password);
+        : await apiRegister(username.trim(), password, email.trim());
     setLoading(false);
     if (res.ok) {
       login(username.trim());
@@ -103,7 +111,7 @@ export function LoginPage() {
         )}
         {mode === 'register' && (
           <div className="mt-4 rounded-lg bg-info px-3 py-2 text-[13px] leading-5 text-info-fg">
-            注册后自动开通你的独立数据分区：项目、语料、密钥、知识库全部按账号隔离。
+            注册后自动开通你的独立数据分区：项目、语料、密钥、知识库全部按账号隔离。邮箱用于找回密码。
           </div>
         )}
 
@@ -121,6 +129,22 @@ export function LoginPage() {
               hasError={!!error}
             />
           </div>
+          {mode === 'register' && (
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-[13px] text-t2">
+                邮箱 <span className="text-danger">*</span>
+              </label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="用于找回密码"
+                autoComplete="email"
+                hasError={!!error}
+              />
+            </div>
+          )}
           <div>
             <label htmlFor="password" className="mb-1.5 block text-[13px] text-t2">
               密码 <span className="text-danger">*</span>
@@ -162,6 +186,11 @@ export function LoginPage() {
                 ? '登录'
                 : '注册并进入'}
           </Button>
+          {mode === 'login' && (
+            <Link to="/forgot" className="block text-center text-[13px] text-t3 hover:text-t2">
+              忘记密码？
+            </Link>
+          )}
         </form>
       </div>
     </div>

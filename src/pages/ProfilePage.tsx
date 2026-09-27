@@ -4,7 +4,7 @@ import { KeyRound, Library, Compass, Eye, EyeOff, Check, ArrowUpRight, Bot } fro
 import { useAuth } from '@/store/auth';
 import { readLlmConfig, saveLlmConfig, type LlmConfig } from '@/lib/llm';
 import { syncKeysFromBackend, pushKeyToBackend } from '@/lib/apikeys';
-import { USE_MOCK } from '@/services/api';
+import { USE_MOCK, getProfile, putEmail } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -35,6 +35,28 @@ export function ProfilePage() {
   const [show, setShow] = useState<Record<string, boolean>>({});
   const [savedTip, setSavedTip] = useState('');
   const [keyErr, setKeyErr] = useState('');
+  // 绑定邮箱（找回密码通道）
+  const [email, setEmail] = useState('');
+  const [emailSaved, setEmailSaved] = useState(false);
+  const [emailErr, setEmailErr] = useState('');
+
+  useEffect(() => {
+    if (USE_MOCK) return;
+    getProfile().then((p) => setEmail(p.email ?? '')).catch(() => {});
+  }, []);
+
+  const saveEmail = async () => {
+    setEmailErr('');
+    setEmailSaved(false);
+    const r = await putEmail(email.trim());
+    if (r.ok) {
+      setEmail(r.email ?? email.trim());
+      setEmailSaved(true);
+      setTimeout(() => setEmailSaved(false), 2000);
+    } else {
+      setEmailErr(r.message ?? '保存失败');
+    }
+  };
 
   const { fields, goal }: { fields: string[]; goal: string } = useMemo(() => {
     try {
@@ -143,6 +165,32 @@ export function ProfilePage() {
             <Badge variant="info">管理员</Badge>
           </div>
           <div className="mt-0.5 text-[12px] text-t3">昵称、头像编辑将在后端账号体系接入后开放</div>
+        </div>
+      </Card>
+
+      {/* 绑定邮箱（找回密码通道） */}
+      <Card className="p-5">
+        <div className="flex items-center gap-2 text-[14px] font-medium">
+          绑定邮箱
+          <Badge variant={email ? 'ok' : 'warn'}>{email ? '已绑定' : '未绑定'}</Badge>
+        </div>
+        <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
+          忘记密码时，重置链接发送到这个邮箱。注册时填过则无需修改；老账号请在此补填。
+        </p>
+        {emailErr && (
+          <div className="mt-3 rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-[12.5px] text-danger">{emailErr}</div>
+        )}
+        <div className="mt-3 flex items-center gap-2">
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@example.com"
+            className="max-w-[320px]"
+          />
+          <Button variant="ghost" onClick={saveEmail} disabled={USE_MOCK}>
+            {emailSaved ? '已保存 ✓' : '保存'}
+          </Button>
         </div>
       </Card>
 

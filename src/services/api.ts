@@ -167,13 +167,13 @@ export async function login(username: string, password: string): Promise<LoginRe
 }
 
 // ---- register（注册成功即自动登录） ----
-export async function register(username: string, password: string): Promise<LoginResult> {
+export async function register(username: string, password: string, email: string): Promise<LoginResult> {
   if (!USE_MOCK) {
     try {
       const r = await fetch(`${API}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, email }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) return { ok: false, message: d.detail ?? `注册失败 (${r.status})` };
@@ -184,6 +184,66 @@ export async function register(username: string, password: string): Promise<Logi
   }
   await delay(320);
   return { ok: true, username, role: 'researcher' };
+}
+
+// ---- 忘记密码 / 重置密码 ----
+export async function forgotPassword(username: string): Promise<{ ok: boolean; message?: string }> {
+  if (!USE_MOCK) {
+    try {
+      const r = await fetch(`${API}/auth/forgot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      });
+      const d = await r.json().catch(() => ({}));
+      return { ok: r.ok, message: d.message ?? d.detail };
+    } catch {
+      return { ok: false, message: '后端不可达，请确认已启动 FastAPI' };
+    }
+  }
+  await delay();
+  return { ok: true, message: '（演示模式）重置链接已"发送"' };
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<{ ok: boolean; message?: string }> {
+  if (!USE_MOCK) {
+    try {
+      const r = await fetch(`${API}/auth/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, new_password: newPassword }),
+      });
+      const d = await r.json().catch(() => ({}));
+      return { ok: r.ok, message: d.message ?? d.detail };
+    } catch {
+      return { ok: false, message: '后端不可达，请确认已启动 FastAPI' };
+    }
+  }
+  await delay();
+  return { ok: true, message: '（演示模式）密码已重置' };
+}
+
+// ---- 绑定邮箱（找回密码通道；存量用户在个人中心补填） ----
+export async function getProfile(): Promise<{ username: string; email: string }> {
+  if (!USE_MOCK) return realFetch('/me/profile');
+  await delay();
+  return { username: 'demo', email: '' };
+}
+
+export async function putEmail(email: string): Promise<{ ok: boolean; email?: string; message?: string }> {
+  if (!USE_MOCK) {
+    try {
+      const d = await realFetch<{ ok: boolean; email: string }>('/me/email', {
+        method: 'PUT',
+        body: JSON.stringify({ email }),
+      });
+      return { ok: true, email: d.email };
+    } catch (e) {
+      return { ok: false, message: e instanceof Error ? e.message : String(e) };
+    }
+  }
+  await delay();
+  return { ok: true, email };
 }
 
 // ---- pipeline ----

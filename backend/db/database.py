@@ -112,7 +112,29 @@ CREATE TABLE IF NOT EXISTS user_kv (
     updated_at TEXT DEFAULT (datetime('now')),
     UNIQUE(user_id, k)
 );
+
+-- 找回密码：一次性令牌（只存 SHA256 哈希，明文 token 仅出现在发信内容里）
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+);
 """
+
+# 列迁移（幂等）：存量库补新列
+_MIGRATIONS = [
+    ("users", "email", "ALTER TABLE users ADD COLUMN email TEXT DEFAULT ''"),
+]
+
+
+def _run_migrations(conn: sqlite3.Connection) -> None:
+    for table, col, ddl in _MIGRATIONS:
+        cols = {d[1] for d in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+        if col not in cols:
+            conn.execute(ddl)
 
 
 def get_db() -> sqlite3.Connection:
@@ -129,6 +151,7 @@ def init_db():
     """初始化数据库表（幂等）。"""
     conn = get_db()
     conn.executescript(SCHEMA)
+    _run_migrations(conn)
     conn.commit()
     conn.close()
 

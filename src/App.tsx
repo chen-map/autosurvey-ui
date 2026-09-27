@@ -18,6 +18,8 @@ import { KgPage } from '@/pages/KgPage';
 import { KnowledgeBasePage } from '@/pages/KnowledgeBasePage';
 import { DirectionPage } from '@/pages/DirectionPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -56,6 +58,8 @@ export default function App() {
       <ErrorBoundary>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot" element={<ForgotPasswordPage />} />
+        <Route path="/reset" element={<ResetPasswordPage />} />
         <Route
           element={
             <RequireAuth>

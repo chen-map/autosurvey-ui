@@ -365,6 +365,37 @@ def get_corpus(pid: str, user: dict = Depends(_me), page: int = 1, page_size: in
 
 # ---- 个人 API Key（Fernet 加密 at rest，接口只回掩码） ----
 
+class EmailIn(BaseModel):
+    email: str
+
+
+@app.get("/api/me/profile")
+def get_profile(user: dict = Depends(_me)):
+    """个人资料：用户名 + 绑定邮箱（找回密码通道）。"""
+    conn = get_db()
+    row = conn.execute("SELECT username, email FROM users WHERE id=?", (user["user_id"],)).fetchone()
+    conn.close()
+    return {"username": row["username"], "email": row["email"] or "" if row else ""}
+
+
+@app.put("/api/me/email")
+def put_email(body: EmailIn, user: dict = Depends(_me)):
+    """补填/更换绑定邮箱（存量注册无邮箱的用户在此补，忘密码靠它）。"""
+    from api.auth import _valid_email
+    email = body.email.strip().lower()
+    if not _valid_email(email):
+        raise HTTPException(400, "邮箱格式不正确")
+    conn = get_db()
+    dup = conn.execute("SELECT 1 FROM users WHERE email=? AND id<>?", (email, user["user_id"])).fetchone()
+    if dup:
+        conn.close()
+        raise HTTPException(409, "该邮箱已被其他账号绑定")
+    conn.execute("UPDATE users SET email=? WHERE id=?", (email, user["user_id"]))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "email": email}
+
+
 class ApiKeyIn(BaseModel):
     platform: str
     key: str
