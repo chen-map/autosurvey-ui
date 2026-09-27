@@ -16,3 +16,9 @@ autosurvey.db
 .master_key
 backend/tools/tectonic.exe
 backend/tools/tectonic.zip
+
+# 运行时数据与日志（项目工作区属用户数据，永不入公开仓库）
+backend/wm/
+server.log
+uvicorn_*.log
+backend/server.log

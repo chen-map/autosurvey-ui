@@ -11,6 +11,7 @@ build_structured_papers.py / build_paper_kg.py 不接受 LLM 参数，依赖 kg_
 from __future__ import annotations
 
 import json
+import os
 import runpy
 import sqlite3
 import sys
@@ -20,15 +21,25 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIR))
 
 
-def load_llm_config(use_case: str) -> tuple[str, str, list[str]]:
-    """按使用点读 llm-config，解析链：环节专属 → default。DB_PATH 与 API 层同源。"""
+def _run_user_id() -> int:
+    """当前运行归属用户：_spawn_runner 注入 AS_RUN_USER_ID；缺失时回落 1（旧单机数据兼容）。"""
+    try:
+        return int(os.environ.get("AS_RUN_USER_ID", "1"))
+    except ValueError:
+        return 1
+
+
+def load_llm_config(use_case: str, user_id: int | None = None) -> tuple[str, str, list[str]]:
+    """按使用点读 llm-config，解析链：环节专属 → default。DB_PATH 与 API 层同源。
+    user_id 缺省时取 AS_RUN_USER_ID（项目归属用户），多用户不串号。"""
     from db.crypto import decrypt  # noqa: PLC0415
     from db.database import DB_PATH  # noqa: PLC0415 — 单一事实源
 
+    uid = user_id if user_id is not None else _run_user_id()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     rows = {r["use_case"]: r for r in conn.execute(
-        "SELECT use_case, base_url, api_key_encrypted, model FROM llm_configs WHERE user_id=1").fetchall()}
+        "SELECT use_case, base_url, api_key_encrypted, model FROM llm_configs WHERE user_id=?", (uid,)).fetchall()}
     conn.close()
     for uc in (use_case, "default"):
         r = rows.get(uc)
@@ -66,7 +77,7 @@ def main() -> None:
     import kg_common  # noqa: PLC0415 — 目标脚本同目录的共享 LLM 配置
 
     base, key, models = load_llm_config(use_case)
-    print(json.dumps({"llm_wrap": True, "use_case": use_case}, ensure_ascii=False), file=sys.stderr)
+    print(json.dumps({"llm_wrap": True, "use_case": use_case, "user_id": _run_user_id()}, ensure_ascii=False), file=sys.stderr)
     if base:
         kg_common.DEFAULT_LLM_BASE_URL = base
     if key:

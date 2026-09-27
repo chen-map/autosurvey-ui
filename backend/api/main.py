@@ -134,15 +134,18 @@ def _read_config(pid: str) -> dict | None:
     return _read_json(_wm(pid) / "w1_config.json")
 
 
-def _spawn_runner(pid: str, workflow: str = "w1") -> None:
+def _spawn_runner(pid: str, workflow: str = "w1", user_id: int | None = None) -> None:
     ws = _wm(pid)
     ws.mkdir(parents=True, exist_ok=True)
     log_path = ws / f"runner_{workflow}.log"
     log = open(log_path, "ab")
+    env = dict(os.environ)
+    if user_id is not None:
+        env["AS_RUN_USER_ID"] = str(user_id)  # 流水线子进程按项目归属用户解析 LLM 配置
     subprocess.Popen(
         [sys.executable, str(RUNNER), "--config", str(ws / "w1_config.json"),
          "--workflow", workflow, "--resume"],
-        stdout=log, stderr=subprocess.STDOUT, cwd=str(ws),
+        stdout=log, stderr=subprocess.STDOUT, cwd=str(ws), env=env,
     )
 
 
@@ -210,7 +213,7 @@ def create_project(body: dict, user: dict = Depends(_me)):
         "year_range": body.get("year_range", [2020, 2026]),
         "seed_dir": seed_dir, "local_dir": body.get("local_dir", ""),
         "search_keywords": body.get("search_keywords", []),  # LLM 生成或用户直填的英文检索词
-        "llm": body.get("llm", {}),
+        # LLM 配置不落盘：唯一事实源是 llm_configs 表（Fernet 加密），运行时经 AS_RUN_USER_ID 解析
         # 存量脚本根目录：前端契约不含此字段，默认本地 autoSurvey_v2（可用 AS_SCRIPTS_ROOT 覆盖）
         "scripts_root": body.get("scripts_root") or os.environ.get(
             "AS_SCRIPTS_ROOT",
@@ -232,6 +235,30 @@ def create_project(body: dict, user: dict = Depends(_me)):
     return {"project_id": pid}
 
 
+@app.delete("/api/projects/{pid}")
+def delete_project(pid: str, user: dict = Depends(_me)):
+    """删除项目：DB 两张项目级表 + 工作区目录。归属校验不过 → 404。"""
+    _own_project(pid, user)
+    conn = get_db()
+    row = conn.execute("SELECT workspace_rel FROM projects WHERE project_id=?", (pid,)).fetchone()
+    conn.execute("DELETE FROM projects WHERE project_id=?", (pid,))
+    conn.execute("DELETE FROM corpus_papers WHERE project_id=?", (pid,))
+    conn.commit()
+    conn.close()
+    # 工作区目录删除：解析后必须仍在 WORKSPACE 内（防 workspace_rel 被污染成穿越路径）
+    import shutil
+    if row and row["workspace_rel"]:
+        root = (WORKSPACE / row["workspace_rel"]).parent  # workspace_rel 形如 u{uid}/{pid}/w1
+        try:
+            root_resolved = root.resolve()
+            root_resolved.relative_to(WORKSPACE.resolve())
+            if root_resolved.exists():
+                shutil.rmtree(root_resolved, ignore_errors=True)
+        except (ValueError, OSError):
+            pass  # 路径越界：宁可留着也不误删
+    return {"ok": True}
+
+
 @app.post("/api/projects/{pid}/run")
 def start_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
     _own_project(pid, user)
@@ -240,7 +267,7 @@ def start_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
         raise HTTPException(400, f"unknown workflow: {workflow}")
     if _read_config(pid) is None:
         raise HTTPException(404, f"project not found: {pid}")
-    _spawn_runner(pid, workflow)
+    _spawn_runner(pid, workflow, user["user_id"])
     return {"ok": True, "project_id": pid, "workflow": workflow}
 
 
@@ -265,7 +292,7 @@ def retry_phase(pid: str, phase_id: str, workflow: str = "w1", user: dict = Depe
             ph["status"] = "pending"
             break
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
-    _spawn_runner(pid, workflow)
+    _spawn_runner(pid, workflow, user["user_id"])
     return {"ok": True, "phase_id": phase_id}
 
 
@@ -722,7 +749,8 @@ def get_project_report(pid: str, user: dict = Depends(_me)):
             if key in text:
                 verdict = key
                 break
-        reviews.append({"round": i, "date": text[:0] or "", "verdict": verdict, "improvements": _bullets(f)})
+        reviews.append({"round": i, "date": time.strftime("%Y-%m-%d", time.localtime(f.stat().st_mtime)),
+                        "verdict": verdict, "improvements": _bullets(f)})
 
     return {"outline": outline, "reviews": reviews}
 
@@ -767,7 +795,6 @@ def list_projects(user: dict = Depends(_me)):
             "year_range": c.get("year_range", [2020, 2026]),
             "seed_dir": c.get("seed_dir", ""),
             "local_dir": c.get("local_dir", ""),
-            "llm": c.get("llm", {}),
             "updated_at": c.get("created_at", ""),
         })
 

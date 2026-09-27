@@ -53,6 +53,15 @@ export async function listProjects(): Promise<Project[]> {
   return [...MOCK_PROJECTS];
 }
 
+// ---- deleteProject ----
+export async function deleteProject(id: string): Promise<void> {
+  if (!USE_MOCK) {
+    await realFetch<{ ok: boolean }>(`/projects/${id}`, { method: 'DELETE' });
+    return;
+  }
+  await delay();
+}
+
 export async function getProject(id: string): Promise<Project | undefined> {
   if (!USE_MOCK) {
     const list = await realFetch<Project[]>('/projects');

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import type { Project } from '@/types';
-import { listProjects } from '@/services/api';
+import { listProjects, deleteProject } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -27,14 +27,30 @@ function Stat({ icon: Icon, value, label }: { icon: typeof FileText; value: stri
   );
 }
 
-function ProjectCard({ p }: { p: Project }) {
+function ProjectCard({ p, onDeleted }: { p: Project; onDeleted: (id: string) => void }) {
   const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
   const s = statusBadge[p.status] ?? statusBadge.draft;
   const claims = (p.stats ?? { claims: { verified: 0 } }).claims;
   const claimsText =
     claims.verified + claims.needsRevision + claims.shouldRemove > 0
       ? `${claims.verified + claims.needsRevision + claims.shouldRemove} 条`
       : '—';
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // 不触发卡片跳转
+    if (deleting) return;
+    if (!window.confirm(`确定删除项目「${p.title}」？\n该项目的语料、KG、RQ、综述等工作目录将一并删除，不可恢复。`)) return;
+    setDeleting(true);
+    try {
+      await deleteProject(p.id);
+      onDeleted(p.id);
+    } catch (err) {
+      alert(`删除失败：${err instanceof Error ? err.message : String(err)}`);
+      setDeleting(false);
+    }
+  };
+
   return (
     <Card
       role="button"
@@ -45,9 +61,21 @@ function ProjectCard({ p }: { p: Project }) {
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-[16px] font-semibold leading-6">{p.title}</h3>
-        <Badge variant={s.variant} withDot={p.status === 'running'}>
-          {s.label}
-        </Badge>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Badge variant={s.variant} withDot={p.status === 'running'}>
+            {s.label}
+          </Badge>
+          <button
+            type="button"
+            aria-label={`删除项目 ${p.title}`}
+            title="删除项目"
+            disabled={deleting}
+            onClick={handleDelete}
+            className="rounded-md p-1.5 text-t3 transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-40"
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -145,7 +173,11 @@ export function ProjectsPage() {
       ) : (
         <div className="stagger mt-6 grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
           {shown.map((p) => (
-            <ProjectCard key={p.id} p={p} />
+            <ProjectCard
+              key={p.id}
+              p={p}
+              onDeleted={(id) => setProjects((ps) => (ps ?? []).filter((x) => x.id !== id))}
+            />
           ))}
         </div>
       )}
