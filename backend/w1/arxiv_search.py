@@ -42,13 +42,25 @@ def build_query(kws: list[str], year_from: int, year_to: int) -> str:
 
 
 def fetch(url: str) -> bytes:
+    """拉取一页；406/429 = arXiv 反滥用限流——指数退避重试，仍败则抛错（区别于正常的空结果）。"""
     import subprocess
-    proc = subprocess.run(["curl", "-sS", "-g", "-L", "--max-time", "60", "-A",
-                           "AutoSurvey-W1-search/0.1 (contact: researcher@example.com)", url],
-                          capture_output=True)
-    if proc.returncode != 0:
-        raise OSError(proc.stderr.decode("utf-8", errors="replace")[:200])
-    return proc.stdout
+    for attempt in range(4):
+        proc = subprocess.run(["curl", "-sS", "-g", "-L", "--max-time", "60", "-w", "%{http_code}", "-A",
+                               "AutoSurvey-W1-search/0.1 (contact: researcher@example.com)", url],
+                              capture_output=True)
+        if proc.returncode != 0:
+            raise OSError(proc.stderr.decode("utf-8", errors="replace")[:200])
+        body, code = proc.stdout[:-3], proc.stdout[-3:].decode()
+        if code in ("200", "20"):
+            return body
+        if code in ("406", "429"):
+            wait = 15 * (2 ** attempt)  # 15s/30s/60s/120s
+            print(f"[arxiv_search] HTTP {code}（arXiv 限流/封禁信号），退避 {wait}s 后重试（第 {attempt+1} 次）", flush=True)
+            time.sleep(wait)
+            continue
+        raise OSError(f"HTTP {code}: {body[:150]}")
+    raise OSError("arXiv 连续限流 4 次——出口 IP 可能被临时封禁（教育网共享出口常见），"
+                  "请稍后再试或为检索通道配置代理")
 
 
 def main() -> int:
