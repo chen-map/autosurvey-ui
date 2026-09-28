@@ -29,9 +29,8 @@ def _run_user_id() -> int:
         return 1
 
 
-def load_llm_config(use_case: str, user_id: int | None = None) -> tuple[str, str, list[str]]:
-    """按使用点读 llm-config，解析链：环节专属 → default。DB_PATH 与 API 层同源。
-    user_id 缺省时取 AS_RUN_USER_ID（项目归属用户），多用户不串号。"""
+def load_llm_config_full(use_case: str, user_id: int | None = None) -> tuple[str, str, list[str], str]:
+    """load_llm_config 的 provider 版：返回 (base, key, models, provider)。"""
     from db.crypto import decrypt  # noqa: PLC0415
     from db.database import DB_PATH  # noqa: PLC0415 — 单一事实源
 
@@ -39,7 +38,7 @@ def load_llm_config(use_case: str, user_id: int | None = None) -> tuple[str, str
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     rows = {r["use_case"]: r for r in conn.execute(
-        "SELECT use_case, base_url, api_key_encrypted, model FROM llm_configs WHERE user_id=?", (uid,)).fetchall()}
+        "SELECT use_case, base_url, api_key_encrypted, model, provider FROM llm_configs WHERE user_id=?", (uid,)).fetchall()}
     conn.close()
     for uc in (use_case, "default"):
         r = rows.get(uc)
@@ -47,8 +46,17 @@ def load_llm_config(use_case: str, user_id: int | None = None) -> tuple[str, str
             continue
         key = decrypt(r["api_key_encrypted"])
         if r["base_url"] and key and r["model"]:
-            return r["base_url"], key, [r["model"]]
-    return "", "", []
+            provider = r["provider"] if "provider" in r.keys() else "openai"
+            return r["base_url"], key, [r["model"]], provider
+    return "", "", [], "openai"
+
+
+def load_llm_config(use_case: str, user_id: int | None = None) -> tuple[str, str, list[str]]:
+    """按使用点读 llm-config，解析链：环节专属 → default。DB_PATH 与 API 层同源。
+    user_id 缺省时取 AS_RUN_USER_ID（项目归属用户），多用户不串号。
+    需要 provider 时用 load_llm_config_full。"""
+    base, key, models, _provider = load_llm_config_full(use_case, user_id)
+    return base, key, models
 
 
 def main() -> None:

@@ -1,146 +1,80 @@
-"""W4 Phase 定义：RQ-specific Working Memory Construction（WORKFLOW4_GUIDE 三阶段 per-RQ）。
+r"""W4 Phase 定义：KG 分析三层架构（v3）。
 
-P1 证据抽取（extract_rq_evidence，LLM 逐篇）→ P2 答案综合（synthesize_rq_answer）
-→ P3 claim 四维核查 + 汇总索引（check_answer_claims + build_working_memory_index）。
-输入：W3 冻结的 rq_evidence_matrix.json / rq_query_registry.json + W2 的 KG/结构化论文。
+主参考文档"三层架构"的真实实现（kg_analysis/ 包，~5000 行）：
+  L1 原子操作（kg_loader/extract/logic/semantic 工具）
+  L2 37 个分析 Skill（layer2_skills/ markdown 规范）
+  L3 LLM Agent（anthropic tool_use 循环，自主选 Skill + 调工具推理）
 
-LLM 注入说明：W4 脚本以别名（module_from_spec）加载 kg_common，llm_wrap 补丁不可达；
-改为 env 注入——build_phases 时经 w2.llm_wrap.load_llm_config 解析（use_case w4.* → default），
-把 base/key/model 写入每个 step 的 env（AS_LLM_*），由 skills/.../kg_common.py shim 消费。
+Phase 流水：
+  W4-P0 KG 适配        paper_kg.json（单文件）→ v3 目录布局（nodes/ + edges/）
+  W4-P1 Agent 逐RQ深析  L3 Agent 每个宏 RQ 一次自主分析（自动选 Skill → 工具循环 → HTML 报告 + 6 文件工作记忆）
+  W4-P2 W5 契约适配    v3 产物 → working_memory/rq_N/{working_memory,answer_claims,rq_answer}.json + INDEX
+  W4-P3 自检           W5 输入契约完整性校验
+
+LLM 通道：v3 说 Anthropic 协议（anthropic SDK，ANTHROPIC_BASE_URL/KEY 可覆盖）。
+个人中心 W4 配置 provider=anthropic + base_url（DeepSeek 填 https://api.deepseek.com/anthropic）。
+旧版实现备份于 phase_defs_legacy_v2.py.bak。
 """
 from __future__ import annotations
 
-import json
-import sys
 from pathlib import Path
 from typing import Any
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "w2"))
-from llm_wrap import load_llm_config  # noqa: E402
-
-SCRIPTS_SUB = "workflow_4_rq_working_memory_construction"
+KG_PKG = HERE / "kg_analysis"
+SKILLS_ROOT = str(KG_PKG / "layer2_skills")
 
 
 def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
-    scripts = cfg["scripts_root"].rstrip("/") + "/" + SCRIPTS_SUB
     ws = cfg.get("workspace_rel", "retrieval_workspace").rstrip("/")
-    ar = "analyze_report"
-    wm = "working_memory"
-
-    # RQ 列表来自 W3 冻结矩阵（rq_id → paper 数），决定 per-RQ 步骤展开
-    matrix_path = Path(cfg["workspace"]) / ar / "rq_evidence_matrix.json"
-    rq_ids: list[str] = []
-    if matrix_path.exists():
-        m = json.loads(matrix_path.read_text(encoding="utf-8"))
-        seen = []
-        for e in m.get("sub_rq_matrix", []):
-            rid = e.get("rq_id")
-            if rid and rid not in seen:
-                seen.append(rid)
-        rq_ids = seen
-
-    def llm_env(use_case: str) -> dict[str, str]:
-        base, key, models = load_llm_config(use_case)
-        env: dict[str, str] = {}
-        if base:
-            env["AS_LLM_BASE_URL"] = base
-        if key:
-            env["AS_LLM_API_KEY"] = key
-        if models:
-            env["AS_LLM_MODELS"] = ",".join(models)
-        return env
-
-    def rq_dir(rq: str) -> str:
-        # RQ1 → rq_1（GUIDE 目录约定 working_memory/rq_1/）
-        digits = "".join(ch for ch in rq if ch.isdigit()) or "0"
-        return f"rq_{digits}"
-
-    extract_steps = [
-        {"script": f"{scripts}/rq_evidence_extractor/extract_rq_evidence.py",
-         "env": llm_env("w4"),
-         "args": ["--rq-id", rq,
-                  "--evidence-matrix", f"{ar}/rq_evidence_matrix.json",
-                  "--query-registry", f"{ar}/rq_query_registry.json",
-                  "--structured-papers", "knowledge_graph/structured_papers.jsonl",
-                  "--kg-db", "knowledge_graph/paper_kg.db",
-                  "--design-report", f"{ar}/design_report.md",
-                  "--output", f"{wm}/{rq_dir(rq)}/"]}
-        for rq in rq_ids
-    ] or [{"script": f"{scripts}/rq_evidence_extractor/extract_rq_evidence.py",
-           "args": ["--rq-id", "RQ1", "--output", f"{wm}/rq_1/"]}]
-
-    synth_steps = [
-        {"script": f"{scripts}/rq_answer_synthesizer/synthesize_rq_answer.py",
-         "env": llm_env("w4"),
-         "args": ["--evidence-pool", f"{wm}/{rq_dir(rq)}/evidence_pool.json",
-                  "--design-report", f"{ar}/design_report.md",
-                  "--output", f"{wm}/{rq_dir(rq)}/"]}
-        for rq in rq_ids
-    ] or [{"script": f"{scripts}/rq_answer_synthesizer/synthesize_rq_answer.py",
-           "args": ["--evidence-pool", f"{wm}/rq_1/evidence_pool.json",
-                    "--output", f"{wm}/rq_1/"]}]
-
-    check_steps = [
-        {"script": f"{scripts}/answer_claim_checker/check_answer_claims.py",
-         "env": llm_env("w4"),
-         "args": ["--rq-answer", f"{wm}/{rq_dir(rq)}/rq_answer.json",
-                  "--evidence-pool", f"{wm}/{rq_dir(rq)}/evidence_pool.json",
-                  "--output", f"{wm}/{rq_dir(rq)}/"]}
-        for rq in rq_ids
-    ] or [{"script": f"{scripts}/answer_claim_checker/check_answer_claims.py",
-           "args": ["--rq-answer", f"{wm}/rq_1/rq_answer.json",
-                    "--evidence-pool", f"{wm}/rq_1/evidence_pool.json",
-                    "--output", f"{wm}/rq_1/"]}]
-
-    p1_outputs = [f"{wm}/{rq_dir(rq)}/evidence_pool.json" for rq in rq_ids] or [f"{wm}/rq_1/evidence_pool.json"]
-    p2_outputs = [f"{wm}/{rq_dir(rq)}/rq_answer.json" for rq in rq_ids] or [f"{wm}/rq_1/rq_answer.json"]
 
     return [
         {
-            "id": "W4-P1",
-            "name": "RQ 证据抽取（LLM 逐篇，冻结集）",
+            "id": "W4-P0",
+            "name": "KG 适配（paper_kg.json → v3 目录布局）",
             "optional": False,
-            "steps": extract_steps,
-            "outputs": p1_outputs,
+            "steps": [
+                {"script": str(HERE / "kg_adapter.py"),
+                 "args": ["--kg", f"{ws}/knowledge_graph/paper_kg.json",
+                          "--out", f"{ws}/kg_v3"]},
+            ],
+            "outputs": [f"{ws}/kg_v3/nodes/papers.json",
+                        f"{ws}/kg_v3/edges"],
+        },
+        {
+            "id": "W4-P1",
+            "name": "Agent 逐 RQ 深析（L3 工具循环，37 Skills 自选）",
+            "optional": False,
+            "steps": [
+                {"script": str(HERE / "run_v3_agent.py"),
+                 "args": ["--workspace", ".",
+                          "--skills-root", SKILLS_ROOT,
+                          "--out-dir", f"{ws}/kg_analysis/working_memory",
+                          "--use-case", "w4"],
+                 "timeout": 14400},
+            ],
+            "outputs": [f"{ws}/kg_analysis/working_memory"],
         },
         {
             "id": "W4-P2",
-            "name": "RQ 答案综合（分维度 + 跨论文规律）",
-            "optional": False,
-            "steps": synth_steps,
-            "outputs": p2_outputs,
-        },
-        {
-            "id": "W4-P2B",
-            "name": "工作记忆装配 + answer_claims 生成（W5 消费契约）",
+            "name": "W5 契约适配（working_memory/answer_claims/INDEX）",
             "optional": False,
             "steps": [
-                step for rq in rq_ids
-                for step in [
-                    {"script": f"{scripts}/working_memory_builder/build_working_memory.py",
-                     "env": llm_env("w4.memory"),
-                     "args": ["--evidence-pool", f"{wm}/{rq_dir(rq)}/evidence_pool.json",
-                              "--design-report", f"{ar}/design_report.md",
-                              "--output", f"{wm}/{rq_dir(rq)}/"]},
-                    {"script": f"{scripts}/answer_claim_generator/generate_answer_claims.py",
-                     "env": llm_env("w4.claims"),
-                     "args": ["--working-memory", f"{wm}/{rq_dir(rq)}/working_memory.json",
-                              "--output", f"{wm}/{rq_dir(rq)}/"]},
-                ]
+                {"script": str(HERE / "v3_to_w5_adapter.py"),
+                 "args": ["--v3-out", f"{ws}/kg_analysis/working_memory",
+                          "--out", f"{ws}/working_memory",
+                          "--matrix", f"{ws}/analyze_report/rq_evidence_matrix.json"]},
             ],
-            "outputs": [f"{wm}/{rq_dir(rq)}/working_memory.json" for rq in rq_ids]
-                       + [f"{wm}/{rq_dir(rq)}/answer_claims.json" for rq in rq_ids],
+            "outputs": [f"{ws}/working_memory/WORKING_MEMORY_INDEX.json"],
         },
         {
             "id": "W4-P3",
-            "name": "claim 四维核查 + 汇总索引",
-            "optional": False,
-            "steps": check_steps + [
-                {"script": f"{scripts}/build_working_memory_index.py",
-                 "args": ["--working-memory-dir", wm,
-                          "--output", f"{wm}/WORKING_MEMORY_INDEX.json"]},
+            "name": "自检（W5 输入契约完整性）",
+            "optional": True,
+            "steps": [
+                {"script": str(HERE / "w4_selfcheck.py"),
+                 "args": ["--wm", f"{ws}/working_memory"]},
             ],
-            "outputs": [f"{wm}/WORKING_MEMORY_INDEX.json"],
+            "outputs": [f"{ws}/working_memory/WORKFLOW4_SELF_CHECK.md"],
         },
     ]

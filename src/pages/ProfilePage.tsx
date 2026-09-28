@@ -19,6 +19,7 @@ const PAID_PLATFORMS = ['IEEE', 'ACM', 'Springer', 'Elsevier', 'Agent 检索'];
 interface UseCaseRow {
   id: string; label: string; stage: string;
   configured: boolean; baseUrl: string; model: string; apiKeyMasked: string;
+  provider?: string;
 }
 
 function readKeys(): Record<string, string> {
@@ -302,7 +303,7 @@ export function ProfilePage() {
           </p>
           <div className="mt-3 space-y-2">
             {catalog.filter(c => c.id !== 'default').map(uc => {
-              const e = ovr[uc.id] ?? { baseUrl: '', model: '', apiKey: '', provider: 'openai' };
+              const e = ovr[uc.id] ?? { baseUrl: '', model: '', apiKey: '', provider: uc.provider || 'openai' };
               const isOpen = expanded === uc.id;
               const isConfigured = uc.configured;
               return (
@@ -332,6 +333,20 @@ export function ProfilePage() {
                         <div>
                           <div className="mb-1 text-[11px] text-t3">模型</div>
                           <Input value={e.model} onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, model: ev.target.value}}))} placeholder="deepseek-chat" className="text-[12px]" autoComplete="off" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <div className="mb-1 text-[11px] text-t3">协议</div>
+                          <select
+                            value={e.provider}
+                            onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, provider: ev.target.value}}))}
+                            className="h-9 w-full rounded-lg border border-line bg-card px-2 text-[12px] text-t2 focus:border-ink focus:outline-none"
+                          >
+                            <option value="openai">OpenAI 兼容（/chat/completions · DeepSeek/Moonshot/通义/Ollama）</option>
+                            <option value="anthropic">Anthropic（/v1/messages · Claude/DeepSeek /anthropic）</option>
+                          </select>
+                          <p className="mt-1 text-[11px] leading-4 text-t3">
+                            W4 v3（KG 分析 Agent）要求 Anthropic 协议：DeepSeek 用户接口地址填 https://api.deepseek.com/anthropic
+                          </p>
                         </div>
                       </div>
                       <div className="flex justify-end">

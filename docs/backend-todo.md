@@ -201,3 +201,10 @@ W3 实际写出 `analyze_report/` 下的产物，前端 RQ 树/专页的每个�
 | 2 | 证据论文缺作者/DOI/arXiv 号 | /rqs 端点最初未回填 evidencePapers | **已修**：端点从 paper_cards + download_ready.csv 拼装 authors/arXivId/DOI（100/100 覆盖），前端证据行两行式渲染，DOI 可点 |
 | 3 | 引用次数不对 | 无引用数数据源（Semantic Scholar 需 API Key；当前未接） | 待裁决：配 S2 API Key 后按批量端点回填 citations（100 篇 1 次调用） |
 | 4 | 5/12 Sub-RQ blocked | 语料为关键词筛的随机子集，部分 RQ 主题（如特定方法范式对比）在语料中天然无支撑；反思修订一轮后 strong 5→7 | 选项：再一轮 P5/P6 修订 / S2 滚雪球扩语料 / 人工收窄 RQ |
+
+## §11 W5 写作提示词后续修改（用户 2026-09-28 拍板：记下来，后续改）
+
+- 位置：`backend/w5/llm_sections.py`（逐章 system/user 提示词）
+- 方向：成文语言去 RQ 化——正文用主题性章节语言组织（如"解释粒度分类"），
+  内部仍以 RQ 组织证据，但成文不出现"RQ1.1"编号体；引用键与 bib 对齐逻辑不动
+- 触发时机：用户验收 W5 正文风格后给具体修改意见再动手

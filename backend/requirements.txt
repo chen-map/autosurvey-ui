@@ -10,3 +10,6 @@ PyMuPDF>=1.24
 pdfminer.six>=20231228
 python-multipart>=0.0.9
 matplotlib>=3.8
+anthropic
+numpy
+sentence-transformers

@@ -135,6 +135,41 @@ def _run_migrations(conn: sqlite3.Connection) -> None:
         cols = {d[1] for d in conn.execute(f"PRAGMA table_info({table})").fetchall()}
         if col not in cols:
             conn.execute(ddl)
+    _migrate_llm_configs_unique(conn)
+
+
+def _migrate_llm_configs_unique(conn: sqlite3.Connection) -> None:
+    """老库 llm_configs 是 user_id 单列 UNIQUE（每用户仅一行配置）→ 重建为
+    UNIQUE(user_id, use_case)。不加此迁移，PUT /api/me/llm-config 的
+    ON CONFLICT(user_id, use_case) 在老库上直接报错（per-WF 配置功能全坏）。"""
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='llm_configs'").fetchone()
+    if row is None:
+        return
+    sql = " ".join((row[0] or "").split())
+    if "UNIQUE(user_id, use_case)" in sql:
+        return  # 已是新结构
+    conn.executescript("""
+DROP TABLE IF EXISTS llm_configs_new;
+CREATE TABLE llm_configs_new (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    use_case TEXT NOT NULL DEFAULT 'default',
+    base_url TEXT NOT NULL DEFAULT '',
+    api_key_encrypted TEXT NOT NULL DEFAULT '',
+    model TEXT NOT NULL DEFAULT '',
+    updated_at TEXT DEFAULT (datetime('now')),
+    provider TEXT NOT NULL DEFAULT 'openai',
+    UNIQUE(user_id, use_case)
+);
+INSERT INTO llm_configs_new (user_id, use_case, base_url, api_key_encrypted, model, updated_at, provider)
+    SELECT user_id, CASE WHEN COALESCE(use_case,'')='' THEN 'default' ELSE use_case END,
+           base_url, api_key_encrypted, model, updated_at,
+           COALESCE(provider,'openai')
+    FROM llm_configs;
+DROP TABLE llm_configs;
+ALTER TABLE llm_configs_new RENAME TO llm_configs;
+""")
 
 
 def get_db() -> sqlite3.Connection:

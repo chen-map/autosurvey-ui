@@ -27,3 +27,4 @@ autosurvey.db-wal
 
 # 增量更新包（pack_update.sh 产物，手工传输不入库）
 deploy/*.tar.gz
+backend/db/__pycache__/
