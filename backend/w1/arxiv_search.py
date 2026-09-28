@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import csv
 import json
 import re
@@ -29,7 +30,7 @@ if sys_path not in __import__("sys").path:
 API = "https://export.arxiv.org/api/query"
 NS = {"a": "http://www.w3.org/2005/Atom"}
 FIELD_ORDER = ["title", "authors", "year", "doi", "abstract", "venue", "url", "source_db"]
-MIN_INTERVAL = 3.0  # arXiv API 官方要求 ≥3s
+MIN_INTERVAL = 10.0  # arXiv 官方 ≥3s；共享出口 IP（VPS/教育网 NAT）配额友好取 10s
 
 
 def build_query(kws: list[str], year_from: int, year_to: int) -> str:
@@ -42,25 +43,29 @@ def build_query(kws: list[str], year_from: int, year_to: int) -> str:
 
 
 def fetch(url: str) -> bytes:
-    """拉取一页；406/429 = arXiv 反滥用限流——指数退避重试，仍败则抛错（区别于正常的空结果）。"""
+    """拉取一页；406/429 = arXiv 反滥用限流——指数退避重试，仍败则抛错（区别于正常的空结果）。
+    AS_ARXIV_PROXY 环境变量非空时经该 HTTP 代理出站（绕过共享出口 IP 封禁）。"""
     import subprocess
+    proxy = os.environ.get("AS_ARXIV_PROXY", "").strip()
+    cmd = ["curl", "-sS", "-g", "-L", "--max-time", "60", "-w", "%{http_code}", "-A",
+           "AutoSurvey-W1-search/0.1 (contact: researcher@example.com)"]
+    if proxy:
+        cmd += ["-x", proxy]
     for attempt in range(4):
-        proc = subprocess.run(["curl", "-sS", "-g", "-L", "--max-time", "60", "-w", "%{http_code}", "-A",
-                               "AutoSurvey-W1-search/0.1 (contact: researcher@example.com)", url],
-                              capture_output=True)
+        proc = subprocess.run(cmd + [url], capture_output=True)
         if proc.returncode != 0:
             raise OSError(proc.stderr.decode("utf-8", errors="replace")[:200])
         body, code = proc.stdout[:-3], proc.stdout[-3:].decode()
         if code in ("200", "20"):
             return body
         if code in ("406", "429"):
-            wait = 15 * (2 ** attempt)  # 15s/30s/60s/120s
+            wait = 60 * (3 ** attempt)  # 60s/180s/540s/1620s——实测配额窗口冷却约 3 分钟
             print(f"[arxiv_search] HTTP {code}（arXiv 限流/封禁信号），退避 {wait}s 后重试（第 {attempt+1} 次）", flush=True)
             time.sleep(wait)
             continue
         raise OSError(f"HTTP {code}: {body[:150]}")
-    raise OSError("arXiv 连续限流 4 次——出口 IP 可能被临时封禁（教育网共享出口常见），"
-                  "请稍后再试或为检索通道配置代理")
+    raise OSError("arXiv 连续限流 4 次——出口 IP 配额耗尽（共享 IP 常见，冷却约 3-10 分钟），"
+                  "稍后重试即可；已配 AS_ARXIV_PROXY 时仍出现说明代理出口 IP 也到限额")
 
 
 def main() -> int:

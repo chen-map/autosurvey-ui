@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import re
 import time
 import urllib.parse
@@ -50,8 +51,13 @@ def save_daily_count(state_path: Path, count: int) -> None:
 
 def request_with_backoff(url: str, user_agent: str, state_path: Path,
                          max_backoff: int = 8, max_attempts: int = 6) -> bytes:
-    """GET + 指数退避；429 优先按 Retry-After 等待；计入每日限额；超过次数放弃。"""
+    """GET + 指数退避；429 优先按 Retry-After 等待；计入每日限额；超过次数放弃。
+    AS_ARXIV_PROXY 环境变量非空时经该 HTTP 代理出站（校园网共享出口被 arXiv
+    封禁时的绕行通道，如 mihomo 127.0.0.1:7893）。"""
     global _daily
+    proxy = os.environ.get("AS_ARXIV_PROXY", "").strip()
+    opener = (urllib.request.build_opener(urllib.request.ProxyHandler(
+        {"http": proxy, "https": proxy})) if proxy else None)
     attempt = 0
     while True:
         if _daily >= DAILY_CAP:
@@ -62,7 +68,9 @@ def request_with_backoff(url: str, user_agent: str, state_path: Path,
         try:
             _daily += 1
             save_daily_count(state_path, _daily)
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            resp = (opener.open(req, timeout=60) if opener
+                    else urllib.request.urlopen(req, timeout=60))
+            with resp:
                 return resp.read()
         except urllib.error.HTTPError as e:
             if e.code == 429:

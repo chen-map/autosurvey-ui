@@ -1,0 +1,28 @@
+# mihomo 专用配置：仅 arXiv 域名走 VPS（reality），其余一律直连
+# 目的：绕过 arXiv 检索 API 对校园网共享出口 IP 的封禁（2026-09-28 诊断）
+mixed-port: 7893
+bind-address: 127.0.0.1   # 只监听本机——流水线子进程用，不对外提供代理（7890 已被共用者占用）
+mode: rule
+log-level: warning
+
+proxies:
+  - name: vps-reality
+    type: vless
+    server: 104.244.94.109
+    port: 443
+    uuid: 3163ece6-2a88-46a9-9473-ad1d01cc155a   # team-A UUID
+    network: tcp
+    tls: true
+    udp: false
+    flow: xtls-rprx-vision
+    servername: addons.mozilla.org
+    reality-opts:
+      public-key: HBJc12cdg1QQu4ndfSIXgsOv42Sj7y19a7AbvO-gIEU
+    client-fingerprint: chrome
+
+rules:
+  - DOMAIN-SUFFIX,arxiv.org,vps-reality      # export（检索 API）+ www/PDF 全走
+  - DOMAIN-SUFFIX,semanticscholar.org,vps-reality
+  - DOMAIN-SUFFIX,s2.api,vps-reality
+  - DOMAIN,api.semanticscholar.org,vps-reality
+  - MATCH,DIRECT                              # 其余（DeepSeek/IEEE/HF镜像/校内）直连不受影响
