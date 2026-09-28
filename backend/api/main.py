@@ -509,6 +509,8 @@ def get_llm_config(user: dict = Depends(_me), use_case: str = "default"):
 @app.put("/api/me/llm-config")
 def put_llm_config(body: LlmConfigIn, user: dict = Depends(_me)):
     use_case = body.useCase if body.useCase in {u["id"] for u in LLM_USE_CASES} else "default"
+    if body.apiKey.strip() and len(body.apiKey.strip()) < 20:
+        raise HTTPException(400, f"API Key 只有 {len(body.apiKey.strip())} 个字符——多半是粘贴不完整，请完整复制后重填")
     conn = get_db()
     if body.apiKey.strip():
         key_enc = encrypt(body.apiKey.strip())  # 提供了新 Key → 加密覆盖
