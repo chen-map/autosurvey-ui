@@ -49,7 +49,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                 {"script": str(HERE / "run_v3_agent.py"),
                  "args": ["--workspace", ".",
                           "--skills-root", SKILLS_ROOT,
-                          "--out-dir", f"{ws}/kg_analysis/working_memory",
+                          "--out-dir", f"{ws}/kg_analysis",
                           "--use-case", "w4"],
                  "timeout": 14400},
             ],

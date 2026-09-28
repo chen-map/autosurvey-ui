@@ -50,7 +50,7 @@ def extract_overall_answer(ans) -> tuple[str, str]:
     if isinstance(ans, dict):
         s = _first_str(ans, ["overall_answer", "answer_summary", "summary",
                              "rq_answer_synthesis", "conclusion", "answer",
-                             "executive_summary"])
+                             "executive_summary", "cognitive_coordinate"])
         if s:
             return s, ""
         # 兜底：JSON 摘要（截断），不编造
@@ -73,8 +73,7 @@ def extract_claims(ans, papers_touched: list[str]) -> tuple[list[dict], list[str
             src_key = k
             break
     if src_key is None:
-        notes.append("answer 未含 claims 类列表字段，key_claims 留空（以 overall_answer 为准）")
-        return [], notes
+        notes.append("answer 未含显式 claims 类列表字段，转入泛化兜底扫描")
 
     for i, item in enumerate(v if (v := ans.get(src_key)) else [], 1):
         if isinstance(item, str):
@@ -110,7 +109,37 @@ def extract_claims(ans, papers_touched: list[str]) -> tuple[list[dict], list[str
         })
     if claims:
         notes.append(f"key_claims 由 answer.{src_key} 泛化映射（{len(claims)} 条）")
-    return claims, notes
+        return claims, notes
+
+    # 泛化兜底：扫描 answer 全部 list 值，条目含像样文本字段（≥25 字符）即收
+    for k, v in ans.items():
+        if k in ("metadata", "rq_id") or not isinstance(v, list) or len(v) < 2:
+            continue
+        harvested = []
+        for i, item in enumerate(v, 1):
+            if isinstance(item, dict):
+                text = _first_str(item, _TEXT_KEYS + ["category", "blind_spot_type", "reason"])
+                if len(text) < 25:
+                    continue
+                ep = next(([(str(x) if not isinstance(x, dict) else str(x.get("paper_id") or x))
+                            for x in item.get(pk)][:8]
+                           for pk in _PAPER_KEYS if isinstance(item.get(pk), list) and item.get(pk)),
+                          None) or next(([item.get(ps)] for ps in _PAPER_SINGLE
+                                         if isinstance(item.get(ps), str) and item.get(ps)), None)
+                harvested.append({
+                    "claim_id": f"C{i}", "claim_text": text[:600],
+                    "claim_type": str(item.get("type") or item.get("status") or k),
+                    "evidence_papers": ep or papers_touched[:5],
+                    "confidence": item.get("confidence") if isinstance(item.get("confidence"), (int, float)) else None,
+                    "counter_evidence": [], "related_sub_rq": ""})
+            elif isinstance(item, str) and len(item) >= 25:
+                harvested.append({"claim_id": f"C{i}", "claim_text": item[:600],
+                                  "claim_type": k, "evidence_papers": papers_touched[:5],
+                                  "confidence": None, "counter_evidence": [], "related_sub_rq": ""})
+        if len(harvested) >= 2:
+            notes.append(f"key_claims 由 answer.{k} 泛化兜底（{len(harvested)} 条）")
+            return harvested[:10], notes
+    return [], notes
 
 
 def main() -> int:

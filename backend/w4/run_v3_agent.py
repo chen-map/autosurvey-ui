@@ -91,13 +91,23 @@ def main() -> int:
     rqs = collect_rqs(matrix)
     print(f"[w4-agent] 宏 RQ {len(rqs)} 个: {[r['rq_id'] for r in rqs]}", flush=True)
 
-    # 断点：已完成（有最终答案）的 RQ 跳过
+    # v3 落盘约定：{output_dir}/working_memory/{rq_id}_{skill}_{ts}/——断点检查须在同一层
+    v3_root = out_root / "working_memory"
+
+    # 断点：已完成（有最终答案且非空）的 RQ 跳过
     def _done(rid: str) -> bool:
         if args.force:
             return False
-        for d in out_root.glob(f"{rid}_*"):
-            if (d / "03_final_answer.json").exists():
-                return True
+        for d in v3_root.glob(f"{rid}_*"):
+            f = d / "03_final_answer.json"
+            if not f.exists():
+                continue
+            try:
+                w = json.loads(f.read_text(encoding="utf-8"))
+                if w.get("answer") is not None:
+                    return True
+            except (OSError, json.JSONDecodeError):
+                continue
         return False
 
     pending = [r for r in rqs if not _done(r["rq_id"])]
@@ -128,16 +138,35 @@ def main() -> int:
     for r in pending:
         rid, rq_text = r["rq_id"], r["rq_text"]
         print(f"[w4-agent] === {rid} 开始：{rq_text[:60]}…", flush=True)
-        try:
-            result = agent.run_skill(skill_id=None, rq_text=rq_text, rq_id=rid)
-            n_rounds = result.get("total_tool_rounds", 0)
-            wm_dir = result.get("working_memory_dir") or ""
-            print(f"[w4-agent] {rid} 完成：{n_rounds} 轮工具 → {wm_dir}", flush=True)
-        except SystemExit:
-            raise
-        except Exception as e:  # 单 RQ 失败不拖垮整批，汇总后统一退出码
-            failed.append(rid)
-            print(f"[w4-agent] {rid} 失败：{type(e).__name__}: {e}", flush=True)
+        result = None
+        for attempt in (1, 2):  # LLM 偶发 end(answer=None)——空答案自动重试一次
+            try:
+                result = agent.run_skill(skill_id=None, rq_text=rq_text, rq_id=rid)
+            except SystemExit:
+                raise
+            except Exception as e:  # 单 RQ 失败不拖垮整批，汇总后统一退出码
+                failed.append(rid)
+                print(f"[w4-agent] {rid} 失败：{type(e).__name__}: {e}", flush=True)
+                result = None
+                break
+            if result.get("final_answer") is not None:
+                break
+            # 空答案：删掉这次落盘（防 resume 误判完成），重试
+            wm_dir = result.get("working_memory_dir")
+            if wm_dir:
+                import shutil
+                shutil.rmtree(wm_dir, ignore_errors=True)
+            print(f"[w4-agent] {rid} 第 {attempt} 次得到空答案（end=None），重试", flush=True)
+        if result is None:
+            continue
+        if result.get("final_answer") is None:
+            if rid not in failed:
+                failed.append(rid)
+            print(f"[w4-agent] {rid} 两次均空答案，放弃（可重试）", flush=True)
+            continue
+        n_rounds = result.get("total_tool_rounds", 0)
+        wm_dir = result.get("working_memory_dir") or ""
+        print(f"[w4-agent] {rid} 完成：{n_rounds} 轮工具 → {wm_dir}", flush=True)
 
     if failed:
         print(f"[w4-agent] 失败 RQ：{failed}（可重试，断点保已完成的）", flush=True)
