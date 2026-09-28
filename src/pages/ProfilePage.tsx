@@ -122,6 +122,8 @@ export function ProfilePage() {
   const [catalog, setCatalog] = useState<UseCaseRow[]>([]);
   const [ovr, setOvr] = useState<Record<string, { baseUrl: string; model: string; apiKey: string; provider: string }>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [showLlmKey, setShowLlmKey] = useState<Record<string, boolean>>({});
+  const [keyTip, setKeyTip] = useState<Record<string, string>>({});
   const loadCatalog = () => {
     if (USE_MOCK) return;
     const API = import.meta.env.VITE_API_BASE ?? '/api';
@@ -316,6 +318,7 @@ export function ProfilePage() {
                   >
                     <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', isConfigured ? 'bg-ok' : 'bg-line')} />
                     <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{uc.label}</span>
+                    <span className="shrink-0 font-mono text-[11px] text-t3">{isConfigured ? uc.apiKeyMasked : ''}</span>
                     <span className="shrink-0 text-[11px] text-t3">{isConfigured ? uc.model : '继承默认'}</span>
                     <span className={cn('shrink-0 text-t3 transition-transform', isOpen && 'rotate-90')}>›</span>
                   </button>
@@ -327,8 +330,28 @@ export function ProfilePage() {
                           <Input value={e.baseUrl} onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, baseUrl: ev.target.value}}))} placeholder="留空继承全局默认" className="text-[12px]" autoComplete="off" />
                         </div>
                         <div>
-                          <div className="mb-1 text-[11px] text-t3">API Key</div>
-                          <Input type="password" value={e.apiKey} onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, apiKey: ev.target.value}}))} placeholder="留空继承默认" className="text-[12px]" autoComplete="off" />
+                          <div className="mb-1 flex items-center justify-between text-[11px] text-t3">
+                            <span>API Key</span>
+                            <span className="inline-flex items-center gap-1">
+                              {uc.apiKeyMasked && <span className="font-mono">当前 {uc.apiKeyMasked}</span>}
+                              <button type="button" aria-label="显示/隐藏 Key" onClick={() => setShowLlmKey(s => ({ ...s, [uc.id]: !s[uc.id] }))} className="inline-flex items-center hover:text-t2">
+                                {showLlmKey[uc.id] ? <EyeOff size={12} /> : <Eye size={12} />}
+                              </button>
+                            </span>
+                          </div>
+                          <Input
+                            type={showLlmKey[uc.id] ? 'text' : 'password'}
+                            value={e.apiKey}
+                            onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, apiKey: ev.target.value}}))}
+                            placeholder="留空继承默认"
+                            className="text-[12px] font-mono"
+                            autoComplete="off"
+                          />
+                          {e.apiKey.trim() && e.apiKey.trim().length < 20 && (
+                            <p className="mt-1 text-[11px] text-danger">
+                              只有 {e.apiKey.trim().length} 个字符——多半没复制完整（正常 Key 约 30-40 字符）
+                            </p>
+                          )}
                         </div>
                         <div>
                           <div className="mb-1 text-[11px] text-t3">模型</div>
@@ -349,16 +372,30 @@ export function ProfilePage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex justify-end">
+                      <div className="flex items-center justify-end gap-3">
+                        {keyTip[uc.id] && <span className="text-[11px] text-danger">{keyTip[uc.id]}</span>}
                         <Button size="sm" variant="secondary"
                           onClick={() => {
+                            const k = e.apiKey.trim();
+                            if (k && k.length < 20) {
+                              setKeyTip(t => ({ ...t, [uc.id]: `Key 只有 ${k.length} 个字符，请完整粘贴` }));
+                              setTimeout(() => setKeyTip(t => ({ ...t, [uc.id]: '' })), 4000);
+                              return;
+                            }
                             const API2 = import.meta.env.VITE_API_BASE ?? '/api';
                             const token = localStorage.getItem('as.token') ?? '';
                             fetch(API2 + '/me/llm-config', {
                               method: 'PUT',
                               headers: {'Content-Type': 'application/json', Authorization: `Bearer ${token}`},
                               body: JSON.stringify({ useCase: uc.id, baseUrl: e.baseUrl, apiKey: e.apiKey, model: e.model, provider: e.provider })
-                            }).then(() => { setSavedTip(uc.label); loadCatalog(); });
+                            }).then((r) => {
+                              if (!r.ok) return r.text().then(t => { throw new Error(t.replace(/^"|"$/g, '')); });
+                              throw null;
+                            }).catch((err) => {
+                              if (!err) { setSavedTip(uc.label); loadCatalog(); return; }
+                              setKeyTip(t => ({ ...t, [uc.id]: err.message || '保存失败' }));
+                              setTimeout(() => setKeyTip(t => ({ ...t, [uc.id]: '' })), 4000);
+                            });
                           }}
                         >保存</Button>
                       </div>
