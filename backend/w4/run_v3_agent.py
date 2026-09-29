@@ -139,7 +139,7 @@ def main() -> int:
         rid, rq_text = r["rq_id"], r["rq_text"]
         print(f"[w4-agent] === {rid} 开始：{rq_text[:60]}…", flush=True)
         result = None
-        for attempt in (1, 2):  # LLM 偶发 end(answer=None)——空答案自动重试一次
+        for attempt in (1, 2):  # 空答案/凝练违约（overall<400字）自动重试一次
             try:
                 result = agent.run_skill(skill_id=None, rq_text=rq_text, rq_id=rid)
             except SystemExit:
@@ -149,14 +149,27 @@ def main() -> int:
                 print(f"[w4-agent] {rid} 失败：{type(e).__name__}: {e}", flush=True)
                 result = None
                 break
-            if result.get("final_answer") is not None:
-                break
-            # 空答案：删掉这次落盘（防 resume 误判完成），重试
-            wm_dir = result.get("working_memory_dir")
-            if wm_dir:
-                import shutil
-                shutil.rmtree(wm_dir, ignore_errors=True)
-            print(f"[w4-agent] {rid} 第 {attempt} 次得到空答案（end=None），重试", flush=True)
+            fa = result.get("final_answer")
+            if fa is None:
+                # 空答案：删掉这次落盘（防 resume 误判完成），重试
+                wm_dir = result.get("working_memory_dir")
+                if wm_dir:
+                    import shutil
+                    shutil.rmtree(wm_dir, ignore_errors=True)
+                print(f"[w4-agent] {rid} 第 {attempt} 次得到空答案（end=None），重试", flush=True)
+                continue
+            oa = fa.get("overall_answer") if isinstance(fa, dict) else ""
+            if isinstance(oa, str) and len(oa) >= 400:
+                break  # 契约达标（叙事 500-2000 字）
+            if attempt == 1:
+                # 凝练违约：删目录重试一次（提示词遵守率 ~60%，重试显著提升）
+                wm_dir = result.get("working_memory_dir")
+                if wm_dir:
+                    import shutil
+                    shutil.rmtree(wm_dir, ignore_errors=True)
+                print(f"[w4-agent] {rid} overall_answer 过短（{len(oa or '')} 字 < 400，契约 500-2000），重试", flush=True)
+                continue
+            print(f"[w4-agent] {rid} 重试后仍凝练（{len(oa or '')} 字），接受——claims 合成兜底补位", flush=True)
         if result is None:
             continue
         if result.get("final_answer") is None:
