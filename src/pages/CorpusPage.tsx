@@ -22,7 +22,7 @@ export function CorpusPage() {
   const savedIdx = useMemo(() => new Set(libItems.map((i) => i.paperIdx)), [libItems]);
   const [data, setData] = useState<{ papers: PaperRecord[]; funnel: PrismaLevel[]; total: number; page: number; pageSize: number } | null>(null);
   const [query, setQuery] = useState('');
-  const [stage, setStage] = useState<'ALL' | ScreenStage>('ALL');
+  const [stage, setStage] = useState<'ALL' | ScreenStage | '需人工'>('ALL');
   const [page, setPage] = useState(1);
     const [active, setActive] = useState<PaperRecord | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -61,7 +61,7 @@ export function CorpusPage() {
   useEffect(() => {
     let alive = true;
     // 后端分页：stage 过滤映射到 status 参数；query 仍在前端当前页内过滤
-    const status = stage === 'ALL' ? '' : stage === '已纳入' ? 'downloaded' : '';
+    const status = stage === 'ALL' ? '' : stage === '已纳入' ? 'downloaded' : stage === '需人工' ? 'failed' : '';
     getCorpus(projectId, { page, pageSize: 50, status }).then((d) => alive && setData(d));
     return () => {
       alive = false;
@@ -116,6 +116,7 @@ export function CorpusPage() {
             {STAGES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
+            <option value="需人工">需人工（付费墙占位）</option>
           </select>
         </div>
 

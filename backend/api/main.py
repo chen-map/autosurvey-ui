@@ -313,6 +313,8 @@ def retry_phase(pid: str, phase_id: str, workflow: str = "w1", user: dict = Depe
     for ph in state.get("phases", []):
         if ph["id"] == phase_id:
             ph["status"] = "pending"
+            ph.pop("duration_sec", None)  # 清上次时长残留（否则 running 显示旧 600s）
+            ph.pop("rc", None)
             break
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     _spawn_runner(pid, workflow, user["user_id"])
@@ -326,11 +328,28 @@ def get_corpus(pid: str, user: dict = Depends(_me), page: int = 1, page_size: in
     """语料库页：分页返回（大语料不全量加载）；漏斗计数走 SQL 聚合。
 
     page 从 1 起；status 可选过滤（downloaded/failed/no_doi）。
+    W1-P6 下载进行中：corpus_papers 尚未入账（ingest 在 P6 末尾），改用
+    download_ready + papers/ 目录实时聚合（用户裁决：下载中就能看到哪个下好了、
+    哪个需要人工补）。
     """
     if _read_config(pid) is None:
         raise HTTPException(404, f"project not found: {pid}")
     init_db()
     page, page_size = max(1, page), min(max(1, page_size), 200)
+
+    # 实时分支：P6 running 且库中行数明显少于下载清单（未入账）
+    state = _read_state(pid)
+    p6 = next((p for p in (state or {}).get("phases", []) if p.get("id") == "W1-P6"), {})
+    ready_csv = _wm(pid) / "retrieval_workspace" / "download" / "download_ready.csv"
+    if p6.get("status") == "running" and ready_csv.exists():
+        conn = get_db()
+        n_db = conn.execute("SELECT COUNT(*) c FROM corpus_papers WHERE project_id=?",
+                            (pid,)).fetchone()["c"]
+        conn.close()
+        n_ready = sum(1 for _ in ready_csv.open(encoding="utf-8-sig")) - 1
+        if n_db < n_ready:
+            return _corpus_live(pid, page, page_size, status)
+
     where = "project_id=?" + (" AND status=?" if status else "")
     args = (pid, status) if status else (pid,)
 
@@ -1019,6 +1038,71 @@ def list_projects(user: dict = Depends(_me)):
         },
         "workflows": wf_summaries.get(pr["project_id"], []),
     } for pr in projects]
+
+
+
+def _corpus_live(pid: str, page: int, page_size: int, status: str) -> dict:
+    """W1-P6 下载中的语料实时视图：download_ready 清单 × papers/ 目录状态。
+    status: downloaded=已下好 PDF / failed=占位待人工 / pending=处理中。"""
+    import csv as _csv
+    ws = _wm(pid)
+    ready = list(_csv.DictReader(
+        open(ws / "retrieval_workspace" / "download" / "download_ready.csv",
+             encoding="utf-8-sig")))
+    papers_dir = ws / "retrieval_workspace" / "papers"
+    pdf_rids: set[str] = set()
+    txt_rids: set[str] = set()
+    if papers_dir.exists():
+        for f in papers_dir.iterdir():
+            rid = f.name[:4]
+            if not rid.isdigit():
+                continue
+            (pdf_rids if f.suffix.lower() == ".pdf" else txt_rids).add(rid)
+
+    rows = []
+    for i, r in enumerate(ready, 1):
+        rid = f"{i:04d}"
+        m = re.match(r"^(\d+)", r.get("record_id") or "")
+        if m:
+            rid = f"{int(m.group(1)):04d}"
+        if rid in pdf_rids:
+            st = "downloaded"
+        elif rid in txt_rids:
+            st = "failed"
+        else:
+            st = "pending"
+        rows.append({"rid": rid, "title": r.get("title") or "", "doi": r.get("doi") or "",
+                     "venue": r.get("venue") or "", "year": r.get("year") or "", "status": st})
+
+    counts = {"downloaded": 0, "failed": 0, "pending": 0}
+    for r in rows:
+        counts[r["status"]] = counts.get(r["status"], 0) + 1
+    if status:
+        rows = [r for r in rows if r["status"] == status]
+    total = len(rows)
+    page_rows = rows[(page - 1) * page_size: page * page_size]
+    papers = [{
+        "id": r["doi"] or r["rid"],
+        "title": r["title"],
+        "authors": "",
+        "venue": r["venue"],
+        "year": int(r["year"] or 0),
+        "citations": 0,
+        "stage": "已纳入" if r["status"] == "downloaded" else "可获取性",
+        "abstract": "",
+        "status": r["status"],
+        "pdfPath": "",
+        "card": {"problems": [], "methods": [], "datasets": [], "metrics": [],
+                 "limitations": [], "assumptions": []},
+    } for r in page_rows]
+    funnel = [
+        {"stage": "下载就绪", "count": len(ready), "note": "download_ready 清单（实时）"},
+        {"stage": "成功下载", "count": counts["downloaded"], "note": "PDF 已落盘，可开 W2"},
+        {"stage": "需要人工", "count": counts["failed"], "note": "付费墙占位——手动上传 PDF 补齐"},
+        {"stage": "处理中", "count": counts["pending"], "note": "下载器队列中"},
+    ]
+    return {"papers": papers, "funnel": funnel, "total": total,
+            "page": page, "pageSize": page_size, "live": True}
 
 
 # 前端静态托管：必须在所有 API 路由注册完之后，否则 Mount("/") 会抢在 API 路由之前匹配
