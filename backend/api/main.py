@@ -1276,6 +1276,22 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 _dist_dir = Path(__file__).resolve().parents[2] / "dist"
 if _dist_dir.exists():
+    # HTML 每次回源校验（dist 热替换后浏览器立即看到新版）；hash JS/CSS 可长缓存
+    from starlette.middleware.base import BaseHTTPMiddleware  # noqa: E402
+
+    class _HtmlNoCache(BaseHTTPMiddleware):
+        def __init__(self, app2, dist: Path):
+            super().__init__(app2)
+            self._html = (dist / "index.html").read_bytes() if (dist / "index.html").exists() else b""
+
+        async def dispatch(self, request, call_next):
+            if request.url.path in ("/", "/index.html") or request.url.path.endswith(".html"):
+                from fastapi.responses import Response
+                return Response(content=self._html, media_type="text/html",
+                                headers={"Cache-Control": "no-cache", "ETag": f'"{hash(self._html) & 0xffffffff:x}"'})
+            return await call_next(request)
+
+    app.add_middleware(_HtmlNoCache, dist=_dist_dir)
     app.mount("/", StaticFiles(directory=str(_dist_dir), html=True), name="frontend")
 
 
