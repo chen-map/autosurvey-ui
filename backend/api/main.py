@@ -975,10 +975,18 @@ def get_rqs(pid: str, user: dict = Depends(_me)):
                     continue
                 ac = json.loads(ac_file.read_text(encoding="utf-8"))
                 analysis = _pretty_analysis(ac.get("overall_answer") or "")
+                if len(analysis) < 200:
+                    # Agent 行为漂移：有的 RQ 结论浓缩在 key_claims 而 overall 只留技能标记——
+                    # 用 claims 合成分析摘要，保证每个 RQ 的专页第 7 节有可读结论
+                    _kcs = ac.get("key_claims") or []
+                    if _kcs:
+                        _lines = [f"（本 RQ 的结论由 Agent 浓缩为 {len(_kcs)} 条 key claims，逐条如下）"]
+                        _lines += [f"- {kc2.get('claim_text') or ''}" for kc2 in _kcs if kc2.get("claim_text")]
+                        analysis = "\n".join(_lines)
                 if rid in macros:
                     macros[rid]["analysisSkill"] = rqd.get("skill_used") or ""
                     macros[rid]["analysisStatus"] = rqd.get("answer_completeness") or ""
-                    if len(analysis) >= 200:  # 过滤"[认知坐标:…]"类技能标记短串
+                    if len(analysis) >= 200:  # 过滤"[认知坐标:…]"类技能标记短串且无 claims 的残串
                         macros[rid]["analysis"] = analysis
                         overall_parts.append(f"【{rid}】{analysis}")
                 for kc in ac.get("key_claims") or []:

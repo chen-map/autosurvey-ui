@@ -84,10 +84,7 @@ function ClaimRow({ claim, index }: { claim: Claim; index: number }) {
         </div>
         <div className="mt-2 flex items-center gap-3">
           <DimDot label="有证据论文" ok={claim.dims.citation} />
-          {claim.dims.crossPaper !== undefined && (
-            <DimDot label="多文交叉" ok={claim.dims.crossPaper} />
-          )}
-          <span className="text-[12px] text-t3">{claim.sources.length} 篇证据</span>
+          <span className="text-[12px] text-t3">{claim.sources.length} 篇证据{claim.sources.length > 1 ? ' · 多文交叉' : ''}</span>
           <ChevronDown size={14} className={cn('ml-auto text-t3 transition-transform', open && 'rotate-180')} />
         </div>
       </button>
