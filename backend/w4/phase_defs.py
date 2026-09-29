@@ -51,6 +51,9 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--skills-root", SKILLS_ROOT,
                           "--out-dir", "kg_analysis",
                           "--use-case", "w4"],
+                 # embedding 模型已在本地 HF 缓存——离线模式跳过每次联网 HEAD 检查
+                 #（服务器连不上 huggingface.co 时 5 轮重试白耗 ~1 分钟/RQ）
+                 "env": {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1"},
                  "timeout": 14400},
             ],
             "outputs": ["kg_analysis/working_memory"],
