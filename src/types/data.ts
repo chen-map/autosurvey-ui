@@ -99,6 +99,9 @@ export interface MacroRQ {
   decompositionNote?: string;// design_report.md：Sub 拆分依据
   synthesisPlan?: string;    // design_report.md：Sub 答案 → Macro 结论的组织策略
   deficiencies?: string[];
+  analysis?: string;         // W4 kg_analysis v3：本 RQ 小分析（overall_answer）
+  analysisSkill?: string;    // W4：Agent 自选 Skill（如 B2.1-a）
+  analysisStatus?: string;   // W4：answer_completeness（answered/partial）
 }
 
 // 冻结矩阵元信息（论文集合内嵌在各 Sub-RQ 上，与真实文件同构）
@@ -112,6 +115,7 @@ export interface ClaimSource { paperId: string; locator: string; kgPath: string 
 
 export interface Claim {
   id: string;
+  rqId?: string;             // 归属宏 RQ（W4 answer_claims）
   text: string;
   status: ClaimStatus;
   dims: ClaimDims;

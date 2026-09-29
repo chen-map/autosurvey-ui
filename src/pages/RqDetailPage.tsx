@@ -37,7 +37,7 @@ const claimStatusMeta: Record<ClaimStatus, { label: string; variant: 'ok' | 'war
 function AnswerText({ text }: { text: string }) {
   const parts = text.split(/(\[\d+\])/g);
   return (
-    <p className="text-[14px] leading-[24px] text-t1">
+    <p className="whitespace-pre-line break-words text-[14px] leading-[24px] text-t1">
       {parts.map((part, i) =>
         /^\[\d+\]$/.test(part) ? (
           <sup key={i} className="mx-0.5 rounded bg-info px-1 text-[11px] font-medium text-info-fg">{part}</sup>
@@ -164,23 +164,29 @@ function StickyNav({ items }: { items: readonly (readonly [string, string])[] })
 }
 
 // 答案与核查（W4 产出）
-function AnswerSection({ no, bundle }: { no: number; bundle: NonNullable<Awaited<ReturnType<typeof getRQBundle>>> }) {
+function AnswerSection({ no, bundle, macro }: { no: number; bundle: NonNullable<Awaited<ReturnType<typeof getRQBundle>>>; macro?: MacroRQ }) {
   const [filter, setFilter] = useState<'ALL' | ClaimStatus>('ALL');
+  const rqClaims = macro ? bundle.claims.filter((c) => c.rqId === macro.id) : bundle.claims;
+  const answer = macro?.analysis || (macro ? '' : bundle.overallAnswer);
   const counts = {
-    all: bundle.claims.length,
-    verified: bundle.claims.filter((c) => c.status === 'verified').length,
-    needs_revision: bundle.claims.filter((c) => c.status === 'needs_revision').length,
-    should_remove: bundle.claims.filter((c) => c.status === 'should_remove').length,
+    all: rqClaims.length,
+    verified: rqClaims.filter((c) => c.status === 'verified').length,
+    needs_revision: rqClaims.filter((c) => c.status === 'needs_revision').length,
+    should_remove: rqClaims.filter((c) => c.status === 'should_remove').length,
   };
-  const claims = bundle.claims.filter((c) => filter === 'ALL' || c.status === filter);
+  const claims = rqClaims.filter((c) => filter === 'ALL' || c.status === filter);
   return (
     <Section id="s-answer" no={no} icon={MessageSquareText} title="答案与核查" source="W4 rq_answer.json">
       <div className="rounded-lg border border-line/60 p-4">
-        <div className="text-[13px] font-medium">综合答案（overall_answer）</div>
+        <div className="flex items-center gap-2">
+          <span className="text-[13px] font-medium">{macro ? `${macro.id} 分析（W4 Agent）` : '综合答案（overall_answer）'}</span>
+          {macro?.analysisSkill && <Badge variant="info" className="font-mono text-[11px]">{macro.analysisSkill}</Badge>}
+          {macro?.analysisStatus && <Badge variant={macro.analysisStatus === 'answered' ? 'ok' : 'warn'}>{macro.analysisStatus}</Badge>}
+        </div>
         <div className="mt-2">
-          {bundle.overallAnswer
-            ? <AnswerText text={bundle.overallAnswer} />
-            : <p className="text-[13px] text-t3">尚未生成（W4 未运行）。</p>}
+          {answer
+            ? <AnswerText text={answer} />
+            : <p className="text-[13px] text-t3">{rqClaims.length ? '本 RQ 未产出长文分析（结论见下方 claims）。' : '尚未生成（W4 未运行）。'}</p>}
         </div>
       </div>
 
@@ -425,7 +431,7 @@ function SubPage({ sub, macro, bundle }: { sub: SubRQ; macro: MacroRQ; bundle: N
       </Section>
 
       {/* 7 答案与核查 */}
-      <AnswerSection no={7} bundle={bundle} />
+      <AnswerSection no={7} bundle={bundle} macro={macro} />
     </div>
   );
 }
@@ -570,7 +576,7 @@ function MacroPage({ macro, bundle }: { macro: MacroRQ; bundle: NonNullable<Awai
       </Section>
 
       {/* 7 答案与核查 */}
-      <AnswerSection no={7} bundle={bundle} />
+      <AnswerSection no={7} bundle={bundle} macro={macro} />
     </div>
   );
 }

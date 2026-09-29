@@ -837,6 +837,43 @@ def get_rqs(pid: str, user: dict = Depends(_me)):
     macros_list = [macros[k] for k in order]
     n_papers = sum(len(s.get("paperIds") or []) for mc in macros_list for s in mc["subs"])
 
+    # W4 小分析接线（kg_analysis v3 契约产物存在才接；W4 未跑时保持 W3-only 展示）
+    claims_all: list[dict] = []
+    overall_parts: list[str] = []
+    wm_dir = _wm(pid) / "working_memory"
+    if (wm_dir / "WORKING_MEMORY_INDEX.json").exists():
+        try:
+            idx4 = json.loads((wm_dir / "WORKING_MEMORY_INDEX.json").read_text(encoding="utf-8"))
+            for rqd in idx4.get("rqs", []):
+                rid = rqd.get("rq_id") or ""
+                num = re.search(r"\d+", rid)
+                ac_file = wm_dir / f"rq_{num.group() if num else ''}" / "answer_claims.json"
+                if not ac_file.exists():
+                    continue
+                ac = json.loads(ac_file.read_text(encoding="utf-8"))
+                analysis = (ac.get("overall_answer") or "").strip()
+                if rid in macros:
+                    macros[rid]["analysisSkill"] = rqd.get("skill_used") or ""
+                    macros[rid]["analysisStatus"] = rqd.get("answer_completeness") or ""
+                    if len(analysis) >= 200:  # 过滤"[认知坐标:…]"类技能标记短串
+                        macros[rid]["analysis"] = analysis
+                        overall_parts.append(f"【{rid}】{analysis}")
+                for kc in ac.get("key_claims") or []:
+                    ev = [str(p) for p in (kc.get("evidence_papers") or []) if p]
+                    claims_all.append({
+                        "id": f"{rid}-{kc.get('claim_id') or len(claims_all) + 1}",
+                        "rqId": rid,
+                        "text": kc.get("claim_text") or "",
+                        "status": "verified" if ev else "needs_revision",
+                        "dims": {"citation": bool(ev), "semantic": True,
+                                 "coverage": True, "crossPaper": len(set(ev)) > 1},
+                        "sources": [{"paperId": p, "locator": "", "kgPath": ""} for p in ev],
+                        "note": (kc.get("claim_type") or "") + (
+                            f" · 反证 {len(kc.get('counter_evidence') or [])}" if kc.get("counter_evidence") else ""),
+                    })
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"[get_rqs] W4 产物读取失败（忽略，回退 W3-only）: {exc}")
+
     # 证据论文元数据：卡片（作者/年份/venue/url）+ download_ready.csv（DOI）
     cards_dir = _wm(pid) / "paper_cards" / "parsed"
     doi_by_rid: dict[int, str] = {}
@@ -874,8 +911,8 @@ def get_rqs(pid: str, user: dict = Depends(_me)):
     return {
         "macros": macros_list,
         "matrix": {"frozenAt": m.get("generated_at", "")},
-        "overallAnswer": "",
-        "claims": [],
+        "overallAnswer": "\n\n".join(overall_parts),
+        "claims": claims_all,
         "evidencePapers": evidence,
         "evidenceGaps": [],
         "stats": {"macros": len(macros_list), "subs": sum(len(x["subs"]) for x in macros_list),
