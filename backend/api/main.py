@@ -337,6 +337,42 @@ def get_corpus(pid: str, user: dict = Depends(_me), page: int = 1, page_size: in
     init_db()
     page, page_size = max(1, page), min(max(1, page_size), 200)
 
+    # 目录-DB 对账：回捞器/手动上传直写 papers/ 目录不经过 P6 末尾的批量入账，
+    # 库里的 status 会滞后（实测 69 vs 目录 162）——目录为准校正
+    try:
+        papers_dir = _wm(pid) / "retrieval_workspace" / "papers"
+        ready_csv0 = _wm(pid) / "retrieval_workspace" / "download" / "download_ready.csv"
+        if papers_dir.exists() and ready_csv0.exists():
+            import csv as _csv0
+            pdf_rids0 = {f.name[:4] for f in papers_dir.glob("*.pdf") if f.name[:4].isdigit()}
+            txt_rids0 = {f.name[:4] for f in papers_dir.glob("*.txt") if f.name[:4].isdigit()}
+            rid_row0: dict[str, dict] = {}
+            if pdf_rids0 or txt_rids0:
+                for r in _csv0.DictReader(open(ready_csv0, encoding="utf-8-sig")):
+                    m0 = re.match(r"^(\d+)", r.get("record_id") or "")
+                    if m0:
+                        rid_row0[f"{int(m0.group(1)):04d}"] = r
+            conn0 = get_db()
+            n_dl0 = conn0.execute(
+                "SELECT COUNT(*) c FROM corpus_papers WHERE project_id=? AND status='downloaded'",
+                (pid,)).fetchone()["c"]
+            if len(pdf_rids0) > n_dl0 and rid_row0:
+                n_fix = 0
+                for rid0, r0 in rid_row0.items():
+                    if rid0 not in pdf_rids0:
+                        continue
+                    cur0 = conn0.execute(
+                        "UPDATE corpus_papers SET status='downloaded' WHERE project_id=? AND record_id=?",
+                        (pid, r0.get("record_id") or ""))
+                    n_fix += cur0.rowcount
+                # 目录 PDF 但 ready 无对应行的（手动上传的新论文等）——已由上传端点入账，跳过
+                conn0.commit()
+                if n_fix:
+                    print(f"[corpus] 目录对账：{n_fix} 行校正为 downloaded")
+            conn0.close()
+    except Exception:
+        pass  # 对账失败不影响正常查询
+
     # 实时分支：P6 running 且库中行数明显少于下载清单（未入账）
     state = _read_state(pid)
     p6 = next((p for p in (state or {}).get("phases", []) if p.get("id") == "W1-P6"), {})

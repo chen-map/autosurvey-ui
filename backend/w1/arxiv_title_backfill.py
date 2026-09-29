@@ -140,6 +140,19 @@ def main() -> int:
                 dest.write_bytes(body)
                 for old in papers_dir.glob(f"{rid}*.txt"):
                     old.unlink(missing_ok=True)
+                # 即时入账（否则 DB status 滞后到下次 get_corpus 对账）
+                try:
+                    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+                    from db.database import get_db as _gdb
+                    conn = _gdb()
+                    conn.execute(
+                        "UPDATE corpus_papers SET status='downloaded', pdf_path=? "
+                        "WHERE project_id=? AND record_id=?",
+                        (str(dest), args.project_id, row.get("record_id") or ""))
+                    conn.commit()
+                    conn.close()
+                except Exception:
+                    pass
                 stats["downloaded"] += 1
                 stats["detail"].append({"rid": rid, "arxiv": best_id, "overlap": round(best_ov, 2)})
                 print(f"[backfill] ✓ {rid} ← arXiv {best_id}（ov={best_ov:.2f}）", flush=True)
