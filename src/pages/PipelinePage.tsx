@@ -56,7 +56,9 @@ export function PipelinePage() {
     const load = () =>
       getPipeline(projectId, workflow)
         .then((r) => alive && (setRun(r), setNotStarted(false)))
-        .catch(() => alive && setNotStarted(true)); // 真实模式：该工作流尚未启动（无对应状态文件）
+        // 真实模式：该工作流尚未启动（无状态文件）——必须清掉上一个工作流的 run 残留，
+        // 否则切 tab 后引导卡下面还挂着别的 W 的阶段卡（用户报的"W2 页面显示无关流程"）
+        .catch(() => alive && (setRun(null), setNotStarted(true)));
     load();
     // 轮询刷新：运行中页面实时跟进状态；未启动时等 runner 写出首个状态文件
     const t = setInterval(load, 4000);
