@@ -90,18 +90,25 @@ def main() -> int:
         return {r["paper_id"] for r in rows}
 
     def term_match_papers(phrases: list[str]) -> list[tuple[str, float]]:
-        """拆词 + IDF 加权：score(paper) = Σ 命中词 idf（标题命中 ×1.5 已并入近似）。"""
+        """拆词 + IDF 加权：score = Σ 命中词 idf；命中 ≥2 个不同 token 才入围
+        （防"只沾 multi-agent 这类全语料高频词"的无关论文混入——Who2com 实测教训）。"""
         toks = tokenize(phrases)
         if not toks:
             return []
-        scores: dict[str, float] = {}
+        hits_by_pid: dict[str, set[str]] = {}
+        idf_by_tok: dict[str, float] = {}
         for tok in toks:
             hits = paper_hits(tok)
             if not hits:
                 continue
-            idf = math.log(max(1.05, n_papers / len(hits)))  # 全语料词也留微小权重
+            idf_by_tok[tok] = math.log(max(1.05, n_papers / len(hits)))  # 全语料词也留微小权重
             for pid in hits:
-                scores[pid] = scores.get(pid, 0.0) + idf
+                hits_by_pid.setdefault(pid, set()).add(tok)
+        scores: dict[str, float] = {}
+        for pid, hit_toks in hits_by_pid.items():
+            if len(hit_toks) < 2:  # 单词命中（尤其高频词）无主题证据，剔除
+                continue
+            scores[pid] = sum(idf_by_tok[t] for t in hit_toks)
         return sorted(scores.items(), key=lambda kv: -kv[1])
 
     def struct_papers(node_types: list[str], edge_types: list[str]) -> dict[str, float]:
