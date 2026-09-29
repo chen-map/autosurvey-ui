@@ -54,13 +54,13 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                 {"script": str(HERE / "openalex_search.py"),
                  "args": ["--keywords", ",".join(cfg.get("search_keywords") or ([cfg.get("topic", "")] + cfg.get("domain_tags", []))),
                           "--year-from", str(year_from), "--year-to", str(year_to),
-                          "--max-records", str(cfg.get("search_max_records", 1000)),
+                          "--max-records", str(cfg.get("search_max_records", 300)),
                           "--out", f"{ws}/raw_results/openalex_results.csv",
                           "--mailto", cfg.get("contact_email", "858641291@qq.com")]},
                 {"script": str(HERE / "arxiv_search.py"),
                  "args": ["--keywords", ",".join(cfg.get("search_keywords") or ([cfg.get("topic", "")] + cfg.get("domain_tags", []))),
                           "--year-from", str(year_from), "--year-to", str(year_to),
-                          "--max-records", str(cfg.get("search_max_records", 1000)),
+                          "--max-records", str(cfg.get("search_max_records", 300)),
                           "--out", f"{ws}/raw_results/arxiv_search_results.csv",
                           "--contact-email", cfg.get("contact_email", "researcher@example.com")]},
                 # OAI-PMH 增量补充源（Retry-After 退避 + 日限额 + 合规 UA），经 P3 归一合流
@@ -87,7 +87,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "steps_tail": [
                 {"script": str(Path(__file__).resolve().parent / "cache_ingest.py"),
                  "args": ["--normalized", f"{ws}/normalized/unified_records.csv",
-                          "--cache-db", str(Path(cfg["workspace"]) / "paper_cache.sqlite3")]},
+                          "--cache-db", str(HERE.parent / "cache" / "paper_cache.sqlite3")]},
             ],
         },
         {
@@ -105,16 +105,18 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
         },
         {
             "id": "W1-P5",
-            "name": "滚雪球扩展",
-            "optional": True,   # S2 无 Key 时被 429 限流，允许降级跳过
-            "degrade": {
-                "note": "S2 无 API Key 限流降级：评分筛选种子直通（跳过引文扩展）",
-                "copy": [[f"{ws}/screening/screened_records.csv", f"{ws}/snowball/snowball_candidates.csv"]],
-            },
+            "name": "引文图谱扩展（OpenAlex，无限流）",
+            "optional": False,
             "steps": [
-                {"script": f"{scripts}/snowball_searcher/snowball_search.py",
-                 "args": ["--direction", "both", "--input", f"{ws}/normalized/unified_records.csv",
-                          "--output", f"{ws}/snowball/"]},
+                # 用户裁决：减少搜索次数，更多依赖引文图谱扩展。
+                # OpenAlex cites: 批量 filter 端点（非 search 集群）——从筛过的核心集种子
+                # 扩展"引用了种子的高被引论文"；S2 滚雪球退役（无 Key 429 空转 1h 的元凶）。
+                {"script": str(HERE / "openalex_citations.py"),
+                 "args": ["--seeds-from", f"{ws}/screening/screened_records.csv",
+                          "--top-seeds", str(cfg.get("snowball_top_seeds", 40)),
+                          "--max-records", str(cfg.get("snowball_max_records", 600)),
+                          "--out-dir", f"{ws}/snowball/",
+                          "--cache-db", str(HERE.parent / "cache" / "paper_cache.sqlite3")]},
             ],
             "outputs": [f"{ws}/snowball/snowball_candidates.csv"],
         },
