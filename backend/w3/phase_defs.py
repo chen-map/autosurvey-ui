@@ -125,6 +125,12 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--matrix-output", f"{ar}/rq_evidence_matrix.json"]},
             ],
             "outputs": [f"{ar}/rq_query_registry.json", f"{ar}/rq_evidence_matrix.json"],
+            # 存量匹配器是纯 LIKE 字面匹配——抽象 focus_terms 零命中时按结构钩子兜底补齐
+            "steps_tail": [
+                {"script": str(HERE / "matrix_boost.py"),
+                 "args": ["--matrix", f"{ar}/rq_evidence_matrix.json",
+                          "--db", "knowledge_graph/paper_kg.db"]},
+            ],
         },
         {
             "id": "W3-P7",
