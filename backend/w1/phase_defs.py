@@ -48,21 +48,22 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--output", f"{ws}/raw_results/"]},
             ],
             "outputs": [f"{ws}/raw_results/"],
-            # arXiv 主题检索（检索式 + 提交年区间 + 新文优先）：真正"查论文"，解决 OAI 全量切片的年份偏斜与不相关
+            # 检索顺序（用户裁决）：arXiv 优先（结果自带 arXiv ID → P6 直连下载成功率最高），
+            # OpenAlex 次之（正式版 DOI 走 OA 通道，作补充）
             "steps_tail": [
-                # OpenAlex 主力源（用户裁决加入）：礼貌池限流极宽松，arXiv 出口配额耗尽时的稳定供给
-                {"script": str(HERE / "openalex_search.py"),
-                 "args": ["--keywords", ",".join(cfg.get("search_keywords") or ([cfg.get("topic", "")] + cfg.get("domain_tags", []))),
-                          "--year-from", str(year_from), "--year-to", str(year_to),
-                          "--max-records", str(cfg.get("search_max_records", 300)),
-                          "--out", f"{ws}/raw_results/openalex_results.csv",
-                          "--mailto", cfg.get("contact_email", "858641291@qq.com")]},
                 {"script": str(HERE / "arxiv_search.py"),
                  "args": ["--keywords", ",".join(cfg.get("search_keywords") or ([cfg.get("topic", "")] + cfg.get("domain_tags", []))),
                           "--year-from", str(year_from), "--year-to", str(year_to),
                           "--max-records", str(cfg.get("search_max_records", 300)),
                           "--out", f"{ws}/raw_results/arxiv_search_results.csv",
                           "--contact-email", cfg.get("contact_email", "researcher@example.com")]},
+                # OpenAlex 补充源：正式版元数据（DOI 权威）+ 引文扩展的种子供给
+                {"script": str(HERE / "openalex_search.py"),
+                 "args": ["--keywords", ",".join(cfg.get("search_keywords") or ([cfg.get("topic", "")] + cfg.get("domain_tags", []))),
+                          "--year-from", str(year_from), "--year-to", str(year_to),
+                          "--max-records", str(cfg.get("search_max_records", 300)),
+                          "--out", f"{ws}/raw_results/openalex_results.csv",
+                          "--mailto", cfg.get("contact_email", "858641291@qq.com")]},
                 # OAI-PMH 增量补充源（Retry-After 退避 + 日限额 + 合规 UA），经 P3 归一合流
                 {"script": str(HERE / "arxiv_oai.py"),
                  "args": ["--set", cfg.get("oai_sets", "cs"),
@@ -141,6 +142,13 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--stats-out", f"{ws}/download/arxiv_batch_stats.json",
                           "--min-interval-sec", str(cfg.get("arxiv_dl_min_interval", 5.0)),
                           "--contact-email", cfg.get("contact_email", "researcher@example.com")]},
+                # arXiv 优先第二棒（用户裁决：下载优先 arXiv）：无 arXiv ID 的记录（引文扩展
+                # 带来的正式版 DOI）按标题查 arXiv 预印本——DOI 记录标 closed 不等于无预印本
+                # （OpenAlex 双 work 记录盲区，实测救回大批"伪付费墙"），命中直下 PDF
+                {"script": str(HERE / "arxiv_title_backfill.py"),
+                 "timeout": 14400,
+                 "args": ["--workspace", ".",
+                          "--project-id", cfg.get("project_id", "")]},
                 # OA 直链第三通道（用户裁决：校内订阅难自动化 → 合法 OA 替代）：
                 # download_prep 已把 best_oa_location.pdf_url 批量解析进 oa_pdf_url 列，
                 # 此处只下无 arXiv ID 且有直链的（出版社官方 OA/机构仓库版，合规）
