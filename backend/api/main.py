@@ -284,9 +284,10 @@ def get_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
         raise HTTPException(404, f"run not found for {pid}")
     state = json.loads(state_path.read_text(encoding="utf-8"))
     # W1-P6 下载进度注入：papers/ 目录 PDF+占位计数 / download_ready 总数（前端 chip 显示 xx/xx）
+    # running 时实时跳数；done/failed 后保留最终战果（用户裁决：进度条跑完也要能看到）
     if workflow == "w1":
         for ph in state.get("phases", []):
-            if ph.get("id") == "W1-P6" and ph.get("status") == "running":
+            if ph.get("id") == "W1-P6" and ph.get("status") in ("running", "done", "failed"):
                 dl_dir = _wm(pid) / "retrieval_workspace" / "download" / "download_ready.csv"
                 papers = _wm(pid) / "retrieval_workspace" / "papers"
                 if dl_dir.exists() and papers.exists():
