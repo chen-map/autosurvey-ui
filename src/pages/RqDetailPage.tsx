@@ -83,10 +83,11 @@ function ClaimRow({ claim, index }: { claim: Claim; index: number }) {
           </Badge>
         </div>
         <div className="mt-2 flex items-center gap-3">
-          <DimDot label="引文" ok={claim.dims.citation} />
-          <DimDot label="语义" ok={claim.dims.semantic} />
-          <DimDot label="覆盖" ok={claim.dims.coverage} />
-          <DimDot label="跨文" ok={claim.dims.crossPaper} />
+          <DimDot label="有证据论文" ok={claim.dims.citation} />
+          {claim.dims.crossPaper !== undefined && (
+            <DimDot label="多文交叉" ok={claim.dims.crossPaper} />
+          )}
+          <span className="text-[12px] text-t3">{claim.sources.length} 篇证据</span>
           <ChevronDown size={14} className={cn('ml-auto text-t3 transition-transform', open && 'rotate-180')} />
         </div>
       </button>
@@ -98,11 +99,13 @@ function ClaimRow({ claim, index }: { claim: Claim; index: number }) {
             )}
             {claim.sources.map((s, i) => (
               <div key={i} className="rounded-lg bg-page px-3 py-2">
-                <div className="text-[13px] text-t1">
-                  <FileText size={13} className="mr-1.5 inline text-t3" />
-                  {s.paperId} <span className="text-t3">{s.locator}</span>
+                <div className="text-[13px] leading-5 text-t1">
+                  <FileText size={13} className="mr-1.5 inline shrink-0 text-t3" />
+                  {s.locator || s.paperId}
                 </div>
-                <div className="mt-0.5 font-mono text-[12px] text-t3">KG 链：{s.kgPath}</div>
+                {s.kgPath
+                  ? <div className="mt-0.5 font-mono text-[12px] text-t3">KG 链：{s.kgPath}</div>
+                  : <div className="mt-0.5 truncate font-mono text-[11.5px] text-t3">{s.paperId}</div>}
               </div>
             ))}
           </div>
