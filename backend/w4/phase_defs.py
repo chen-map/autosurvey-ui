@@ -26,8 +26,8 @@ SKILLS_ROOT = str(KG_PKG / "layer2_skills")
 
 
 def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
-    ws = cfg.get("workspace_rel", "retrieval_workspace").rstrip("/")
-
+    # 路径一律 cwd 相对（runner cwd=workspace）：W2 产物在根 knowledge_graph/、W3 在根
+    # analyze_report/——曾用 workspace_rel 前缀导致 W4-P0 找不到 KG 秒失败（实测教训）
     return [
         {
             "id": "W4-P0",
@@ -35,11 +35,11 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": False,
             "steps": [
                 {"script": str(HERE / "kg_adapter.py"),
-                 "args": ["--kg", f"{ws}/knowledge_graph/paper_kg.json",
-                          "--out", f"{ws}/kg_v3"]},
+                 "args": ["--kg", "knowledge_graph/paper_kg.json",
+                          "--out", "kg_v3"]},
             ],
-            "outputs": [f"{ws}/kg_v3/nodes/papers.json",
-                        f"{ws}/kg_v3/edges"],
+            "outputs": ["kg_v3/nodes/papers.json",
+                        "kg_v3/edges"],
         },
         {
             "id": "W4-P1",
@@ -49,11 +49,11 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                 {"script": str(HERE / "run_v3_agent.py"),
                  "args": ["--workspace", ".",
                           "--skills-root", SKILLS_ROOT,
-                          "--out-dir", f"{ws}/kg_analysis",
+                          "--out-dir", "kg_analysis",
                           "--use-case", "w4"],
                  "timeout": 14400},
             ],
-            "outputs": [f"{ws}/kg_analysis/working_memory"],
+            "outputs": ["kg_analysis/working_memory"],
         },
         {
             "id": "W4-P2",
@@ -61,11 +61,11 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": False,
             "steps": [
                 {"script": str(HERE / "v3_to_w5_adapter.py"),
-                 "args": ["--v3-out", f"{ws}/kg_analysis/working_memory",
-                          "--out", f"{ws}/working_memory",
-                          "--matrix", f"{ws}/analyze_report/rq_evidence_matrix.json"]},
+                 "args": ["--v3-out", "kg_analysis/working_memory",
+                          "--out", "working_memory",
+                          "--matrix", "analyze_report/rq_evidence_matrix.json"]},
             ],
-            "outputs": [f"{ws}/working_memory/WORKING_MEMORY_INDEX.json"],
+            "outputs": ["working_memory/WORKING_MEMORY_INDEX.json"],
         },
         {
             "id": "W4-P3",
@@ -73,8 +73,8 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": True,
             "steps": [
                 {"script": str(HERE / "w4_selfcheck.py"),
-                 "args": ["--wm", f"{ws}/working_memory"]},
+                 "args": ["--wm", "working_memory"]},
             ],
-            "outputs": [f"{ws}/working_memory/WORKFLOW4_SELF_CHECK.md"],
+            "outputs": ["working_memory/WORKFLOW4_SELF_CHECK.md"],
         },
     ]

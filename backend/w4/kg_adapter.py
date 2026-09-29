@@ -35,7 +35,14 @@ def main() -> int:
 
     kg_path = Path(args.kg)
     if not kg_path.exists():
-        raise SystemExit(f"[kg_adapter] KG 不存在: {kg_path}（先跑 W2）")
+        # 兜底：W2 实际把 paper_kg.json 写在 workspace 根的 knowledge_graph/（cwd 相对），
+        # 老配置的 retrieval_workspace/ 前缀路径不存在时回退去找（实测 proj-1790652141048 踩坑）
+        alt = Path("knowledge_graph/paper_kg.json")
+        if alt.exists():
+            print(f"[kg_adapter] 输入路径回退: {kg_path} -> {alt}")
+            kg_path = alt
+        else:
+            raise SystemExit(f"[kg_adapter] KG 不存在: {kg_path}（先跑 W2）")
     out = Path(args.out)
     marker = out / "nodes" / "papers.json"
     if marker.exists() and marker.stat().st_size > 2:
