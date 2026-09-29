@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { X, FileText, Bookmark } from 'lucide-react';
+import { X, FileText, Bookmark, Upload } from 'lucide-react';
 import type { PaperRecord, ScreenStage, PrismaLevel } from '@/types/data';
 import { getCorpus } from '@/services/api';
 import { useLibrary } from '@/store/library';
@@ -25,6 +25,38 @@ export function CorpusPage() {
   const [stage, setStage] = useState<'ALL' | ScreenStage>('ALL');
   const [page, setPage] = useState(1);
     const [active, setActive] = useState<PaperRecord | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadTip, setUploadTip] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const doUpload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    setUploadTip('');
+    try {
+      const API = import.meta.env.VITE_API_BASE ?? '/api';
+      const token = localStorage.getItem('as.token') ?? '';
+      const fd = new FormData();
+      Array.from(files).forEach((f) => fd.append('files', f));
+      const res = await fetch(`${API}/projects/${projectId}/corpus/upload`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setUploadTip(`上传失败：${d.detail ?? res.status}`);
+      } else {
+        setUploadTip(`补齐 ${d.matched} 篇（替换占位）+ 新增 ${d.added} 篇${d.failed ? `，${d.failed} 个文件无效` : ''}`);
+        setPage(1);
+      }
+    } catch (e) {
+      setUploadTip(`上传失败：${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setUploading(false);
+      setTimeout(() => setUploadTip(''), 6000);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -141,8 +173,16 @@ export function CorpusPage() {
           <div className="flex items-center justify-between px-4 py-2.5 text-[12px] text-t3">
             <span>
               第 {data.page} 页 · 本页 {shown.length} 篇 · 共 {data.total} 篇
+              {uploadTip && <span className="ml-2 text-info-fg">{uploadTip}</span>}
             </span>
             <div className="flex items-center gap-2">
+              <input ref={fileRef} type="file" accept="application/pdf" multiple className="hidden"
+                onChange={(e) => { void doUpload(e.target.files); e.target.value = ''; }} />
+              <Button size="sm" variant="secondary" title="手动下载的付费墙 PDF 上传补齐（文件名以占位编号开头自动替换，否则按新论文入库）"
+                disabled={uploading} onClick={() => fileRef.current?.click()}>
+                <Upload size={13} className={uploading ? 'animate-pulse' : ''} />
+                {uploading ? '上传中…' : '手动上传 PDF'}
+              </Button>
               <Button
                 size="sm"
                 variant="secondary"

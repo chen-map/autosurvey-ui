@@ -624,6 +624,90 @@ def put_library(body: dict = Body(...), user: dict = Depends(_me)):
     return {"ok": True}
 
 
+@app.post("/api/projects/{pid}/corpus/upload")
+async def upload_corpus_pdfs(pid: str, files: list[UploadFile] = File(...), user: dict = Depends(_me)):
+    """手动上传 PDF 补齐语料（用户裁决：付费墙论文用户自己搞，此处收尾入账）。
+    匹配优先级：文件名前缀 4 位数字 = record_id（替换同名占位 txt）→ 标题包含匹配
+    download_ready → 匹配不到作为新论文登记（title=文件名）。全部落 papers/ 目录并
+    upsert corpus_papers（status=downloaded）。"""
+    import re as _re
+    import shutil as _shutil
+    _own_project(pid, user)
+    ws = _wm(pid)
+    papers_dir = ws / "retrieval_workspace" / "papers"
+    ready_csv = ws / "retrieval_workspace" / "download" / "download_ready.csv"
+    papers_dir.mkdir(parents=True, exist_ok=True)
+
+    # download_ready 索引：record_id → 行；title_norm → 行
+    ready_by_rid: dict[str, dict] = {}
+    ready_by_title: dict[str, dict] = {}
+
+    def _norm_t(t: str) -> str:
+        return _re.sub(r"[^a-z0-9]+", "", (t or "").lower())
+
+    if ready_csv.exists():
+        import csv as _csv
+        with open(ready_csv, encoding="utf-8-sig", newline="") as fh:
+            for row in _csv.DictReader(fh):
+                rid = "".join(c for c in (row.get("record_id") or "") if c.isdigit())
+                if rid:
+                    ready_by_rid[f"{int(rid):04d}"] = row
+                nt = _norm_t(row.get("title") or "")
+                if nt and nt not in ready_by_title:
+                    ready_by_title[nt] = row
+
+    result = {"matched": 0, "added": 0, "failed": 0, "detail": []}
+    conn = get_db()
+    for f in files:
+        name = Path(f.filename or "paper.pdf").name
+        data = await f.read()
+        if len(data) < 1024 or data[:4] != b"%PDF":
+            result["failed"] += 1
+            result["detail"].append({"file": name, "note": "不是有效 PDF"})
+            continue
+        stem = name.rsplit(".", 1)[0]
+        m = _re.match(r"^(\d{4})", stem)
+        row = ready_by_rid.get(m.group(1)) if m else None
+        how = "record_id 匹配（占位替换）" if row else None
+        if row is None:
+            nt = _norm_t(stem)
+            for t, r in ready_by_title.items():
+                if nt and (nt in t or t in nt):
+                    row, how = r, "标题匹配"
+                    break
+        if row:
+            rid_key = "".join(c for c in row["record_id"] if c.isdigit())
+            dest = papers_dir / f"{int(rid_key):04d}_{_re.sub(r'[^\w\-]+', '_', (row.get('title') or 'paper')[:60]).strip('_')}.pdf"
+            # 删占位 txt（命名可能不同：按 rid 前缀扫）
+            for old in papers_dir.glob(f"{int(rid_key):04d}*.txt"):
+                old.unlink(missing_ok=True)
+            dest.write_bytes(data)
+            conn.execute(
+                "INSERT INTO corpus_papers (project_id, doi, title, venue, year, url, abstract, source, status, pdf_path, record_id)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(project_id, doi, title)"
+                " DO UPDATE SET status='downloaded', pdf_path=excluded.pdf_path",
+                (pid, row.get("doi") or "", row.get("title") or "", row.get("venue") or "",
+                 row.get("year") or "", row.get("url") or "", "", "manual",
+                 "downloaded", str(dest), row.get("record_id") or ""))
+            result["matched"] += 1
+            result["detail"].append({"file": name, "note": how})
+        else:
+            # 新论文登记（title=文件名）
+            dest = papers_dir / f"manual_{_re.sub(r'[^\w\-]+', '_', stem[:60])}.pdf"
+            dest.write_bytes(data)
+            conn.execute(
+                "INSERT INTO corpus_papers (project_id, doi, title, venue, year, url, abstract, source, status, pdf_path, record_id)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(project_id, doi, title)"
+                " DO UPDATE SET status='downloaded', pdf_path=excluded.pdf_path",
+                (pid, "", stem.replace("_", " "), "", "", "", "", "manual_upload",
+                 "downloaded", str(dest), ""))
+            result["added"] += 1
+            result["detail"].append({"file": name, "note": "新论文入库（未匹配占位）"})
+    conn.commit()
+    conn.close()
+    return result
+
+
 @app.get("/api/projects/{pid}/kg")
 def get_kg(pid: str, user: dict = Depends(_me)):
     _own_project(pid, user)
