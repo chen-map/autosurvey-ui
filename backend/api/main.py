@@ -788,6 +788,39 @@ def get_kg(pid: str, user: dict = Depends(_me)):
             "paperCount": len(data.get("papers", []))}
 
 
+def _pretty_analysis(text: str) -> str:
+    """W4 overall_answer 可能是 agent 输出的 JSON 串——转可读 markdown（键加粗、列表逐项）。"""
+    t = (text or "").strip()
+    if not t.startswith("{"):
+        return t
+    try:
+        d = json.loads(t)
+    except json.JSONDecodeError:
+        return t
+
+    def fmt(obj: object, indent: int = 0) -> str:
+        pad = "  " * indent
+        if isinstance(obj, dict):
+            lines = []
+            for k, v in obj.items():
+                key = str(k).replace("_", " ")
+                if isinstance(v, (dict, list)) and v:
+                    lines.append(f"{pad}- **{key}**：")
+                    lines.append(fmt(v, indent + 1))
+                elif isinstance(v, (dict, list)):
+                    lines.append(f"{pad}- **{key}**：（空）")
+                else:
+                    lines.append(f"{pad}- **{key}**：{v}")
+            return "\n".join(lines)
+        if isinstance(obj, list):
+            if all(not isinstance(x, (dict, list)) for x in obj):
+                return "\n".join(f"{pad}- {x}" for x in obj)
+            return "\n".join(fmt(x, indent) for x in obj)
+        return f"{pad}{obj}"
+
+    return fmt(d)
+
+
 @app.get("/api/projects/{pid}/rqs")
 def get_rqs(pid: str, user: dict = Depends(_me)):
     _own_project(pid, user)
@@ -871,6 +904,62 @@ def get_rqs(pid: str, user: dict = Depends(_me)):
         })
     ev_by_id = {e["id"]: e for e in evidence}
 
+    # W3 设计产物接线：前 6 节真实数据（design_report 钩子/原则 · design_summary 表 · outline 章节 · reflection 缺陷）
+    ar_dir = _wm(pid) / "analyze_report"
+    principle, hooks = "", {}
+    _dp = ar_dir / "design_report.md"
+    if _dp.exists():
+        _md = _dp.read_text(encoding="utf-8")
+        _mp = re.search(r"设计原则[：:]\s*(.+)", _md)
+        principle = _mp.group(1).strip() if _mp else ""
+        _parts = re.split(r"\*\*证据钩子（(RQ\d+)）\*\*", _md)
+        for i in range(1, len(_parts), 2):
+            body = _parts[i + 1] if i + 1 < len(_parts) else ""
+            def _grab(pat: str, _b=body) -> str:
+                _g = re.search(pat, _b)
+                return _g.group(1).strip().replace("`", "") if _g else ""
+            hooks[_parts[i]] = {"nodes": _grab(r"依赖节点类型[：:]\s*(.+)"),
+                                "edges": _grab(r"依赖边类型[：:]\s*(.+)"),
+                                "terms": _grab(r"英文焦点词[：:]\s*(.+)")}
+    _ds = ar_dir / "survey_design_summary.md"
+    if _ds.exists():
+        for _m in re.finditer(r"^\|\s*(RQ\d+)\s*\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|\s*$",
+                              _ds.read_text(encoding="utf-8"), re.M):
+            if _m.group(1) in macros:
+                macros[_m.group(1)]["summary"] = (
+                    f"{_m.group(2).strip()}——{_m.group(3).strip()}，Sub-RQ {_m.group(4).strip()} 个，"
+                    f"证据强度「{_m.group(5).strip()}」")
+    _ol = ar_dir / "survey_outline.json"
+    if _ol.exists():
+        try:
+            for _sec in json.loads(_ol.read_text(encoding="utf-8")).get("sections", []):
+                _n = len(_sec.get("supporting_paper_ids") or [])
+                for _rid in _sec.get("macro_rq_ids") or []:
+                    if _rid in macros:
+                        macros[_rid]["synthesisPlan"] = (
+                            f"Sub 答案汇总至 §{_sec.get('section_index')}（章节标题即本 RQ），"
+                            f"该章冻结支撑论文 {_n} 篇；章节内按 Sub-RQ 逐条综合，"
+                            f"W5 以 working_memory/answer_claims 为事实底座撰写正文。")
+        except (OSError, json.JSONDecodeError):
+            pass
+    _rl = ar_dir / "rq_reflection_log.md"
+    if _rl.exists():
+        for _m in re.finditer(r"^## (RQ\d+)\.(\d+): .+?$\n+- Current support: (\d+) papers\n+- Support level: (\w+)",
+                              _rl.read_text(encoding="utf-8"), re.M):
+            if _m.group(1) in macros:
+                macros[_m.group(1)].setdefault("deficiencies", []).append(
+                    f"{_m.group(1)}.{_m.group(2)} 证据极弱（{_m.group(3)} 篇，{_m.group(4)}）："
+                    f"低于接受阈值，建议放宽范围/合并/改写")
+    if principle or hooks:
+        for _rid, _mc in macros.items():
+            _h = hooks.get(_rid) or {}
+            _lines = ([f"设计原则：{principle}"] if principle else []) + [
+                f"{_k}：{_v}" for _k, _v in (("依赖节点类型", _h.get("nodes")),
+                                             ("依赖边类型", _h.get("edges")),
+                                             ("英文焦点词", _h.get("terms"))) if _v]
+            if _lines:
+                _mc["decompositionNote"] = "\n".join(_lines)
+
     # W4 小分析接线（kg_analysis v3 契约产物存在才接；W4 未跑时保持 W3-only 展示）
     claims_all: list[dict] = []
     overall_parts: list[str] = []
@@ -885,7 +974,7 @@ def get_rqs(pid: str, user: dict = Depends(_me)):
                 if not ac_file.exists():
                     continue
                 ac = json.loads(ac_file.read_text(encoding="utf-8"))
-                analysis = (ac.get("overall_answer") or "").strip()
+                analysis = _pretty_analysis(ac.get("overall_answer") or "")
                 if rid in macros:
                     macros[rid]["analysisSkill"] = rqd.get("skill_used") or ""
                     macros[rid]["analysisStatus"] = rqd.get("answer_completeness") or ""

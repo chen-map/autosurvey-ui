@@ -490,14 +490,14 @@ function MacroPage({ macro, bundle }: { macro: MacroRQ; bundle: NonNullable<Awai
 
       {/* 1 Macro 简述 ← design_report.md */}
       <Section id="s-summary" no={1} icon={FileQuestion} title="Macro 简述" source={SRC.design}>
-        <p className="text-[14px] leading-[24px] text-t1">
+        <p className="whitespace-pre-line text-[14px] leading-[24px] text-t1">
           {macro.summary ?? `${macro.text}——该 Macro 的简述尚未生成（W3-P2 产出）。`}
         </p>
       </Section>
 
       {/* 2 分解逻辑 ← design_report.md */}
       <Section id="s-decompose" no={2} icon={GitMerge} title="分解逻辑" source={SRC.design}>
-        <p className="text-[13.5px] leading-[22px] text-t1">
+        <p className="whitespace-pre-line text-[13.5px] leading-[22px] text-t1">
           {macro.decompositionNote ?? '分解逻辑尚未生成。'}
         </p>
         {macro.role && (
@@ -557,7 +557,7 @@ function MacroPage({ macro, bundle }: { macro: MacroRQ; bundle: NonNullable<Awai
 
       {/* 5 怎么综合 ← design_report.md */}
       <Section id="s-synthesis" no={5} icon={CheckCircle2} title="怎么综合" source={SRC.design}>
-        <p className="text-[13.5px] leading-[22px] text-t1">
+        <p className="whitespace-pre-line text-[13.5px] leading-[22px] text-t1">
           {macro.synthesisPlan ?? '综合策略尚未生成。'}
         </p>
       </Section>
