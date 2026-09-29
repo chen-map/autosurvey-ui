@@ -42,30 +42,59 @@ def build_query(kws: list[str], year_from: int, year_to: int) -> str:
     return "(" + " OR ".join(terms) + ") AND " + date
 
 
-def fetch(url: str) -> bytes:
-    """拉取一页；406/429 = arXiv 反滥用限流——指数退避重试，仍败则抛错（区别于正常的空结果）。
-    AS_ARXIV_PROXY 环境变量非空时经该 HTTP 代理出站（绕过共享出口 IP 封禁）。"""
+def _curl_once(url: str, proxy: str) -> tuple[bytes, str, int]:
+    """单次请求。返回 (body, http_code, curl_rc)。"""
     import subprocess
-    proxy = os.environ.get("AS_ARXIV_PROXY", "").strip()
     cmd = ["curl", "-sS", "-g", "-L", "--max-time", "60", "-w", "%{http_code}", "-A",
            "AutoSurvey-W1-search/0.1 (contact: researcher@example.com)"]
     if proxy:
         cmd += ["-x", proxy]
-    for attempt in range(4):
-        proc = subprocess.run(cmd + [url], capture_output=True)
-        if proc.returncode != 0:
-            raise OSError(proc.stderr.decode("utf-8", errors="replace")[:200])
-        body, code = proc.stdout[:-3], proc.stdout[-3:].decode()
-        if code in ("200", "20"):
+    proc = subprocess.run(cmd + [url], capture_output=True)
+    if proc.returncode != 0:
+        return b"", "", proc.returncode
+    body, code = proc.stdout[:-3], proc.stdout[-3:].decode()
+    return body, code, 0
+
+
+def fetch(url: str) -> bytes:
+    """双通道自动回退：直连优先 → 406/429 或链路失败且配了 AS_ARXIV_PROXY 时切代理 →
+    代理链路失败回直连。两通道都限流则指数退避交替重试。
+    背景：直连快但共享出口 IP 配额会被人群烧光；VPS 独立配额但国际链路偶发超时。"""
+    proxy = os.environ.get("AS_ARXIV_PROXY", "").strip()
+    direct = ""  # 直连=空 proxy
+    cur = direct
+    attempt = 0
+    while attempt < 5:
+        body, code, rc = _curl_once(url, cur)
+        if rc == 0 and code in ("200", "20"):
             return body
+        # 链路失败（curl rc≠0，如代理超时 000）→ 切另一通道立即重试（不计入退避次数）
+        if rc != 0:
+            other = proxy if cur == direct and proxy else direct
+            if other != cur:
+                print(f"[arxiv_search] {'直连' if cur == direct else '代理'}链路失败（rc={rc}），"
+                      f"切{'VPS 代理' if other else '直连'}重试", flush=True)
+                cur = other
+                continue
+            attempt += 1
+            time.sleep(5)
+            continue
+        # HTTP 层限流 → 优先换通道（直连↔代理），换无可换再退避
         if code in ("406", "429"):
-            wait = 60 * (3 ** attempt)  # 60s/180s/540s/1620s——实测配额窗口冷却约 3 分钟
-            print(f"[arxiv_search] HTTP {code}（arXiv 限流/封禁信号），退避 {wait}s 后重试（第 {attempt+1} 次）", flush=True)
+            other = proxy if cur == direct and proxy else direct
+            if other != cur:
+                print(f"[arxiv_search] HTTP {code}（限流），"
+                      f"切{'VPS 代理' if other else '直连'}通道", flush=True)
+                cur = other
+                continue
+            wait = 60 * (3 ** attempt)  # 双通道都限流：60s/180s/540s/1620s/4860s
+            print(f"[arxiv_search] HTTP {code} 双通道均限流，退避 {wait}s（第 {attempt+1} 次）", flush=True)
             time.sleep(wait)
+            attempt += 1
             continue
         raise OSError(f"HTTP {code}: {body[:150]}")
-    raise OSError("arXiv 连续限流 4 次——出口 IP 配额耗尽（共享 IP 常见，冷却约 3-10 分钟），"
-                  "稍后重试即可；已配 AS_ARXIV_PROXY 时仍出现说明代理出口 IP 也到限额")
+    raise OSError("arXiv 双通道（直连+VPS 代理）均连续失败——出口配额耗尽或链路异常，"
+                  "稍后重试；持续失败请检查 AS_ARXIV_PROXY 指向的代理是否存活")
 
 
 def main() -> int:
