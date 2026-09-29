@@ -507,7 +507,18 @@ class LLMSkillAgent:
             f"**研究问题（RQ）**：{rq_text}\n"
             f"**RQ ID**：{rq_id}\n\n"
             "请按照 Skill 规范，调用工具从知识图谱中提取数据完成分析。\n"
-            "分析完成后，调用 `end` 工具输出结构化结果，"
+            "分析完成后，调用 `end` 工具输出结构化结果。"
+            "**end 的 answer 必须是字段固定的 JSON 对象**（下游按此契约消费，字段名不可改）：\n"
+            "{\n"
+            '  "overall_answer": 叙事性综合结论（中文 markdown 段落，500-2000 字）：第一段直接回答 RQ；'
+            "随后 2-4 段展开论证主线，引用证据论文的关键数字与结论（以 [paper_id] 形式内联标注）；"
+            "最后一段说明分歧点、证据缺口与不确定性。不要输出表格、纯数据罗列或 JSON 转储——"
+            "要写成能直接进综述正文的连贯论述；\n"
+            '  "key_claims": [5-12 条，每条 {claim_id, claim_text(可核查结论句，尽量含量化证据), '
+            "claim_type, evidence_papers(工具结果中真实出现的论文 id), counter_evidence, confidence}]；\n"
+            '  "answer_completeness": "answered | partial | blocked"；\n'
+            '  "completeness_notes": "证据覆盖不足之处（一句话）"\n'
+            "}\n"
             "然后生成 HTML 报告的 JSON 内容块数组。"
         )
         if extra_context:
