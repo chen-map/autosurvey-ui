@@ -216,6 +216,16 @@ function PhaseChip({ phase, projectId, workflow, onRetried }: { phase: PhaseStat
           </div>
         </div>
       </div>
+      {phase.progress && (
+        <div className="shrink-0 text-right">
+          <div className="tabular-nums text-[13px] font-medium text-t1">
+            {phase.progress.downloaded + phase.progress.placeholder}/{phase.progress.total}
+          </div>
+          <div className="text-[10.5px] text-t3">
+            {phase.progress.downloaded} 篇 PDF{phase.progress.placeholder ? ` + ${(phase.progress.placeholder)} 占位` : ''}
+          </div>
+        </div>
+      )}
       {failedLike && (
         <Button variant="ghost" size="sm" className="shrink-0 px-2" title="重跑该阶段（从 checkpoint 断点续传）" onClick={() => void retry()} disabled={retrying}>
           <RotateCcw size={13} className={retrying ? 'animate-spin' : ''} />

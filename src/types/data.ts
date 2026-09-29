@@ -8,6 +8,7 @@ export interface PhaseState {
   name: string;
   status: PhaseStatus;
   durationSec?: number;
+  progress?: { downloaded: number; placeholder: number; total: number }; // W1-P6 下载进度
 }
 
 export interface WorkflowRun {

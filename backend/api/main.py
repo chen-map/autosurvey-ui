@@ -211,10 +211,11 @@ def create_project(body: dict, user: dict = Depends(_me)):
         "field_tags": body.get("field_tags", []),
         "description": body.get("description", ""),
         "platforms": body.get("platforms", []),
-        "search_cap": body.get("search_cap", 2000),
-        "corpus_cap": body.get("corpus_cap", 500),
+        # camelCase（前端 payload）优先，snake_case 兜底——曾因命名不匹配永远落默认值
+        "search_cap": body.get("searchCap", body.get("search_cap", 2000)),
+        "corpus_cap": body.get("corpusCap", body.get("corpus_cap", 500)),
         "prescore": body.get("prescore", 0.25),
-        "year_range": body.get("year_range", [2020, 2026]),
+        "year_range": body.get("yearRange", body.get("year_range", [2020, 2026])),
         "seed_dir": seed_dir, "local_dir": body.get("local_dir", ""),
         "search_keywords": body.get("search_keywords", []),  # LLM 生成或用户直填的英文检索词
         # LLM 配置不落盘：唯一事实源是 llm_configs 表（Fernet 加密），运行时经 AS_RUN_USER_ID 解析
@@ -281,7 +282,24 @@ def get_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
     state_path = _wm(pid) / f"{workflow}_state.json"
     if not state_path.exists():
         raise HTTPException(404, f"run not found for {pid}")
-    return json.loads(state_path.read_text(encoding="utf-8"))
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    # W1-P6 下载进度注入：papers/ 目录 PDF+占位计数 / download_ready 总数（前端 chip 显示 xx/xx）
+    if workflow == "w1":
+        for ph in state.get("phases", []):
+            if ph.get("id") == "W1-P6" and ph.get("status") == "running":
+                dl_dir = _wm(pid) / "retrieval_workspace" / "download" / "download_ready.csv"
+                papers = _wm(pid) / "retrieval_workspace" / "papers"
+                if dl_dir.exists() and papers.exists():
+                    try:
+                        total = sum(1 for _ in dl_dir.open(encoding="utf-8-sig")) - 1
+                        n_pdf = len(list(papers.glob("*.pdf")))
+                        n_txt = len(list(papers.glob("*.txt")))
+                        ph["progress"] = {"downloaded": n_pdf, "placeholder": n_txt,
+                                          "total": max(total, 0)}
+                    except OSError:
+                        pass
+                break
+    return state
 
 
 @app.post("/api/projects/{pid}/phases/{phase_id}/retry")

@@ -195,7 +195,8 @@ export function NewProjectPage() {
   const create = async () => {
     setCreating(true);
     localStorage.setItem(LS_LAST_FIELDS, JSON.stringify(tags)); // 记住本次领域组合，下次自动预选
-    const p = await createProject({ title, fieldTags: tags, description, seedFiles: seeds, searchKeywords: keywords });
+    // 滑杆参数必须随 payload 走（曾双断：前端没发 + 后端只认 snake_case → 永远默认值）
+    const p = await createProject({ title, fieldTags: tags, description, seedFiles: seeds, searchKeywords: keywords, searchCap, corpusCap, prescore });
     try {
       await startRun(p.id); // 真实模式：创建即启动 W1；启动失败不阻断，可在流水线页手动启动
     } catch {
