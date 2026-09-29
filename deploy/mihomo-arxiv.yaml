@@ -21,8 +21,8 @@ proxies:
     client-fingerprint: chrome
 
 rules:
-  - DOMAIN-SUFFIX,arxiv.org,vps-reality      # export（检索 API）+ www/PDF 全走
+  - DOMAIN,export.arxiv.org,vps-reality    # 检索 API 域（被限流的）走 VPS
+  - DOMAIN-SUFFIX,arxiv.org,DIRECT          # PDF 下载域直连（未被封，直连快）
   - DOMAIN-SUFFIX,semanticscholar.org,vps-reality
-  - DOMAIN-SUFFIX,s2.api,vps-reality
   - DOMAIN,api.semanticscholar.org,vps-reality
-  - MATCH,DIRECT                              # 其余（DeepSeek/IEEE/HF镜像/校内）直连不受影响
+  - MATCH,DIRECT                             # 其余（DeepSeek/IEEE/HF镜像/校内）直连不受影响

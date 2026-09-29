@@ -50,6 +50,13 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "outputs": [f"{ws}/raw_results/"],
             # arXiv 主题检索（检索式 + 提交年区间 + 新文优先）：真正"查论文"，解决 OAI 全量切片的年份偏斜与不相关
             "steps_tail": [
+                # OpenAlex 主力源（用户裁决加入）：礼貌池限流极宽松，arXiv 出口配额耗尽时的稳定供给
+                {"script": str(HERE / "openalex_search.py"),
+                 "args": ["--keywords", ",".join(cfg.get("search_keywords") or ([cfg.get("topic", "")] + cfg.get("domain_tags", []))),
+                          "--year-from", str(year_from), "--year-to", str(year_to),
+                          "--max-records", str(cfg.get("search_max_records", 1000)),
+                          "--out", f"{ws}/raw_results/openalex_results.csv",
+                          "--mailto", cfg.get("contact_email", "858641291@qq.com")]},
                 {"script": str(HERE / "arxiv_search.py"),
                  "args": ["--keywords", ",".join(cfg.get("search_keywords") or ([cfg.get("topic", "")] + cfg.get("domain_tags", []))),
                           "--year-from", str(year_from), "--year-to", str(year_to),
