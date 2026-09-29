@@ -1,23 +1,60 @@
 #!/usr/bin/env python3
-"""W3 证据矩阵结构兜底（执行器层，存量脚本零改动；改矩阵前自动备份）。
+"""W3 证据矩阵兜底增强（执行器层，存量脚本零改动；改矩阵前自动备份）。
 
-病根（proj-1790652141048 实测）：query_rq_evidence.py 的匹配是纯 LIKE 字面匹配，
-LLM 规划的 focus_terms 是抽象长短语（"evaluation validity" 类）时字面零命中——
-该 RQ 论文数 0、判 blocked；而 query_plan 里带全的 node_type_hints / edge_type_hints
-结构钩子完全没被用上（KG 里明明有 Metric×278、measured_by×725）。
+病根（proj-1790652141048 实测）：query_rq_evidence.py 的匹配是纯 LIKE 整串匹配，
+LLM 规划的 focus_terms 是抽象长短语（"multi-agent collaboration evaluation" 类）时
+字面零命中——该 RQ 论文数 0、判 blocked。
 
-本脚本在证据矩阵落地后（P6 steps_tail）跑：对 paper_ids 为空的行，按结构钩子查
-KG 图（论文=拥有提示类型节点 / 参与提示类型边的 origin_paper_id）补齐证据论文。
-评分诚实压在 supporting/background 档（封顶 0.84，不冒充 strong），并标注 boost 来源。
+两级递降（用户裁决：长短语拆词匹配是治本，结构钩子只是兜底）：
+1. 拆词匹配：focus_terms/paper_text_terms 拆 token（去停用词/去连字符变体），
+   逐词 LIKE 标题/摘要/summary，IDF 加权计分（语料全是 multi-agent 论文，
+   "multi-agent" 无区分度；mismatch/validity 等稀有词才是排序信号）。
+2. 结构兜底：拆词仍零命中时，按 query_plan 节点/边类型钩子查 KG 图补齐。
+
+评分诚实压在 supporting 档（封顶 0.84 / primary 线以下），并标注 boost 来源。
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
+import re
 import shutil
 import sqlite3
 import time
 from pathlib import Path
+
+# 研究腔/功能词——无区分度，拆词后剔除
+STOPWORDS = {
+    "a", "an", "the", "of", "in", "on", "for", "and", "or", "to", "with", "via",
+    "how", "what", "whether", "between", "existing", "current", "across", "their",
+    "these", "those", "such", "some", "is", "are", "do", "does", "can", "could",
+    "should", "there", "exist", "existing", "using", "based", "toward", "towards",
+    "study", "survey", "review", "research",
+}
+TOKEN_RE = re.compile(r"[a-z][a-z0-9-]+")
+MIN_TOKEN_LEN = 4
+
+
+def tokenize(phrases: list[str], limit: int = 16) -> list[str]:
+    """长短语 → 去重 token 列表（保序）。连字符词保留原形与去连字符两变体由调用方 LIKE。"""
+    seen: list[str] = []
+    for ph in phrases or []:
+        for tok in TOKEN_RE.findall((ph or "").lower()):
+            if len(tok) < MIN_TOKEN_LEN or tok in STOPWORDS:
+                continue
+            if tok not in seen:
+                seen.append(tok)
+            if len(seen) >= limit:
+                return seen
+    return seen
+
+
+def like_variants(tok: str) -> list[str]:
+    """multi-agent → ['multi-agent', 'multi agent', 'multiagent'] 三种标题写法。"""
+    if "-" in tok:
+        return list(dict.fromkeys([tok, tok.replace("-", " "), tok.replace("-", "")]))
+    return [tok]
 
 
 def qmarks(items: list[str]) -> str:
@@ -25,7 +62,7 @@ def qmarks(items: list[str]) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="证据矩阵结构兜底（0 论文行按 KG 图补齐）")
+    ap = argparse.ArgumentParser(description="证据矩阵兜底（0 论文行：拆词匹配优先 + 结构兜底）")
     ap.add_argument("--matrix", required=True, help="rq_evidence_matrix.json")
     ap.add_argument("--db", required=True, help="paper_kg.db")
     ap.add_argument("--max-papers", type=int, default=12)
@@ -40,6 +77,32 @@ def main() -> int:
 
     conn = sqlite3.connect(args.db)
     conn.row_factory = sqlite3.Row
+    n_papers = conn.execute("SELECT COUNT(*) c FROM papers").fetchone()["c"]
+    titles = {r["paper_id"]: r["title"] for r in conn.execute("SELECT paper_id, title FROM papers")}
+
+    def paper_hits(tok: str) -> set[str]:
+        """LIKE 命中该词（含连字符变体）的论文集合。"""
+        pats, params = [], []
+        for v in like_variants(tok):
+            pats.append("(title LIKE ? COLLATE NOCASE OR abstract LIKE ? COLLATE NOCASE OR summary LIKE ? COLLATE NOCASE)")
+            params += [f"%{v}%"] * 3
+        rows = conn.execute(f"SELECT paper_id FROM papers WHERE {' OR '.join(pats)}", params)
+        return {r["paper_id"] for r in rows}
+
+    def term_match_papers(phrases: list[str]) -> list[tuple[str, float]]:
+        """拆词 + IDF 加权：score(paper) = Σ 命中词 idf（标题命中 ×1.5 已并入近似）。"""
+        toks = tokenize(phrases)
+        if not toks:
+            return []
+        scores: dict[str, float] = {}
+        for tok in toks:
+            hits = paper_hits(tok)
+            if not hits:
+                continue
+            idf = math.log(max(1.05, n_papers / len(hits)))  # 全语料词也留微小权重
+            for pid in hits:
+                scores[pid] = scores.get(pid, 0.0) + idf
+        return sorted(scores.items(), key=lambda kv: -kv[1])
 
     def struct_papers(node_types: list[str], edge_types: list[str]) -> dict[str, float]:
         """论文得分 = 拥有提示类型节点数 + 0.5×参与提示类型边数。"""
@@ -61,18 +124,29 @@ def main() -> int:
                 scores[r["pid"]] = scores.get(r["pid"], 0.0) + 0.5 * float(r["c"])
         return scores
 
-    titles = {r["paper_id"]: r["title"] for r in conn.execute("SELECT paper_id, title FROM papers")}
-
-    def fill_row(row: dict, sid: str) -> int:
+    def fill_row(row: dict) -> str | None:
         qp = row.get("query_plan") or {}
-        node_types = [t for t in (qp.get("node_type_hints") or []) if t]
-        edge_types = [t for t in (qp.get("edge_type_hints") or []) if t]
-        if not node_types and not edge_types:
-            return 0
-        raw = struct_papers(node_types, edge_types)
-        ranked = sorted(raw.items(), key=lambda kv: -kv[1])[: args.max_papers]
+        phrases = list(qp.get("focus_terms") or []) + list(qp.get("paper_text_terms") or [])
+        ranked: list[tuple[str, float]] = []
+        source, detail = "", {}
+        # 第一级：拆词匹配（治本——长短语拆 token 逐词 LIKE，IDF 加权排序）
+        ranked = term_match_papers(phrases)
+        if ranked:
+            source = "term_split"
+            detail = {"tokens": tokenize(phrases)[:12]}
         if not ranked:
-            return 0
+            # 第二级：结构钩子兜底（拆词仍零命中才走）
+            node_types = [t for t in (qp.get("node_type_hints") or []) if t]
+            edge_types = [t for t in (qp.get("edge_type_hints") or []) if t]
+            if not node_types and not edge_types:
+                return None
+            raw = struct_papers(node_types, edge_types)
+            ranked = sorted(raw.items(), key=lambda kv: -kv[1])
+            source = "kg_structural_fallback"
+            detail = {"node_types": node_types, "edge_types": edge_types}
+        if not ranked:
+            return None
+        ranked = ranked[: args.max_papers]
         top = ranked[0][1] or 1.0
         ids, scores, roles = [], [], []
         for pid, sc in ranked:
@@ -84,35 +158,36 @@ def main() -> int:
         row["paper_scores"] = scores
         row["paper_roles"] = roles
         row["paper_titles"] = [titles.get(p, p) for p in ids]
-        if node_types:
+        if source == "term_split":
+            pass  # 拆词命中不需要 node_ids 伪装
+        elif detail.get("node_types"):
+            nt = detail["node_types"]
             sample = conn.execute(
-                f"SELECT node_id FROM nodes WHERE node_type IN ({qmarks(node_types)}) "
-                f"ORDER BY rowid LIMIT 8", node_types)
+                f"SELECT node_id FROM nodes WHERE node_type IN ({qmarks(nt)}) "
+                f"ORDER BY rowid LIMIT 8", nt)
             row["node_ids"] = [r["node_id"] for r in sample]
-        else:
-            row["node_ids"] = row.get("node_ids") or []
         ans = row.get("answerability") if isinstance(row.get("answerability"), dict) else {}
-        ans.update({"level": "moderate" if len(ids) >= 5 else "limited",
-                    "note": "结构兜底：focus_terms 字面零命中，按 query_plan 节点/边类型钩子从 KG 图补齐"})
+        note = ("拆词匹配：长短语拆 token 逐词匹配，IDF 加权排序"
+                if source == "term_split" else
+                "结构兜底：按 query_plan 节点/边类型钩子从 KG 图补齐")
+        ans.update({"level": "moderate" if len(ids) >= 5 else "limited", "note": note})
         row["answerability"] = ans
-        row["boost"] = {"source": "kg_structural_fallback",
-                        "node_types": node_types, "edge_types": edge_types,
-                        "papers_added": len(ids)}
-        return len(ids)
+        row["boost"] = {"source": source, **detail, "papers_added": len(ids)}
+        return source
 
     touched = []
     for row in data.get("sub_rq_matrix") or []:
         sid = row.get("sub_rq_id") or ""
         if not row.get("paper_ids_ranked") and row.get("rq_id"):
-            n = fill_row(row, sid)
-            if n:
-                touched.append(f"{sid}:+{n}")
+            src = fill_row(row)
+            if src:
+                touched.append(f"{sid}:+{len(row['paper_ids_ranked'])}({src})")
     for row in data.get("rq_matrix") or []:
         rid = row.get("rq_id") or ""
         if not row.get("paper_ids_ranked"):
-            n = fill_row(row, rid)
-            if n:
-                touched.append(f"{rid}:+{n}")
+            src = fill_row(row)
+            if src:
+                touched.append(f"{rid}:+{len(row['paper_ids_ranked'])}({src})")
     for key, idx in (data.get("indexes") or {}).items():
         if isinstance(idx, dict):
             for row in data.get("sub_rq_matrix") or []:
@@ -129,7 +204,7 @@ def main() -> int:
         shutil.copy2(matrix_path, backup)
         matrix_path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"[matrix_boost] 备份: {backup.name}")
-    print(f"[matrix_boost] 补齐: {', '.join(touched) if touched else '无需补齐（无 0 论文行或无结构钩子）'}")
+    print(f"[matrix_boost] 补齐: {', '.join(touched) if touched else '无需补齐（无 0 论文行）'}")
     return 0
 
 
