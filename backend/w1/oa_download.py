@@ -25,9 +25,12 @@ UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
 
 
-def dest_name(record_id: str) -> str:
+def dest_name(record_id: str, title: str = "") -> str:
+    """与其他通道统一：{rid:04d}_{title slug}.pdf（纯数字名曾致同 rid 双文件，
+    回捞器/arxiv_batch 认不出 OA 版已下过 → 重复下载 20 篇，实测教训）。"""
     rid = re.sub(r"\D", "", record_id) or "0"
-    return f"{int(rid):04d}.pdf"
+    slug = re.sub(r"[^\w\-]+", "_", (title or "").strip())[:60].strip("_")
+    return f"{int(rid):04d}_{slug}.pdf" if slug else f"{int(rid):04d}.pdf"
 
 
 def pdf_ok(path: Path) -> bool:
@@ -49,6 +52,7 @@ def main() -> int:
     args = ap.parse_args()
 
     rows = list(csv.DictReader(open(args.input, encoding="utf-8-sig")))
+    title_of = {r.get("record_id") or "": (r.get("title") or "") for r in rows}
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     # 断点：已有合法 PDF 的跳过（arxiv_batch 可能已下）
@@ -57,7 +61,7 @@ def main() -> int:
         url = (r.get("oa_pdf_url") or "").strip()
         if not url:
             continue
-        dest = out / dest_name(r.get("record_id") or "0")
+        dest = out / dest_name(r.get("record_id") or "0", title_of.get(r.get("record_id") or "", ""))
         if dest.exists() and pdf_ok(dest):
             continue
         todo.append((r, dest))
