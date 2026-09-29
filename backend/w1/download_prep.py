@@ -127,7 +127,15 @@ def prep(input_csv: Path, out_dir: Path, *, limit: int = 0,
             w.writerows(rows)
 
     base_fields = ["record_id", "title", "doi", "url", "year", "venue", "source_db", "abstract", "_score"]
-    dump(out_dir / "download_ready.csv", ready, base_fields)
+    # OA 直链批量解析（用户裁决的校内资源替代路线）：无 arXiv_id 的 ready 记录
+    # 批量查 OpenAlex best_oa_location.pdf_url（出版社官方 OA/机构仓库版，合规可直下）
+    oa_targets = [r for r in ready if not r.get("arxiv_id")]
+    if oa_targets:
+        try:
+            _annotate_oa(oa_targets)
+        except Exception as e:  # OA 解析失败不阻塞下载主流程
+            print(f"[prep] OA 直链解析失败（忽略）: {e}")
+    dump(out_dir / "download_ready.csv", ready, base_fields + ["oa_pdf_url"])
     dump(out_dir / "no_doi_records.csv", no_doi, base_fields)
 
     stats = {
@@ -155,3 +163,52 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+def _annotate_oa(rows: list[dict], mailto: str = "858641291@qq.com") -> None:
+    """批量（50 DOI/次）查 best_oa_location.pdf_url 写入 oa_pdf_url 列。"""
+    import urllib.parse
+    import subprocess as _sp
+
+    API = "https://api.openalex.org/works"
+    pending = [r for r in rows if r.get("doi")]
+    got = 0
+    for i in range(0, len(pending), 50):
+        batch = pending[i:i + 50]
+        dois = "|".join(urllib.parse.quote(r["doi"], safe="") for r in batch)
+        # OpenAlex filter 的 | 分隔符不能被 urlencode（%7C 不识别——实测坑），手动拼
+        q = (f"filter=doi:{dois}&per-page=50&select=doi,best_oa_location"
+             f"&mailto={urllib.parse.quote(mailto)}")
+        proc = _sp.run(["curl", "-sS", "-g", "--max-time", "45",
+                        f"{API}?{q}"], capture_output=True)
+        try:
+            import json as _json
+            data = _json.loads(proc.stdout.decode("utf-8", errors="replace"))
+        except Exception:
+            continue
+        by_doi = {}
+        for w in data.get("results", []):
+            d = (w.get("doi") or "").replace("https://doi.org/", "").lower()
+            oa = w.get("best_oa_location") or {}
+            pdf = oa.get("pdf_url") or ""
+            if not pdf and oa.get("is_oa") and oa.get("version") in ("publishedVersion", "acceptedVersion"):
+                # pdf_url 覆盖不全——按 DOI 前缀构造已知出版社的合法 OA 直链
+                pdf = _guess_oa_pdf(d)
+            if d and pdf:
+                by_doi[d] = pdf
+        for r in batch:
+            url = by_doi.get(r["doi"].lower())
+            if url:
+                r["oa_pdf_url"] = url
+                got += 1
+    print(f"[prep] OA 直链：{got}/{len(pending)} 条无 arXiv 记录拿到合法 OA PDF 链接")
+
+def _guess_oa_pdf(doi: str) -> str:
+    """is_oa 但 OpenAlex 未记 pdf_url 时按出版社规律构造直链（OA 版合法可下）。"""
+    if doi.startswith("10.1007/"):          # Springer（实测 link.springer 直链稳定）
+        return f"https://link.springer.com/content/pdf/{doi}.pdf"
+    if doi.startswith("10.48550/arxiv."):   # arXiv（兜底，一般已被 arxiv_id 通道覆盖）
+        aid = doi.split("arxiv.", 1)[1]
+        return f"https://arxiv.org/pdf/{aid}"
+    if doi.startswith("10.3390/"):          # MDPI 全 OA
+        return f"https://www.mdpi.com/resolver?blobType=pdf&doi={doi}"
+    return ""

@@ -125,6 +125,7 @@ def to_record(w: dict) -> dict:
         "venue": ((loc.get("source") or {}).get("display_name") or "")[:200],
         "url": w.get("id") or "",
         "source_db": "openalex_citation",
+        "oa_cited": w.get("cited_by_count") or 0,
     }
 
 
@@ -240,6 +241,11 @@ def main() -> int:
         if k and k in seen_keys:
             continue
         seen_keys.add(k)
+        try:
+            cited = int(r.get("oa_cited") or 0)
+        except ValueError:
+            cited = 0
+        r["_score"] = round(0.5 + min(cited, 500) / 1000.0, 4)  # 扩展行注入分：截断不沉底
         merged.append(r)
     cand_csv = out_dir / "snowball_candidates.csv"
     fieldnames = list(base_rows[0].keys()) if base_rows else FIELD_ORDER

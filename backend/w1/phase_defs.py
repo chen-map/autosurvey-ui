@@ -127,7 +127,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "steps": [
                 # DOI 锚定预处理（用户裁决：不用 DOI 会跑偏）——消毒/补 arXiv DOI/去重/无 DOI 分流
                 {"script": str(HERE / "download_prep.py"),
-                 "args": ["--input", f"{ws}/screening/screened_records.csv",  # P4 筛选通过集为语料正源（评分 Top-N）；滚雪球全量候选会绕过相关性筛选
+                 "args": ["--input", f"{ws}/snowball/snowball_candidates.csv",  # P5 产物 = 核心集 + 引文扩展去重合并（扩展行已注入 _score）
                           "--out-dir", f"{ws}/download/",
                           "--scores", f"{ws}/screening/screened_records.csv",
                           "--limit", str(cfg.get("corpus_cap", 500))]},
@@ -141,6 +141,15 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--stats-out", f"{ws}/download/arxiv_batch_stats.json",
                           "--min-interval-sec", str(cfg.get("arxiv_dl_min_interval", 5.0)),
                           "--contact-email", cfg.get("contact_email", "researcher@example.com")]},
+                # OA 直链第三通道（用户裁决：校内订阅难自动化 → 合法 OA 替代）：
+                # download_prep 已把 best_oa_location.pdf_url 批量解析进 oa_pdf_url 列，
+                # 此处只下无 arXiv ID 且有直链的（出版社官方 OA/机构仓库版，合规）
+                {"script": str(HERE / "oa_download.py"),
+                 "timeout": 14400,
+                 "args": ["--input", f"{ws}/download/download_ready.csv",
+                          "--out-dir", f"{ws}/papers/",
+                          "--min-interval-sec", "2",
+                          "--stats-out", f"{ws}/download/oa_download_stats.json"]},
                 {"script": f"{scripts}/paper_downloader/download_papers.py",
                  "timeout": 14400,   # 旧链兜底逐篇慢，同样放宽
                  "args": ["--input", f"{ws}/download/download_ready.csv",
