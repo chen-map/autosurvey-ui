@@ -79,6 +79,8 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
             "optional": False,
             "steps": [
                 {"script": LLM_WRAP,
+                 # 全配对 17k 对 ≈ 4h（72 对/分实测），默认 3600s 会被掐死（rc=-9 整点超时实测教训）
+                 "timeout": 28800,
                  "args": ["--use-case", "w2",
                           "--target", f"{kg_scripts}/build_paper_kg.py",
                           "--input", "knowledge_graph/candidate_structured_papers.jsonl",
