@@ -40,8 +40,12 @@ def main() -> int:
         return 0
 
     pdf = paper_dir / "main.pdf"
-    # 断点：已有 PDF 且比 tex 新则跳过
-    if pdf.exists() and pdf.stat().st_mtime > tex.stat().st_mtime:
+    # 断点：已有 PDF 且比「全目录最新 tex/图」新才跳过（P3 只重写 sections/*.tex 不动 main.tex，
+    # 仅比较 main.tex 会漏检 sections 更新——实测教训）
+    latest_src = max((f.stat().st_mtime for f in paper_dir.rglob("*.tex")), default=0.0)
+    for extra in paper_dir.rglob("*.png"):
+        latest_src = max(latest_src, extra.stat().st_mtime)
+    if pdf.exists() and pdf.stat().st_mtime > latest_src:
         print(f"[compile_pdf] main.pdf 已是最新（{pdf.stat().st_size // 1024}KB），跳过")
         return 0
 
