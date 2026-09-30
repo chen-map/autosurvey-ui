@@ -39,6 +39,34 @@ def chat(base_url: str, api_key: str, model: str, system: str, user: str, max_to
         return json.loads(resp.read().decode("utf-8"))["choices"][0]["message"]["content"]
 
 
+CMD_RE = re.compile(r"\\(?:cite|ref|label|url|includegraphics|input)(?:\[[^\]]*\])?\{[^}]*\}")
+UNI_MAP = {
+    "≈": "$\\approx$", "≥": "$\\geq$", "≤": "$\\leq$", "×": "$\\times$",
+    "→": "$\\to$", "↔": "$\\leftrightarrow$", "±": "$\\pm$",
+    "∞": "$\\infty$", "≠": "$\\neq$", "—": "---", "–": "--",
+}
+
+
+def latex_sanitize(tex: str) -> str:
+    """LLM 正文常见炸弹防御：unicode 数学符号→数学模式；裸 & % # _ 转义（cite 等命令先 stash）；itemize 闭合兜底。"""
+    stash: list[str] = []
+
+    def _keep(m):
+        stash.append(m.group(0))
+        return f"@@CMD{len(stash) - 1}@@"
+
+    t = CMD_RE.sub(_keep, tex)
+    for ch, rep in UNI_MAP.items():
+        t = t.replace(ch, rep)
+    for ch in ("&", "%", "#", "_"):
+        t = re.sub(r"(?<!\\)" + re.escape(ch), "\\" + ch, t)
+    for i, cmd in enumerate(stash):
+        t = t.replace(f"@@CMD{i}@@", cmd)
+    if t.count("\\begin{itemize}") > t.count("\\end{itemize}"):
+        t = t.rstrip() + "\n" + "\\end{itemize}\n" * (t.count("\\begin{itemize}") - t.count("\\end{itemize}"))
+    return t
+
+
 def rq_payload_summaries(wm_dir: Path) -> list[dict]:
     idx = json.loads((wm_dir / "WORKING_MEMORY_INDEX.json").read_text(encoding="utf-8"))
     out = []
@@ -111,9 +139,11 @@ def main() -> int:
         "你是学术综述写作者。基于给定的真实工作记忆（RQ 答案、维度、共识、证据）撰写综述的一个章节，"
         "输出纯 LaTeX 正文（不含 \\section 标题行，那由装配器提供）。要求：\n"
         "1. 所有论断必须来自给定材料，关键论断用 \\cite{paper_id} 引用（paper_id 见材料中的论文 ID，原样使用）；\n"
-        "2. 结构建议：先总起一段直接回答本 RQ，再按维度/子问题分段展开论证（有对比、有量化证据），结尾指出证据缺口；\n"
-        "3. 如实呈现材料中的分歧与缺口，不得编造论文、数据或结论；\n"
-        "4. 学术中文撰写（与全文语言一致），专业术语、数据集/方法名保留英文原文，每章 3-6 段。"
+        "2. 这是面向期刊读者的正文，不是材料复述：要组织成详尽的论文语言——承上启下的关联词与过渡句（然而/与之相对/进一步地/值得注意的是/综合来看）、学术探究的句式（这提示…/其内在机制可解释为…/一个自然的疑问是…），对材料中的结论做更深入的阐释与串联，而非罗列；\n"
+        "3. 结构：开篇一段承接上一章并给出本章问题的回答总纲；主体 3-5 个论证段落，每段围绕一个维度展开（探索性论述与验证性证据交织：具体方法名、数据集、实验数字）；结尾一段给出本章结论并自然引向下一章的主题；\n"
+        "4. 如实呈现材料中的分歧与缺口，不得编造论文、数据或结论；所有关键论断用 \\cite{paper_id} 引用；\n"
+        "5. 学术中文撰写，专业术语、数据集/方法名保留英文原文，每章 4-8 段、每段 4-8 句，篇幅充实；\n"
+        "6. 严禁出现系统内部术语：冻结、工作记忆、流水线、W1/W2/W3/W4/W5、KG 分析 Agent、装配器、研究问题编号堆砌——用学术语言表达（如「证据集合在分析启动前已预先确定」「结构化证据档案」）。"
     )
 
     manifest = {"sections": [], "model": model}
@@ -125,22 +155,53 @@ def main() -> int:
         target = sections_dir / rq_section_files[i] if i < len(rq_section_files) else None
         if target is None:
             break
-        user = (f"章节主题（来自综述大纲）：{payload['rq_text']}\n\n"
-                f"工作记忆（真实证据）：\n{json.dumps(payload, ensure_ascii=False, indent=1)[:9000]}")
-        tex = chat(base, key, model, system, user)
+        prev_rq = rq_data[i - 1] if i > 0 else None
+        next_rq = rq_data[i + 1] if i + 1 < len(rq_data) else None
+        ctx = ""
+        if prev_rq:
+            ctx += f"\n上一章主题（{prev_rq['rq_id']}）：{prev_rq['rq_text']}\n上一章核心结论：{prev_rq['overall_answer'][:260]}"
+        if next_rq:
+            ctx += f"\n下一章主题（{next_rq['rq_id']}）：{next_rq['rq_text']}——本章结尾应自然引向它"
+        user = (f"章节主题（来自综述大纲）：{payload['rq_text']}\n{ctx}\n\n"
+                f"结构化证据材料（真实证据，论断与引用只允许来自这里）：\n{json.dumps(payload, ensure_ascii=False, indent=1)[:9000]}")
+        tex = latex_sanitize(chat(base, key, model, system, user))
         target.write_text(tex.strip() + "\n", encoding="utf-8")
         manifest["sections"].append(str(target.name))
         print(f"[llm_sections] {target.name} 写入（{len(tex)} 字符）", flush=True)
 
     # 摘要：汇总四个 RQ 的整体答案
-    abstract_user = ("为综述撰写 abstract（一段英文，150-220 词）。四个研究问题及其整体答案如下：\n"
+    abstract_user = ("为综述撰写中文摘要（一段，250-350 字，语言与正文一致）。各研究问题及其核心结论如下：\n"
                      + "\n".join(f"- {p['rq_id']}: {p['overall_answer'][:500]}" for p in rq_data))
     abstract_tex = chat(base, key, model,
-                        "你是综述摘要写作者。只输出摘要正文一段，不含 \\begin{abstract} 等命令，不加标题。",
-                        abstract_user, max_tokens=1200)
+                        "你是综述摘要写作者。只输出摘要正文一段（中文），不含 \\begin{abstract} 等命令，不加标题，"
+                        "句式凝练、有整体感，不出现「研究问题编号」堆砌与任何系统内部术语。",
+                        abstract_user, max_tokens=1400)
     (sections_dir / "0_abstract.tex").write_text(abstract_tex.strip() + "\n", encoding="utf-8")
     manifest["sections"].append("0_abstract.tex")
     print("[llm_sections] abstract 写入", flush=True)
+
+    # Contribution 章：跨 RQ 综合分析（LLM 撰写，非模板拼接）
+    contrib_files = sorted(sections_dir.glob("[0-9]*_contribution.tex"),
+                           key=lambda p: int(p.name.split('_')[0]))
+    if contrib_files:
+        cf = contrib_files[0]
+        contrib_user = (
+            "撰写综述的「综合分析与贡献」一章（Contribution），做跨研究问题的综合分析：\n"
+            "1. 第一段总起：把各问题的结论并置，提炼贯穿全文的 1-2 条主线索（例如架构-任务适配、评测碎片化）；\n"
+            "2. 中段 2-3 段：交叉综合——某问题的证据如何补充/制约另一问题的结论；指出跨问题的共识、矛盾与耦合；\n"
+            "3. 结尾段：凝练本文可复用的知识贡献（新分类框架、新坐标系、新设计维度）。\n"
+            "只输出 LaTeX 正文（不含 \\section 行）。各研究问题的结论材料：\n"
+            + json.dumps([{ 'rq_id': p['rq_id'], 'rq_text': p['rq_text'],
+                            'core': p['overall_answer'][:700],
+                            'top_claims': [c['text'] for c in (p.get('key_claims') or [])[:4]]}
+                          for p in rq_data], ensure_ascii=False, indent=1)[:12000])
+        contrib_tex = latex_sanitize(chat(base, key, model,
+                           "你是学术综述写作者，撰写跨问题的综合分析章。学术中文、术语保留英文，4-6 段，"
+                           "论断须来自给定材料并用 \\cite{paper_id} 引用，严禁内部术语（冻结/工作记忆/流水线/W1-W5）。",
+                           contrib_user, max_tokens=6500))
+        cf.write_text(contrib_tex.strip() + "\n", encoding="utf-8")
+        manifest["sections"].append(cf.name)
+        print(f"[llm_sections] {cf.name} 跨RQ综合章写入（{len(contrib_tex)} 字符）", flush=True)
 
     # 引用键扩展：LLM 常写短键（如 2049），bib 键为完整 paper_id——前缀唯一匹配展开
     bib_path = sections_dir.parent / "references.bib"

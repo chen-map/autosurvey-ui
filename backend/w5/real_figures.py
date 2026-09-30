@@ -37,6 +37,69 @@ def load_kg(kg_json: Path):
     return nodes, edges, n_papers
 
 
+def load_paper_bridges(kg_json: Path, row_edge: str, col_edge: str, top: int = 12):
+    """同一论文同时连接的两类概念节点的共现矩阵（轴=领域概念）。
+
+    KG 边形如 Paper -edge-> Concept；row_edge 取行概念（如 evaluated_on→数据集），
+    col_edge 取列概念（如 measured_by→指标）。返回 (row_names, col_names, mat)。
+    """
+    kg = json.loads(kg_json.read_text(encoding="utf-8"))
+    names: dict[str, str] = {}
+    for n in kg.get("nodes", []):
+        nid = str(n.get("node_id") or "")
+        if nid:
+            names[nid] = n.get("canonical_name") or nid
+    rows_of: dict[str, set] = {}
+    cols_of: dict[str, set] = {}
+    deg_r: dict[str, int] = {}
+    deg_c: dict[str, int] = {}
+    for e in kg.get("edges", []):
+        et = e.get("edge_type") or ""
+        tgt = str(e.get("target_id") or "")
+        src = str(e.get("source_id") or "")
+        if not tgt or not src:
+            continue
+        if et == row_edge:
+            rows_of.setdefault(src, set()).add(tgt)
+            deg_r[tgt] = deg_r.get(tgt, 0) + 1
+        elif et == col_edge:
+            cols_of.setdefault(src, set()).add(tgt)
+            deg_c[tgt] = deg_c.get(tgt, 0) + 1
+    rows = [t for t, _ in sorted(deg_r.items(), key=lambda kv: -kv[1])[:top]]
+    cols = [t for t, _ in sorted(deg_c.items(), key=lambda kv: -kv[1])[:top]]
+    mat = [[0] * len(cols) for _ in rows]
+    for pid in set(rows_of) & set(cols_of):
+        for r in rows_of[pid]:
+            if r in rows:
+                i = rows.index(r)
+                for c in cols_of[pid]:
+                    if c in cols:
+                        mat[i][cols.index(c)] += 1
+    return ([names.get(t, t)[:22] for t in rows],
+            [names.get(t, t)[:16] for t in cols], mat)
+
+
+def draw_cooccur(fig_dir: Path, fname: str, title: str, row_names, col_names, mat) -> bool:
+    if not mat or not any(any(r) for r in mat):
+        return False
+    nr, nc = len(row_names), len(col_names)
+    fig, ax = plt.subplots(figsize=(1.9 + 0.42 * nc, 1.6 + 0.30 * nr))
+    ax.imshow(mat, cmap="Greys", aspect="auto")
+    ax.set_xticks(range(nc), col_names, rotation=42, ha="right", fontsize=7)
+    ax.set_yticks(range(nr), row_names, fontsize=7)
+    vmax = max(max(r) for r in mat)
+    for i in range(nr):
+        for j in range(nc):
+            if mat[i][j]:
+                ax.text(j, i, str(mat[i][j]), ha="center", va="center", fontsize=6.5,
+                        color="white" if mat[i][j] > vmax * 0.55 else "black")
+    ax.set_title(title, fontsize=9)
+    fig.tight_layout()
+    fig.savefig(fig_dir / fname, bbox_inches="tight")
+    plt.close(fig)
+    return True
+
+
 def load_rq_papers(matrix_json: Path) -> dict[str, set]:
     """RQ -> 冻结证据论文集合（sub_rq 归并到宏 RQ）。"""
     m = json.loads(matrix_json.read_text(encoding="utf-8"))
@@ -128,55 +191,19 @@ def main(argv: list[str] | None = None) -> int:
         fig.savefig(fig_dir / "fig_kg_edges.png", bbox_inches="tight")
         plt.close(fig)
 
-    # 图 4：RQ 间证据共享热力图（哪些论文同时支撑多个 RQ——揭示 RQ 证据耦合）
-    matrix_json = ws / "analyze_report" / "rq_evidence_matrix.json"
-    rq_papers = load_rq_papers(matrix_json) if matrix_json.exists() else {}
-    rq_ids = sorted(rq_papers.keys())
-    if len(rq_ids) >= 2:
-        n = len(rq_ids)
-        mat = [[0] * n for _ in range(n)]
-        for i, a in enumerate(rq_ids):
-            for j, b in enumerate(rq_ids):
-                mat[i][j] = len(rq_papers[a] & rq_papers[b]) if i != j else len(rq_papers[a])
-        vmax = max(max(r) for r in mat)
-        fig, ax = plt.subplots(figsize=(4.6, 4.0))
-        im = ax.imshow(mat, cmap="Greys")
-        ax.set_xticks(range(n), rq_ids, rotation=45, ha="right")
-        ax.set_yticks(range(n), rq_ids)
-        for i in range(n):
-            for j in range(n):
-                ax.text(j, i, str(mat[i][j]), ha="center", va="center", fontsize=8,
-                        color="white" if mat[i][j] > vmax * 0.55 else "black")
-        fig.colorbar(im, ax=ax, shrink=0.8, label="Shared papers")
-        ax.set_title("Cross-RQ evidence sharing")
-        fig.tight_layout()
-        fig.savefig(fig_dir / "fig_rq_sharing.png", bbox_inches="tight")
-        plt.close(fig)
+    # 图 4：数据集 × 指标评测格局（同一论文共同评测；轴=领域概念而非 RQ）
+    if kg_json.exists():
+        rnames, cnames, mat = load_paper_bridges(kg_json, "evaluated_on", "measured_by")
+        draw_cooccur(fig_dir, "fig_ds_metric.png",
+                     "Benchmark-metric landscape (co-evaluated within papers)",
+                     rnames, cnames, mat)
 
-    # 图 5：各 RQ 论断证据支撑度（claims 数 / 有证据占比）
-    wm_dir = ws / "working_memory"
-    rq_claims = load_rq_claims(wm_dir) if wm_dir.exists() else {}
-    if rq_claims:
-        ids = sorted(rq_claims.keys())
-        claims = [rq_claims[k]["claims"] for k in ids]
-        pct = [100 * rq_claims[k]["with_evidence"] / max(rq_claims[k]["claims"], 1) for k in ids]
-        fig, ax1 = plt.subplots(figsize=(5.2, 2.8))
-        xs = range(len(ids))
-        ax1.bar(xs, claims, color="#2b2b2b", width=0.55, label="Key claims")
-        ax1.set_xticks(list(xs), ids)
-        ax1.set_ylabel("Key claims")
-        style_axes(ax1)
-        ax2 = ax1.twinx()
-        ax2.plot(list(xs), pct, "o--", color="#777", lw=1.2, ms=4)
-        ax2.set_ylabel("% claims with evidence")
-        ax2.set_ylim(0, 110)
-        ax2.spines["top"].set_visible(False)
-        for i, v in enumerate(pct):
-            ax2.text(i, v + 4, f"{v:.0f}%", ha="center", fontsize=7.5, color="#555")
-        ax1.set_title("Evidence backing of per-RQ key claims")
-        fig.tight_layout()
-        fig.savefig(fig_dir / "fig_rq_claims.png", bbox_inches="tight")
-        plt.close(fig)
+    # 图 5：问题 × 方法格局（同一论文 addresses 的问题与 proposes 的方法）
+    if kg_json.exists():
+        rnames2, cnames2, mat2 = load_paper_bridges(kg_json, "addresses", "proposes")
+        draw_cooccur(fig_dir, "fig_prob_method.png",
+                     "Problem-method landscape (co-occurring within papers)",
+                     rnames2, cnames2, mat2)
 
     # 重写 latex_includes.tex：真实数据图替换流水线自评图
     inc = ["% Figure includes rewritten by W5 real-data figures.\n"]
@@ -195,18 +222,16 @@ def main(argv: list[str] | None = None) -> int:
             "\\begin{figure}[t]\n  \\centering\n  \\includegraphics[width=0.72\\textwidth]{figures/fig_kg_edges.png}\n"
             "  \\caption{Distribution of relation types connecting entities in the knowledge graph.}\n"
             "  \\label{fig:kg-edges}\n\\end{figure}\n")
-    if rq_papers and len(rq_ids) >= 2:
-        inc.append(
-            "\\begin{figure}[t]\n  \\centering\n  \\includegraphics[width=0.58\\textwidth]{figures/fig_rq_sharing.png}\n"
-            "  \\caption{Cross-RQ evidence sharing: number of frozen evidence papers shared between each pair of research questions (diagonal = each RQ's evidence set size). Shared papers are the coupling points of the survey's argument structure.}\n"
-            "  \\label{fig:rq-sharing}\n\\end{figure}\n")
-    if rq_claims:
-        inc.append(
-            "\\begin{figure}[t]\n  \\centering\n  \\includegraphics[width=0.72\\textwidth]{figures/fig_rq_claims.png}\n"
-            "  \\caption{Evidence backing of per-RQ key claims: bars = number of key claims; line = share of claims backed by at least one evidence paper.}\n"
-            "  \\label{fig:rq-claims}\n\\end{figure}\n")
+    inc.append(
+        "\\begin{figure}[t]\n  \\centering\n  \\includegraphics[width=0.88\\textwidth]{figures/fig_ds_metric.png}\n"
+        "  \\caption{Benchmark--metric landscape: how frequently each benchmark is co-evaluated with each metric within the same paper. The matrix reveals which measurement conventions dominate which benchmarks, and where evaluation practice diverges.}\n"
+        "  \\label{fig:ds-metric}\n\\end{figure}\n")
+    inc.append(
+        "\\begin{figure}[t]\n  \\centering\n  \\includegraphics[width=0.88\\textwidth]{figures/fig_prob_method.png}\n"
+        "  \\caption{Problem--method landscape: problems addressed and methods proposed within the same papers. Dense rows indicate crowded problem niches; sparse rows indicate under-served problems.}\n"
+        "  \\label{fig:prob-method}\n\\end{figure}\n")
     (fig_dir / "latex_includes.tex").write_text("\n".join(inc), encoding="utf-8")
-    print(f"[real_figures] years={sum(years.values())} kg_nodes={sum(nodes.values())} kg_edges={sum(edges.values())} rq_figs={len(rq_papers)}+{len(rq_claims)} → latex_includes.tex 重写")
+    print(f"[real_figures] years={sum(years.values())} kg_nodes={sum(nodes.values())} kg_edges={sum(edges.values())} domain_figs=ds-metric+prob-method → latex_includes.tex 重写")
     return 0
 
 
