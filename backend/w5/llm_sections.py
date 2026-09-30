@@ -48,7 +48,8 @@ UNI_MAP = {
 
 
 def latex_sanitize(tex: str) -> str:
-    """LLM 正文常见炸弹防御：unicode 数学符号→数学模式；裸 & % # _ 转义（cite 等命令先 stash）；itemize 闭合兜底。"""
+    """LLM 正文常见炸弹防御：内部术语机械替换（禁令遵守率<100% 的保底）；unicode 数学符号→数学模式；
+    裸 & % # _ 转义（cite 等命令先 stash）；itemize 闭合兜底。"""
     stash: list[str] = []
 
     def _keep(m):
@@ -56,6 +57,10 @@ def latex_sanitize(tex: str) -> str:
         return f"@@CMD{len(stash) - 1}@@"
 
     t = CMD_RE.sub(_keep, tex)
+    # 系统内部术语 → 学术表达（LLM 会复述材料里的流水线腔，机械替换保底）
+    for bad, good in (("冻结证据集合", "预先确定的证据集合"), ("证据冻结", "证据预先固定"),
+                      ("工作记忆", "结构化证据档案"), ("流水线", "研究流程"), ("冻结", "预先固定")):
+        t = t.replace(bad, good)
     for ch, rep in UNI_MAP.items():
         t = t.replace(ch, rep)
     for ch in ("&", "%", "#", "_"):
@@ -202,6 +207,35 @@ def main() -> int:
         cf.write_text(contrib_tex.strip() + "\n", encoding="utf-8")
         manifest["sections"].append(cf.name)
         print(f"[llm_sections] {cf.name} 跨RQ综合章写入（{len(contrib_tex)} 字符）", flush=True)
+
+    # Literature Review 章：LLM 学术化重写（模板嵌 markdown 调研报告的排版/腔调问题治本）
+    lit_files = sorted(sections_dir.glob("[0-9]*_literature_review.tex"),
+                       key=lambda p: int(p.name.split('_')[0]))
+    if lit_files:
+        rr_path = Path(args.staging) / "workflow_3" / "analyze_report" / "related_review_report.md"
+        gap_path = Path(args.staging) / "workflow_3" / "analyze_report" / "gap_summary.md"
+        rr_text = rr_path.read_text(encoding="utf-8")[:4000] if rr_path.exists() else ""
+        gap_text = gap_path.read_text(encoding="utf-8")[:1800] if gap_path.exists() else ""
+        if rr_text:
+            lit_user = (
+                "撰写综述的 Literature Review 章（2-4 段正文 + 一个「关键论文」条目列表）：\n"
+                "1. 第一段：概括本领域已有综述所覆盖的视角与结论格局（基于给定调研材料改写成学术叙述，"
+                "不得照抄报告原文、不得出现任何 markdown 标记或报告腔标题）；\n"
+                "2. 第二段：指出已有工作的覆盖盲区与本文的切入点；\n"
+                "3. 「关键论文」部分用 \\\\begin{itemize} 列 4-8 篇给定枢纽论文（有则列，无则略）；\n"
+                "4. 只输出 LaTeX 正文（不含 \\\\section 行），学术中文、术语保留英文。\n\n"
+                f"== 已有综述调研材料 ==\\n{rr_text}\\n\\n== 领域空白分析 ==\\n{gap_text}\\n\\n"
+                f"== 枢纽论文（多问题共享证据） ==\\n" + "\\n".join(
+                    f"- {p['rq_id']} 相关：{c['text'][:120]}（证据：" + ",".join(c['evidence'][:2]) + "）"
+                    for p in rq_data for c in (p.get('key_claims') or [])[:1]))
+            lit_tex = latex_sanitize(chat(base, key, model,
+                                "你是学术综述写作者。基于给定材料撰写 Literature Review 章，"
+                                "把调研报告改写为面向期刊读者的学术叙述，严禁照抄原文结构与标题、"
+                                "严禁内部术语（冻结/工作记忆/流水线/W1-W5）与 markdown 残留。",
+                                lit_user, max_tokens=3500))
+            lit_files[0].write_text(lit_tex.strip() + "\n", encoding="utf-8")
+            manifest["sections"].append(lit_files[0].name)
+            print(f"[llm_sections] {lit_files[0].name} Literature Review 重写（{len(lit_tex)} 字符）", flush=True)
 
     # 引用键扩展：LLM 常写短键（如 2049），bib 键为完整 paper_id——前缀唯一匹配展开
     bib_path = sections_dir.parent / "references.bib"
