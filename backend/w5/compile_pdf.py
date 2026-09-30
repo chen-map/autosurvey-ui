@@ -48,7 +48,7 @@ def main() -> int:
     # 真实数据统计图（年份/KG 分布）替换流水线自评图
     try:
         import real_figures  # noqa: PLC0415
-        real_figures.main()
+        real_figures.main([])  # 传空 argv：防其 argparse 误吞本脚本的 --paper-dir
     except Exception as exc:  # matplotlib 缺失等 → 跳过图，继续编译
         print(f"[compile_pdf] real_figures 跳过: {exc}", flush=True)
 

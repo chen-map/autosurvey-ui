@@ -48,16 +48,6 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                         f"{paper_out}/WORKFLOW5_SELF_REVIEW.md"],
         },
         {
-            "id": "W5-P4",
-            "name": "编译综述 PDF（tectonic，可选）",
-            "optional": True,   # 未安装 tectonic 时优雅跳过
-            "steps": [
-                {"script": str(HERE / "compile_pdf.py"),
-                 "args": ["--paper-dir", paper_out]},
-            ],
-            "outputs": [f"{paper_out}/main.pdf"],
-        },
-        {
             "id": "W5-P3",
             "name": "LLM 正文撰写（渲染 W2/W4 真实产物）",
             "optional": False,
@@ -69,5 +59,15 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           "--out-manifest", f"{paper_out}/sections/llm_written.json"]},
             ],
             "outputs": [f"{paper_out}/sections/llm_written.json"],
+        },
+        {
+            "id": "W5-P4",
+            "name": "编译综述 PDF（tectonic，可选）",
+            "optional": True,   # 未安装 tectonic 时优雅跳过
+            "steps": [
+                {"script": str(HERE / "compile_pdf.py"),
+                 "args": ["--paper-dir", paper_out]},
+            ],
+            "outputs": [f"{paper_out}/main.pdf"],
         },
     ]

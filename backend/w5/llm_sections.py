@@ -47,10 +47,26 @@ def rq_payload_summaries(wm_dir: Path) -> list[dict]:
         rel = entry.get("rq_answer_path", "").replace("\\", "/")
         if rel.lower().startswith("working_memory/"):
             rel = rel[len("working_memory/"):]
-        p = wm_dir / rel
+        p = wm_dir / rel if rel else None
+        if p is None or not p.exists():
+            # v3 契约 INDEX 无 rq_answer_path 键——按 rq_id 定位 rq_N 目录
+            num = re.search(r"\d+", str(entry.get("rq_id") or ""))
+            if num:
+                p = wm_dir / f"rq_{num.group()}"
+        if p is None or not p.exists():
+            continue
+        if p.is_dir():  # 目录 → 下钻三件套
+            p = p / "rq_answer.json"
         if not p.exists():
             continue
         a = json.loads(p.read_text(encoding="utf-8"))
+        ac_file = p.parent / "answer_claims.json"
+        ac = json.loads(ac_file.read_text(encoding="utf-8")) if ac_file.exists() else {}
+        key_claims = [
+            {"text": str(c.get("claim_text") or c.get("claim") or "")[:220],
+             "evidence": [str(x) for x in (c.get("evidence_papers") or [])][:4]}
+            for c in (ac.get("key_claims") or [])
+        ][:14]
         out.append({
             "rq_id": entry.get("rq_id"),
             "rq_text": entry.get("rq_text", ""),
@@ -67,6 +83,8 @@ def rq_payload_summaries(wm_dir: Path) -> list[dict]:
                 for s in (a.get("sub_rq_answers") or [])
             ],
             "gaps": [g.get("gap_description", "") for g in (a.get("evidence_gaps") or [])],
+            "key_claims": key_claims,
+            "completeness": ac.get("answer_completeness", ""),
         })
     return out
 
@@ -100,9 +118,11 @@ def main() -> int:
 
     manifest = {"sections": [], "model": model}
 
-    # RQ 章节（3-6）：按大纲顺序逐章撰写
+    # RQ 章节：动态扫描装配产物（{n}_rq*.tex，数量随项目 RQ 集合变化）
+    rq_section_files = sorted((p.name for p in sections_dir.glob("[0-9]*_rq*.tex")),
+                              key=lambda n: (int(n.split('_')[0]), n))
     for i, payload in enumerate(rq_data):
-        target = sections_dir / RQ_SECTION_FILES[i] if i < len(RQ_SECTION_FILES) else None
+        target = sections_dir / rq_section_files[i] if i < len(rq_section_files) else None
         if target is None:
             break
         user = (f"章节主题（来自综述大纲）：{payload['rq_text']}\n\n"

@@ -43,10 +43,10 @@ def style_axes(ax):
     ax.grid(axis="y", alpha=0.25)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="W5 真实数据统计图")
     ap.add_argument("--workspace", default=".")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)  # argv=None 走 sys.argv；被 compile_pdf 内嵌调用时传 [] 用默认值
 
     ws = Path(args.workspace)
     download = ws / "retrieval_workspace" / "download" / "download_ready.csv"
