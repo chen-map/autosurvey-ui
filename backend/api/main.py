@@ -1033,6 +1033,47 @@ def get_survey_pdf(pid: str, user: dict = Depends(_me)):
     return FileResponse(str(pdf), media_type="application/pdf", filename=f"{pid}-survey.pdf")
 
 
+@app.get("/api/projects/{pid}/w4-reports")
+def get_w4_reports(pid: str, user: dict = Depends(_me)):
+    """W4-P1 Agent 分析报告列表：每 RQ 的 HTML 小论文 + 运行元数据（skill/轮次/工具调用）。"""
+    _own_project(pid, user)
+    root = _wm(pid) / "kg_analysis" / "working_memory"
+    reports = []
+    if root.exists():
+        for d in sorted(root.iterdir()):
+            if not d.is_dir() or not (d / "05_report.html").exists():
+                continue
+            meta: dict = {}
+            try:
+                meta = json.loads((d / "00_meta.json").read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                pass
+            reports.append({
+                "dir": d.name,
+                "rq_id": meta.get("rq_id") or d.name.split("_")[0],
+                "rq_text": meta.get("rq_text", ""),
+                "skill": meta.get("skill_id", ""),
+                "skill_reason": ((meta.get("skill_selection") or {}).get("reason") or ""),
+                "model": meta.get("model", ""),
+                "duration": round(float(meta.get("total_time_sec") or 0), 1),
+                "rounds": meta.get("total_tool_rounds", 0),
+                "calls": meta.get("total_tool_calls", 0),
+            })
+    return {"reports": reports}
+
+
+@app.get("/api/projects/{pid}/w4-reports/{rdir}/html")
+def get_w4_report_html(pid: str, rdir: str, user: dict = Depends(_me)):
+    """W4 Agent HTML 报告内容（blob 渲染用；路径限制在 working_memory 一级目录内）。"""
+    _own_project(pid, user)
+    root = (_wm(pid) / "kg_analysis" / "working_memory").resolve()
+    f = (root / rdir / "05_report.html").resolve()
+    if not str(f).startswith(str(root) + os.sep) or not f.exists():
+        raise HTTPException(404, "report not found")
+    from fastapi.responses import FileResponse
+    return FileResponse(str(f), media_type="text/html")
+
+
 @app.get("/api/projects/{pid}/report")
 def get_project_report(pid: str, user: dict = Depends(_me)):
     """报告页：W3 大纲（OutlineNode 树）+ W3 两轮评审/W5 自审（ReviewRound）。"""

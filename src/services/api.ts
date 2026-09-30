@@ -387,6 +387,30 @@ export async function getRQBundle(projectId: string): Promise<RQBundle | null> {
   return RQ_BUNDLES[projectId] ?? null;
 }
 
+export interface W4Report {
+  dir: string; rq_id: string; rq_text: string; skill: string; skill_reason: string;
+  model: string; duration: number; rounds: number; calls: number;
+}
+
+export async function getW4Reports(projectId: string): Promise<W4Report[]> {
+  if (!USE_MOCK) {
+    const d = await realFetch<{ reports: W4Report[] }>(`/projects/${projectId}/w4-reports`);
+    return d.reports;
+  }
+  await delay();
+  return [];
+}
+
+export async function fetchW4ReportHtml(projectId: string, dir: string): Promise<string> {
+  // HTML 报告需带 Authorization → text → blob URL（同 survey-pdf 模式）
+  const API = import.meta.env.VITE_API_BASE ?? '/api';
+  const token = localStorage.getItem('as.token') ?? '';
+  const r = await fetch(`${API}/projects/${projectId}/w4-reports/${encodeURIComponent(dir)}/html`,
+    { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.text();
+}
+
 export async function getReport(projectId: string): Promise<{ outline: OutlineNode[]; reviews: ReviewRound[] }> {
   if (!USE_MOCK) return realFetch<{ outline: OutlineNode[]; reviews: ReviewRound[] }>(`/projects/${projectId}/report`);
   await delay();
