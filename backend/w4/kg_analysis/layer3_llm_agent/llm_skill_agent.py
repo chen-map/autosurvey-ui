@@ -260,8 +260,10 @@ class LLMSkillAgent:
     """
 
     DEFAULT_MODEL = "claude-opus-4-6"
-    MAX_TOOL_ROUNDS = 30  # 防止无限循环
-    _URGE_AT_ROUND = 12   # 超过此轮数后插入催促消息
+    MAX_TOOL_ROUNDS = 60  # 防止无限循环（深挖版：30→60，实测 6-10 轮即自愿交卷、覆盖不足）
+    _URGE_AT_ROUND = 45   # 催促阈值随上限放宽（原 12 会过早打断深挖）
+    _MIN_ROUNDS = 14      # 防早退：低于此轮次调 end 会被拒一次并要求补覆盖
+    _MIN_TOOL_CALLS = 40  # 防早退：工具调用总数门槛（软性，随提示词一起强调）
 
     def __init__(
         self,
@@ -424,8 +426,22 @@ class LLMSkillAgent:
                     "elapsed_ms": elapsed_ms,
                 })
 
-                # 捕获 end() 的最终答案
+                # 捕获 end() 的最终答案；防早退：覆盖不足时拒绝一次 end，要求补查
                 if tool_name == "end" and isinstance(raw_result, dict):
+                    if (round_count < self._MIN_ROUNDS
+                            and len(tool_call_log) < self._MIN_TOOL_CALLS):
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": json.dumps({
+                                "rejected": True,
+                                "reason": (f"证据覆盖不足：目前仅 {round_count} 轮 / "
+                                           f"{len(tool_call_log)} 次工具调用。请继续深挖："
+                                           "对六类节点（问题/方法/数据集基准/指标/局限/假设）逐类补查询，"
+                                           "并用 search_paper_sections 多读几篇关键论文的原文摘录，"
+                                           "覆盖充分后再调用 end。"), "ensure_ascii": False}),
+                        })
+                        continue
                     final_answer = raw_result.get("answer")
 
                 tool_results.append({
@@ -519,7 +535,10 @@ class LLMSkillAgent:
             '  "answer_completeness": "answered | partial | blocked"；\n'
             '  "completeness_notes": "证据覆盖不足之处（一句话）"\n'
             "}\n"
-            "然后生成 HTML 报告的 JSON 内容块数组。"
+            "然后生成 HTML 报告的 JSON 内容块数组。\n\n"
+            "**深挖纪律（重要）**：end 之前必须确认——（1）对问题/方法/数据集基准/指标/局限/假设六类节点"
+            "都执行过针对性查询；（2）用 search_paper_sections 精读过至少 8 篇关键论文的相关段落；"
+            "（3）总工具调用不少于 40 次。宁多查三轮，不浅尝辄止——分析深度是首要质量标准。"
         )
         if extra_context:
             msg += f"\n\n**上游 Skill 输出摘要**：\n{extra_context}"
