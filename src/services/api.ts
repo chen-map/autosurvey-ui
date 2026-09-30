@@ -247,12 +247,14 @@ export async function putEmail(email: string): Promise<{ ok: boolean; email?: st
 }
 
 // ---- pipeline ----
-export async function startRun(projectId: string, workflow: 'w1' | 'w2' | 'w3' | 'w4' | 'w5' = 'w1'): Promise<void> {
+export async function startRun(projectId: string, workflow: 'w1' | 'w2' | 'w3' | 'w4' | 'w5' = 'w1',
+  opts: { w2MaxPairs?: number } = {}): Promise<void> {
   if (!USE_MOCK) {
     const token = getToken();
     const res = await fetch(`${API}/projects/${projectId}/run?workflow=${workflow}`, {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : {},
+      body: JSON.stringify(opts.w2MaxPairs != null ? { w2_max_pairs: opts.w2MaxPairs } : {}),
     });
     if (res.status === 401) throw new Error('未登录或会话过期，请重新登录');
     if (!res.ok) throw new Error(`startRun 失败: ${res.status}`);

@@ -154,6 +154,13 @@ def register(body: RegisterRequest):
         (username, pw_hash, "researcher", email),
     )
     uid = cur.lastrowid
+    # 预置 W2 默认配置：服务器本地 Qwen（免费但慢）——用户可随时在个人中心换成自己的 API
+    from db.crypto import encrypt as _enc
+    conn.execute(
+        "INSERT OR IGNORE INTO llm_configs (user_id, use_case, base_url, api_key_encrypted, model, provider) "
+        "VALUES (?,?,?,?,?,?)",
+        (uid, "w2", "http://127.0.0.1:11434/v1",
+         _enc("local-ollama-qwen-no-key-needed"), "qwen3.6:35b", "openai"))
     conn.commit()
     conn.close()
     # 开数据分区（注册即建，网站基本原则）

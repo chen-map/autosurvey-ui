@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Play, RotateCcw, FileText, Network, Clock } from 'lucide-react';
 import type { PipelineRun, PhaseState } from '@/types/data';
-import { getPipeline, startRun, getW4Reports, fetchW4ReportHtml, type W4Report } from '@/services/api';
+import { getPipeline, startRun, getW4Reports, fetchW4ReportHtml, getCorpus, type W4Report } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -68,10 +68,22 @@ export function PipelinePage() {
     };
   }, [projectId, workflow]);
 
+  const [w2Limit, setW2Limit] = useState<'all' | '3000'>('all');
+  const [corpusN, setCorpusN] = useState(0);
+
+  useEffect(() => {
+    if (!notStarted || workflow !== 'w2') return;
+    let alive = true;
+    getCorpus(projectId, { page: 1, pageSize: 1 })
+      .then((d) => alive && setCorpusN(d.total))
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [notStarted, workflow, projectId]);
+
   const start = async () => {
     setStarting(true);
     try {
-      await startRun(projectId, workflow);
+      await startRun(projectId, workflow, workflow === 'w2' && w2Limit === '3000' ? { w2MaxPairs: 3000 } : {});
       setNotStarted(false); // 轮询会在 runner 写出状态文件后自动接管
     } finally {
       setStarting(false);
@@ -112,6 +124,30 @@ export function PipelinePage() {
         <Card className="mx-auto max-w-lg p-8 text-center">
           <div className="text-[15px] font-medium">{tabMeta.key.toUpperCase()} 尚未启动</div>
           <div className="mt-1.5 text-[13px] leading-5 text-t3">{tabMeta.hint}</div>
+
+          {workflow === 'w2' && (
+            <div className="mt-5 space-y-2 rounded-lg border border-line/60 bg-page/60 p-4 text-left">
+              <div className="text-[12.5px] font-medium">KG 论文对规模</div>
+              {([
+                ['all', '全量配对（默认）', 'KG 最完整，覆盖全部论文组合'],
+                ['3000', '限量 3000 对（提速）', '等不及时的选择——预评分上限 3000 对，KG 覆盖缩小'],
+              ] as const).map(([val, label, desc]) => (
+                <label key={val} className="flex cursor-pointer items-start gap-2">
+                  <input type="radio" name="w2limit" checked={w2Limit === val}
+                    onChange={() => setW2Limit(val)} className="mt-0.5" />
+                  <span>
+                    <span className="text-[13px] text-t1">{label}</span>
+                    <span className="ml-1.5 text-[11.5px] text-t3">{desc}</span>
+                  </span>
+                </label>
+              ))}
+              <div className="rounded bg-warn/15 px-3 py-2 text-[11.5px] leading-5 text-t2">
+                {corpusN > 1 && <>当前语料 {corpusN} 篇 → 全量 {Math.round((corpusN * (corpusN - 1)) / 2).toLocaleString()} 对。{''}</>}
+                用默认的本地 Qwen 实测约 95 秒/对（全量可能要数天）；在个人中心 W2 卡换成自己的 API 约 1 秒/对（全量数小时、限量 3000 对约 1 小时）。
+              </div>
+            </div>
+          )}
+
           <Button className="mx-auto mt-4" onClick={start} disabled={starting}>
             <Play size={14} />
             {starting ? '启动中…' : `启动 ${tabMeta.key.toUpperCase()}`}

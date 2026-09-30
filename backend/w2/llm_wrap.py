@@ -32,15 +32,9 @@ def _run_user_id() -> int:
 def load_llm_config_full(use_case: str, user_id: int | None = None) -> tuple[str, str, list[str], str]:
     """load_llm_config 的 provider 版：返回 (base, key, models, provider)。
 
-    W2 内置服务器本地 Qwen（用户裁决：全员免配置，W2 不读用户配置表）——
-    AS_W2_LOCAL_BASE / AS_W2_LOCAL_MODEL / AS_W2_LOCAL_KEY 环境变量可覆盖默认。
+    W2 默认配置由注册预置写入 llm_configs（服务器本地 Qwen，慢但免费）——
+    解析链与其它 use_case 一致，用户可在个人中心换自己的 API。
     """
-    if use_case == "w2":
-        base = os.environ.get("AS_W2_LOCAL_BASE", "http://127.0.0.1:11434/v1")
-        model = os.environ.get("AS_W2_LOCAL_MODEL", "qwen3.6:35b")
-        key = os.environ.get("AS_W2_LOCAL_KEY", "local-ollama-qwen-no-key-needed")
-        return base, key, [model], "openai"
-
     from db.crypto import decrypt  # noqa: PLC0415
     from db.database import DB_PATH  # noqa: PLC0415 — 单一事实源
 
