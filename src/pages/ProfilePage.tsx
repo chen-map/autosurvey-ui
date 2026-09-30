@@ -20,6 +20,7 @@ interface UseCaseRow {
   id: string; label: string; stage: string;
   configured: boolean; baseUrl: string; model: string; apiKeyMasked: string;
   provider?: string;
+  builtin?: string;
 }
 
 function readKeys(): Record<string, string> {
@@ -308,6 +309,18 @@ export function ProfilePage() {
               const e = ovr[uc.id] ?? { baseUrl: '', model: '', apiKey: '', provider: uc.provider || 'openai' };
               const isOpen = expanded === uc.id;
               const isConfigured = uc.configured;
+              if (uc.builtin) {
+                return (
+                  <div key={uc.id} className="rounded-lg border border-ok/30 bg-[#f6ffed]/40 px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-ok" />
+                      <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{uc.label}</span>
+                      <Badge variant="ok">内置 · 免配置</Badge>
+                    </div>
+                    <div className="mt-1 pl-4.5 text-[11.5px] text-t2">{uc.builtin as string}</div>
+                  </div>
+                );
+              }
               return (
                 <div key={uc.id} className="rounded-lg border border-line/60 overflow-hidden">
                   <button

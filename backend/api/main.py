@@ -513,7 +513,7 @@ def delete_api_key(platform: str, user: dict = Depends(_me)):
 LLM_USE_CASES = [
     {"id": "default", "label": "全局默认", "wf": "所有", "stage": "未单独配置的环节自动继承此配置"},
     {"id": "w1", "label": "W1 语料构建", "wf": "W1", "stage": "检索 · 筛选 · 下载 · 入库"},
-    {"id": "w2", "label": "W2 事实记忆", "wf": "W2", "stage": "解析 · 六类提取 · KG 构建"},
+    {"id": "w2", "label": "W2 事实记忆", "wf": "W2", "stage": "解析 · 六类提取 · KG 构建", "builtin": "服务器本地 Qwen（qwen3.6:35b · Ollama 11434）——免配置，全员共用"},
     {"id": "w3", "label": "W3 框架与RQ", "wf": "W3", "stage": "Gap · RQ 设计 · 证据矩阵 · 评审"},
     {"id": "w4", "label": "W4 工作记忆", "wf": "W4", "stage": "证据抽取 · 答案综合 · claim 核查"},
     {"id": "w5", "label": "W5 综述写作", "wf": "W5", "stage": "大纲 → LaTeX 全文"},
@@ -521,6 +521,12 @@ LLM_USE_CASES = [
 
 
 def resolve_llm(user_id: int, use_case: str = "default") -> tuple[str, str, str, str]:
+    if use_case == "w2":  # 用户裁决：W2 恒用服务器本地 Qwen，不读用户配置
+        import os as _os
+        return (_os.environ.get("AS_W2_LOCAL_BASE", "http://127.0.0.1:11434/v1"),
+                _os.environ.get("AS_W2_LOCAL_KEY", "local-ollama-qwen-no-key-needed"),
+                _os.environ.get("AS_W2_LOCAL_MODEL", "qwen3.6:35b"), "openai")
+
     """解析链：环节专属行（Key 可解密且非空）→ default 行。返回 (base, key, model, provider)。"""
     from db.crypto import decrypt
 
