@@ -164,14 +164,15 @@ def main() -> int:
             if rid and rid not in rq_text:
                 rq_text[rid] = e.get("rq_text", "")
 
-    # 每个 RQ 取最新一次 run 目录（v3 目录名 {rq_id}_{skill_id}_{ts}）
-    runs: dict[str, Path] = {}
+    # 子 RQ 粒度目录（RQ1.1_xxx）按父 RQ 聚合；兼容旧宏 RQ 目录（RQ1_xxx）
+    runs_by_parent: dict[str, dict[str, Path]] = {}
     for d in sorted(v3_root.iterdir()):
         if not d.is_dir() or not (d / "03_final_answer.json").exists():
             continue
-        rid = d.name.split("_")[0]
-        runs[rid] = d  # sorted 顺序下后者覆盖 → 取字典序最新（时间戳后缀保证）
-    if not runs:
+        rid_full = d.name.split("_")[0]
+        parent = rid_full.split(".")[0]
+        runs_by_parent.setdefault(parent, {})[rid_full] = d
+    if not runs_by_parent:
         raise SystemExit("[v3->w5] 未发现任何含 03_final_answer.json 的运行目录")
 
     def _rq_num(rid: str) -> int:
@@ -179,20 +180,49 @@ def main() -> int:
         return int(m.group()) if m else 0
 
     index_entries = []
-    for rid in sorted(runs, key=_rq_num):
-        d = runs[rid]
-        meta = _j(d / "00_meta.json", {})
-        ans = _j(d / "03_final_answer.json", None)
-        # end() 包装：{"answer": ..., "metadata": ..., "_done": true}
-        if isinstance(ans, dict) and "answer" in ans:
-            ans = ans.get("answer")
-        tool_calls = _j(d / "01_tool_calls.json", [])
-        trace = _j(d / "02_reasoning_trace.json", [])
-        papers_touched = paper_ids_touched(tool_calls)
+    for rid in sorted(runs_by_parent, key=_rq_num):
+        sub_runs = runs_by_parent[rid]           # {RQ1.1: Path, RQ1.2: Path, ...} 或 {RQ1: Path}
+        sub_ids = sorted(sub_runs, key=_rq_num)
 
-        overall, note1 = extract_overall_answer(ans)
-        claims, notes2 = extract_claims(ans, papers_touched)
-        notes = [n for n in (note1, *notes2) if n]
+        # ---- 逐子 RQ 收集分析结果，按父 RQ 聚合 ----
+        subs_overall: list[str] = []
+        subs_answers: list[dict] = []
+        claims: list = []
+        notes: list[str] = []
+        skills: list[str] = []
+        papers_all: list[str] = []
+        total_calls = 0
+        total_rounds = 0
+        for sid in sub_ids:
+            d = sub_runs[sid]
+            meta = _j(d / "00_meta.json", {})
+            ans = _j(d / "03_final_answer.json", None)
+            if isinstance(ans, dict) and "answer" in ans:
+                ans = ans.get("answer")
+            tool_calls = _j(d / "01_tool_calls.json", [])
+            papers_touched = paper_ids_touched(tool_calls)
+            s_overall, note1 = extract_overall_answer(ans)
+            s_claims, notes2 = extract_claims(ans, papers_touched)
+            notes += [n for n in (note1, *notes2) if n]
+            skills.append(str(meta.get("skill_id", "")))
+            total_calls += len(tool_calls)
+            total_rounds += int(meta.get("total_tool_rounds") or 0)
+            for p in papers_touched:
+                if p not in papers_all:
+                    papers_all.append(p)
+            if s_overall:
+                subs_overall.append(f"### {sid}\n{s_overall}" if len(sub_ids) > 1 else s_overall)
+            subs_answers.append({
+                "sub_rq_id": sid,
+                "answer": s_overall or "",
+                "confidence": None,
+                "claims": len(s_claims),
+                "papers_touched": len(papers_touched),
+            })
+            claims.extend(s_claims)
+        claims = claims[:24]  # 聚合上限：W5 消费友好
+        overall = "\n\n".join(subs_overall)
+        papers_touched = papers_all[:30]
 
         rq_dir = out / f"rq_{_rq_num(rid)}"
         rq_dir.mkdir(parents=True, exist_ok=True)
@@ -201,29 +231,29 @@ def main() -> int:
             "rq_id": rid,
             "rq_text": rq_text.get(rid, ""),
             "engine": "kg_analysis_v3",
-            "skill_used": meta.get("skill_id", ""),
-            "skill_selection": meta.get("skill_selection"),
-            "answer": ans,
+            "skill_used": "+".join(skills),
+            "sub_rq_analyses": subs_answers,
             "overall_answer": overall,
-            "tool_rounds": meta.get("total_tool_rounds") or len(tool_calls),
+            "tool_rounds": total_rounds,
+            "tool_calls": total_calls,
             "papers_touched": papers_touched,
-            "v3_run_dir": str(d),
         }
         answer_claims = {
             "rq_id": rid,
             "rq_text": rq_text.get(rid, ""),
             "overall_answer": overall,
             "key_claims": claims,
-            "sub_rq_answers": [],  # v3 宏 RQ 粒度分析；Sub 级映射见 completeness_notes
+            "sub_rq_answers": subs_answers,  # 子 RQ 粒度分析（学长思路）：每子答案真实落位
             "confidence": None,
             "answer_completeness": "partial" if notes else "answered",
             "completeness_notes": "; ".join(notes) if notes else "",
-            "synthesis_notes": f"由 kg_analysis v3 生成（Skill: {meta.get('skill_id', '?')}，"
-                               f"{len(tool_calls)} 次工具调用，触及 {len(papers_touched)} 篇论文）",
+            "synthesis_notes": f"kg_analysis v3 子 RQ 粒度聚合（{len(sub_ids)} 个子分析，"
+                               f"Skills: {'+'.join(skills) or '?'}，{total_calls} 次工具调用，"
+                               f"触及 {len(papers_all)} 篇论文）",
         }
         rq_answer = {
             "rq_id": rid, "rq_text": rq_text.get(rid, ""),
-            "overall_answer": overall, "sub_rq_answers": [],
+            "overall_answer": overall, "sub_rq_answers": subs_answers,
             "key_claims": claims,
         }
 
@@ -236,12 +266,12 @@ def main() -> int:
 
         index_entries.append({
             "rq_id": rid, "rq_text": rq_text.get(rid, ""),
-            "rq_type": "", "total_papers": len(papers_touched),
-            "engine": "kg_analysis_v3", "skill_used": meta.get("skill_id", ""),
+            "rq_type": "", "total_papers": len(papers_all),
+            "engine": "kg_analysis_v3", "skill_used": "+".join(skills),
             "answer_completeness": answer_claims["answer_completeness"],
         })
-        print(f"[v3->w5] {rid} → {rq_dir}（claims {len(claims)}，"
-              f"触及论文 {len(papers_touched)}）")
+        print(f"[v3->w5] {rid} → {rq_dir}（子分析 {len(sub_ids)} 个，claims {len(claims)}，"
+              f"触及论文 {len(papers_all)}）")
 
     out.mkdir(parents=True, exist_ok=True)
     (out / "WORKING_MEMORY_INDEX.json").write_text(

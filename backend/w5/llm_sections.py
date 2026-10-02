@@ -72,6 +72,57 @@ def latex_sanitize(tex: str) -> str:
     return t
 
 
+def kg_subgraph_summary(staging, rid: str, top: int = 6) -> str:
+    """该 RQ 冻结证据论文在 W2 知识图谱中诱导的子图摘要（六类节点 top-N + 边类型计数）。
+
+    正文材料从「工作记忆」扩展为「工作记忆 + W2 KG 子图」（用户裁决：文字也要基于 W2）。
+    """
+    try:
+        staging = Path(staging)
+        matrix = staging / "workflow_3" / "analyze_report" / "rq_evidence_matrix.json"
+        kg_path = staging / "knowledge_graph" / "paper_kg.json"
+        if not (matrix.exists() and kg_path.exists()):
+            return ""
+        m = json.loads(matrix.read_text(encoding="utf-8"))
+        paper_ids: set = set()
+        for e in m.get("sub_rq_matrix", []):
+            if (e.get("rq_id") or "") == rid:
+                paper_ids.update(e.get("paper_ids_ranked") or [])
+        if not paper_ids:
+            return ""
+        kg = json.loads(kg_path.read_text(encoding="utf-8"))
+        names: dict = {}
+        for n in kg.get("nodes", []):
+            nid = str(n.get("node_id") or "")
+            if nid:
+                names[nid] = n.get("canonical_name") or nid
+        from collections import Counter
+        node_hits: dict = {}
+        edge_hits = Counter()
+        touched: set = set()
+        for e in kg.get("edges", []):
+            src, tgt = str(e.get("source_id") or ""), str(e.get("target_id") or "")
+            if src in paper_ids or tgt in paper_ids:
+                edge_hits[e.get("edge_type") or "?"] += 1
+                touched.add(src)
+                touched.add(tgt)
+        for n in kg.get("nodes", []):
+            nid = str(n.get("node_id") or "")
+            if nid in touched:
+                node_hits.setdefault(n.get("node_type") or "?", Counter())[names[nid]] += 1
+        parts = [f"RQ {rid} 证据子图（{len(paper_ids)} 篇冻结论文诱导）："]
+        for t in ("Problem", "Method", "DatasetBenchmark", "Metric", "Limitation", "AssumptionConstraint"):
+            c = node_hits.get(t)
+            if c:
+                tops = ", ".join(f"{k}({v})" for k, v in c.most_common(top))
+                parts.append(f"- {t} top：{tops}")
+        if edge_hits:
+            parts.append("- 关系边：" + ", ".join(f"{k}({v})" for k, v in edge_hits.most_common(8)))
+        return chr(10).join(parts)
+    except Exception:
+        return ""
+
+
 def rq_payload_summaries(wm_dir: Path) -> list[dict]:
     idx = json.loads((wm_dir / "WORKING_MEMORY_INDEX.json").read_text(encoding="utf-8"))
     out = []
@@ -145,6 +196,7 @@ def main() -> int:
         "输出纯 LaTeX 正文（不含 \\section 标题行，那由装配器提供）。要求：\n"
         "1. 所有论断必须来自给定材料，关键论断用 \\cite{paper_id} 引用（paper_id 见材料中的论文 ID，原样使用）；\n"
         "2. 这是面向期刊读者的正文，不是材料复述：要组织成详尽的论文语言——承上启下的关联词与过渡句（然而/与之相对/进一步地/值得注意的是/综合来看）、学术探究的句式（这提示…/其内在机制可解释为…/一个自然的疑问是…），对材料中的结论做更深入的阐释与串联，而非罗列；\n"
+        "2b. 对比分析是硬要求：利用 KG 子图摘要做显式对比——方法之间（谁在什么条件下优于谁）、数据集/基准之间（覆盖与盲区）、失败模式之间（成因与耦合）；每个主要论证段至少包含一组对比或一组跨文献的综合；\n"
         "3. 结构：开篇一段承接上一章并给出本章问题的回答总纲；主体 3-5 个论证段落，每段围绕一个维度展开（探索性论述与验证性证据交织：具体方法名、数据集、实验数字）；结尾一段给出本章结论并自然引向下一章的主题；\n"
         "4. 如实呈现材料中的分歧与缺口，不得编造论文、数据或结论；所有关键论断用 \\cite{paper_id} 引用；\n"
         "5. 学术中文撰写，专业术语、数据集/方法名保留英文原文，每章 4-8 段、每段 4-8 句，篇幅充实；\n"
@@ -167,8 +219,10 @@ def main() -> int:
             ctx += f"\n上一章主题（{prev_rq['rq_id']}）：{prev_rq['rq_text']}\n上一章核心结论：{prev_rq['overall_answer'][:260]}"
         if next_rq:
             ctx += f"\n下一章主题（{next_rq['rq_id']}）：{next_rq['rq_text']}——本章结尾应自然引向它"
+        kg_ctx = kg_subgraph_summary(args.staging, payload['rq_id'])
         user = (f"章节主题（来自综述大纲）：{payload['rq_text']}\n{ctx}\n\n"
-                f"结构化证据材料（真实证据，论断与引用只允许来自这里）：\n{json.dumps(payload, ensure_ascii=False, indent=1)[:9000]}")
+                f"结构化证据材料（真实证据，论断与引用只允许来自这里）：\n{json.dumps(payload, ensure_ascii=False, indent=1)[:9000]}"
+                + (f"\n\n== W2 知识图谱证据子图（本 RQ 冻结论文诱导，用于对比分析与事实锚定）==\n{kg_ctx}" if kg_ctx else ""))
         tex = latex_sanitize(chat(base, key, model, system, user))
         target.write_text(tex.strip() + "\n", encoding="utf-8")
         manifest["sections"].append(str(target.name))

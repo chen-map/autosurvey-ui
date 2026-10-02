@@ -41,8 +41,30 @@ def resolve_anthropic(use_case: str) -> tuple[str, str, str]:
 
 
 def collect_rqs(matrix_path: Path) -> list[dict]:
-    """从 W3 证据矩阵提取宏 RQ 列表（rq_id, rq_text），保持首次出现顺序去重。"""
+    """从 W3 证据矩阵提取**子 RQ** 列表（学长思路：子 RQ 才是回答重点，逐个分析后综合）。
+
+    返回 [{rq_id: "RQ1.1", rq_text: 子问题文本（含父问题上下文与冻结证据提示）}]；
+    无子 RQ 的矩阵回落宏 RQ 粒度。
+    """
     m = json.loads(matrix_path.read_text(encoding="utf-8"))
+    parent_text: dict[str, str] = {}
+    subs: list[dict] = []
+    for e in m.get("sub_rq_matrix", []):
+        pid = (e.get("rq_id") or "").strip()
+        if pid and pid not in parent_text:
+            parent_text[pid] = e.get("rq_text", "")
+        sid = (e.get("sub_rq_id") or "").strip()
+        if not sid or "." not in sid:
+            continue
+        ev = (e.get("paper_ids_ranked") or [])[:6]
+        hint = (f"\n\n（证据矩阵为该子问题冻结的论文，可优先用工具查询：{', '.join(ev)}）" if ev else "")
+        subs.append({
+            "rq_id": sid,
+            "rq_text": (f"[父问题 {pid}] {parent_text.get(pid, '')}\n"
+                        f"[本子问题 {sid}] {e.get('sub_rq_text') or e.get('rq_text', '')}{hint}"),
+        })
+    if subs:
+        return subs
     seen: dict[str, str] = {}
     for e in m.get("sub_rq_matrix", []):
         rid = (e.get("rq_id") or "").strip()
