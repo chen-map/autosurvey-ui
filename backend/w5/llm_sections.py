@@ -226,92 +226,178 @@ def main() -> int:
 
     manifest = {"sections": [], "model": model}
 
-    # RQ 章节：动态扫描装配产物（{n}_rq*.tex，数量随项目 RQ 集合变化）
-    rq_section_files = sorted((p.name for p in sections_dir.glob("[0-9]*_rq*.tex")),
-                              key=lambda n: (int(n.split('_')[0]), n))
-    for i, payload in enumerate(rq_data):
-        target = sections_dir / rq_section_files[i] if i < len(rq_section_files) else None
-        if target is None:
-            break
-        prev_rq = rq_data[i - 1] if i > 0 else None
-        next_rq = rq_data[i + 1] if i + 1 < len(rq_data) else None
-        ctx = ""
-        if prev_rq:
-            ctx += f"\n上一章主题（{prev_rq['rq_id']}）：{prev_rq['rq_text']}\n上一章核心结论：{prev_rq['overall_answer'][:260]}"
-        if next_rq:
-            ctx += f"\n下一章主题（{next_rq['rq_id']}）：{next_rq['rq_text']}——本章结尾应自然引向它"
-        kg_ctx = kg_subgraph_summary(args.staging, payload['rq_id'])
-        subs = payload.get('sub_answers') or []
-        if len(subs) >= 2:
-            # ---- 逐子 RQ 撰写（和谐成文：内容性小节标题 + 真实承接，不做编号罗列） ----
-            parts_tex: list[str] = []
-            head_user = (f"本章主题（{payload['rq_id']}）：{payload['rq_text']}\n{ctx}\n\n"
-                         f"本章按内容逻辑组织为 {len(subs)} 个小节。先写章首总起段：承接上文 + 点出本章核心张力 + "
-                         f"用内容的逻辑（而非编号）预告本章如何展开（如「我们先剖析…，进而考察…，"
-                         f"最后检验…」）。3-4 句，不写小节标题、不引用。\n本章各部分结论速览：\n"
-                         + "\n".join(f"- {(s_.get('answer') or '')[:220]}" for s_ in subs))
-            parts_tex.append(chat(base, key, model,
-                                  "你是综述章节作者。只输出一段中文总起（不带任何标题命令），"
-                                  "组织感强、像期刊论文的章首导语，凝练克制。",
-                                  head_user, max_tokens=700))
-            sub_texts_cfg = _load_sub_texts(args.staging)
-            prev_tail = ""  # 上一小节实际正文的结尾（真实承接依据）
-            for j, s_ in enumerate(subs):
-                sid = s_.get('id') or ''
-                sub_claims = json.dumps(s_.get('sub_claims') or [], ensure_ascii=False)[:2600]
-                sub_user = (f"撰写综述本章的一小节。\n"
-                            f"本节要回答的子问题：{sub_texts_cfg.get(sid, '')}\n"
-                            f"（所在章主题：{payload['rq_text'][:180]}）\n\n"
-                            "== 本节论断与证据论文 id（引用只准用这些 id，务必充分使用）==\n" + sub_claims + "\n\n"
-                            "== 本节的分析材料（改写为论文语言，深入机理与对比）==\n"
-                            + (s_.get('answer') or '')[:3400]
-                            + (f"\n\n== W2 KG 证据子图参考 ==\n{kg_ctx}" if kg_ctx and j == 0 else ""))
-                if prev_tail:
-                    sub_user += (f"\n\n== 上一小节的结尾（你的第一句必须与之自然衔接，"
-                                 f"禁止出现「下一节/上一节将讨论」式的编号导航腔）==\n{prev_tail}")
-                sub_user += ("\n\n输出格式：第一行是 \\subsection{内容性标题}——标题概括本节的核心观点"
-                             "（如「错误传播的三条路径：漂移、级联与约束失效」），**禁止使用 RQ 编号**、"
-                             "禁止照抄子问题原文；随后 3-5 段正文，段间有推进关系。")
-                sub_tex = latex_sanitize(chat(base, key, model, system, sub_user))
-                nc = len(re.findall(r"\\cite\{", sub_tex))
-                if nc < 4:
-                    sub_tex = latex_sanitize(chat(base, key, model, system,
-                        sub_user + f"\n\n【上次引用仅 {nc} 处（要求 ≥4），必须使用材料中的论文 id。】"))
-                    nc = len(re.findall(r"\\cite\{", sub_tex))
-                if not sub_tex.lstrip().startswith("\\subsection"):
-                    sub_tex = f"\\subsection{{{_short(sub_texts_cfg.get(sid, ''))}}}\n" + sub_tex
-                parts_tex.append(sub_tex)
-                prev_tail = sub_tex[-360:]  # 结尾给下一节做承接锚点
-                print(f"[llm_sections] {target.name} {sid} 小节（{len(sub_tex)} 字符，{nc} 引用）", flush=True)
-            tex = "\n\n".join(parts_tex)
-            n_cites = len(re.findall(r"\\cite\{", tex))
-            target.write_text(tex.strip() + "\n", encoding="utf-8")
-            manifest["sections"].append(str(target.name))
-            print(f"[llm_sections] {target.name} 写入（{len(tex)} 字符，{len(subs)} 小节，{n_cites} 处引用）", flush=True)
-            continue
+    # ==== 发表级结构：子分析按主题重组为章（不做 RQ 罗列/串联） ====
+    sub_texts_cfg = _load_sub_texts(args.staging)
+    all_subs = []
+    for p_ in rq_data:
+        for s_ in (p_.get('sub_answers') or []):
+            all_subs.append({"id": s_.get('id') or p_['rq_id'], "payload": p_, "s": s_})
+    if not all_subs:  # 无子分析的项目：每 RQ 作为一个单元
+        all_subs = [{"id": p_['rq_id'], "payload": p_,
+                     "s": {"id": p_['rq_id'], "answer": p_.get('overall_answer', ''),
+                           "sub_claims": p_.get('key_claims', [])}} for p_ in rq_data]
 
-        # ---- 无子分析：单章撰写（原逻辑） ----
-        claims_txt = json.dumps(payload.get('key_claims') or [], ensure_ascii=False)[:4200]
-        subs_txt = "\n".join(f"- {s.get('id') or s.get('sub_rq_id')}: {(s.get('answer') or '')[:1100]}"
-                             for s in subs)[:3600]
-        overall_txt = (payload.get('overall_answer') or '')[:1800]
-        user = (f"章节主题（来自综述大纲）：{payload['rq_text']}\n{ctx}\n\n"
-                "== 可核查论断与证据论文 id（引用只允许使用这里出现的 id，务必充分使用）==\n" + claims_txt + "\n\n"
-                "== 子问题及其分析（本章须逐一覆盖）==\n" + (subs_txt or "（无子答案）") + "\n\n"
-                "== 综合叙事（补充上下文）==\n" + overall_txt
-                + (f"\n\n== W2 知识图谱证据子图（对比分析与事实锚定用）==\n{kg_ctx}" if kg_ctx else ""))
-        tex = latex_sanitize(chat(base, key, model, system, user))
-        n_cites = len(re.findall(r"\\cite\{", tex))
-        if n_cites < 8:  # 验收：引用密度不达标 → 带批评重试一次（不靠 LLM 自觉）
-            print(f"[llm_sections] {target.name} 引用仅 {n_cites} 处（<8），重试", flush=True)
-            tex2 = chat(base, key, model, system,
-                        user + f"\n\n【上次输出被驳回：引用只有 {n_cites} 处（要求 ≥8）。"
-                               "这次必须充分使用「可核查论断与证据论文 id」材料中的论文 id，并逐一覆盖子问题。】")
-            tex = latex_sanitize(tex2)
-            n_cites = len(re.findall(r"\\cite\{", tex))
-        target.write_text(tex.strip() + "\n", encoding="utf-8")
-        manifest["sections"].append(str(target.name))
-        print(f"[llm_sections] {target.name} 写入（{len(tex)} 字符，{n_cites} 处引用）", flush=True)
+    # 1) 主题规划：LLM 把全部单元聚类为 3-4 个主题章（按内容亲缘，输出阅读逻辑顺序）
+    plan_user = ("把以下综述分析单元重组为 3-4 个主题章（按内容亲缘聚类，严禁按编号顺序分组）。"
+                 '输出 JSON 数组：[{"title": "主题章标题（观点性短语，不带编号与冒号）", '
+                 '"logic": "本章组织逻辑一句话", "subs": ["单元id", ...]}]。'
+                 "要求：每个单元恰好被分配一次；主题顺序符合阅读逻辑（如：现象与机理 → 设计与架构 → "
+                 "评测与方法论 → 风险与边界）。单元清单（id: 子问题 | 结论速览）：\n"
+                 + "\n".join(f"- {u['id']}: {sub_texts_cfg.get(u['id'], u['payload']['rq_text'])[:100]}"
+                             f" | {(u['s'].get('answer') or '')[:110]}" for u in all_subs))
+    plan_raw = chat(base, key, model,
+                    "你是综述架构师。只输出 JSON 数组本体，不要任何其他文字与代码块标记。",
+                    plan_user, max_tokens=1600)
+    themes: list = []
+    try:
+        _mj = re.search(r"\[.*\]", plan_raw, re.S)
+        if _mj:
+            themes = json.loads(_mj.group(0))
+    except (json.JSONDecodeError, AttributeError):
+        themes = []
+    if not isinstance(themes, list) or not themes:
+        themes = [{"title": _short(p_['rq_text'], 30), "logic": "",
+                   "subs": [s_.get('id') for s_ in (p_.get('sub_answers') or [])] or [p_['rq_id']]}
+                  for p_ in rq_data]
+    _assigned = {sid for th in themes for sid in (th.get("subs") or [])}
+    for u in all_subs:  # 覆盖校验：遗漏单元追加末章
+        if u["id"] not in _assigned:
+            themes[-1].setdefault("subs", []).append(u["id"])
+    print(f"[llm_sections] 主题规划：{len(themes)} 章 = " +
+          " / ".join(f"{th.get('title', '')[:18]}({len(th.get('subs', []))})" for th in themes), flush=True)
+
+    sub_by_id = {u["id"]: u for u in all_subs}
+    theme_stems: list[str] = []
+    for ti, th in enumerate(themes):
+        stem = f"T{ti + 1}body"
+        f = sections_dir / f"{stem}.tex"
+        parts_tex: list[str] = []
+        title_tex = re.sub(r"[&#%]", "", th.get("title") or f"主题 {ti + 1}")
+        parts_tex.append(f"\\section{{{title_tex}}}\n\\label{{sec:theme{ti + 1}}}\n\n")
+        prev_th = themes[ti - 1] if ti > 0 else None
+        next_th = themes[ti + 1] if ti + 1 < len(themes) else None
+        ctx2 = (f"上一章是「{prev_th.get('title', '')}」。\n" if prev_th else "这是正文第一个主题章（前文是方法章）。\n")
+        if next_th:
+            ctx2 += f"下一章是「{next_th.get('title', '')}」——本章最后一小节的结尾应自然引向它。\n"
+        head_user = (f"综述主题章「{title_tex}」的章首导语。{ctx2}\n本章组织逻辑：{th.get('logic', '')}\n"
+                     "本章各部分结论速览：\n"
+                     + "\n".join(f"- {(sub_by_id[sid]['s'].get('answer') or '')[:200]}"
+                                 for sid in (th.get("subs") or []) if sid in sub_by_id)
+                     + "\n\n写 3-4 句导语：承接上文 + 点出本章核心张力 + 按内容逻辑预告展开。不写标题命令、不引用。")
+        parts_tex.append(chat(base, key, model,
+                              "你是综述章节作者。只输出一段中文导语（无任何标题命令），期刊风格，凝练克制。",
+                              head_user, max_tokens=700))
+        prev_tail = ""
+        for j, sid in enumerate(th.get("subs") or []):
+            u = sub_by_id.get(sid)
+            if not u:
+                continue
+            s_ = u["s"]
+            sub_claims = json.dumps(s_.get('sub_claims') or [], ensure_ascii=False)[:2600]
+            sub_user = (f"撰写综述本章的一小节。\n"
+                        f"本节要回答的子问题：{sub_texts_cfg.get(sid, u['payload']['rq_text'])}\n"
+                        f"（所在章主题：{title_tex}）\n\n"
+                        "== 本节论断与证据论文 id（引用只准用这些 id，务必充分使用）==\n" + sub_claims + "\n\n"
+                        "== 本节的分析材料（改写为论文语言，深入机理与对比）==\n"
+                        + (s_.get('answer') or '')[:3400])
+            if prev_tail:
+                sub_user += (f"\n\n== 上一小节的结尾（你的第一句必须与之自然衔接，"
+                             f"禁止「下一节将讨论」式编号导航腔）==\n{prev_tail}")
+            sub_user += ("\n\n输出格式：第一行是 \\subsection{内容性标题}——概括本节核心观点，"
+                         "禁止使用 RQ/单元编号、禁止照抄子问题原文；随后 3-5 段正文，段间有推进。")
+            sub_tex = latex_sanitize(chat(base, key, model, system, sub_user))
+            nc = len(re.findall(r"\\cite\{", sub_tex))
+            if nc < 4:
+                sub_tex = latex_sanitize(chat(base, key, model, system,
+                    sub_user + f"\n\n【上次引用仅 {nc} 处（要求 ≥4），必须使用材料中的论文 id。】"))
+                nc = len(re.findall(r"\\cite\{", sub_tex))
+            if not sub_tex.lstrip().startswith("\\subsection"):
+                sub_tex = f"\\subsection{{{_short(sub_texts_cfg.get(sid, ''), 40)}}}\n" + sub_tex
+            parts_tex.append(sub_tex)
+            prev_tail = sub_tex[-360:]
+            print(f"[llm_sections] {stem} {sid} 小节（{len(sub_tex)} 字符，{nc} 引用）", flush=True)
+        f.write_text("\n\n".join(parts_tex).strip() + "\n", encoding="utf-8")
+        manifest["sections"].append(f.name)
+        theme_stems.append(stem)
+        print(f"[llm_sections] 主题章 {f.name} 完成", flush=True)
+
+    # ---- Background 章（领域基础：概念与术语，发表级结构标配） ----
+    bg_file = sections_dir / "background.tex"
+    if not bg_file.exists():
+        bg_mat = ("为本综述撰写 Background 章（领域基础与 preliminaries）。核心概念素材（来自图谱与各章分析）：\n"
+                  + "\n".join(f"- 主题「{th.get('title', '')}」涉及："
+                              + "; ".join(sub_texts_cfg.get(sid, '')[:60]
+                                          for sid in (th.get('subs') or [])[:6]) for th in themes)
+                  + "\n\n任务：定义本综述反复出现的核心概念（如多智能体协作、编排拓扑、角色制度、评测基准、"
+                    "协作约束等，以素材实际出现为准），给出术语界定与相互关系（3-5 个概念小节用 "
+                    "\\subsection，标题为概念名），为后文主题章铺垫。学术中文，2-4 段/小节，可少量引用"
+                    "（仅当材料中出现了具体论文时）。第一行输出 \\section{Background and Preliminaries}。")
+        bg_tex = latex_sanitize(chat(base, key, model,
+                              "你是综述作者。撰写 Background 章：概念定义准确、相互关系清晰，"
+                              "面向不熟悉本领域的读者，严禁内部术语与空话。",
+                              bg_mat, max_tokens=2800))
+        bg_file.write_text(bg_tex.strip() + "\n", encoding="utf-8")
+        manifest["sections"].append(bg_file.name)
+        print(f"[llm_sections] background.tex 写入（{len(bg_tex)} 字符）", flush=True)
+
+    # ---- Conclusion 章 ----
+    concl_file = sections_dir / "conclusion.tex"
+    concl_mat = ("撰写 Conclusion 章（3-4 段：总括各主题章的核心答案 → 本文带来的认识转变一句话 → "
+                 "对研究者/工程师各一句实践启示）。素材：\n"
+                 + "\n".join(f"- 「{th.get('title', '')}」："
+                             + " ".join((sub_by_id[sid]['s'].get('answer') or '')[:120]
+                                        for sid in (th.get('subs') or [])[:3] if sid in sub_by_id)
+                             for th in themes))
+    concl_tex = latex_sanitize(chat(base, key, model,
+                               "你是综述作者。第一行输出 \\section{Conclusion}，随后正文 3-4 段，凝练收束，不引入新论断。",
+                               concl_mat, max_tokens=1200))
+    concl_file.write_text(concl_tex.strip() + "\n", encoding="utf-8")
+    manifest["sections"].append(concl_file.name)
+    print(f"[llm_sections] conclusion.tex 写入（{len(concl_tex)} 字符）", flush=True)
+
+    # ---- main.tex 重写：发表级章节顺序（编号全部由 LaTeX 自动排） ----
+    def _glob1(pat: str) -> str | None:
+        fs = sorted(sections_dir.glob(pat))
+        return fs[0].stem if fs else None
+
+    order = []
+    for pat in ("[0-9]*_introduction.tex", "background.tex",
+                "[0-9]*_literature_review.tex", "[0-9]*_method.tex"):
+        st = _glob1(pat)
+        if st:
+            order.append(st)
+    order += theme_stems
+    for pat in ("[0-9]*_contribution.tex", "[0-9]*_future_research.tex",
+                "[0-9]*_limitation.tex", "conclusion.tex"):
+        st = _glob1(pat)
+        if st:
+            order.append(st)
+    main_path = sections_dir.parent / "main.tex"
+    old_title = "Survey"
+    if main_path.exists():
+        _mt = re.search(r"\\title\{(.+?)\}", main_path.read_text(encoding="utf-8"), re.S)
+        if _mt:
+            old_title = _mt.group(1).strip()
+    inputs_tex = "\n".join(f"\\input{{sections/{st}}}" for st in order)
+    main_tex = (
+        "\\documentclass[10pt]{article}\n"
+        "\\usepackage[UTF8]{ctex}\n"
+        "\\usepackage[a4paper,margin=2.4cm]{geometry}\n"
+        "\\usepackage{amsmath,amssymb,amsfonts}\n"
+        "\\usepackage{booktabs,tabularx,array,multirow}\n"
+        "\\usepackage{graphicx}\n"
+        "\\usepackage{url}\n"
+        "\\usepackage{cite}\n"
+        "\\usepackage{xcolor}\n"
+        "\\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue]{hyperref}\n\n"
+        f"\\title{{{old_title}}}\n"
+        "\\author{AutoSurvey Pipeline}\n\n"
+        "\\begin{document}\n\\maketitle\n\n"
+        "\\begin{abstract}\n\\input{sections/0_abstract}\n\\end{abstract}\n\n"
+        + inputs_tex + "\n\n"
+        "\\bibliographystyle{unsrt}\n\\bibliography{references}\n\n\\end{document}\n")
+    main_path.write_text(main_tex, encoding="utf-8")
+    print(f"[llm_sections] main.tex 重写：{len(order)} 章 = {' → '.join(order)}", flush=True)
 
     # 摘要：汇总四个 RQ 的整体答案
     abstract_user = ("为综述撰写中文摘要（一段，250-350 字，语言与正文一致）。各研究问题及其核心结论如下：\n"
