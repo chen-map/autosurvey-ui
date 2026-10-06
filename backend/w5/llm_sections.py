@@ -202,7 +202,8 @@ def main() -> int:
         "3. 结构：开篇一段承接上一章并给出本章问题的回答总纲；主体 3-5 个论证段落，每段围绕一个维度展开（探索性论述与验证性证据交织：具体方法名、数据集、实验数字）；结尾一段给出本章结论并自然引向下一章的主题；\n"
         "4. 如实呈现材料中的分歧与缺口，不得编造论文、数据或结论；所有关键论断用 \\cite{paper_id} 引用；\n"
         "5. 学术中文撰写，专业术语、数据集/方法名保留英文原文，每章 4-8 段、每段 4-8 句，篇幅充实；\n"
-        "6. 严禁出现系统内部术语：冻结、工作记忆、流水线、W1/W2/W3/W4/W5、KG 分析 Agent、装配器、研究问题编号堆砌——用学术语言表达（如「证据集合在分析启动前已预先确定」「结构化证据档案」）。"
+        "6. 严禁出现系统内部术语：冻结、工作记忆、流水线、W1/W2/W3/W4/W5、KG 分析 Agent、装配器、研究问题编号堆砌——用学术语言表达（如「证据集合在分析启动前已预先确定」「结构化证据档案」）；\n"
+        "7. 输出前自检（不满足则重写再交）：全文引用 ≥8 处且每个论证段至少 1 处；本章所有子问题逐一覆盖；同一断言的引用 ≤2 篇（选代表性来源，禁止三连堆砌）；首段承接上一章、尾段引出下一章。"
     )
 
     manifest = {"sections": [], "model": model}
@@ -222,13 +223,29 @@ def main() -> int:
         if next_rq:
             ctx += f"\n下一章主题（{next_rq['rq_id']}）：{next_rq['rq_text']}——本章结尾应自然引向它"
         kg_ctx = kg_subgraph_summary(args.staging, payload['rq_id'])
+        # 材料分层（预算重分配）：论断证据置顶保真——9500 盲截会把论文 id 挤掉（RQ2 零引用实测）
+        claims_txt = json.dumps(payload.get('key_claims') or [], ensure_ascii=False)[:4200]
+        subs = payload.get('sub_answers') or []
+        subs_txt = "\n".join(f"- {s.get('id') or s.get('sub_rq_id')}: {(s.get('answer') or '')[:1100]}"
+                             for s in subs)[:3600]
+        overall_txt = (payload.get('overall_answer') or '')[:1800]
         user = (f"章节主题（来自综述大纲）：{payload['rq_text']}\n{ctx}\n\n"
-                f"结构化证据材料（真实证据，论断与引用只允许来自这里）：\n{json.dumps(payload, ensure_ascii=False, indent=1)[:9000]}"
-                + (f"\n\n== W2 知识图谱证据子图（本 RQ 冻结论文诱导，用于对比分析与事实锚定）==\n{kg_ctx}" if kg_ctx else ""))
+                "== 可核查论断与证据论文 id（引用只允许使用这里出现的 id，务必充分使用）==\n" + claims_txt + "\n\n"
+                "== 子问题及其分析（本章须逐一覆盖）==\n" + (subs_txt or "（无子答案）") + "\n\n"
+                "== 综合叙事（补充上下文）==\n" + overall_txt
+                + (f"\n\n== W2 知识图谱证据子图（对比分析与事实锚定用）==\n{kg_ctx}" if kg_ctx else ""))
         tex = latex_sanitize(chat(base, key, model, system, user))
+        n_cites = len(re.findall(r"\\cite\{", tex))
+        if n_cites < 8:  # 验收：引用密度不达标 → 带批评重试一次（不靠 LLM 自觉）
+            print(f"[llm_sections] {target.name} 引用仅 {n_cites} 处（<8），重试", flush=True)
+            tex2 = chat(base, key, model, system,
+                        user + f"\n\n【上次输出被驳回：引用只有 {n_cites} 处（要求 ≥8）。"
+                               "这次必须充分使用「可核查论断与证据论文 id」材料中的论文 id，并逐一覆盖子问题。】")
+            tex = latex_sanitize(tex2)
+            n_cites = len(re.findall(r"\\cite\{", tex))
         target.write_text(tex.strip() + "\n", encoding="utf-8")
         manifest["sections"].append(str(target.name))
-        print(f"[llm_sections] {target.name} 写入（{len(tex)} 字符）", flush=True)
+        print(f"[llm_sections] {target.name} 写入（{len(tex)} 字符，{n_cites} 处引用）", flush=True)
 
     # 摘要：汇总四个 RQ 的整体答案
     abstract_user = ("为综述撰写中文摘要（一段，250-350 字，语言与正文一致）。各研究问题及其核心结论如下：\n"
@@ -287,11 +304,78 @@ def main() -> int:
             lit_tex = latex_sanitize(chat(base, key, model,
                                 "你是学术综述写作者。基于给定材料撰写 Literature Review 章，"
                                 "把调研报告改写为面向期刊读者的学术叙述，严禁照抄原文结构与标题、"
-                                "严禁内部术语（冻结/工作记忆/流水线/W1-W5）与 markdown 残留。",
+                                "严禁内部术语（冻结/工作记忆/流水线/W1-W5）与 markdown 残留；"
+                                "「关键论文」列表必须给出且每条带 \\cite{论文 id}，正文引用 ≥4 处。",
                                 lit_user, max_tokens=3500))
             lit_files[0].write_text(lit_tex.strip() + "\n", encoding="utf-8")
             manifest["sections"].append(lit_files[0].name)
             print(f"[llm_sections] {lit_files[0].name} Literature Review 重写（{len(lit_tex)} 字符）", flush=True)
+
+    # ---- 模板章 LLM 学术化（intro / method / future / limitation——骨架文案升级为成文） ----
+    def _llm_rewrite(fname_pat: str, system2: str, user2: str, min_cites: int = 0) -> None:
+        fs = sorted(sections_dir.glob(fname_pat), key=lambda p: int(p.name.split('_')[0]))
+        if not fs:
+            return
+        tex3 = latex_sanitize(chat(base, key, model, system2, user2, max_tokens=3000))
+        nc = len(re.findall(r"\\cite\{", tex3))
+        if nc < min_cites:
+            tex3 = latex_sanitize(chat(base, key, model, system2,
+                                       user2 + f"\n\n【上次引用仅 {nc} 处（要求 ≥{min_cites}），须使用材料中的论文 id。】",
+                                       max_tokens=3500))
+        fs[0].write_text(tex3.strip() + "\n", encoding="utf-8")
+        manifest["sections"].append(fs[0].name)
+        print(f"[llm_sections] {fs[0].name} 重写（{len(tex3)} 字符，{nc} 处引用）", flush=True)
+
+    rq_ids = [p['rq_id'] for p in rq_data]
+    _ids = sorted({e for p_ in rq_data for c in (p_.get('key_claims') or [])[:3] for e in (c.get('evidence') or [])[:2]})
+    intro_mat = ("综述主题：" + (rq_data[0].get('rq_text') or '')[:200] + " 等 " + str(len(rq_data)) + " 个问题方向。\n"
+                 "可引用论文 id 清单（贡献点每条至少引 1 篇，只准用这些 id）：" + ", ".join(_ids[:20]) + "\n"
+                 "各问题核心结论（用于撰写贡献点，引用其中的论文 id）：\n"
+                 + "\n".join(f"- {p['rq_id']}: {p['overall_answer'][:400]}" for p in rq_data)
+                 + "\n代表性论断：\n" + json.dumps(
+                     [{"rq": p['rq_id'], "claims": [c['text'] for c in (p.get('key_claims') or [])[:3]],
+                       "ev": [e for c in (p.get('key_claims') or [])[:3] for e in (c.get('evidence') or [])[:2]]}
+                     for p in rq_data], ensure_ascii=False)[:3000])
+    _llm_rewrite("[0-9]*_introduction.tex",
+                 "你是综述 Introduction 写作者。按「出发点（领域背景与核心张力）→ 创新点（与已有综述的差异，"
+                 "基于结构化证据与逐问题综合）→ 贡献点（itemize 列出，每条带引用）」三小节成文，学术中文，"
+                 "\\section 行不要，4-6 段，引用 ≥6 处，严禁内部术语与空话套话。",
+                 intro_mat, min_cites=6)
+
+    n_corpus = 0
+    idx_csv = Path(args.staging) / "paper_cards" / "index" / "PAPER_INDEX.csv"
+    if idx_csv.exists():
+        with open(idx_csv, encoding='utf-8') as fh:
+            n_corpus = max(0, sum(1 for _ in fh) - 1)
+    n_subs = sum(len(p.get('sub_answers') or []) for p in rq_data)
+    method_mat = (f"语料 {n_corpus} 篇（多源检索：arXiv 优先、开放学术索引兜底，DOI/标识锚定去重）；"
+                  f"{len(rq_data)} 个研究问题共 {n_subs} 个子问题，证据集合在分析前预先固定；"
+                  "概念提取为六类实体（问题/方法/数据集基准/指标/局限/假设约束）与语义关系边；"
+                  "逐子问题做基于图谱的分析（分类/对比/演化/权衡），结论拆解为可核查论断并标注支撑论文。")
+    _llm_rewrite("[0-9]*_method.tex",
+                 "你是综述 Method 写作者。按「Data Mapping（来源与范围）→ Data Refinement（筛选标准与证据固定协议）"
+                 "→ Data Evaluation（图谱构建、逐问题分析、论断核查三层）」三小节成文，学术中文，\\section 行不要，"
+                 "3-5 段，写实不写虚（用材料中的真实数字），严禁内部术语。",
+                 method_mat, min_cites=0)
+
+    _fids = sorted({e for p_ in rq_data for c in (p_.get('key_claims') or [])[-2:] for e in (c.get('evidence') or [])[:2]})
+    future_mat = ("各问题的证据缺口与覆盖不足（用于研究议程）：\n"
+                  "可引用论文 id 清单（每段至少 1 处，只准用这些 id）：" + ", ".join(_fids[:16]) + "\n"
+                  + "\n".join(f"- {p['rq_id']}（{p.get('completeness') or ''}）: "
+                              + "; ".join(c['text'][:120] for c in (p.get('key_claims') or [])[-2:])
+                              for p in rq_data)[:3000])
+    _llm_rewrite("[0-9]*_future_research.tex",
+                 "你是综述 Future Research 写作者。按 balanced（平衡视角：缺口即机会）/ critical（批判视角："
+                 "哪些方向证据强度不足以支撑强结论）/ synthesised（综合视角：贯穿多问题的杠杆点）三段成文，"
+                 "学术中文，\\section 行不要，3-4 段，每段至少 1 处引用，严禁内部术语。",
+                 future_mat, min_cites=3)
+
+    _llm_rewrite("[0-9]*_limitation.tex",
+                 "你是综述 Limitation 写作者。就（1）语料与检索边界（自动检索池+人工补充的覆盖偏差、时间截止）；"
+                 "（2）方法边界（模型辅助提取与撰写的可核查性努力：逐条论断标注支撑文献、分析过程留痕，"
+                 "但个别抽取误差仍可能存在）；（3）范围边界（聚焦既定主题，相邻领域仅交叉处纳入）三方面诚实成文，"
+                 "学术中文，\\section 行不要，3 段，不引用、不辩解。",
+                 "（无额外材料，按规范直接撰写）", min_cites=0)
 
     # 引用键扩展：LLM 常写短键（如 2049），bib 键为完整 paper_id——前缀唯一匹配展开
     bib_path = sections_dir.parent / "references.bib"
