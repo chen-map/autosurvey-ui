@@ -443,6 +443,8 @@ def main() -> int:
                            "你是学术综述写作者，撰写跨问题的综合分析章。学术中文、术语保留英文，4-6 段，"
                            "论断须来自给定材料并用 \\cite{paper_id} 引用，严禁内部术语（冻结/工作记忆/流水线/W1-W5）。",
                            contrib_user, max_tokens=6500))
+        if not contrib_tex.lstrip().startswith("\\section"):
+            contrib_tex = "\\section{Discussion}\n\n" + contrib_tex
         cf.write_text(contrib_tex.strip() + "\n", encoding="utf-8")
         manifest["sections"].append(cf.name)
         print(f"[llm_sections] {cf.name} 跨RQ综合章写入（{len(contrib_tex)} 字符）", flush=True)
@@ -473,12 +475,15 @@ def main() -> int:
                                 "严禁内部术语（冻结/工作记忆/流水线/W1-W5）与 markdown 残留；"
                                 "「关键论文」列表必须给出且每条带 \\cite{论文 id}，正文引用 ≥4 处。",
                                 lit_user, max_tokens=3500))
+            if not lit_tex.lstrip().startswith("\\section"):
+                lit_tex = "\\section{Related Work}\n\n" + lit_tex
             lit_files[0].write_text(lit_tex.strip() + "\n", encoding="utf-8")
             manifest["sections"].append(lit_files[0].name)
             print(f"[llm_sections] {lit_files[0].name} Literature Review 重写（{len(lit_tex)} 字符）", flush=True)
 
     # ---- 模板章 LLM 学术化（intro / method / future / limitation——骨架文案升级为成文） ----
-    def _llm_rewrite(fname_pat: str, system2: str, user2: str, min_cites: int = 0) -> None:
+    def _llm_rewrite(fname_pat: str, system2: str, user2: str, min_cites: int = 0,
+                     section_title: str = "") -> None:
         fs = sorted(sections_dir.glob(fname_pat), key=lambda p: int(p.name.split('_')[0]))
         if not fs:
             return
@@ -488,6 +493,9 @@ def main() -> int:
             tex3 = latex_sanitize(chat(base, key, model, system2,
                                        user2 + f"\n\n【上次引用仅 {nc} 处（要求 ≥{min_cites}），须使用材料中的论文 id。】",
                                        max_tokens=3500))
+        # 章标题由代码层保证（LLM 输出不含 \section——实测丢标题致章节连排）
+        if section_title and not tex3.lstrip().startswith("\\section"):
+            tex3 = f"\\section{{{section_title}}}\n\n" + tex3
         fs[0].write_text(tex3.strip() + "\n", encoding="utf-8")
         manifest["sections"].append(fs[0].name)
         print(f"[llm_sections] {fs[0].name} 重写（{len(tex3)} 字符，{nc} 处引用）", flush=True)
@@ -506,7 +514,7 @@ def main() -> int:
                  "你是综述 Introduction 写作者。按「出发点（领域背景与核心张力）→ 创新点（与已有综述的差异，"
                  "基于结构化证据与逐问题综合）→ 贡献点（itemize 列出，每条带引用）」三小节成文，学术中文，"
                  "\\section 行不要，4-6 段，引用 ≥6 处，严禁内部术语与空话套话。",
-                 intro_mat, min_cites=6)
+                 intro_mat, min_cites=6, section_title="Introduction")
 
     n_corpus = 0
     idx_csv = Path(args.staging) / "paper_cards" / "index" / "PAPER_INDEX.csv"
@@ -522,7 +530,7 @@ def main() -> int:
                  "你是综述 Method 写作者。按「Data Mapping（来源与范围）→ Data Refinement（筛选标准与证据固定协议）"
                  "→ Data Evaluation（图谱构建、逐问题分析、论断核查三层）」三小节成文，学术中文，\\section 行不要，"
                  "3-5 段，写实不写虚（用材料中的真实数字），严禁内部术语。",
-                 method_mat, min_cites=0)
+                 method_mat, min_cites=0, section_title="Survey Methodology")
 
     _fids = sorted({e for p_ in rq_data for c in (p_.get('key_claims') or [])[-2:] for e in (c.get('evidence') or [])[:2]})
     future_mat = ("各问题的证据缺口与覆盖不足（用于研究议程）：\n"
@@ -534,14 +542,14 @@ def main() -> int:
                  "你是综述 Future Research 写作者。按 balanced（平衡视角：缺口即机会）/ critical（批判视角："
                  "哪些方向证据强度不足以支撑强结论）/ synthesised（综合视角：贯穿多问题的杠杆点）三段成文，"
                  "学术中文，\\section 行不要，3-4 段，每段至少 1 处引用，严禁内部术语。",
-                 future_mat, min_cites=3)
+                 future_mat, min_cites=3, section_title="Future Research")
 
     _llm_rewrite("[0-9]*_limitation.tex",
                  "你是综述 Limitation 写作者。就（1）语料与检索边界（自动检索池+人工补充的覆盖偏差、时间截止）；"
                  "（2）方法边界（模型辅助提取与撰写的可核查性努力：逐条论断标注支撑文献、分析过程留痕，"
                  "但个别抽取误差仍可能存在）；（3）范围边界（聚焦既定主题，相邻领域仅交叉处纳入）三方面诚实成文，"
                  "学术中文，\\section 行不要，3 段，不引用、不辩解。",
-                 "（无额外材料，按规范直接撰写）", min_cites=0)
+                 "（无额外材料，按规范直接撰写）", min_cites=0, section_title="Limitations")
 
     # 引用键扩展：LLM 常写短键（如 2049），bib 键为完整 paper_id——前缀唯一匹配展开
     bib_path = sections_dir.parent / "references.bib"
