@@ -243,35 +243,45 @@ def main() -> int:
         kg_ctx = kg_subgraph_summary(args.staging, payload['rq_id'])
         subs = payload.get('sub_answers') or []
         if len(subs) >= 2:
-            # ---- 逐子 RQ 撰写（小 RQ 是分析主力：每子一个 \subsection，全部进正文） ----
+            # ---- 逐子 RQ 撰写（和谐成文：内容性小节标题 + 真实承接，不做编号罗列） ----
             parts_tex: list[str] = []
             head_user = (f"本章主题（{payload['rq_id']}）：{payload['rq_text']}\n{ctx}\n\n"
-                         f"本章含 {len(subs)} 个子问题，先写章首总起段（承接上文、概述本章问题与回答要点，"
-                         f"2-3 句，不写子节标题、不引用）。\n本章各子问题结论速览：\n"
-                         + "\n".join(f"- {s_.get('id')}: {(s_.get('answer') or '')[:220]}" for s_ in subs))
+                         f"本章按内容逻辑组织为 {len(subs)} 个小节。先写章首总起段：承接上文 + 点出本章核心张力 + "
+                         f"用内容的逻辑（而非编号）预告本章如何展开（如「我们先剖析…，进而考察…，"
+                         f"最后检验…」）。3-4 句，不写小节标题、不引用。\n本章各部分结论速览：\n"
+                         + "\n".join(f"- {(s_.get('answer') or '')[:220]}" for s_ in subs))
             parts_tex.append(chat(base, key, model,
-                                  "你是综述章节作者。只输出一段中文总起（不带任何标题命令），凝练克制。",
-                                  head_user, max_tokens=600))
+                                  "你是综述章节作者。只输出一段中文总起（不带任何标题命令），"
+                                  "组织感强、像期刊论文的章首导语，凝练克制。",
+                                  head_user, max_tokens=700))
             sub_texts_cfg = _load_sub_texts(args.staging)
+            prev_tail = ""  # 上一小节实际正文的结尾（真实承接依据）
             for j, s_ in enumerate(subs):
                 sid = s_.get('id') or ''
                 sub_claims = json.dumps(s_.get('sub_claims') or [], ensure_ascii=False)[:2600]
-                sub_user = (f"子问题 {sid}：{sub_texts_cfg.get(sid, '')}\n"
-                            f"（父问题 {payload['rq_id']}：{payload['rq_text'][:200]}）\n\n"
-                            "== 本子问题论断与证据论文 id（引用只准用这些 id，务必充分使用）==\n" + sub_claims + "\n\n"
-                            "== 本子问题的分析叙事（改写为论文语言，深入机理与对比）==\n"
+                sub_user = (f"撰写综述本章的一小节。\n"
+                            f"本节要回答的子问题：{sub_texts_cfg.get(sid, '')}\n"
+                            f"（所在章主题：{payload['rq_text'][:180]}）\n\n"
+                            "== 本节论断与证据论文 id（引用只准用这些 id，务必充分使用）==\n" + sub_claims + "\n\n"
+                            "== 本节的分析材料（改写为论文语言，深入机理与对比）==\n"
                             + (s_.get('answer') or '')[:3400]
                             + (f"\n\n== W2 KG 证据子图参考 ==\n{kg_ctx}" if kg_ctx and j == 0 else ""))
-                nxt = subs[j + 1] if j + 1 < len(subs) else None
-                if nxt:
-                    sub_user += f"\n（下一小节将讨论：{nxt.get('id')}，本节结尾一句自然引出）"
+                if prev_tail:
+                    sub_user += (f"\n\n== 上一小节的结尾（你的第一句必须与之自然衔接，"
+                                 f"禁止出现「下一节/上一节将讨论」式的编号导航腔）==\n{prev_tail}")
+                sub_user += ("\n\n输出格式：第一行是 \\subsection{内容性标题}——标题概括本节的核心观点"
+                             "（如「错误传播的三条路径：漂移、级联与约束失效」），**禁止使用 RQ 编号**、"
+                             "禁止照抄子问题原文；随后 3-5 段正文，段间有推进关系。")
                 sub_tex = latex_sanitize(chat(base, key, model, system, sub_user))
                 nc = len(re.findall(r"\\cite\{", sub_tex))
                 if nc < 4:
                     sub_tex = latex_sanitize(chat(base, key, model, system,
                         sub_user + f"\n\n【上次引用仅 {nc} 处（要求 ≥4），必须使用材料中的论文 id。】"))
                     nc = len(re.findall(r"\\cite\{", sub_tex))
-                parts_tex.append(f"\\subsection{{{sid}：{_short(sub_texts_cfg.get(sid, ''))}}}\n" + sub_tex)
+                if not sub_tex.lstrip().startswith("\\subsection"):
+                    sub_tex = f"\\subsection{{{_short(sub_texts_cfg.get(sid, ''))}}}\n" + sub_tex
+                parts_tex.append(sub_tex)
+                prev_tail = sub_tex[-360:]  # 结尾给下一节做承接锚点
                 print(f"[llm_sections] {target.name} {sid} 小节（{len(sub_tex)} 字符，{nc} 引用）", flush=True)
             tex = "\n\n".join(parts_tex)
             n_cites = len(re.findall(r"\\cite\{", tex))
