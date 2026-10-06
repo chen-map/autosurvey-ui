@@ -238,7 +238,10 @@ def main() -> int:
                            "sub_claims": p_.get('key_claims', [])}} for p_ in rq_data]
 
     # 1) 主题规划：LLM 把全部单元聚类为 3-4 个主题章（按内容亲缘，输出阅读逻辑顺序）
-    plan_user = ("把以下综述分析单元重组为 3-4 个主题章（按内容亲缘聚类，严禁按编号顺序分组）。"
+    n_theme_hint = max(3, min(6, round(len(all_subs) / 4)))
+    plan_user = (f"把以下综述分析单元重组为 {n_theme_hint} 个左右的主题章。分组基线：大问题（RQ）本就是"
+                 "现成主题（其子问题天然聚成一章）；仅当两个大问题内容亲缘明显（如安全与通信）才合并为一章，"
+                 "仅当一个大问题内部跨度过大才拆成两章——不要求从零聚类。"
                  '输出 JSON 数组：[{"title": "主题章标题（观点性短语，不带编号与冒号）", '
                  '"logic": "本章组织逻辑一句话", "subs": ["单元id", ...]}]。'
                  "要求：每个单元恰好被分配一次；主题顺序符合阅读逻辑（如：现象与机理 → 设计与架构 → "
@@ -299,12 +302,13 @@ def main() -> int:
                         f"（所在章主题：{title_tex}）\n\n"
                         "== 本节论断与证据论文 id（引用只准用这些 id，务必充分使用）==\n" + sub_claims + "\n\n"
                         "== 本节的分析材料（改写为论文语言，深入机理与对比）==\n"
-                        + (s_.get('answer') or '')[:3400])
+                        + (s_.get('answer') or '')[:4500])
             if prev_tail:
                 sub_user += (f"\n\n== 上一小节的结尾（你的第一句必须与之自然衔接，"
                              f"禁止「下一节将讨论」式编号导航腔）==\n{prev_tail}")
             sub_user += ("\n\n输出格式：第一行是 \\subsection{内容性标题}——概括本节核心观点，"
-                         "禁止使用 RQ/单元编号、禁止照抄子问题原文；随后 3-5 段正文，段间有推进。")
+                         "禁止使用 RQ/单元编号、禁止照抄子问题原文；随后 4-7 段正文（这是论文主体，"
+                         "写足写深：机理剖析→证据对比→量化结果→边界与例外，段间有推进）。")
             sub_tex = latex_sanitize(chat(base, key, model, system, sub_user))
             nc = len(re.findall(r"\\cite\{", sub_tex))
             if nc < 4:
@@ -379,25 +383,21 @@ def main() -> int:
         if _mt:
             old_title = _mt.group(1).strip()
     inputs_tex = "\n".join(f"\\input{{sections/{st}}}" for st in order)
+    # ACM Computing Surveys 期刊模板（acmsmall + xeCJK 中文方案——ctex 与 acmart 冲突实测）；
+    # abstract 必须在 \maketitle 之前（acmart 规范）
     main_tex = (
-        "\\documentclass[10pt]{article}\n"
-        "\\usepackage[UTF8]{ctex}\n"
-        "\\usepackage[a4paper,margin=2.4cm]{geometry}\n"
-        "\\usepackage{amsmath,amssymb,amsfonts}\n"
-        "\\usepackage{booktabs,tabularx,array,multirow}\n"
-        "\\usepackage{graphicx}\n"
-        "\\usepackage{url}\n"
-        "\\usepackage{cite}\n"
-        "\\usepackage{xcolor}\n"
-        "\\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue]{hyperref}\n\n"
-        f"\\title{{{old_title}}}\n"
-        "\\author{AutoSurvey Pipeline}\n\n"
-        "\\begin{document}\n\\maketitle\n\n"
+        "\\documentclass[acmsmall,nonacm]{acmart}\n"
+        "\\usepackage{xeCJK}\n"
+        "\\settopmatter{printacmref=false}\n\n"
+        "\\begin{document}\n\n"
         "\\begin{abstract}\n\\input{sections/0_abstract}\n\\end{abstract}\n\n"
+        f"\\title{{{old_title}}}\n"
+        "\\author{AutoSurvey Pipeline}\n"
+        "\\maketitle\n\n"
         + inputs_tex + "\n\n"
-        "\\bibliographystyle{unsrt}\n\\bibliography{references}\n\n\\end{document}\n")
+        "\\bibliographystyle{ACM-ReferenceFormat}\n\\bibliography{references}\n\n\\end{document}\n")
     main_path.write_text(main_tex, encoding="utf-8")
-    print(f"[llm_sections] main.tex 重写：{len(order)} 章 = {' → '.join(order)}", flush=True)
+    print(f"[llm_sections] main.tex 重写（ACM acmsmall 模板）：{len(order)} 章 = {' → '.join(order)}", flush=True)
 
     # 摘要：汇总四个 RQ 的整体答案
     abstract_user = ("为综述撰写中文摘要（一段，250-350 字，语言与正文一致）。各研究问题及其核心结论如下：\n"
