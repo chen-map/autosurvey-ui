@@ -125,6 +125,23 @@ def kg_subgraph_summary(staging, rid: str, top: int = 6) -> str:
         return ""
 
 
+def _load_sub_texts(staging) -> dict:
+    """子问题 id → 文本（矩阵 sub_rq_matrix）。"""
+    try:
+        m = json.loads((Path(staging) / "workflow_3" / "analyze_report" / "rq_evidence_matrix.json")
+                       .read_text(encoding="utf-8"))
+        return {e.get("sub_rq_id"): (e.get("sub_rq_text") or e.get("rq_text") or "")
+                for e in m.get("sub_rq_matrix", []) if e.get("sub_rq_id")}
+    except Exception:
+        return {}
+
+
+def _short(t: str, n: int = 42) -> str:
+    """子节标题截断（长问题文本压短）。"""
+    t = (t or "").strip().replace("\n", " ")
+    return t[:n] + ("…" if len(t) > n else "")
+
+
 def rq_payload_summaries(wm_dir: Path) -> list[dict]:
     idx = json.loads((wm_dir / "WORKING_MEMORY_INDEX.json").read_text(encoding="utf-8"))
     out = []
@@ -165,7 +182,8 @@ def rq_payload_summaries(wm_dir: Path) -> list[dict]:
             ],
             "consensus": (a.get("cross_paper_patterns") or {}).get("consensus") or [],
             "sub_answers": [
-                {"id": s.get("sub_rq_id"), "answer": s.get("answer", ""), "confidence": s.get("confidence")}
+                {"id": s.get("sub_rq_id"), "answer": s.get("answer", ""), "confidence": s.get("confidence"),
+                 "sub_claims": s.get("sub_claims") or []}
                 for s in (a.get("sub_rq_answers") or [])
             ],
             "gaps": [g.get("gap_description", "") for g in (a.get("evidence_gaps") or [])],
@@ -223,9 +241,47 @@ def main() -> int:
         if next_rq:
             ctx += f"\n下一章主题（{next_rq['rq_id']}）：{next_rq['rq_text']}——本章结尾应自然引向它"
         kg_ctx = kg_subgraph_summary(args.staging, payload['rq_id'])
-        # 材料分层（预算重分配）：论断证据置顶保真——9500 盲截会把论文 id 挤掉（RQ2 零引用实测）
-        claims_txt = json.dumps(payload.get('key_claims') or [], ensure_ascii=False)[:4200]
         subs = payload.get('sub_answers') or []
+        if len(subs) >= 2:
+            # ---- 逐子 RQ 撰写（小 RQ 是分析主力：每子一个 \subsection，全部进正文） ----
+            parts_tex: list[str] = []
+            head_user = (f"本章主题（{payload['rq_id']}）：{payload['rq_text']}\n{ctx}\n\n"
+                         f"本章含 {len(subs)} 个子问题，先写章首总起段（承接上文、概述本章问题与回答要点，"
+                         f"2-3 句，不写子节标题、不引用）。\n本章各子问题结论速览：\n"
+                         + "\n".join(f"- {s_.get('id')}: {(s_.get('answer') or '')[:220]}" for s_ in subs))
+            parts_tex.append(chat(base, key, model,
+                                  "你是综述章节作者。只输出一段中文总起（不带任何标题命令），凝练克制。",
+                                  head_user, max_tokens=600))
+            sub_texts_cfg = _load_sub_texts(args.staging)
+            for j, s_ in enumerate(subs):
+                sid = s_.get('id') or ''
+                sub_claims = json.dumps(s_.get('sub_claims') or [], ensure_ascii=False)[:2600]
+                sub_user = (f"子问题 {sid}：{sub_texts_cfg.get(sid, '')}\n"
+                            f"（父问题 {payload['rq_id']}：{payload['rq_text'][:200]}）\n\n"
+                            "== 本子问题论断与证据论文 id（引用只准用这些 id，务必充分使用）==\n" + sub_claims + "\n\n"
+                            "== 本子问题的分析叙事（改写为论文语言，深入机理与对比）==\n"
+                            + (s_.get('answer') or '')[:3400]
+                            + (f"\n\n== W2 KG 证据子图参考 ==\n{kg_ctx}" if kg_ctx and j == 0 else ""))
+                nxt = subs[j + 1] if j + 1 < len(subs) else None
+                if nxt:
+                    sub_user += f"\n（下一小节将讨论：{nxt.get('id')}，本节结尾一句自然引出）"
+                sub_tex = latex_sanitize(chat(base, key, model, system, sub_user))
+                nc = len(re.findall(r"\\cite\{", sub_tex))
+                if nc < 4:
+                    sub_tex = latex_sanitize(chat(base, key, model, system,
+                        sub_user + f"\n\n【上次引用仅 {nc} 处（要求 ≥4），必须使用材料中的论文 id。】"))
+                    nc = len(re.findall(r"\\cite\{", sub_tex))
+                parts_tex.append(f"\\subsection{{{sid}：{_short(sub_texts_cfg.get(sid, ''))}}}\n" + sub_tex)
+                print(f"[llm_sections] {target.name} {sid} 小节（{len(sub_tex)} 字符，{nc} 引用）", flush=True)
+            tex = "\n\n".join(parts_tex)
+            n_cites = len(re.findall(r"\\cite\{", tex))
+            target.write_text(tex.strip() + "\n", encoding="utf-8")
+            manifest["sections"].append(str(target.name))
+            print(f"[llm_sections] {target.name} 写入（{len(tex)} 字符，{len(subs)} 小节，{n_cites} 处引用）", flush=True)
+            continue
+
+        # ---- 无子分析：单章撰写（原逻辑） ----
+        claims_txt = json.dumps(payload.get('key_claims') or [], ensure_ascii=False)[:4200]
         subs_txt = "\n".join(f"- {s.get('id') or s.get('sub_rq_id')}: {(s.get('answer') or '')[:1100]}"
                              for s in subs)[:3600]
         overall_txt = (payload.get('overall_answer') or '')[:1800]

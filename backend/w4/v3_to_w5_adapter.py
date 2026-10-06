@@ -217,6 +217,10 @@ def main() -> int:
                 "answer": s_overall or "",
                 "confidence": None,
                 "claims": len(s_claims),
+                # 子级论断带证据 id（W5 逐小节撰写的引用来源——小 RQ 是分析主力）
+                "sub_claims": [{"text": str(c.get("claim_text") or c.get("claim") or "")[:240],
+                                "evidence": [str(x) for x in (c.get("evidence_papers") or []) if x][:4]}
+                               for c in s_claims][:8],
                 "papers_touched": len(papers_touched),
             })
             claims.extend(s_claims)
