@@ -383,21 +383,26 @@ def main() -> int:
         if _mt:
             old_title = _mt.group(1).strip()
     inputs_tex = "\n".join(f"\\input{{sections/{st}}}" for st in order)
-    # ACM Computing Surveys 期刊模板（acmsmall + xeCJK 中文方案——ctex 与 acmart 冲突实测）；
-    # abstract 必须在 \maketitle 之前（acmart 规范）
+    # 经典单栏版式（用户裁决：视觉用这版，比 ACM 模板美观；结构/内容不变）
     main_tex = (
-        "\\documentclass[acmsmall,nonacm]{acmart}\n"
-        "\\usepackage{xeCJK}\n"
-        "\\settopmatter{printacmref=false}\n\n"
-        "\\begin{document}\n\n"
-        "\\begin{abstract}\n\\input{sections/0_abstract}\n\\end{abstract}\n\n"
+        "\\documentclass[10pt]{article}\n"
+        "\\usepackage[UTF8]{ctex}\n"
+        "\\usepackage[a4paper,margin=2.4cm]{geometry}\n"
+        "\\usepackage{amsmath,amssymb,amsfonts}\n"
+        "\\usepackage{booktabs,tabularx,array,multirow}\n"
+        "\\usepackage{graphicx}\n"
+        "\\usepackage{url}\n"
+        "\\usepackage{cite}\n"
+        "\\usepackage{xcolor}\n"
+        "\\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue]{hyperref}\n\n"
         f"\\title{{{old_title}}}\n"
-        "\\author{AutoSurvey Pipeline}\n"
-        "\\maketitle\n\n"
+        "\\author{AutoSurvey Pipeline}\n\n"
+        "\\begin{document}\n\\maketitle\n\n"
+        "\\begin{abstract}\n\\input{sections/0_abstract}\n\\end{abstract}\n\n"
         + inputs_tex + "\n\n"
-        "\\bibliographystyle{ACM-ReferenceFormat}\n\\bibliography{references}\n\n\\end{document}\n")
+        "\\bibliographystyle{unsrt}\n\\bibliography{references}\n\n\\end{document}\n")
     main_path.write_text(main_tex, encoding="utf-8")
-    print(f"[llm_sections] main.tex 重写（ACM acmsmall 模板）：{len(order)} 章 = {' → '.join(order)}", flush=True)
+    print(f"[llm_sections] main.tex 重写（经典版式）：{len(order)} 章 = {' → '.join(order)}", flush=True)
 
     # 摘要：汇总四个 RQ 的整体答案
     abstract_user = ("为综述撰写中文摘要（一段，250-350 字，语言与正文一致）。各研究问题及其核心结论如下：\n"
