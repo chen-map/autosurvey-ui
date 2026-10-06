@@ -69,6 +69,13 @@ def latex_sanitize(tex: str) -> str:
         t = re.sub(r"(?<!\\)" + re.escape(ch), "\\" + ch, t)
     for i, cmd in enumerate(stash):
         t = t.replace(f"@@CMD{i}@@", cmd)
+    # 裸方括号引用（stash 还原后处理，避免新造 cite 键被下划线转义破坏）：
+    # LLM 偶发把 id 写成 [3823\_llmbased...] 文本而非 \cite——超长不可断致溢出边框。
+    # 此时 _ 已转义为 \_，正则按转义形态匹配，还原成裸键后包 \cite。
+    def _to_cite(m: "re.Match") -> str:
+        return "\\cite{" + m.group(1).replace("\\_", "_") + "}"
+    t = re.sub(r"\[(\d{4}(?:\\_|[A-Za-z0-9-]){8,})\]", _to_cite, t)
+    t = re.sub(r"\[(\d{3,4})\]", r"\\cite{\1}", t)
     if t.count("\\begin{itemize}") > t.count("\\end{itemize}"):
         t = t.rstrip() + "\n" + "\\end{itemize}\n" * (t.count("\\begin{itemize}") - t.count("\\end{itemize}"))
     return t
