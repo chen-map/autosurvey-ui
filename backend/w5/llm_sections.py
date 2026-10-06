@@ -63,6 +63,8 @@ def latex_sanitize(tex: str) -> str:
         t = t.replace(bad, good)
     for ch, rep in UNI_MAP.items():
         t = t.replace(ch, rep)
+    t = re.sub(r"(?<!\\)\^", r"\\^{}", t)   # 2^4 类裸上标（Missing $ 实测）
+    t = re.sub(r"(?<!\\)~", r"\\textasciitilde{}", t)
     for ch in ("&", "%", "#", "_"):
         t = re.sub(r"(?<!\\)" + re.escape(ch), "\\" + ch, t)
     for i, cmd in enumerate(stash):

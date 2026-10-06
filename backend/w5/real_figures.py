@@ -47,16 +47,24 @@ def load_method_tree(kg_json: Path, max_nodes: int = 18):
         if nid:
             names[nid] = n.get("canonical_name") or nid
             types[nid] = n.get("node_type") or ""
+    # KG 的 extends 是 Paper→Paper（引文扩展）——方法族谱经论文桥接推导：
+    # B extends A 且 A proposes X、B proposes Y ⇒ X→Y（Y 构建于 X 之上）
+    paper_methods: dict[str, list] = {}
+    for e in kg.get("edges", []):
+        if e.get("edge_type") == "proposes":
+            paper_methods.setdefault(str(e.get("source_id") or ""), []).append(str(e.get("target_id") or ""))
     ext: list[tuple[str, str]] = []
     deg: dict[str, int] = {}
     for e in kg.get("edges", []):
         if e.get("edge_type") != "extends":
             continue
-        src, tgt = str(e.get("source_id") or ""), str(e.get("target_id") or "")
-        if src in types and tgt in types and types.get(src) == "Method" and types.get(tgt) == "Method":
-            ext.append((tgt, src))  # target extends source → source 是父
-            deg[src] = deg.get(src, 0) + 1
-            deg[tgt] = deg.get(tgt, 0) + 1
+        a, b = str(e.get("target_id") or ""), str(e.get("source_id") or "")  # b extends a → a 在前
+        for x in paper_methods.get(a, []):
+            for y in paper_methods.get(b, []):
+                if x != y:
+                    ext.append((x, y))
+                    deg[x] = deg.get(x, 0) + 1
+                    deg[y] = deg.get(y, 0) + 1
     if not ext:
         return [], []
     # 最大连通分量（并查集）
@@ -358,13 +366,13 @@ def main(argv: list[str] | None = None) -> int:
         "  \\caption{Problem--method landscape: problems addressed and methods proposed within the same papers. Dense rows indicate crowded problem niches; sparse rows indicate under-served problems.}\n"
         "  \\label{fig:prob-method}\n\\end{figure}\n")
     inc.append(
-        "\\begin{figure}[t]\\n  \\centering\\n  \\includegraphics[width=0.95\\textwidth]{figures/fig_method_tree.png}\\n"
-        "  \\caption{Method evolution: the largest connected group of \\emph{extends} relations among methods in the knowledge graph, showing which methods build on which.}\\n"
-        "  \\label{fig:method-tree}\\n\\end{figure}\\n")
+        "\\begin{figure}[t]\n  \\centering\n  \\includegraphics[width=0.95\\textwidth]{figures/fig_method_tree.png}\n"
+        "  \\caption{Method evolution: the largest connected group of extends relations among methods in the knowledge graph, showing which methods build on which.}\n"
+        "  \\label{fig:method-tree}\n\\end{figure}\n")
     inc.append(
-        "\\begin{figure}[t]\\n  \\centering\\n  \\includegraphics[width=0.62\\textwidth]{figures/fig_limitations.png}\\n"
-        "  \\caption{Most-cited failure modes and limitations across the surveyed papers (KG degree = number of relations linking the limitation to methods, papers, or problems).}\\n"
-        "  \\label{fig:limitations}\\n\\end{figure}\\n")
+        "\\begin{figure}[t]\n  \\centering\n  \\includegraphics[width=0.62\\textwidth]{figures/fig_limitations.png}\n"
+        "  \\caption{Most-cited failure modes and limitations across the surveyed papers (KG degree = number of relations linking the limitation to methods, papers, or problems).}\n"
+        "  \\label{fig:limitations}\n\\end{figure}\n")
     (fig_dir / "latex_includes.tex").write_text("\n".join(inc), encoding="utf-8")
     print(f"[real_figures] years={sum(years.values())} kg_nodes={sum(nodes.values())} kg_edges={sum(edges.values())} domain_figs=ds-metric+prob-method → latex_includes.tex 重写")
     return 0
