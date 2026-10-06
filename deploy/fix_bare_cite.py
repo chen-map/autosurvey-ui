@@ -20,6 +20,8 @@ def fix(s: str) -> str:
 
     s = re.sub(r'\[(\d{4}(?:\\_|[A-Za-z0-9-]){8,})\]', to_cite, s)
     s = re.sub(r'\[(\d{3,4})\]', r'\\cite{\1}', s)
+    # 裸 id 嵌句（无方括号，同病异形）
+    s = re.sub(r'(?<![\w{])(\d{4}(?:\\_|[A-Za-z0-9-]){15,})(?![\w}])', to_cite, s)
     for i, c in enumerate(stash):
         s = s.replace(f'@@C{i}@@', c)
     return s

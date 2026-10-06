@@ -76,6 +76,8 @@ def latex_sanitize(tex: str) -> str:
         return "\\cite{" + m.group(1).replace("\\_", "_") + "}"
     t = re.sub(r"\[(\d{4}(?:\\_|[A-Za-z0-9-]){8,})\]", _to_cite, t)
     t = re.sub(r"\[(\d{3,4})\]", r"\\cite{\1}", t)
+    # 裸 id 嵌句（无方括号）："1665\_Flow-of-Action... 显示" → \cite（同病异形，亦致溢出）
+    t = re.sub(r"(?<![\w{])(\d{4}(?:\\_|[A-Za-z0-9-]){15,})(?![\w}])", _to_cite, t)
     if t.count("\\begin{itemize}") > t.count("\\end{itemize}"):
         t = t.rstrip() + "\n" + "\\end{itemize}\n" * (t.count("\\begin{itemize}") - t.count("\\end{itemize}"))
     return t
