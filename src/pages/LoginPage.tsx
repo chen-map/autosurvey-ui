@@ -13,7 +13,7 @@ export function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('login');
-  const [username, setUsername] = useState('demo');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('123456');
   const [confirm, setConfirm] = useState('');
   const [email, setEmail] = useState('');
@@ -32,7 +32,7 @@ export function LoginPage() {
       setConfirm('');
       setEmail('');
     } else {
-      setUsername('demo');
+      setUsername('');
       setPassword('123456');
     }
   };
@@ -104,11 +104,6 @@ export function LoginPage() {
           ))}
         </div>
 
-        {mode === 'login' && (
-          <div className="mt-4 rounded-lg bg-info px-3 py-2 text-[13px] leading-5 text-info-fg">
-            演示环境：账号 demo / 123456，已预填，直接登录即可。
-          </div>
-        )}
         {mode === 'register' && (
           <div className="mt-4 rounded-lg bg-info px-3 py-2 text-[13px] leading-5 text-info-fg">
             注册后自动开通你的独立数据分区：项目、语料、密钥、知识库全部按账号隔离。邮箱用于找回密码。

@@ -62,7 +62,7 @@ export function AppShell() {
 
         <div className="space-y-3 border-t border-line/70 px-4 py-4">
           <label className="flex cursor-pointer items-center justify-between text-[13px] text-t2">
-            演示模式（只读）
+            只读模式
             <input
               type="checkbox"
               checked={readOnly}

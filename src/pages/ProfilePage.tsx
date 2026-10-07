@@ -253,7 +253,7 @@ export function ProfilePage() {
           <Bot size={15} className="text-t3" />
           LLM 接入配置
           <Badge variant={llm.baseUrl && llm.apiKey && llm.model ? 'ok' : 'warn'} withDot>
-            {llm.baseUrl && llm.apiKey && llm.model ? '已配置' : '未配置——AI 功能将使用内置演示数据'}
+            {llm.baseUrl && llm.apiKey && llm.model ? '已配置' : '未配置——AI 功能将不可用，请在下方配置'}
           </Badge>
         </div>
         <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
@@ -291,7 +291,7 @@ export function ProfilePage() {
         </div>
         <div className="mt-2 text-[11.5px] text-t3">
           {USE_MOCK
-            ? '演示模式：配置保存在本浏览器，AI 调用由浏览器直连。'
+            ? '本地模式：配置保存在本浏览器，AI 调用由浏览器直连。'
             : '真实模式：配置加密存于本地数据库（Fernet），AI 调用经服务端代理执行，明文 Key 不回传浏览器。'}
         </div>
 

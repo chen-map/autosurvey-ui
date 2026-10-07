@@ -139,7 +139,7 @@ export function DirectionPage() {
     setTimeout(() => setSavedTip(false), 1500);
   };
 
-  // ---- AI 方向精炼（B14 mock 版）：真实实现为 POST /direction/refine ----
+  // ---- AI 方向精炼（走后端 LLM 代理 /api/llm/chat，个人中心配置生效） ----
   const [vague, setVague] = useState('');
   const [phase, setPhase] = useState<'idle' | 'thinking' | 'done'>('idle');
   const [refined, setRefined] = useState<RefinedDirection | null>(null);
@@ -418,7 +418,7 @@ export function DirectionPage() {
                 <p className="mt-1 text-[13px] leading-5 text-t2">{refined.gap}</p>
               </div>
               <div>
-                <div className="text-[12px] font-medium text-t3">可能的高质量论文（mock 演示数据；真实版经 Semantic Scholar 检索）</div>
+                <div className="text-[12px] font-medium text-t3">可能的高质量论文（AI 推荐参考）</div>
                 <ul className="mt-1 space-y-1.5">
                   {refined.papers.map((p) => (
                     <li key={p.title} className="flex items-start gap-2 text-[13px]">

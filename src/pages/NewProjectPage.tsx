@@ -551,7 +551,7 @@ export function NewProjectPage() {
               </div>
             ))}
             <div className="rounded-lg bg-info px-3 py-2 text-[12.5px] leading-5 text-info-fg">
-              创建后即启动 W1 语料库构建；演示环境下流水线以 mock 数据回放。
+              创建后即启动 W1 语料库构建，各阶段进度实时可见。
             </div>
           </div>
         )}
