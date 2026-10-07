@@ -14,7 +14,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('login');
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('123456');
+  const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -33,7 +33,7 @@ export function LoginPage() {
       setEmail('');
     } else {
       setUsername('');
-      setPassword('123456');
+      setPassword('');
     }
   };
 
