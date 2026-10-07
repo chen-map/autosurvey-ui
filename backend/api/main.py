@@ -9,6 +9,7 @@ import json
 import re
 import os
 import csv
+import sqlite3
 import subprocess
 import sys
 import time
@@ -679,6 +680,30 @@ def put_directions(body: dict = Body(...), user: dict = Depends(_me)):
     return {"ok": True}
 
 
+@app.get("/api/users")
+def list_users_admin(user: dict = Depends(_me)):
+    """管理员用户总览（非 admin 404）。返回全部账号 + 各自项目数 + 最近活跃（项目 updated_at 最大值）。"""
+    if user.get("role") != "admin":
+        raise HTTPException(404, "project not found")
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    proj_stats: dict[int, dict] = {}
+    for r in conn.execute(
+            "SELECT user_id, COUNT(*) n, MAX(created_at) latest FROM projects GROUP BY user_id"):
+        proj_stats[r["user_id"]] = {"n": r["n"], "latest": r["latest"]}
+    out = []
+    for u in conn.execute("SELECT id, username, role, email, created_at FROM users ORDER BY id"):
+        st = proj_stats.get(u["id"], {})
+        out.append({
+            "username": u["username"], "role": u["role"], "email": u["email"],
+            "createdAt": u["created_at"], "projects": st.get("n", 0),
+            "lastActive": st.get("latest") or u["created_at"],
+            "status": "active",
+        })
+    conn.close()
+    return out
+
+
 @app.get("/api/me/library")
 def get_library(user: dict = Depends(_me)):
     return _kv_get(user["user_id"], "library") or {"items": [], "collections": ["方法参考", "待精读"]}
@@ -1142,10 +1167,15 @@ def get_project_report(pid: str, user: dict = Depends(_me)):
 
 @app.get("/api/projects")
 def list_projects(user: dict = Depends(_me)):
-    """以 projects 表为准（表驱动），目录扫描只作旧数据兜底。"""
+    """以 projects 表为准（表驱动），目录扫描只作旧数据兜底。
+    admin 可见全部用户的项目（owner 字段标注归属）；普通用户仅见自己的。"""
     conn = get_db()
-    user_pids = {r["project_id"] for r in conn.execute(
-        "SELECT project_id FROM projects WHERE user_id=?", (user["user_id"],)).fetchall()}
+    if user.get("role") == "admin":
+        user_pids = {r["project_id"]: r["username"] for r in conn.execute(
+            "SELECT p.project_id, u.username FROM projects p JOIN users u ON p.user_id=u.id").fetchall()}
+    else:
+        user_pids = {r["project_id"]: user["username"] for r in conn.execute(
+            "SELECT project_id FROM projects WHERE user_id=?", (user["user_id"],)).fetchall()}
     conn.close()
 
     projects = []
@@ -1248,6 +1278,7 @@ def list_projects(user: dict = Depends(_me)):
 
     return [{
         "id": pr["project_id"],
+        "owner": user_pids.get(pr["project_id"], ""),
         "title": pr["title"],
         "fieldTags": pr["field_tags"],
         "description": pr["description"],
