@@ -6,6 +6,7 @@ import { USE_MOCK } from '@/services/api';
 export interface LibraryItem {
   key: string;
   paperIdx?: number;
+  fp?: string;  // 内容指纹 norm(title)+year——跨分页/会话稳定的去重键（paperIdx 是视图下标，翻页即漂移，实测 NaN 重复）
   source: 'corpus' | 'upload' | 'manual';
   title: string;
   authors?: string;
@@ -26,6 +27,11 @@ function read<T>(key: string, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+export function fingerprint(title: string, year?: number): string {
+  const t = (title || '').toLowerCase().replace(/[^a-z0-9一-龥]+/g, '').slice(0, 60);
+  return t + '|' + (year ?? '');
 }
 
 export interface NewLibraryInput {
@@ -80,16 +86,19 @@ export const useLibrary = create<LibraryState>((set, get) => ({
   items: read(ITEMS_KEY, []),
   collections: read(COLLS_KEY, ['方法参考', '待精读']),
   toggleSave: (item) => {
+    const fp = fingerprint(item.title, item.year);
     const items = get().items;
-    const existing = items.find((i) => i.source === 'corpus' && i.paperIdx === item.paperIdx);
+    const existing = items.find((i) => (i.fp ?? fingerprint(i.title, i.year)) === fp);
     let next: LibraryItem[];
     let added: boolean;
     if (existing) {
       next = items.filter((i) => i.key !== existing.key);
       added = false;
     } else {
+      const badIdx = item.paperIdx == null || Number.isNaN(item.paperIdx);
       next = [
-        { ...item, key: `lib-c-${item.paperIdx}`, collection: '未分类', savedAt: new Date().toLocaleString() },
+        { ...item, paperIdx: badIdx ? undefined : item.paperIdx, fp,
+          key: `lib-f-${fp.slice(0, 24)}`, collection: '未分类', savedAt: new Date().toLocaleString() },
         ...items,
       ];
       added = true;
@@ -100,8 +109,10 @@ export const useLibrary = create<LibraryState>((set, get) => ({
     return added;
   },
   addManual: (item) => {
+    const fp = fingerprint(item.title, item.year);
+    if (get().items.some((i) => (i.fp ?? fingerprint(i.title, i.year)) === fp)) return;  // 手动录入也防重
     const next = [
-      { ...item, collection: item.collection ?? '未分类', key: `lib-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, savedAt: new Date().toLocaleString() },
+      { ...item, fp, collection: item.collection ?? '未分类', key: `lib-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, savedAt: new Date().toLocaleString() },
       ...get().items,
     ];
     localStorage.setItem(ITEMS_KEY, JSON.stringify(next));

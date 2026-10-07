@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { X, FileText, Bookmark, Upload } from 'lucide-react';
 import type { PaperRecord, ScreenStage, PrismaLevel } from '@/types/data';
 import { getCorpus } from '@/services/api';
-import { useLibrary } from '@/store/library';
+import { useLibrary, fingerprint } from '@/store/library';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -19,7 +19,7 @@ function stageVariantOf(s: ScreenStage): 'neutral' | 'ok' {
 export function CorpusPage() {
   const { projectId = '' } = useParams();
   const { items: libItems, toggleSave } = useLibrary();
-  const savedIdx = useMemo(() => new Set(libItems.map((i) => i.paperIdx)), [libItems]);
+  const savedFps = useMemo(() => new Set(libItems.map((i) => i.fp ?? fingerprint(i.title, i.year))), [libItems]);
   const [data, setData] = useState<{ papers: PaperRecord[]; funnel: PrismaLevel[]; total: number; page: number; pageSize: number } | null>(null);
   const [query, setQuery] = useState('');
   const [stage, setStage] = useState<'ALL' | ScreenStage | '需人工'>('ALL');
@@ -136,7 +136,7 @@ export function CorpusPage() {
             <tbody>
               {shown.map((p, i) => {
                 const idx = Number(p.id.replace('paper-', '')) - 1;
-                const saved = savedIdx.has(idx);
+                const saved = savedFps.has(fingerprint(p.title, p.year));
                 return (
                 <tr
                   key={p.id}
@@ -227,7 +227,7 @@ function PaperDrawer({ paper, onClose }: { paper: PaperRecord; onClose: () => vo
   const [tab, setTab] = useState<(typeof CARD_TABS)[number][0]>('problems');
   const { items: libItems, toggleSave } = useLibrary();
   const idx = Number(paper.id.replace('paper-', '')) - 1;
-  const saved = libItems.some((i) => i.paperIdx === idx);
+  const saved = libItems.some((i) => (i.fp ?? fingerprint(i.title, i.year)) === fingerprint(paper.title, paper.year));
   return (
     <div className="fixed inset-0 z-[100]">
       <div className="absolute inset-0 bg-black/45" style={{ animation: 'rise .15s ease-out' }} onClick={onClose} />
