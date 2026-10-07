@@ -184,26 +184,9 @@ export function DirectionPage() {
       return;
     }
 
-    // mock 演示（未配置 LLM）：数据形状与真实模式一致
-    const kw = vague.trim();
-    setTimeout(() => {
-      setRefined({
-        title: `${kw}：从现象描述到机制刻画的系统性研究`,
-        statement: `围绕「${kw}」构建可复现的评测体系与机制分析框架，结合你关注的 ${ctxFields[0] ?? '相关领域'} 视角，识别现有研究的覆盖缺口并提出对照性研究问题。`,
-        questions: [
-          `${kw} 相关问题中，哪些已被系统研究、覆盖度如何（可用 KG 覆盖缺口验证）？`,
-          '现有方法在真实场景下的失效边界与失败模式是什么？',
-          '哪些交叉视角尚未被组合研究？',
-        ],
-        gap: '现有工作偏重单点性能提升，缺少跨方法对照与失败案例分析；评测多基于合成设定，真实场景证据不足。',
-        papers: [
-          { title: 'A Survey on Evaluation Practices in Modern NLP Research', venue: 'arXiv', year: 2024, reason: '评测方法论对照框架' },
-          { title: 'On the Generalization Gaps in Contemporary Machine Learning', venue: 'ACL', year: 2023, reason: '泛化缺口分析框架' },
-          { title: 'Reproducibility in Machine Learning Research', venue: 'Nature Machine Intelligence', year: 2022, reason: '可复现性规范来源' },
-        ],
-      });
-      setPhase('done');
-    }, 1500);
+    // 未配置 LLM：不提供 mock 演示（编造文献有损可信度），明确提示先配置
+    setRefineError('AI 精炼需要大模型支持——请先在个人中心配置 LLM（全局默认卡或任意工作流卡），再回到这里使用。');
+    setPhase('idle');
   };
 
   const adoptRefined = () => {
@@ -366,7 +349,9 @@ export function DirectionPage() {
               <Sparkles size={15} className="text-t3" />
               AI 方向精炼
             </div>
-            <Badge variant="warn">实验 · mock 数据</Badge>
+            <Badge variant={llmConfigured(readLlmConfig()) ? 'ok' : 'warn'} withDot={false}>
+              {llmConfigured(readLlmConfig()) ? 'LLM 驱动' : '需先配置 LLM'}
+            </Badge>
           </div>
           <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
             用一段模糊描述，AI 会结合你的领域标签，把它精炼成更专业、更有研究水准的方向——生成后一键入库。
