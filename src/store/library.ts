@@ -75,15 +75,31 @@ async function pullLibrary(set: (s: Partial<LibraryState>) => void) {
     if (!res.ok) return;
     const d = await res.json();
     if (Array.isArray(d.items) && d.items.length > 0) {
-      localStorage.setItem(ITEMS_KEY, JSON.stringify(d.items));
+      const seen = new Set<string>();
+      const dedup = d.items.filter((i: LibraryItem) => {
+        const fp = i.fp ?? fingerprint(i.title, i.year);
+        if (seen.has(fp)) return false;  // 存量重复防御（lib-c-NaN 时代产物）
+        seen.add(fp);
+        if (!i.fp) i.fp = fp;
+        return true;
+      });
+      localStorage.setItem(ITEMS_KEY, JSON.stringify(dedup));
       if (Array.isArray(d.collections) && d.collections.length > 0) localStorage.setItem(COLLS_KEY, JSON.stringify(d.collections));
-      set({ items: d.items, collections: d.collections?.length ? d.collections : read(COLLS_KEY, ['方法参考', '待精读']) });
+      set({ items: dedup, collections: d.collections?.length ? d.collections : read(COLLS_KEY, ['方法参考', '待精读']) });
     }
   } catch { /* 后端不可达时保留本地 */ }
 }
 
 export const useLibrary = create<LibraryState>((set, get) => ({
-  items: read(ITEMS_KEY, []),
+  items: (() => {
+    const seen = new Set<string>();
+    return read<LibraryItem[]>(ITEMS_KEY, []).filter((i) => {
+      const fp = i.fp ?? fingerprint(i.title, i.year);
+      if (seen.has(fp)) return false;
+      seen.add(fp);
+      return true;
+    });
+  })(),
   collections: read(COLLS_KEY, ['方法参考', '待精读']),
   toggleSave: (item) => {
     const fp = fingerprint(item.title, item.year);
