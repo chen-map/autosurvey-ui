@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Compass, Save, Sparkles, ArrowRight, FileText, Plus, Trash2, Pencil, Star } from 'lucide-react';
-import { readLlmConfig, llmConfigured, chatCompletion } from '@/lib/llm';
 import { USE_MOCK } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -153,41 +152,55 @@ export function DirectionPage() {
     if (!vague.trim()) return;
     setRefineError('');
     setPhase('thinking');
-    const cfg = readLlmConfig();
 
-    if (llmConfigured(cfg)) {
-      // 真实模式：统一 LLM 执行器（url + apikey + model）
-      try {
-        const sys = [
-          '你是学术选题顾问。把用户的模糊研究想法精炼为专业、可执行的研究方向。',
-          '严格只输出 JSON（不要代码块围栏、不要解释）：',
-          '{"title":"方向标题","statement":"一句话阐述","questions":["研究问题1","研究问题2","研究问题3"],"gap":"为什么值得做（识别的空白）","papers":[{"title":"真实存在的论文标题","venue":"会议或期刊","year":2024,"reason":"推荐理由"}]}',
-          'papers 恰好 3 篇且必须真实存在的文献。',
-        ].join('\n');
-        const raw = await chatCompletion(cfg, [
-          { role: 'system', content: sys },
-          { role: 'user', content: `模糊想法：${vague}\n我的领域标签：${ctxFields.join('、') || '无'}` },
-        ], { maxTokens: 1500 });
-        const cleaned = raw.replace(/```json|```/g, '').trim();
-        const d = JSON.parse(cleaned);
-        setRefined({
-          title: d.title || '未命名方向',
-          statement: d.statement || '',
-          questions: Array.isArray(d.questions) ? d.questions : [],
-          gap: d.gap || '',
-          papers: Array.isArray(d.papers) ? d.papers : [],
-        });
-      } catch (e) {
-        setRefineError(e instanceof Error ? e.message : String(e));
+    // 走后端 LLM 代理：个人中心配置（llm_configs，加密存储）为唯一配置源
+    const API = import.meta.env.VITE_API_BASE ?? '/api';
+    const token = localStorage.getItem('as.token') ?? '';
+    try {
+      const sys = [
+        '你是学术选题顾问。把用户的模糊研究想法精炼为专业、可执行的研究方向。',
+        '严格只输出 JSON（不要代码块围栏、不要解释）：',
+        '{"title":"方向标题","statement":"一句话阐述","questions":["研究问题1","研究问题2","研究问题3"],"gap":"为什么值得做（识别的空白）","papers":[{"title":"真实存在的论文标题","venue":"会议或期刊","year":2024,"reason":"推荐理由"}]}',
+        'papers 恰好 3 篇且必须真实存在的文献。',
+      ].join('\n');
+      const res = await fetch(`${API}/llm/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: sys },
+            { role: 'user', content: `模糊想法：${vague}
+我的领域标签：${ctxFields.join('、') || '无'}` },
+          ],
+          maxTokens: 1800,
+          useCase: 'default',
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+        throw new Error(d.detail ?? `HTTP ${res.status}`);
       }
-      setPhase('done');
+      const raw = (await res.json()).content ?? '';
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      const d = JSON.parse(cleaned);
+      setRefined({
+        title: d.title || '未命名方向',
+        statement: d.statement || '',
+        questions: Array.isArray(d.questions) ? d.questions : [],
+        gap: d.gap || '',
+        papers: Array.isArray(d.papers) ? d.papers : [],
+      });
+    } catch (e) {
+      setRefineError(
+        e instanceof Error && /未配置|LLM/.test(e.message)
+          ? 'AI 精炼需要大模型支持——请先在个人中心「全局默认」卡配置接口地址、API Key 与模型，再回到这里使用。'
+          : e instanceof Error ? e.message : String(e));
+      setPhase('idle');
       return;
     }
-
-    // 未配置 LLM：不提供 mock 演示（编造文献有损可信度），明确提示先配置
-    setRefineError('AI 精炼需要大模型支持——请先在个人中心配置 LLM（全局默认卡或任意工作流卡），再回到这里使用。');
-    setPhase('idle');
+    setPhase('done');
   };
+
 
   const adoptRefined = () => {
     if (!refined) return;
@@ -349,9 +362,7 @@ export function DirectionPage() {
               <Sparkles size={15} className="text-t3" />
               AI 方向精炼
             </div>
-            <Badge variant={llmConfigured(readLlmConfig()) ? 'ok' : 'warn'} withDot={false}>
-              {llmConfigured(readLlmConfig()) ? 'LLM 驱动' : '需先配置 LLM'}
-            </Badge>
+            <Badge variant="ok">AI 驱动 · 个人中心配置</Badge>
           </div>
           <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
             用一段模糊描述，AI 会结合你的领域标签，把它精炼成更专业、更有研究水准的方向——生成后一键入库。

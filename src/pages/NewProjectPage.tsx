@@ -108,10 +108,8 @@ export function NewProjectPage() {
   const togglePlatform = (p: string) =>
     setPlatforms((s) => (s.includes(p) ? (s.length > 1 ? s.filter((x) => x !== p) : s) : [...s, p]));
 
-  const setCorpusCapClamped = (v: number) => {
-    setCorpusCap(v);
-    if (v > searchCap) setSearchCap(v); // 保留量不能超过检索量，自动抬底
-  };
+  // 滑杆解耦（用户裁决：两个滑杆各自独立，互不拽动）；保留量>检索量的归一在提交时做
+  const setCorpusCapClamped = (v: number) => setCorpusCap(v);
 
   const toggleTag = (t: string) =>
     setTags((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
@@ -196,7 +194,8 @@ export function NewProjectPage() {
     setCreating(true);
     localStorage.setItem(LS_LAST_FIELDS, JSON.stringify(tags)); // 记住本次领域组合，下次自动预选
     // 滑杆参数必须随 payload 走（曾双断：前端没发 + 后端只认 snake_case → 永远默认值）
-    const p = await createProject({ title, fieldTags: tags, description, seedFiles: seeds, searchKeywords: keywords, searchCap, corpusCap, prescore });
+    const capFinal = Math.min(corpusCap, searchCap);  // 保留量 ≤ 检索量（提交时归一，滑杆互不拽动）
+    const p = await createProject({ title, fieldTags: tags, description, seedFiles: seeds, searchKeywords: keywords, searchCap, corpusCap: capFinal, prescore });
     try {
       await startRun(p.id); // 真实模式：创建即启动 W1；启动失败不阻断，可在流水线页手动启动
     } catch {
@@ -476,11 +475,7 @@ export function NewProjectPage() {
               </div>
               <input
                 type="range" min={200} max={2000} step={100} value={searchCap}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
-                  setSearchCap(v);
-                  if (corpusCap > v) setCorpusCap(v);
-                }}
+                onChange={(e) => setSearchCap(Number(e.target.value))}
                 className="mt-2 w-full accent-black"
               />
               <p className="mt-1 text-[12.5px] text-t3">七库联合检索与六阶段筛选的处理量（默认 2000），决定 W1 筛选耗时</p>
@@ -491,12 +486,13 @@ export function NewProjectPage() {
                 <span className="tabular-nums text-t2">{corpusCap} 篇</span>
               </div>
               <input
-                type="range" min={100} max={Math.min(searchCap, 2000)} step={50} value={corpusCap}
+                type="range" min={100} max={2000} step={50} value={corpusCap}
                 onChange={(e) => setCorpusCapClamped(Number(e.target.value))}
                 className="mt-2 w-full accent-black"
               />
               <p className="mt-1 text-[12.5px] text-t3">
                 筛选后进入语料库的规模（默认 500），直接决定 W2 KG 构建耗时：500 篇 ≈ 13 万论文对 ≈ 3–4h。
+                两个滑杆独立调节；若保留量大于检索量，创建时自动对齐为检索量。
                 下载侧按 5s/篇合规限速：1000 篇 arXiv ≈ 1.5–2h，断点续传可中断重跑
               </p>
             </div>
