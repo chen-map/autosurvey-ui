@@ -1100,15 +1100,15 @@ def get_project_report(pid: str, user: dict = Depends(_me)):
         for sub in sec.get("subsections", []):
             subs.append({
                 "id": sub.get("subsection_id", ""),
-                "title": sub.get("subsection_title", ""),
-                "rq": sub.get("sub_rq", ""),
-                "papers": len(sub.get("paper_ids") or []),
+                "title": sub.get("title") or sub.get("subsection_title", ""),
+                "rq": sub.get("sub_rq_text") or sub.get("sub_rq", ""),
+                "papers": len(sub.get("supporting_paper_ids") or sub.get("paper_ids") or []),
             })
         outline.append({
             "id": sec.get("section_id", ""),
             "title": sec.get("title", ""),
-            "rq": sec.get("macro_rq", ""),
-            "papers": sum(x["papers"] for x in subs) or len(sec.get("paper_ids") or []),
+            "rq": (sec.get("macro_rq_texts") or [""])[0] if sec.get("macro_rq_texts") else sec.get("macro_rq", ""),
+            "papers": sum(x["papers"] for x in subs) or len(sec.get("supporting_paper_ids") or sec.get("paper_ids") or []),
             "children": subs,
         })
 
