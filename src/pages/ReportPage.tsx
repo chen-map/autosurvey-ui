@@ -8,24 +8,40 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
+// 侧栏清洗：大纲标题是整句 RQ 文本（"Section 1. ...？"），渲染层压成短标题
+function shortTitle(t: string, n = 26): string {
+  const clean = (t || '').replace(/^Section\s*\d+\.\s*/, '').replace(/[??？]+$/, '').trim();
+  return clean.length > n ? clean.slice(0, n) + '…' : clean;
+}
+function rqBadge(rq: string | undefined): string {
+  if (!rq) return '';
+  const m = rq.match(/RQ\d+(?:\.\d+)?/i);
+  return m ? m[0].toUpperCase() : '';
+}
+
 function OutlineTree({ nodes, depth = 0, rqHref }: { nodes: OutlineNode[]; depth?: number; rqHref: (rq: string) => string }) {
   return (
     <ul className={cn(depth > 0 && 'ml-4 border-l border-line/60 pl-3')}>
       {nodes.map((n) => (
         <li key={n.id} className="py-1.5">
           <div className="flex items-center justify-between gap-2">
-            <span className={cn('text-[13.5px]', depth === 0 ? 'font-medium text-t1' : 'text-t2')}>{n.title}</span>
+            <span
+              className={cn('min-w-0 flex-1 truncate text-[13.5px]', depth === 0 ? 'font-medium text-t1' : 'text-t2', !n.papers && depth > 0 && 'text-t3')}
+              title={n.title}
+            >
+              {shortTitle(n.title, depth === 0 ? 22 : 26)}
+            </span>
             <span className="shrink-0 text-[11px] text-t3">
-              {n.rq && (
+              {n.rq && rqBadge(n.rq) && (
                 <Link
                   to={rqHref(n.rq)}
-                  title={`跳转到 ${n.rq} 的证据页`}
-                  className="mr-2 rounded bg-black/5 px-1.5 py-0.5 text-info-fg transition-colors hover:bg-info"
+                  title={`跳转到 ${rqBadge(n.rq)} 的证据页`}
+                  className="mr-2 rounded bg-black/5 px-1.5 py-0.5 font-mono text-info-fg transition-colors hover:bg-info"
                 >
-                  {n.rq} →
+                  {rqBadge(n.rq)} →
                 </Link>
               )}
-              {n.papers} 篇
+              {n.papers ? `${n.papers} 篇` : '—'}
             </span>
           </div>
           {n.children && <OutlineTree nodes={n.children} depth={depth + 1} rqHref={rqHref} />}
