@@ -619,20 +619,38 @@ def main() -> int:
             canon[k] = kk
             continue
         cands = {alias.get(bk, bk) for bk in bib_entries if bk.startswith(k)}
-        canon[k] = cands.pop() if len(cands) == 1 else k
-    # 3) 缺失键补录 @misc（标题卫生：structured 脏则 slug 反推）
+        if len(cands) == 1:
+            canon[k] = cands.pop()
+            continue
+        # bib 无解 → structured 语料前缀唯一解析（真实语料 id，含数字命名）
+        s_cands = [fid for fid in st_full_ids if fid.startswith(k)]
+        if len(s_cands) == 1:
+            canon[k] = s_cands[0]
+        else:
+            canon[k] = None  # 不可解析 → 剥离（宁少引，不假引）
+
+    # 3) 缺失键处理（v5 规则：宁少引，不假引）——仅真实语料键可补录；禁键/脏标题 → 剥离
     added = 0
-    for k, target in canon.items():
-        if target not in bib_entries:
-            meta = st_meta.get(target, {})
-            title = meta.get("title") or ""
-            if _bad_title(title):
-                title = _slug_to_title(target)
-            title_esc = re.sub(r"([_%&#])", r"\\\1", title)  # BibTeX 特殊字符转义（_ 触发数学模式实测）
-            bib_entries[target] = ("@misc{%s,\n  title = {%s},\n  author = {Anonymous},\n"
-                                   "  year = {%s},\n  note = {Preprint},\n}\n") % (target, title_esc, meta.get("year") or "")
-            added += 1
-    # 4) 重写正文键与 bib
+    stripped: set = set()
+    for k, target in list(canon.items()):
+        if target is None or target.lower() == "paper_id":
+            stripped.add(k)
+            continue
+        if target in bib_entries:
+            continue
+        meta = st_meta.get(target, {})
+        title = meta.get("title") or ""
+        if _bad_title(title):
+            stripped.add(k)  # 语料标题脏且无法回填 → 剥离，不造标题
+            continue
+        title_esc = re.sub(r"([_%&#])", r"\\1", title)  # BibTeX 特殊字符转义
+        authors = [str(a).strip() for a in (meta.get("authors") or []) if str(a).strip()][:4]
+        bib_entries[target] = ("@misc{%s,\n  title = {%s},\n  author = {%s},\n"
+                               "  year = {%s},\n  note = {Preprint},\n}\n") % (
+            target, title_esc, " and ".join(authors) or "Anonymous", meta.get("year") or "")
+        added += 1
+
+# 4) 重写正文键与 bib（剥离键从正文消失，空 cite 删除）
     for f in sec_files:
         s_ = f.read_text(encoding="utf-8")
 
@@ -640,17 +658,34 @@ def main() -> int:
             keys: list = []
             for k in mo.group(1).split(","):
                 kk = k.strip()
-                if kk and kk not in keys:
-                    keys.append(canon.get(kk, kk))
-            return "\\cite{" + ",".join(keys) + "}"
+                target = canon.get(kk, kk)
+                if target is None or kk in stripped:
+                    continue  # 假引剥离
+                if target and target not in keys:
+                    keys.append(target)
+            return "\\cite{" + ",".join(keys) + "}" if keys else ""
 
         s2 = re.sub(r"\\cite\{([^}]*)\}", _repl, s_)
+        s2 = re.sub(r"\n\s*\n\s*\n+", "\n\n", s2)
         if s2 != s_:
             f.write_text(s2, encoding="utf-8")
-    with bib_path.open("w", encoding="utf-8") as fh:
-        for k, ent in bib_entries.items():
-            fh.write(ent + "\n")
-    print(f"[llm_sections] 引用闭环：正文键 {len(cited)}，补录 {added}，双录合并 {len(alias)}，bib 共 {len(bib_entries)}", flush=True)
+    print(f"[llm_sections] 引用闭环 v5：正文键 {len(cited)}，补录 {added}，剥离 {len(stripped)}，双录合并 {len(alias)}，bib 共 {len(bib_entries)}", flush=True)
+
+    # 终检（硬失败）：正文 cite ⊆ bib、bib 无垃圾标题——违规退出码 1，不静默产出假引
+    errors: list = []
+    for k in sorted(cited):
+        tgt = canon.get(k, k)
+        if tgt is None or (tgt not in bib_entries and k not in stripped):
+            errors.append(f"悬空引用 {k}")
+    for bk, ent in bib_entries.items():
+        mt2 = re.search(r"title\s*=\s*\{(.+?)\}", ent, re.S)
+        tv = (mt2.group(1) if mt2 else "").replace("\\_", "_")
+        if _bad_title(tv):
+            errors.append(f"垃圾条目 {bk}: {tv[:40]}")
+    if errors:
+        for e_ in errors[:10]:
+            print(f"[llm_sections] 终检失败: {e_}", flush=True)
+        raise SystemExit(1)
 
     Path(args.out_manifest).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out_manifest).write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
