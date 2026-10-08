@@ -283,6 +283,14 @@ def start_run(pid: str, workflow: str = "w1", body: RunIn | None = None, user: d
         cfg_path = _wm(pid) / "w1_config.json"
         cfg["w2_max_pairs"] = max(0, int(body.w2_max_pairs))
         cfg_path.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 防重复启动（用户裁决修复：连点 3 次起 3 个 runner 并发写同一目录的实测事故）——
+    # 该工作流的 runner 进程活着 → 409，前端提示"正在运行中"
+    ws = str(_wm(pid))
+    import subprocess as _sub
+    out = _sub.run(["pgrep", "-f", f"runner.py --config .*{pid}.*--workflow {workflow}"],
+                   capture_output=True, text=True)
+    if out.stdout.strip():
+        raise HTTPException(409, f"{workflow.upper()} 已在运行中——请等待完成，或刷新页面查看进度（勿重复启动）")
     _spawn_runner(pid, workflow, user["user_id"])
     return {"ok": True, "project_id": pid, "workflow": workflow}
 
