@@ -1195,17 +1195,21 @@ def list_projects(user: dict = Depends(_me)):
         if pid in seen:
             return
         seen.add(pid)
-        state_path = cfg_path.parent / "w1_state.json"
         status = "draft"
-        if state_path.exists():
-            st = json.loads(state_path.read_text(encoding="utf-8"))
-            statuses = [p.get("status") for p in st.get("phases", [])]
-            if "running" in statuses:
-                status = "running"
-            elif statuses and all(x == "done" for x in statuses if x):
-                status = "completed"
-            elif "failed" in statuses:
-                status = "failed"
+        all_statuses: list = []
+        for sf in ("w1_state.json", "w2_state.json", "w3_state.json", "w4_state.json", "w5_state.json"):
+            sp = cfg_path.parent / sf
+            if sp.exists():
+                try:
+                    all_statuses += [q.get("status") for q in json.loads(sp.read_text(encoding="utf-8")).get("phases", [])]
+                except (OSError, json.JSONDecodeError):
+                    pass
+        if "running" in all_statuses:
+            status = "running"
+        elif "failed" in all_statuses:
+            status = "failed"
+        elif all_statuses and all(x == "done" for x in all_statuses if x):
+            status = "completed"
         projects.append({
             "project_id": pid,
             "title": c.get("title", fallback_id),
@@ -1248,7 +1252,15 @@ def list_projects(user: dict = Depends(_me)):
     # 前端 Project 类型（camelCase 裸数组）：id/fieldTags/status/createdAt/updatedAt + stats
     conn = get_db()
     kg_stats = {}
+    rq_stats: dict = {}
     for pr in projects:
+        rqj = _wm(pr["project_id"]) / "analyze_report" / "rq_evidence_matrix.json"
+        if rqj.exists():
+            try:
+                mj = json.loads(rqj.read_text(encoding="utf-8"))
+                rq_stats[pr["project_id"]] = len(mj.get("rq_matrix") or mj.get("sub_rq_matrix") or [])
+            except Exception:
+                pass
         n = conn.execute("SELECT COUNT(*) c FROM corpus_papers WHERE project_id=? AND status='downloaded'",
                          (pr["project_id"],)).fetchone()["c"]
         kgj = _wm(pr["project_id"]) / "knowledge_graph" / "paper_kg.json"
@@ -1281,7 +1293,7 @@ def list_projects(user: dict = Depends(_me)):
             _wf(pid, "W2", "事实记忆(KG)", "w2_state.json", 4),
             _wf(pid, "W3", "框架与RQ", "w3_state.json", 7),
             _wf(pid, "W4", "RQ证据", "w4_state.json", 4),
-            _wf(pid, "W5", "综述写作", "w5_state.json", 3),
+            _wf(pid, "W5", "综述写作", "w5_state.json", 4),
         ]
 
     return [{
@@ -1298,8 +1310,8 @@ def list_projects(user: dict = Depends(_me)):
         "stats": {
             "papers": kg_stats[pr["project_id"]]["papers"],
             "kgEdges": kg_stats[pr["project_id"]]["kgEdges"],
-            "rqs": 0,
-            "claims": {"verified": 0, "needsRevision": 0, "shouldRemove": 0},
+            "rqs": rq_stats.get(pr["project_id"], 0),
+            "claims": {"verified": rq_stats.get(pr["project_id"], 0), "needsRevision": 0, "shouldRemove": 0},
         },
         "workflows": wf_summaries.get(pr["project_id"], []),
     } for pr in projects]

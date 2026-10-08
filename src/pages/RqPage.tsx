@@ -53,19 +53,38 @@ export function RqPage() {
   const [bundle, setBundle] = useState<RQBundle | null>(null);
   const [loaded, setLoaded] = useState(false);
 
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     let alive = true;
-    getRQBundle(projectId).then((b) => {
-      if (!alive) return;
-      setBundle(b);
-      setLoaded(true);
-    });
+    getRQBundle(projectId)
+      .then((b) => {
+        if (!alive) return;
+        setBundle(b);
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (alive) {
+          setFailed(true);
+          setLoaded(true);
+        }
+      });
     return () => {
       alive = false;
     };
   }, [projectId]);
 
   if (!loaded) return <div className="py-16 text-center text-[13px] text-t3">加载中…</div>;
+  if (failed)
+    return (
+      <div className="mx-auto max-w-lg px-8 py-20 text-center">
+        <Card className="p-8">
+          <p className="text-[15px] font-medium">RQ 体系尚未生成</p>
+          <p className="mt-2 text-[13px] leading-5 text-t3">
+            该项目还没有可用的证据矩阵——请先完成 W3（综述框架与研究问题设计），再回到本页。
+          </p>
+        </Card>
+      </div>
+    );
 
   // 运行中：W3 未完成，矩阵未冻结
   if (!bundle || bundle.macros.length === 0) {
