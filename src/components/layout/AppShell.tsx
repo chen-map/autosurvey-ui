@@ -5,6 +5,7 @@ import { useUi } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
+import { USE_MOCK } from '@/services/api';
 
 const navItems = [
   { to: '/projects', label: '全部项目', icon: LayoutGrid },
@@ -26,9 +27,11 @@ export function AppShell() {
         <div className="px-5 pt-6">
           <div className="text-[19px] font-bold leading-6 tracking-tight">AutoSurvey</div>
           <div className="mt-0.5 text-xs text-t3">综述流水线控制台</div>
-          <Badge variant="warn" withDot className="mt-3">
-            DEMO DATA
-          </Badge>
+          {USE_MOCK && (
+            <Badge variant="warn" withDot className="mt-3">
+              DEMO DATA
+            </Badge>
+          )}
         </div>
 
         {!readOnly && (
@@ -72,7 +75,7 @@ export function AppShell() {
           </label>
           <div className="flex items-center gap-1.5 text-[12px] text-t3">
             <Database size={13} />
-            后端：mock（契约未接入）
+            后端：已接入（222.20.126.64）
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
