@@ -285,7 +285,8 @@ function W2SupplementCard({ projectId }: { projectId: string }) {
 
 function W4ReportsSection({ projectId }: { projectId: string }) {
   const [reports, setReports] = useState<W4Report[]>([]);
-  const [open, setOpen] = useState<{ title: string; html: string } | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [htmlCache, setHtmlCache] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState('');
 
   useEffect(() => {
@@ -294,14 +295,14 @@ function W4ReportsSection({ projectId }: { projectId: string }) {
     return () => { alive = false; };
   }, [projectId]);
 
-  const view = async (r: W4Report) => {
+  const toggle = async (r: W4Report) => {
+    if (expanded === r.dir) { setExpanded(null); return; }
     setBusy(r.dir);
     try {
-      const html = await fetchW4ReportHtml(projectId, r.dir);
-      setOpen({ title: `${r.rq_id} · ${r.skill}`, html });
-    } finally {
-      setBusy('');
-    }
+      const html = htmlCache[r.dir] ?? (await fetchW4ReportHtml(projectId, r.dir));
+      setHtmlCache((c) => ({ ...c, [r.dir]: html }));
+      setExpanded(r.dir);
+    } finally { setBusy(''); }
   };
 
   if (!reports.length) return null;
@@ -309,48 +310,39 @@ function W4ReportsSection({ projectId }: { projectId: string }) {
     <Card className="p-5">
       <div className="flex items-baseline gap-2.5">
         <span className="rounded bg-ink px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white">W4-P1</span>
-        <h3 className="text-[15px] font-semibold">KG 分析 Agent 报告（每 RQ 一份 HTML 小论文）</h3>
+        <h3 className="text-[15px] font-semibold">KG 分析 Agent 报告（每 RQ 一份 HTML 小论文，点击展开）</h3>
       </div>
       <div className="mt-4 space-y-3">
         {reports.map((r) => (
-          <div key={r.dir} className="rounded-card border border-line/60 p-4 transition-shadow hover:shadow-s2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-[12px] font-semibold">{r.rq_id}</span>
-              <Badge variant="info" className="font-mono text-[11px]">Skill {r.skill}</Badge>
-              <span className="text-[12px] text-t3">{r.rounds} 轮工具 · {r.calls} 次调用 · {r.duration}s · {r.model}</span>
-              <button
-                type="button"
-                onClick={() => view(r)}
-                disabled={busy === r.dir}
-                className="ml-auto rounded bg-ink px-3 py-1 text-[12.5px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-50"
-              >
-                {busy === r.dir ? '加载中…' : '查看 HTML 报告'}
-              </button>
-            </div>
-            <div className="mt-2 text-[13.5px] leading-5 text-t1">{r.rq_text}</div>
-            {r.skill_reason && (
-              <div className="mt-2 rounded-lg bg-page px-3 py-2 text-[12.5px] leading-5 text-t2">
-                <span className="font-medium text-t1">为何选 {r.skill}：</span>{r.skill_reason}
+          <div key={r.dir} className="rounded-card border border-line/60 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggle(r)}
+              disabled={busy === r.dir}
+              className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-page"
+            >
+              <span className="shrink-0 rounded bg-black/5 px-1.5 py-0.5 font-mono text-[12px] font-semibold">{r.rq_id}</span>
+              <Badge variant="info" className="shrink-0 font-mono text-[11px]">{r.skill}</Badge>
+              <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{r.rq_text}</span>
+              <span className="shrink-0 text-[11px] text-t3">{r.rounds}轮 · {r.duration}s</span>
+              <span className={cn('shrink-0 text-t3 transition-transform', expanded === r.dir && 'rotate-90')}>›</span>
+            </button>
+            {expanded === r.dir && (
+              <div className="border-t border-line/40 bg-white">
+                <div className="px-4 py-2 text-[11.5px] leading-4 text-t2">
+                  {r.skill_reason && <span>选型依据：{r.skill_reason}</span>}
+                </div>
+                <iframe
+                  title={r.rq_id}
+                  srcDoc={htmlCache[r.dir] ?? ''}
+                  className="w-full border-0"
+                  style={{ height: '70vh' }}
+                />
               </div>
             )}
           </div>
         ))}
       </div>
-
-      {open && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/60 p-4 md:p-8" onClick={() => setOpen(null)}>
-          <div className="flex items-center justify-between rounded-t-xl bg-white px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
-            <span className="font-mono text-[13px] font-semibold">{open.title}</span>
-            <button type="button" onClick={() => setOpen(null)} className="rounded px-2 py-0.5 text-[13px] text-t2 hover:bg-black/5">关闭 ✕</button>
-          </div>
-          <iframe
-            title={open.title}
-            srcDoc={open.html}
-            className="min-h-0 w-full flex-1 rounded-b-xl bg-white"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
     </Card>
   );
 }
