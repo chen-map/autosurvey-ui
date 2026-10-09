@@ -189,6 +189,9 @@ export function PipelinePage() {
           {/* W4 Agent 分析报告（HTML 小论文，每 RQ 一份） */}
           {workflow === 'w4' && <W4ReportsSection projectId={projectId} />}
 
+          {/* W2 补充构建：手动上传新论文后提示增量提取 */}
+          {workflow === 'w2' && run && <W2SupplementCard projectId={projectId} />}
+
           {/* 日志面板（黑底等宽：黑白账本语言中的"终端"元素） */}
           <Card className="overflow-hidden">
             <div className="flex items-center justify-between border-b border-line/60 px-4 py-2.5">
@@ -223,6 +226,60 @@ export function PipelinePage() {
         </>
       )}
     </div>
+  );
+}
+
+function W2SupplementCard({ projectId }: { projectId: string }) {
+  const [info, setInfo] = useState<{ pending: number; total_cards: number; extracted: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const API = import.meta.env.VITE_API_BASE ?? '/api';
+    const tk = localStorage.getItem('as.token') ?? '';
+    fetch(`${API}/projects/${projectId}/w2-pending`, { headers: tk ? { Authorization: `Bearer ${tk}` } : {} })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => alive && setInfo(d))
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [projectId]);
+
+  if (!info || info.pending === 0) return null;
+  const supplement = async () => {
+    setBusy(true);
+    try {
+      const API = import.meta.env.VITE_API_BASE ?? '/api';
+      const tk = localStorage.getItem('as.token') ?? '';
+      await fetch(`${API}/projects/${projectId}/run?workflow=w2`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(tk ? { Authorization: `Bearer ${tk}` } : {}) },
+        body: JSON.stringify({}),
+      });
+      window.location.reload();
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[14px] font-medium">
+            检测到 {info.pending} 篇新上传论文尚未构建进知识图谱
+          </div>
+          <div className="mt-1 text-[12.5px] text-t3">
+            已提取 {info.extracted} / 共 {info.total_cards} 篇。补充构建为增量执行（已有产物不动，只提取新增部分）。
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={supplement}
+          disabled={busy}
+          className="shrink-0 rounded bg-ink px-4 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-50"
+        >
+          {busy ? '执行中…' : '补充构建 KG'}
+        </button>
+      </div>
+    </Card>
   );
 }
 

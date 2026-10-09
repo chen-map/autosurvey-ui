@@ -843,6 +843,47 @@ async def upload_corpus_pdfs(pid: str, files: list[UploadFile] = File(...), user
     return result
 
 
+@app.get("/api/projects/{pid}/w2-pending")
+def w2_pending_count(pid: str, user: dict = Depends(_me)):
+    """检测：手动上传/新入语料但尚未进入 KG 提取的论文数（供前端提示『补充构建』）。"""
+    _own_project(pid, user)
+    kgj = _wm(pid) / "knowledge_graph" / "structured_papers.jsonl"
+    done: set = set()
+    if kgj.exists():
+        for line in kgj.read_text(encoding="utf-8").splitlines():
+            try:
+                done.add(str(json.loads(line).get("paper_id") or ""))
+            except json.JSONDecodeError:
+                pass
+    papers_dir = _wm(pid) / "paper_cards" / "parsed"
+    pending = []
+    if papers_dir.exists():
+        for f in papers_dir.glob("*.json"):
+            pid_ = str(f.stem)
+            if pid_ not in done:
+                pending.append(pid_)
+    return {"pending": len(pending), "total_cards": len(list(papers_dir.glob("*.json"))),
+            "extracted": len(done)}
+
+
+@app.get("/api/projects/{pid}/w2-pending")
+def w2_pending_count(pid: str, user: dict = Depends(_me)):
+    """检测：手动上传/新入语料但尚未进入 KG 提取的论文数（前端『补充构建 KG』按钮依据）。"""
+    _own_project(pid, user)
+    kgj = _wm(pid) / "knowledge_graph" / "structured_papers.jsonl"
+    done: set = set()
+    if kgj.exists():
+        for line in kgj.read_text(encoding="utf-8").splitlines():
+            try:
+                done.add(str(json.loads(line).get("paper_id") or ""))
+            except json.JSONDecodeError:
+                pass
+    papers_dir = _wm(pid) / "paper_cards" / "parsed"
+    pending = [f.stem for f in papers_dir.glob("*.json") if f.stem not in done]
+    return {"pending": len(pending), "total_cards": len(list(papers_dir.glob("*.json"))),
+            "extracted": len(list(papers_dir.glob("*.json"))) - len(pending)}
+
+
 @app.post("/api/projects/{pid}/corpus/{row_id}/upload")
 async def upload_corpus_row(pid: str, row_id: int, file: UploadFile = File(...), user: dict = Depends(_me)):
     """行级上传（用户裁决：对单条『需人工/可获取性』条目直接点上传绑定，不依赖文件名匹配）。
