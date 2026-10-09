@@ -110,3 +110,16 @@
   flex: 1;
   height: auto;
 }
+
+/* Agent 分析结果 markdown 渲染样式 */
+.prose-agent h1, .prose-agent h2, .prose-agent h3 { font-weight: 600; margin: 1.2em 0 0.5em; color: #111; }
+.prose-agent h1 { font-size: 1.2em; } .prose-agent h2 { font-size: 1.1em; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; } .prose-agent h3 { font-size: 1em; }
+.prose-agent p { margin: 0.6em 0; line-height: 1.7; }
+.prose-agent ul, .prose-agent ol { margin: 0.6em 0; padding-left: 1.5em; }
+.prose-agent li { margin: 0.3em 0; line-height: 1.6; }
+.prose-agent strong { font-weight: 600; color: #111; }
+.prose-agent table { width: 100%; border-collapse: collapse; margin: 0.8em 0; font-size: 0.9em; }
+.prose-agent th, .prose-agent td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; }
+.prose-agent th { background: #f9fafb; font-weight: 600; }
+.prose-agent blockquote { border-left: 3px solid #d1d5db; margin: 0.8em 0; padding: 0.3em 1em; color: #6b7280; }
+.prose-agent code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }

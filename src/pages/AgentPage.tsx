@@ -5,6 +5,7 @@ import type { AgentRun } from '@/types/data';
 import { getAgentRun, getKg, USE_MOCK } from '@/services/api';
 import type { KgGraphData } from '@/services/api';
 import { readLlmConfig, llmConfigured, chatCompletion } from '@/lib/llm';
+import Markdown from 'react-markdown';
 import { TYPE_LABELS, type KgType } from '@/mock/kg';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -215,8 +216,10 @@ export function AgentPage() {
       )}
       {realAnswer && (
         <Card className="p-5">
-          <div className="text-[13px] font-medium">分析结果（LLM 真实输出）</div>
-          <div className="mt-2 whitespace-pre-wrap text-[13.5px] leading-6 text-t1">{realAnswer}</div>
+          <div className="text-[13px] font-medium">分析结果</div>
+          <div className="prose-agent mt-2 max-h-[70vh] overflow-y-auto rounded-lg border border-line/60 bg-white px-5 py-4 text-[13.5px] leading-6 text-t1">
+            <Markdown>{realAnswer}</Markdown>
+          </div>
         </Card>
       )}
 
