@@ -162,6 +162,35 @@ export function CorpusPage() {
                     >
                       <Bookmark size={14} className={saved ? 'fill-ink text-ink' : ''} />
                     </button>
+                    {p.status !== 'downloaded' && (
+                      <button
+                        type="button"
+                        title="上传该论文的 PDF（手动补齐）"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const inp = document.createElement('input');
+                          inp.type = 'file';
+                          inp.accept = 'application/pdf';
+                          inp.onchange = async () => {
+                            const file = inp.files?.[0];
+                            if (!file || !p.rowId) return;
+                            const fd = new FormData();
+                            fd.append('file', file);
+                            const API = import.meta.env.VITE_API_BASE ?? '/api';
+                            const tk = localStorage.getItem('as.token') ?? '';
+                            const res = await fetch(`${API}/projects/${projectId}/corpus/${p.rowId}/upload`, {
+                              method: 'POST', headers: tk ? { Authorization: `Bearer ${tk}` } : {}, body: fd,
+                            });
+                            if (res.ok) window.location.reload();
+                            else alert('上传失败：' + (await res.json().catch(() => ({ detail: res.status }))).detail);
+                          };
+                          inp.click();
+                        }}
+                        className="rounded p-1.5 text-t3 transition-colors hover:bg-black/5"
+                      >
+                        <Upload size={14} />
+                      </button>
+                    )}
                   </td>
                 </tr>
                 );

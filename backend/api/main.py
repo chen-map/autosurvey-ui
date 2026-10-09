@@ -27,6 +27,14 @@ from fastapi import Header
 from fastapi import Body
 import requests as _requests
 
+def _html_unescape(t: str) -> str:
+    import html as _html
+    return _html.unescape(t or "")
+
+
+def _norm_key(t: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", (t or "").lower())[:48]
+
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 RUNNER = BACKEND_DIR / "w1" / "runner.py"
 
@@ -341,6 +349,8 @@ def retry_phase(pid: str, phase_id: str, workflow: str = "w1", user: dict = Depe
 
 
 @app.get("/api/projects/{pid}/corpus")
+
+
 def get_corpus(pid: str, user: dict = Depends(_me), page: int = 1, page_size: int = 50,
                status: str = ""):
     _own_project(pid, user)
@@ -411,16 +421,41 @@ def get_corpus(pid: str, user: dict = Depends(_me), page: int = 1, page_size: in
     conn = get_db()
     total = conn.execute(f"SELECT COUNT(*) c FROM corpus_papers WHERE {where}", args).fetchone()["c"]
     rows = [dict(r) for r in conn.execute(
-        f"SELECT id, doi, title, venue, year, status, pdf_path FROM corpus_papers WHERE {where} ORDER BY id LIMIT ? OFFSET ?",
+        f"SELECT id, doi, title, venue, year, status, pdf_path, record_id FROM corpus_papers WHERE {where} ORDER BY id LIMIT ? OFFSET ?",
         args + (page_size, (page - 1) * page_size)).fetchall()]
     status_counts = {r["status"]: r["c"] for r in conn.execute(
         f"SELECT status, COUNT(*) c FROM corpus_papers WHERE {where} GROUP BY status", args).fetchall()}
     conn.close()
 
+    # authors/元数据真值回填：unified_records（W1 权威元数据）按 record_id 精确匹配
+    uni_authors: dict[str, str] = {}
+    try:
+        ready_csv0 = _wm(pid) / "retrieval_workspace" / "download" / "download_ready.csv"
+        ur_csv = _wm(pid) / "retrieval_workspace" / "normalized" / "unified_records.csv"
+        ready_map: dict[str, str] = {}
+        if ready_csv0.exists():
+            import csv as _csv1
+            for r1 in _csv1.DictReader(open(ready_csv0, encoding="utf-8-sig")):
+                m1 = re.match(r"^(\d+)", r1.get("record_id") or "")
+                if m1:
+                    ready_map[f"{int(m1.group(1)):04d}"] = (r1.get("title") or "")
+        if ur_csv.exists():
+            import csv as _csv2
+            for r2 in _csv2.DictReader(open(ur_csv, encoding="utf-8-sig")):
+                t2 = _html_unescape(r2.get("title") or "")
+                a2 = (r2.get('authors') or '').strip()
+                if a2:
+                    uni_authors[_norm_key(t2)] = a2
+                rid2 = ''.join(ch for ch in (r2.get('record_id') or '') if ch.isdigit())
+                if rid2 and a2:
+                    uni_authors[f"{int(rid2):04d}"] = a2
+    except Exception:
+        pass
+
     papers = [{
-        "id": r["doi"] or f"paper-{r['id']}",
+        "id": r["doi"] or f"paper-{r['id']}", "rowId": r["id"],
         "title": r["title"],
-        "authors": "",
+        "authors": uni_authors.get((r["record_id"] or "").strip()) or uni_authors.get(_norm_key(r["title"])) or "",
         "venue": r["venue"],
         "year": int(r["year"] or 0),
         "citations": 0,
@@ -805,6 +840,37 @@ async def upload_corpus_pdfs(pid: str, files: list[UploadFile] = File(...), user
     conn.commit()
     conn.close()
     return result
+
+
+@app.post("/api/projects/{pid}/corpus/{row_id}/upload")
+async def upload_corpus_row(pid: str, row_id: int, file: UploadFile = File(...), user: dict = Depends(_me)):
+    """行级上传（用户裁决：对单条『需人工/可获取性』条目直接点上传绑定，不依赖文件名匹配）。
+    按 corpus_papers.id 定位行 → 落 papers/ → 状态改 downloaded。"""
+    _own_project(pid, user)
+    data = await file.read()
+    if len(data) < 1024 or data[:4] != b"%PDF":
+        raise HTTPException(400, "不是有效 PDF")
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    row = conn.execute("SELECT * FROM corpus_papers WHERE id=? AND project_id=?", (row_id, pid)).fetchone()
+    if row is None:
+        raise HTTPException(404, "row not found")
+    papers_dir = _wm(pid) / "retrieval_workspace" / "papers"
+    papers_dir.mkdir(parents=True, exist_ok=True)
+    rid_key = (row["record_id"] or "").strip()
+    slug = re.sub(r"[^\w\-]+", "_", (row["title"] or "paper")[:60]).strip("_")
+    if rid_key:
+        dest = papers_dir / f"{rid_key}_{slug}.pdf"
+        for old in papers_dir.glob(f"{rid_key}*.txt"):
+            old.unlink(missing_ok=True)
+    else:
+        dest = papers_dir / f"manual_{slug or row_id}.pdf"
+    dest.write_bytes(data)
+    c2 = get_db()
+    c2.execute("UPDATE corpus_papers SET status='downloaded', pdf_path=? WHERE id=?",
+               (str(dest), row_id))
+    c2.commit()
+    return {"ok": True, "id": row_id, "status": "downloaded", "file": dest.name}
 
 
 @app.get("/api/projects/{pid}/kg")
