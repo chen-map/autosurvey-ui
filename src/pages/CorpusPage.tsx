@@ -186,9 +186,9 @@ export function CorpusPage() {
                           };
                           inp.click();
                         }}
-                        className="mr-1 inline-flex items-center gap-1 rounded border border-line px-2 py-1 text-[11.5px] text-t2 transition-colors hover:border-ink hover:text-t1"
+                        className="rounded p-1.5 text-t3 transition-colors hover:bg-black/5 hover:text-t1"
                       >
-                        <Upload size={12} /> 上传
+                        <Upload size={14} />
                       </button>
                     )}
                   </td>
