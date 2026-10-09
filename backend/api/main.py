@@ -940,6 +940,9 @@ def get_paper_card(pid: str, paper_id: str, user: dict = Depends(_me)):
     return {
         "paper_id": pp.get("paper_id"),
         "title": pp.get("title") or "",
+        "abstract": (pp.get("abstract") or "")[:2000],
+        "authors": pp.get("authors") or "",
+        "year": pp.get("year"),
         "problems": _items(pp.get("problems")),
         "methods": _items(pp.get("methods")),
         "datasets_benchmarks": _items(pp.get("datasets_benchmarks")),

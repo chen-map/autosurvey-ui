@@ -300,7 +300,15 @@ function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClos
   const { items: libItems, toggleSave } = useLibrary();
   const idx = Number(paper.id.replace('paper-', '')) - 1;
   // Paper Card 六类对象：从 KG paper-card 端点拉取（W2 产出真值）
-  const [cardData, setCardData] = useState<Record<string, { name: string; description: string }[]> | null>(null);
+  const [cardData, setCardData] = useState<{
+    abstract?: string; authors?: string; year?: number | string;
+    problems: { name: string; description: string }[];
+    methods: { name: string; description: string }[];
+    datasets: { name: string; description: string }[];
+    metrics: { name: string; description: string }[];
+    limitations: { name: string; description: string }[];
+    assumptions: { name: string; description: string }[];
+  } | null>(null);
   useEffect(() => {
     let alive = true;
     const API = import.meta.env.VITE_API_BASE ?? '/api';
@@ -312,6 +320,7 @@ function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClos
       .then((d) => {
         if (!alive || !d) return;
         setCardData({
+          abstract: d.abstract ?? '', authors: d.authors ?? '', year: d.year ?? '',
           problems: d.problems ?? [], methods: d.methods ?? [],
           datasets: d.datasets_benchmarks ?? [], metrics: d.metrics ?? [],
           limitations: d.limitations ?? [], assumptions: d.assumption_constraints ?? [],
@@ -349,6 +358,20 @@ function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClos
         <div className="border-b border-line/60 p-5">
           <div className="text-[13px] font-medium text-t2">摘要</div>
           <p className="mt-1.5 text-[13px] leading-5 text-t2">{paper.abstract}</p>
+        </div>
+
+        {/* 摘要与元数据（paper-card 端点） */}
+        <div className="border-b border-line/60 p-5">
+          <div className="text-[13px] font-medium text-t2">摘要</div>
+          <p className="mt-1.5 text-[13px] leading-5 text-t1">
+            {(cardData?.abstract) ? cardData.abstract : '本篇暂无摘要（未成功下载全文或元数据缺失）。'}
+          </p>
+          {(cardData?.authors || cardData?.year) && (
+            <p className="mt-2 text-[12px] text-t3">
+              {cardData.authors && <span>{cardData.authors} · </span>}
+              {cardData.year && <span>{cardData.year}</span>}
+            </p>
+          )}
         </div>
 
         {/* Paper Card：六类结构化对象（W2 产出） */}
