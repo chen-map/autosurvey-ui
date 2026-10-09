@@ -454,6 +454,7 @@ def get_corpus(pid: str, user: dict = Depends(_me), page: int = 1, page_size: in
 
     papers = [{
         "id": r["doi"] or f"paper-{r['id']}", "rowId": r["id"],
+        "rid": (r["record_id"] or "").strip().zfill(4),
         "title": r["title"],
         "authors": uni_authors.get((r["record_id"] or "").strip()) or uni_authors.get(_norm_key(r["title"])) or "",
         "venue": r["venue"],

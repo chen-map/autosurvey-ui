@@ -35,6 +35,7 @@ export type ScreenStage = '标题筛选' | '摘要筛选' | '可获取性' | '�
 export interface PaperRecord {
   id: string;
   rowId?: number;
+  rid?: string;
   status?: string;
   title: string;
   authors: string;

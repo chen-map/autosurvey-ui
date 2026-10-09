@@ -262,7 +262,7 @@ function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClos
     let alive = true;
     const API = import.meta.env.VITE_API_BASE ?? '/api';
     const tk = localStorage.getItem('as.token') ?? '';
-    fetch(`${API}/projects/${projectId}/paper-card/${encodeURIComponent(paper.id)}`, {
+    fetch(`${API}/projects/${projectId}/paper-card/${encodeURIComponent(paper.rid || paper.id)}`, {
       headers: tk ? { Authorization: `Bearer ${tk}` } : {},
     })
       .then((r) => (r.ok ? r.json() : null))
