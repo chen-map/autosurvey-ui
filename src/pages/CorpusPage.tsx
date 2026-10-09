@@ -355,11 +355,6 @@ function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClos
           </div>
         )}
 
-        <div className="border-b border-line/60 p-5">
-          <div className="text-[13px] font-medium text-t2">摘要</div>
-          <p className="mt-1.5 text-[13px] leading-5 text-t2">{paper.abstract}</p>
-        </div>
-
         {/* 摘要与元数据（paper-card 端点） */}
         <div className="border-b border-line/60 p-5">
           <div className="text-[13px] font-medium text-t2">摘要</div>
