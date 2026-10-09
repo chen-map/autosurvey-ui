@@ -165,7 +165,7 @@ export function CorpusPage() {
                     {p.status !== 'downloaded' && (
                       <button
                         type="button"
-                        title="上传该论文的 PDF（手动补齐）"
+                        title="手动上传该论文的 PDF 补齐"
                         onClick={(e) => {
                           e.stopPropagation();
                           const inp = document.createElement('input');
@@ -186,9 +186,9 @@ export function CorpusPage() {
                           };
                           inp.click();
                         }}
-                        className="rounded p-1.5 text-t3 transition-colors hover:bg-black/5"
+                        className="mr-1 inline-flex items-center gap-1 rounded border border-line px-2 py-1 text-[11.5px] text-t2 transition-colors hover:border-ink hover:text-t1"
                       >
-                        <Upload size={14} />
+                        <Upload size={12} /> 上传
                       </button>
                     )}
                   </td>
@@ -243,6 +243,49 @@ export function CorpusPage() {
   );
 }
 
+function RowUploadButton({ projectId, rowId }: { projectId: string; rowId: number }) {
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={busy || done}
+      onClick={() => {
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'application/pdf';
+        inp.onchange = async () => {
+          const file = inp.files?.[0];
+          if (!file) return;
+          setBusy(true);
+          const fd = new FormData();
+          fd.append('file', file);
+          const API = import.meta.env.VITE_API_BASE ?? '/api';
+          const tk = localStorage.getItem('as.token') ?? '';
+          const res = await fetch(`${API}/projects/${projectId}/corpus/${rowId}/upload`, {
+            method: 'POST', headers: tk ? { Authorization: `Bearer ${tk}` } : {}, body: fd,
+          });
+          setBusy(false);
+          if (res.ok) {
+            setDone(true);
+            window.location.reload();
+          } else {
+            alert('上传失败：' + (await res.json().catch(() => ({ detail: res.status }))).detail);
+          }
+        };
+        inp.click();
+      }}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12.5px] font-medium transition-colors',
+        done ? 'border-ok text-ok' : 'border-line text-t2 hover:border-ink hover:text-t1',
+      )}
+    >
+      <Upload size={13} />
+      {done ? '已上传，刷新生效' : busy ? '上传中…' : '上传 PDF 补齐'}
+    </button>
+  );
+}
+
 const CARD_TABS = [
   ['problems', '问题'],
   ['methods', '方法'],
@@ -286,7 +329,7 @@ function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClos
         style={{ animation: 'slideIn .2s ease-out' }}
       >
         <div className="flex items-start justify-between gap-3 border-b border-line/60 p-5">
-          <div>
+          <div className="min-w-0 flex-1">
             <h3 className="text-[16px] font-semibold leading-6">{paper.title}</h3>
             <div className="mt-1.5 text-[12px] text-t3">
               {paper.authors} · {paper.venue} {paper.year} · 被引 {paper.citations}
@@ -297,6 +340,11 @@ function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClos
             <X size={16} />
           </button>
         </div>
+        {paper.status !== 'downloaded' && paper.rowId != null && (
+          <div className="border-b border-line/60 px-5 py-3">
+            <RowUploadButton projectId={projectId} rowId={paper.rowId} />
+          </div>
+        )}
 
         <div className="border-b border-line/60 p-5">
           <div className="text-[13px] font-medium text-t2">摘要</div>
