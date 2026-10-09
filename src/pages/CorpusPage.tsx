@@ -238,7 +238,7 @@ export function CorpusPage() {
       </div>
 
       {/* 论文详情抽屉（含 Paper Card） */}
-      {active && <PaperDrawer paper={active} onClose={() => setActive(null)} />}
+      {active && <PaperDrawer projectId={projectId} paper={active} onClose={() => setActive(null)} />}
     </div>
   );
 }
@@ -252,10 +252,31 @@ const CARD_TABS = [
   ['assumptions', '假设'],
 ] as const;
 
-function PaperDrawer({ paper, onClose }: { paper: PaperRecord; onClose: () => void }) {
+function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClose: () => void; projectId: string }) {
   const [tab, setTab] = useState<(typeof CARD_TABS)[number][0]>('problems');
   const { items: libItems, toggleSave } = useLibrary();
   const idx = Number(paper.id.replace('paper-', '')) - 1;
+  // Paper Card 六类对象：从 KG paper-card 端点拉取（W2 产出真值）
+  const [cardData, setCardData] = useState<Record<string, { name: string; description: string }[]> | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const API = import.meta.env.VITE_API_BASE ?? '/api';
+    const tk = localStorage.getItem('as.token') ?? '';
+    fetch(`${API}/projects/${projectId}/paper-card/${encodeURIComponent(paper.id)}`, {
+      headers: tk ? { Authorization: `Bearer ${tk}` } : {},
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!alive || !d) return;
+        setCardData({
+          problems: d.problems ?? [], methods: d.methods ?? [],
+          datasets: d.datasets_benchmarks ?? [], metrics: d.metrics ?? [],
+          limitations: d.limitations ?? [], assumptions: d.assumption_constraints ?? [],
+        });
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [paper.id]);
   const saved = libItems.some((i) => (i.fp ?? fingerprint(i.title, i.year)) === fingerprint(paper.title, paper.year));
   return (
     <div className="fixed inset-0 z-[100]">
@@ -304,12 +325,15 @@ function PaperDrawer({ paper, onClose }: { paper: PaperRecord; onClose: () => vo
             ))}
           </div>
           <ul className="mt-3 space-y-2">
-            {(paper.card[tab] as string[]).map((item) => (
-              <li key={item} className="flex gap-2 rounded-lg bg-page px-3 py-2 text-[13px] text-t1">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-ink/70" />
-                {item}
+            {(cardData?.[tab] ?? []).map((it, gi) => (
+              <li key={gi} className="rounded-lg bg-page px-3 py-2">
+                <div className="text-[13px] font-medium text-t1">{it.name}</div>
+                {it.description && <div className="mt-1 text-[12.5px] leading-5 text-t2">{it.description}</div>}
               </li>
             ))}
+            {(!cardData || (cardData[tab] ?? []).length === 0) && (
+              <li className="px-3 py-2 text-[12.5px] text-t3">该类暂无结构化对象（本篇未抽取到，或 W2 未运行）。</li>
+            )}
           </ul>
         </div>
 

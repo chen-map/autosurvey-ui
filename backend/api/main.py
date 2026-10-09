@@ -873,6 +873,40 @@ async def upload_corpus_row(pid: str, row_id: int, file: UploadFile = File(...),
     return {"ok": True, "id": row_id, "status": "downloaded", "file": dest.name}
 
 
+@app.get("/api/projects/{pid}/paper-card/{paper_id}")
+def get_paper_card(pid: str, paper_id: str, user: dict = Depends(_me)):
+    """Paper Card：单篇论文的六类结构化对象（W2 KG 的 papers[].problems/methods/...）。"""
+    _own_project(pid, user)
+    p = _wm(pid) / "knowledge_graph" / "paper_kg.json"
+    if not p.exists():
+        raise HTTPException(404, "KG not built（先跑 W2）")
+    data = json.loads(p.read_text(encoding="utf-8"))
+    pp = next((x for x in data.get("papers", []) if str(x.get("paper_id") or "").startswith(paper_id)), None)
+    if pp is None:
+        raise HTTPException(404, f"paper not in KG: {paper_id}")
+
+    def _items(lst):
+        out = []
+        for it in (lst or []):
+            if isinstance(it, dict):
+                out.append({"name": (it.get("name") or it.get("canonical_name") or "")[:80],
+                            "description": (it.get("description") or "")[:220]})
+            else:
+                out.append({"name": str(it)[:80], "description": ""})
+        return out
+
+    return {
+        "paper_id": pp.get("paper_id"),
+        "title": pp.get("title") or "",
+        "problems": _items(pp.get("problems")),
+        "methods": _items(pp.get("methods")),
+        "datasets_benchmarks": _items(pp.get("datasets_benchmarks")),
+        "metrics": _items(pp.get("metrics")),
+        "limitations": _items(pp.get("limitations")),
+        "assumption_constraints": _items(pp.get("assumption_constraints")),
+    }
+
+
 @app.get("/api/projects/{pid}/kg")
 def get_kg(pid: str, user: dict = Depends(_me)):
     _own_project(pid, user)
