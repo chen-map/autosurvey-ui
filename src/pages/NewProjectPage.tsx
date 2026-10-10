@@ -15,7 +15,7 @@ const PLATFORMS: { name: string; paid: boolean; builtin?: boolean; note?: string
   { name: 'Semantic Scholar', paid: false },
   { name: 'arXiv', paid: false },
   { name: 'Google Scholar', paid: false, note: '非官方爬取，限速' },
-  { name: 'IEEE', paid: true, builtin: true, note: '项目已内置 Key' },
+  { name: 'IEEE', paid: true, note: '需订阅/机构 API Key' },
   { name: 'ACM', paid: false, note: '免费爬取，限速' },
   { name: 'Springer', paid: true },
   { name: 'Elsevier', paid: true },
@@ -457,7 +457,7 @@ export function NewProjectPage() {
               <div className="mt-2 text-[12.5px] leading-5">
                 {missingKeys.length === 0 ? (
                   <span className="text-[12px] text-t3">
-                    IEEE 已内置项目 Key，可直接检索；所选付费平台 Key 均已配置。
+                    所选付费平台 Key 均已配置。
                   </span>
                 ) : (
                   <span className="text-[12.5px] text-warn-fg">

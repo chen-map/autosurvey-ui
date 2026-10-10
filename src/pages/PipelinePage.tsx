@@ -249,6 +249,11 @@ function W2SupplementCard({ projectId }: { projectId: string }) {
     try {
       const API = import.meta.env.VITE_API_BASE ?? '/api';
       const tk = localStorage.getItem('as.token') ?? '';
+      // 先重置 P0+P1 为 pending（P0 幂等重跑：已有卡跳过，新 PDF 补建卡；P1 只提取新增）
+      await fetch(`${API}/projects/${projectId}/retry/w2/W2-P0`, {
+        method: 'POST', headers: { Authorization: `Bearer ${tk}` } });
+      await fetch(`${API}/projects/${projectId}/retry/w2/W2-P1`, {
+        method: 'POST', headers: { Authorization: `Bearer ${tk}` } });
       await fetch(`${API}/projects/${projectId}/run?workflow=w2`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(tk ? { Authorization: `Bearer ${tk}` } : {}) },
