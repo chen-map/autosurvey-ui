@@ -190,7 +190,7 @@ export function PipelinePage() {
           {workflow === 'w4' && <W4ReportsSection projectId={projectId} />}
 
           {/* W2 补充构建：手动上传新论文后提示增量提取 */}
-          {workflow === 'w2' && run && <W2SupplementCard projectId={projectId} />}
+          {workflow === 'w2' && run && <W2SupplementCard projectId={projectId} w2Failed={run.workflows.find((w) => w.id === 'W2')?.status === 'failed'} />}
 
           {/* 日志面板（黑底等宽：黑白账本语言中的"终端"元素） */}
           <Card className="overflow-hidden">
@@ -229,7 +229,7 @@ export function PipelinePage() {
   );
 }
 
-function W2SupplementCard({ projectId }: { projectId: string }) {
+function W2SupplementCard({ projectId, w2Failed }: { projectId: string; w2Failed: boolean }) {
   const [info, setInfo] = useState<{ pending: number; total_cards: number; extracted: number } | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -244,12 +244,13 @@ function W2SupplementCard({ projectId }: { projectId: string }) {
   }, [projectId]);
 
   if (!info || info.pending === 0) return null;
+  const isFailed = w2Failed;
   const supplement = async () => {
     setBusy(true);
     try {
       const API = import.meta.env.VITE_API_BASE ?? '/api';
       const tk = localStorage.getItem('as.token') ?? '';
-      // 先重置 P0+P1 为 pending（P0 幂等重跑：已有卡跳过，新 PDF 补建卡；P1 只提取新增）
+      // 重置 P0+P1 为 pending（P0 幂等：已有卡跳过；P1 增量只提取新增）
       await fetch(`${API}/projects/${projectId}/retry/w2/W2-P0`, {
         method: 'POST', headers: { Authorization: `Bearer ${tk}` } });
       await fetch(`${API}/projects/${projectId}/retry/w2/W2-P1`, {
@@ -265,23 +266,32 @@ function W2SupplementCard({ projectId }: { projectId: string }) {
     }
   };
   return (
-    <Card className="p-5">
+    <Card className={cn('p-5', isFailed && 'border-danger/40')}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[14px] font-medium">
-            检测到 {info.pending} 篇新上传论文尚未构建进知识图谱
-          </div>
+          {isFailed ? (
+            <div className="text-[14px] font-medium text-danger">
+              W2 提取失败——上次因大模型不可用而中断，{info.pending} 篇论文等待提取
+            </div>
+          ) : (
+            <div className="text-[14px] font-medium">
+              检测到 {info.pending} 篇新上传论文尚未构建进知识图谱
+            </div>
+          )}
           <div className="mt-1 text-[12.5px] text-t3">
-            已提取 {info.extracted} / 共 {info.total_cards} 篇。补充构建为增量执行（已有产物不动，只提取新增部分）。
+            共 {info.total_cards} 篇论文卡，已提取 {info.extracted} 篇。点击下方按钮重新执行提取。
           </div>
         </div>
         <button
           type="button"
           onClick={supplement}
           disabled={busy}
-          className="shrink-0 rounded bg-ink px-4 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-50"
+          className={cn(
+            'shrink-0 rounded px-4 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-50',
+            isFailed ? 'bg-danger' : 'bg-ink',
+          )}
         >
-          {busy ? '执行中…' : '补充构建 KG'}
+          {busy ? '执行中…' : isFailed ? '重跑提取' : '补充构建 KG'}
         </button>
       </div>
     </Card>
