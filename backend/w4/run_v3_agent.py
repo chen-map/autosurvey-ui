@@ -25,18 +25,22 @@ sys.path.insert(0, str(HERE.parent))  # backend/（db、w2.llm_wrap）
 
 
 def resolve_anthropic(use_case: str) -> tuple[str, str, str]:
-    """解析 (base_url, api_key, model)；provider 非 anthropic 时给明确指引。"""
+    """解析 (base_url, api_key, model)。
+
+    W4 强制 Anthropic 协议（Agent 底层用 anthropic SDK）。
+    自动转换：用户填了 DeepSeek 的 OpenAI 格式 URL → 自动追加 /anthropic 路径。
+    不需要用户理解协议差异——填自己的 API 地址即可。
+    """
     from w2.llm_wrap import load_llm_config_full
 
     base, key, models, provider = load_llm_config_full(use_case)
     if not (base and key and models):
         raise SystemExit(
             "[w4-agent] LLM 未配置：个人中心 → W4 填 baseUrl + API Key + 模型")
-    if provider != "anthropic":
-        raise SystemExit(
-            "[w4-agent] W4 v3（KG 分析 Agent）走 Anthropic 协议，当前 W4 配置 provider="
-            f"{provider}。请在个人中心 W4 卡片把接口地址改为 Anthropic 兼容端点并将协议选为 "
-            f"anthropic（DeepSeek 填 https://api.deepseek.com/anthropic）")
+    # 自动转换：DeepSeek OpenAI 端点 → Anthropic 端点（用户裁决：强制 Anthropic，不让用户操心协议）
+    if "api.deepseek.com" in base and "/anthropic" not in base:
+        base = base.rstrip("/").replace("/v1", "") + "/anthropic"
+        print(f"[w4-agent] 自动转换 → Anthropic 端点: {base}", flush=True)
     return base, key, models[0]
 
 
