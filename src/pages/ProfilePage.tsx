@@ -368,10 +368,23 @@ export function ProfilePage() {
                             <option value="openai">OpenAI 兼容（/chat/completions · DeepSeek/Moonshot/通义/Ollama）</option>
                             <option value="anthropic">Anthropic（/v1/messages · Claude/DeepSeek /anthropic）</option>
                           </select>
-                          <p className="mt-1 text-[11px] leading-4 text-t3">
-                            W4 v3（KG 分析 Agent）要求 Anthropic 协议：DeepSeek 用户接口地址填 https://api.deepseek.com/anthropic
-                          </p>
                         </div>
+                        {uc.id === 'w4' && (
+                          <div className="md:col-span-2 flex flex-wrap gap-2">
+                            <button type="button"
+                              onClick={() => setOvr(o => ({...o, w4: {...(o.w4 ?? e), baseUrl: 'https://api.deepseek.com/anthropic', provider: 'anthropic', model: 'deepseek-chat'}}))}
+                              className="rounded border border-line bg-page px-2.5 py-1 text-[11.5px] text-t2 transition-colors hover:border-ink hover:text-t1"
+                            >
+                              一键填 DeepSeek（Anthropic 协议）
+                            </button>
+                            <button type="button"
+                              onClick={() => setOvr(o => ({...o, w4: {...(o.w4 ?? e), baseUrl: 'https://api.deepseek.com/v1', provider: 'openai', model: 'deepseek-chat'}}))}
+                              className="rounded border border-line bg-page px-2.5 py-1 text-[11.5px] text-t2 transition-colors hover:border-ink hover:text-t1"
+                            >
+                              一键填 DeepSeek（OpenAI 协议）
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center justify-end gap-3">
                         {keyTip[uc.id] && <span className="text-[11px] text-danger">{keyTip[uc.id]}</span>}
