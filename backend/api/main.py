@@ -104,7 +104,9 @@ def _me(authorization: str = Header(default="")) -> dict:
 
 
 def _own_project(pid: str, user: dict) -> None:
-    """项目归属校验：pid 不属于当前用户 → 404（不泄露存在性）。"""
+    """项目归属校验：pid 不属于当前用户 → 404（不泄露存在性）。admin 豁免。"""
+    if user.get("role") == "admin":
+        return
     conn = get_db()
     row = conn.execute("SELECT user_id FROM projects WHERE project_id=?", (pid,)).fetchone()
     conn.close()
