@@ -149,7 +149,7 @@ export function NewProjectPage() {
           temperature: 0.2,
           maxTokens: 600,
           messages: [
-            { role: 'system', content: 'You extract English academic search keywords for a literature survey. Given a Chinese or English survey topic and description, return ONLY a JSON array of 5-8 English search keyword phrases (e.g. ["llm agent security","prompt injection attack"]). No explanation.' },
+            { role: 'system', content: 'You are a research librarian searching academic databases (arXiv, PubMed, Semantic Scholar) for a literature survey. Given a survey topic and description, think: what search terms would YOU type to find the most relevant papers? Use established field terminology and standard method names — NOT descriptive phrases restating the topic. Return ONLY a JSON array of 5-8 short English search terms (1-3 words each, e.g. ["CRISPR delivery","off-target effects","immunogenicity","lipid nanoparticles","base editing"]). No explanation.' },
             { role: 'user', content: `主题：${title}
 领域标签：${tags.join(', ') || '无'}
 描述：${description || '无'}` },
