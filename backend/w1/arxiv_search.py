@@ -130,7 +130,9 @@ def main() -> int:
 
     for start in range(0, args.max_records, 100):
         # 相关性优先（用户裁决）： sortBy=relevance；年份只做 submittedDate 区间硬过滤
-        enc = urllib.parse.quote(query, safe="")
+        # safe 保留 + ( ) 但不保留空格——空格必须编码为 %20（URL 里原始空格会导致 curl 解析失败 code 000）
+        # arXiv API 用 + 做空格分隔也可以，但 %20 更规范且实测有效
+        enc = urllib.parse.quote(query, safe="+()")
         url = (f"{API}?search_query={enc}"
                f"&start={start}&max_results=100&sortBy=relevance")
         try:
