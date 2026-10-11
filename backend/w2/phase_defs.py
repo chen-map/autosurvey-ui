@@ -52,6 +52,7 @@ def build_phases(cfg: dict[str, Any]) -> list[dict[str, Any]]:
                           # 增量包装：import 存量脚本 + checkpoint 续跑（新增卡才提取；
                           # 手动上传的新论文重跑即增量并入，已有产物不动）
                           "--target", str(HERE / "incremental_extract.py"),
+                          "--kg-common-path", kg_scripts,
                           "--input", "paper_cards/parsed",
                           "--out", "knowledge_graph/structured_papers.jsonl",
                           "--max-text-chars", str(max_text_chars)]},

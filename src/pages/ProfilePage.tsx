@@ -365,8 +365,12 @@ export function ProfilePage() {
                             onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, provider: ev.target.value}}))}
                             className="h-9 w-full rounded-lg border border-line bg-card px-2 text-[12px] text-t2 focus:border-ink focus:outline-none"
                           >
-                            <option value="anthropic">Anthropic（W4 专用协议）</option>
+                            <option value="openai">OpenAI 兼容（/chat/completions · DeepSeek/Moonshot/通义/Ollama）</option>
+                            {uc.id === 'w4' && <option value="anthropic">Anthropic（/v1/messages · DeepSeek /anthropic）</option>}
                           </select>
+                          {uc.id !== 'w4' && (
+                            <p className="mt-1 text-[11px] leading-4 text-t3">OpenAI 兼容协议适用于大多数 LLM 服务商（DeepSeek / Moonshot / 通义 / Ollama）</p>
+                          )}
                         </div>
                         {uc.id === 'w4' && (
                           <div className="md:col-span-2 flex flex-wrap gap-2">

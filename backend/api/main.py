@@ -908,6 +908,16 @@ async def upload_corpus_row(pid: str, row_id: int, file: UploadFile = File(...),
     else:
         dest = papers_dir / f"manual_{slug or row_id}.pdf"
     dest.write_bytes(data)
+    # 同步创建 paper_card JSON（W2-pending 检测依赖 cards 目录）
+    cards_dir = _wm(pid) / "paper_cards" / "parsed"
+    cards_dir.mkdir(parents=True, exist_ok=True)
+    card = {"paper_id": dest.stem, "title": row["title"] or dest.stem,
+            "authors": row["authors"] or "", "year": row["year"] or "",
+            "venue": row["venue"] or "", "url": row["url"] or "",
+            "local_path": str(dest), "abstract": row["abstract"] or "",
+            "paper_text": "", "sections": {}, "references": [],
+            "parse_engine": "manual_upload", "parse_status": "ok", "text": ""}
+    (cards_dir / (dest.stem + ".json")).write_text(json.dumps(card, ensure_ascii=False, indent=1), encoding="utf-8")
     c2 = get_db()
     c2.execute("UPDATE corpus_papers SET status='downloaded', pdf_path=? WHERE id=?",
                (str(dest), row_id))
