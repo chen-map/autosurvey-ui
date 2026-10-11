@@ -332,6 +332,31 @@ def get_run(pid: str, workflow: str = "w1", user: dict = Depends(_me)):
     return state
 
 
+@app.post("/api/projects/{pid}/phases/{phase_id}/pause")
+def pause_phase(pid: str, phase_id: str, workflow: str = "w1", user: dict = Depends(_me)):
+    """暂停运行中的阶段：终止 runner 进程，阶段标记为 checkpoint（断点可续传）。
+    已提取/已下载的产物保留在磁盘，恢复时从 checkpoint 续传。"""
+    _own_project(pid, user)
+    state_path = _wm(pid) / f"{workflow}_state.json"
+    if not state_path.exists():
+        raise HTTPException(404, f"run not found for {pid}")
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    for ph in state.get("phases", []):
+        if ph["id"] == phase_id:
+            if ph["status"] != "running":
+                raise HTTPException(400, f"{phase_id} 不在运行中（当前: {ph['status']}）")
+            ph["status"] = "checkpoint"
+            break
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 终止该项目的 runner 进程（下一次 resume 从 checkpoint 续传）
+    import subprocess as _sub
+    _sub.run(["pkill", "-9", "-f", f"runner.py --config .*{pid}.*--workflow {workflow}"],
+             capture_output=True)
+    _sub.run(["pkill", "-9", "-f", f"llm_wrap.py.*{pid}"], capture_output=True)
+    _sub.run(["pkill", "-9", "-f", f"incremental_extract.py.*{pid}"], capture_output=True)
+    return {"ok": True, "phase_id": phase_id, "status": "checkpoint"}
+
+
 @app.post("/api/projects/{pid}/phases/{phase_id}/retry")
 def retry_phase(pid: str, phase_id: str, workflow: str = "w1", user: dict = Depends(_me)):
     _own_project(pid, user)

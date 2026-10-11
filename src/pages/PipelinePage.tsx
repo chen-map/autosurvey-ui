@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Play, RotateCcw, FileText, Network, Clock } from 'lucide-react';
+import { Play, RotateCcw, FileText, Network, Clock , Pause } from 'lucide-react';
 import type { PipelineRun, PhaseState } from '@/types/data';
 import { getPipeline, startRun, getW4Reports, fetchW4ReportHtml, getCorpus, type W4Report } from '@/services/api';
 import { Card } from '@/components/ui/Card';
@@ -366,6 +366,7 @@ function PhaseChip({ phase, projectId, workflow, onRetried }: { phase: PhaseStat
   const st = statusStyle[phase.status] ?? statusStyle.pending;
   const failedLike = phase.status === 'failed' || phase.status === 'checkpoint' || phase.status === 'skipped';
   const [retrying, setRetrying] = useState(false);
+  const [pausing, setPausing] = useState(false);
   const retry = async () => {
     setRetrying(true);
     try {
@@ -406,6 +407,25 @@ function PhaseChip({ phase, projectId, workflow, onRetried }: { phase: PhaseStat
       {failedLike && (
         <Button variant="ghost" size="sm" className="shrink-0 px-2" title="重跑该阶段（从 checkpoint 断点续传）" onClick={() => void retry()} disabled={retrying}>
           <RotateCcw size={13} className={retrying ? 'animate-spin' : ''} />
+        </Button>
+      )}
+      {phase.status === 'running' && (
+        <Button variant="ghost" size="sm" className="shrink-0 px-2"
+          title="暂停该阶段（终止进程，已提取产物保留在磁盘，恢复时从断点续传）"
+          onClick={async () => {
+            setPausing(true);
+            try {
+              const API = import.meta.env.VITE_API_BASE ?? '/api';
+              const tk = localStorage.getItem('as.token') ?? '';
+              await fetch(`${API}/projects/${projectId}/phases/${phase.id}/pause?workflow=${workflow}`, {
+                method: 'POST', headers: tk ? { Authorization: `Bearer ${tk}` } : {},
+              });
+              onRetried?.();
+            } finally { setPausing(false); }
+          }}
+          disabled={pausing}
+        >
+          <Pause size={13} className={pausing ? 'animate-spin' : ''} />
         </Button>
       )}
     </div>
