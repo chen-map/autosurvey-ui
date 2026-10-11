@@ -34,8 +34,23 @@ MIN_INTERVAL = 10.0  # arXiv 官方 ≥3s；共享出口 IP（VPS/教育网 NAT�
 
 
 def build_query(kws: list[str], year_from: int, year_to: int) -> str:
-    """关键词 OR 并集（宽召回，相关性交给 P4 筛选打分）+ 提交日期硬区间。"""
-    terms = [f'all:"{k}"' for k in kws if k.strip()][:5]
+    """关键词 OR 并集（宽召回，相关性交给 P4 筛选打分）+ 提交日期硬区间。
+
+    查询策略（实测教训）：引号短语查询 `all:"multi word phrase"` 在 arXiv 命中率极低
+    （LLM 裁判项目 8 个短语全引号 → 总命中 0 条），因为 arXiv 全文索引对引号短语
+    匹配过于严格。改为：长关键词拆词 + AND 组合（保证词共现），短词保留引号。
+    """
+    terms = []
+    for k in kws[:5]:
+        k = k.strip()
+        if not k:
+            continue
+        words = k.split()
+        if len(words) >= 3:
+            # 多词短语 → 拆词 AND 共现（arXiv 全文索引对引号短语过于严格）
+            terms.append("+".join(f"all:{w}" for w in words[:4]))
+        else:
+            terms.append(f'all:"{k}"')
     if not terms:
         terms = ['all:"graph neural network"', 'all:"explainability"']
     date = f"submittedDate:[{year_from}0101000000 TO {year_to}1231235959]"
