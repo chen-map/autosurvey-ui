@@ -22,7 +22,8 @@ const PLATFORMS: { name: string; paid: boolean; builtin?: boolean; note?: string
   { name: 'Agent 检索', paid: true, note: 'LLM Agent 聚合检索：按问题发起、无布尔式限制、无平台限流' },
 ];
 const STEPS = ['研究领域', '主题与种子', '本地资料', '参数配置', '确认创建'];
-const LS_CUSTOM_FIELDS = 'as.custom-fields'; // 用户自定义领域库（持久化，跨会话复用）
+const LS_CUSTOM_FIELDS = 'as.custom-fields';
+import { pushDirections } from './DirectionPage'; // 用户自定义领域库（持久化，跨会话复用）
 const LS_LAST_FIELDS = 'as.last-fields'; // 上次使用的领域组合（自动预选）
 
 // B2 创建向导：研究领域标签 → 主题+种子 → 本地资料 → 参数 → 确认
@@ -45,6 +46,11 @@ export function NewProjectPage() {
     }
   });
   const [customTag, setCustomTag] = useState('');
+
+  // 打开向导时从后端拉取最新数据（防切页后 localStorage 被覆盖丢失）
+  useEffect(() => {
+    void pushDirections();  // 先推送本地变更
+  }, []);
   const [title, setTitle] = useState('');
   const [seeds, setSeeds] = useState<string[]>([]);
   const [description, setDescription] = useState('');
@@ -122,6 +128,7 @@ export function NewProjectPage() {
       const next = [...savedCustom, t];
       setSavedCustom(next);
       localStorage.setItem(LS_CUSTOM_FIELDS, JSON.stringify(next));
+      pushDirections();  // 同步到后端（切页/刷新后不丢）
     }
     if (!tags.includes(t)) setTags((s) => [...s, t]);
     setCustomTag('');
