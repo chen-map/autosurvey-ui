@@ -20,8 +20,11 @@ Third-party components include, but are not limited to:
 - FastAPI, Pydantic, Uvicorn (MIT / BSD-3-Clause)
 - React, React DOM, Vite, Tailwind CSS, Zustand, React Router, d3-force,
   React Flow, react-markdown, lucide (MIT / ISC)
-- PyMuPDF (AGPL-3.0 or commercial license; used only in the private
-  deployment, not distributed in this repository)
+- PyMuPDF (AGPL-3.0 or commercial license). The running service that uses it
+  stays in private deployment; this repository publishes the source excerpt
+  open/pipeline/tools/build_paper_evidence_index.py for reading/reference
+  only, which does not constitute distribution of a PyMuPDF-based network
+  service — see docs/THIRD_PARTY_RESOURCES.md §5.
 - pdfminer.six (MIT)
 - sentence-transformers (Apache-2.0)
 - tectonic (MIT) and LaTeX packages (LPPL, including IEEEtran and acmart)

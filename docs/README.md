@@ -2,10 +2,11 @@
 
 AutoSurvey 面向科研文献调研场景：把一个研究方向的上百篇论文，整理成**证据可回溯、结论可核查、人工可修订**的综述初稿。系统的核心不是“让模型写一篇文章”，而是把综述生产拆成可检查的环节：检索与筛选、论文结构化、论文关系图、研究问题与证据矩阵、逐题分析、写作与质量检查。
 
-本仓库是 **open-core 的公开部分**：控制台前端、真实运行快照、分析工作流规范和参赛文档。核心编排与生产配置在私有仓库中维护，可按评审需要提供只读访问。
+本仓库是 **open-core 的公开部分**：控制台前端、真实运行快照、五步工作流关键实现摘录、分析工作流规范和参赛文档。完整可运行系统（后端服务、数据库、部署配置）在私有仓库中维护，可按评审需要提供只读访问。
 
 - 在线演示：<https://chen-map.github.io/autosurvey-ui/>
 - 公开数据：`public/showcase/`（四个真实项目的 RQ、证据矩阵、claims、原文页码、综述 PDF）
+- 五步工作流代码摘录：[`open/pipeline/`](open/pipeline/README.md)（W1–W5 各环节关键实现 + 37 技能执行框架导读）
 - 开放工作流：`open/analysis-skills/`（37 个分析策略规范）
 - 开放计划：[docs/OPEN_SOURCE_PLAN.md](docs/OPEN_SOURCE_PLAN.md)
 - 第三方资源清单：[docs/THIRD_PARTY_RESOURCES.md](docs/THIRD_PARTY_RESOURCES.md)
@@ -27,7 +28,7 @@ npm run dev      # http://localhost:5173，账号 demo / 123456
 npm run build
 ```
 
-公开仓库不含后端服务、数据库、部署脚本、访问凭据或生产配置。完整系统的运行方式见私有仓库说明；评审需要时可通过只读方式提供。
+公开仓库不含可运行的后端服务、数据库、部署脚本、访问凭据或生产配置；流水线关键算法以源码摘录形式开放于 [`open/pipeline/`](open/pipeline/README.md)（含摘录说明）。完整系统的运行方式见私有仓库说明；评审需要时可通过只读方式提供。
 
 ## 数据与许可
 
