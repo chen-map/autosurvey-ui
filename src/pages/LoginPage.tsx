@@ -170,7 +170,7 @@ export function LoginPage() {
               />
             </div>
           )}
-          {/* 错误内联在控件正下方（design-db 表单范式，禁 alert） */}
+          {/* 错误内联在控件正下方（表单范式，禁 alert） */}
           {error && <p className="text-[12px] text-danger">{error}</p>}
           <Button type="submit" size="lg" className="w-full" disabled={loading}>
             {loading

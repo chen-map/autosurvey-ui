@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-// 标签公式（design-db）：浅底 + 同色相深字，禁饱和底白字
+// 标签公式：浅底 + 同色相深字，禁饱和底白字
 const variants = {
   neutral: 'bg-black/5 text-t2',
   ok: 'bg-[#f6ffed] text-[#1a7f37]',
