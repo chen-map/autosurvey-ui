@@ -8,7 +8,7 @@ export const WORKFLOW_NAMES = {
   W5: '综述写作',
 } as const;
 
-// 两个 mock 快照（workflow.md「推演中发现的缺口」：答辩讲到哪演到哪）
+// 两个 mock 快照：答辩讲到哪演到哪
 // 快照一：全流程已完成
 const completedWorkflows = (['W1', 'W2', 'W3', 'W4', 'W5'] as const).map((id) => ({
   id,

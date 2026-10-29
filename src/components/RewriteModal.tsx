@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 
-// 大规模重写弹窗（用户裁决）：用户给大纲说明或写作 prompt →
+// 大规模重写弹窗：用户给大纲说明或写作 prompt →
 // LLM 结合 W4 各 RQ 深度分析逐章节重写论文正文 → 完成后自动编译 PDF
 const API = import.meta.env.VITE_API_BASE ?? '/api';
 const authHeaders = (): Record<string, string> => {

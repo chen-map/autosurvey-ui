@@ -477,7 +477,7 @@ export function DirectionPage() {
             与流水线的联动 · 规划中
           </div>
           <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
-            默认预选的方向将作为 W3 Gap Analyzer 的输入：结合你的知识库与 KG 识别 coverage gaps，主动推送值得研究的选题（依赖后端接口，见 backend-todo.md §3）。
+            默认预选的方向将作为 W3 Gap Analyzer 的输入：结合你的知识库与 KG 识别 coverage gaps，主动推送值得研究的选题（依赖后端接口）。
           </p>
         </Card>
       )}

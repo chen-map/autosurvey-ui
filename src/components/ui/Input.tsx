@@ -5,7 +5,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   hasError?: boolean;
 }
 
-// 输入框：底 #f5f5f5、圆角 8、focus 黑边（xept 实拍范式；错误内联在控件下方，见页面层）
+// 输入框：底 #f5f5f5、圆角 8、focus 黑边；错误内联在控件下方（见页面层）
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, hasError, ...props }, ref) => (
     <input

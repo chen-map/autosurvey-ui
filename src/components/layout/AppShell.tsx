@@ -23,7 +23,7 @@ export function AppShell() {
 
   return (
     <div className="flex min-h-screen">
-      {/* 左侧栏（xept projects 页范式：黑 wordmark + 实底黑主按钮 + 分组导航） */}
+      {/* 左侧栏：黑 wordmark + 实底黑主按钮 + 分组导航 */}
       <aside className="fixed inset-y-0 left-0 flex w-60 flex-col border-r border-line/70 bg-card">
         <div className="px-5 pt-6">
           <div className="text-[19px] font-bold leading-6 tracking-tight">AutoSurvey</div>

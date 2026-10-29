@@ -13,7 +13,7 @@ const cleanCitations = (t: string): string => (t || '')
   .replace(/【[\s,;]*】/g, '')
   .replace(/[ 	]{2,}/g, ' ');
 
-// Human Loop 分屏侧边栏（用户裁决 v2）：常驻分屏、挤占主区不覆盖、浅黄暖色。
+// Human Loop 分屏侧边栏：常驻分屏、挤占主区不覆盖、浅黄暖色。
 // 只作用于当前 RQ 界面：聊天 → AI 预更改（红绿 diff）→ 用户确认 → 写回证据矩阵。
 // Skill 与参考文件有专门管理面板（仿 harness：已安装列表 + 预览 + 启用 + 删除）。
 
@@ -488,7 +488,7 @@ export function HumanLoopSidebar({ projectId, rqId, subs, ctxSubId, scope = 'rq'
         persist(next);
         return next;
       });
-      // 用户裁决：W5（outline）修改落盘+后台编译后，当次界面不动——刷新后展示新论文；
+      // W5（outline）修改落盘+后台编译后，当次界面不动——刷新后展示新论文；
       // RQ 界面保持即时刷新（所见即所得）
       if (scope === 'outline') {
         if ('compiled' in d && d.compiled) {
@@ -826,7 +826,7 @@ export function HumanLoopSidebar({ projectId, rqId, subs, ctxSubId, scope = 'rq'
           </div>
         )}
 
-        {/* 模型与思考（用户裁决：放底部、明显、黑色文字） */}
+        {/* 模型与思考（放底部、明显、黑色文字） */}
         <div className="flex items-center gap-2 border-t border-[#F5F5F4] bg-[#FAFAF9]/60 px-4 py-2">
           <span className="text-[11.5px] font-semibold text-stone-800">模型</span>
           <select value={useModel} onChange={(e) => setUseModel(e.target.value)}

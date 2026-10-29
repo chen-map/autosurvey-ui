@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Trash2, X } from 'lucide-react';
 
-// AI 协作侧边栏的模型配置（用户裁决：入口放个人中心）
-// 两级结构（学 ZCode）：一个厂商一张卡（API Key + 接口地址），卡内多个模型；
+// AI 协作侧边栏的模型配置（入口放个人中心）
+// 两级结构（）：一个厂商一张卡（API Key + 接口地址），卡内多个模型；
 // 聊天时在侧边栏底部「模型」下拉按厂商分组选择。
 
 interface HlVendor { id: number; label: string; baseUrl: string; models: string[]; provider: string; keyMasked: string }

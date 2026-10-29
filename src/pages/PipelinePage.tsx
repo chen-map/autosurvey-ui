@@ -285,7 +285,7 @@ export function PipelinePage() {
 
 const wfKeyOf = (id: string) => id.toLowerCase();
 
-// W1 修改配置重建：打开编辑弹窗（用户裁决：W1 重跑 = 改配置从头构建，
+// W1 修改配置重建：打开编辑弹窗（W1 重跑 = 改配置从头构建，
 // 会作废 W2-W5 产物，需重新运行下游——弹窗内明确警示）
 function W1RebuildButton({ projectId, running }: { projectId: string; running: boolean }) {
   const [open, setOpen] = useState(false);

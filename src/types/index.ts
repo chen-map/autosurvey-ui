@@ -1,4 +1,4 @@
-// API 契约类型（对应 docs/requirements.md「数据需求」节）
+// API 契约类型
 // service 层按 REST 语义命名，后端定稿后仅替换实现、类型不变
 
 export type WorkflowId = 'W1' | 'W2' | 'W3' | 'W4' | 'W5';

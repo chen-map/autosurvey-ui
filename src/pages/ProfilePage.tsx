@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { ukey } from '@/lib/userScope';
 
 // 个人中心（B15 前端版）：个人信息 + 付费平台 API Key 存储
-// Key 仅存本浏览器 localStorage；生产环境由后端加密存储、接口只回掩码（backend-todo.md §6）
+// Key 仅存本浏览器 localStorage；生产环境由后端加密存储、接口只回掩码
 const LS_APIKEYS = () => ukey('as.apikeys');
 const PAID_PLATFORMS = ['IEEE', 'ACM', 'Springer', 'Elsevier', 'Agent 检索'];
 
@@ -238,7 +238,7 @@ export function ProfilePage() {
         </div>
         <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
           订阅制论文平台需要机构/API Key 才会真实返回数据。Key 只保存在你的浏览器中；
-          后端接入后改为服务端加密存储，接口只回传掩码（见 backend-todo.md §6）。
+          后端接入后改为服务端加密存储，接口只回传掩码。
         </p>
         {keyErr && (
           <div className="mt-3 rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-[12.5px] text-danger">{keyErr}</div>

@@ -2,7 +2,6 @@
 // API service 层 —— 双模式：mock（演示） / real（后端 FastAPI）
 //
 // 切换：VITE_USE_MOCK=0 走真实后端；默认走 mock 演示数据。
-// 后端 API 契约见 docs/backend-todo.md。
 // ============================================================
 import type { Project } from '@/types';
 import type {

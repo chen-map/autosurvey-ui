@@ -58,7 +58,7 @@ export function KnowledgeBasePage() {
         <span className="text-[13px] text-t3">共 {items.length} 篇收藏</span>
       </div>
       <p className="mt-1 text-[13px] text-t3">
-        收藏优秀论文并分类管理，跨项目复用。数据存于本浏览器（后端接入后自动同步，见 backend-todo.md）。
+        收藏优秀论文并分类管理，跨项目复用。数据存于本浏览器（后端接入后自动同步）。
       </p>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
