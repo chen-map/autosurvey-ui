@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-a 分析报告</h1>
+<div class="meta">RQ [RQ5.2]：[父问题 RQ5] 本领域评价体系与证据结构存在哪些系统性缺口，如何构建面向&quot;采纳—能效—田间鲁棒性&quot;的统一评价与研究议程？
+[本子问题 RQ5.2] `contradicts`=0、`supports`=1、Time Evolution 全 Unknown 对知识积累意味着什么，如何补足争议与趋势证据？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2996_phenointel_a_lifecyclealigned_multiagent_web_application_for, 0712_Advancing_the_science_and_practice_of_ecological_nutrient_ma, 2959_unlocking_ais_potential_in_agriculture_the_critical_role_of, 2811_evaluating_digital_tools_for_sustainable_agriculture_using_c, 0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I, 2929_towards_scalable_organ_level_3d_plant_segmentation_bridging）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心发现一_Supports_的_空心化_与_Contradicts_的缺席">核心发现一：Supports 的&quot;空心化&quot;与 Contradicts 的缺席</a></li>
+<li><a href="#sec_核心发现二_Contradicts_0_掩盖了真实存在的定量冲突">核心发现二：Contradicts=0 掩盖了真实存在的定量冲突</a></li>
+<li><a href="#sec_核心发现三_Time_Evolution_全_Unknown_使_收敛_vs_碎片化_无法判定">核心发现三：Time Evolution 全 Unknown 使&quot;收敛 vs 碎片化&quot;无法判定</a></li>
+<li><a href="#sec_核心发现四_评估维度的结构性盲区">核心发现四：评估维度的结构性盲区</a></li>
+<li><a href="#sec_如何补足争议与趋势证据">如何补足争议与趋势证据</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ5.2——&quot;`contradicts`=0、`supports`=1、Time Evolution 全 Unknown 对知识积累意味着什么&quot;——对冻结的 6 篇证据矩阵论文及相关支撑论文执行了元评估分析。核心结论是：这一图谱特征并非数据缺漏，而是&quot;证据积累前范式阶段&quot;的结构性诊断。领域内论文以&quot;平行声明&quot;而非&quot;相互辩驳&quot;的方式存在，证据单向累积而非批判性对话。</p><p>在冻结矩阵中，KG 仅记录到 1 条 supports 边（0713→0712，confidence=0.78），且 0 条 contradicts 边<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这条唯一的支持关系本身也属&quot;空心化&quot;——两篇综述共享生态农业叙事却未做数据层交叉复现。与此同时，我们据原文识别出若干未入谱的定量冲突，最典型的是数字农业建议的&quot;投入-结果脱耦&quot;：<sup class="cite"><a href="#ref-0023" style="text-decoration:none">[0023]</a></sup> 记录的数字建议使化肥使用可能性提升 2–5 倍，但产量零效应<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，与 <sup class="cite"><a href="#ref-0678" style="text-decoration:none">[0678]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、<sup class="cite"><a href="#ref-2811" style="text-decoration:none">[2811]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 报告的 12%–17% 显著增产形成张力。Time Evolution 全 Unknown 则使&quot;收敛 vs 碎片化&quot;无法判定。报告最后提出补足争议与趋势证据的三条路径，并指出能效、田间鲁棒性两维度的结构性评估缺口。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>分析基于知识图谱结构性数据与论文原文语义检索两类来源。KG 层面加载了全部核心节点类型：paper（84 篇，含标题/描述）、metric（132 个评估指标节点）、problem（226 个问题节点）、method（231 个方法节点）、limitation（137 个局限性节点）、dataset（104 个数据集/基准节点）、assumption（61 个假设约束节点）。关系层通过一跳关系边查询了证据矩阵中全部 6 篇冻结论文及若干关键扩展论文（0678、2811、2996、0712、0713、2959、2929）。</p><p>原文层面使用 search_paper_sections 对至少 10 篇关键论文（0678、2811、0712、0713、2996、0073、2959、0023、0680、3033、0714、0558、2824、2854、0747）的相关段落做了精读，覆盖评估设计、因果推断、采纳-结果脱耦、效率指标、田间鲁棒性等主题。本次分析共执行 22 次工具调用，其中关系边查询与实体链接聚焦于 supports/contradicts/extends 三类论文间关系，以及 metric 本体的效率维度覆盖。</p>
+
+<h2 id="sec_核心发现一_Supports_的_空心化_与_Contradicts_的缺席">核心发现一：Supports 的&quot;空心化&quot;与 Contradicts 的缺席</h2>
+<p>冻结的 6 篇证据矩阵论文中，KG 边结构呈现极端稀疏的争议拓扑：仅 1 条 supports 边（0713→0712，confidence=0.78），0 条 contradicts 边。唯一的 supports 边 evidence 字段明确写道&quot;sharing the same agroecological framing and practices without directly extending its specific ENM method&quot;<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，即两文共享&quot;生态农业优于化肥&quot;的宏大叙事，却未对彼此的具体结论做数据层面交叉验证。</p><p>原文进一步暴露这种支持关系的脆弱性：<sup class="cite"><a href="#ref-0712" style="text-decoration:none">[0712]</a></sup> 自承&quot;When ENM is first implemented, short-term yield outcomes are variable; however, over the long-term… can increase yields&quot;<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，而 <sup class="cite"><a href="#ref-0713" style="text-decoration:none">[0713]</a></sup> 直言&quot;agroecological systems can only provide meager yields&quot;是部分人的质疑、并指出&quot;the assurance of obtaining better performance… is not guaranteed&quot;<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。被标记为 supports 的两篇论文内部就存在&quot;短期减产 vs 长期增产&quot;的张力，却无任何 contradicts 边将其显式化。支持关系在此沦为&quot;同温层互引&quot;，而非&quot;独立证据汇合&quot;。</p>
+<h3>证据矩阵的论文间争议拓扑结构</h3>
+<table><thead><tr><th>关系类型</th><th>数量</th><th>涉及论文</th><th>诊断含义</th></tr></thead><tbody><tr><td>supports</td><td>1</td><td>0713 → 0712 (conf 0.78)</td><td>框架性背书，非定量复现</td></tr>
+<tr><td>contradicts</td><td>0</td><td>—</td><td>批判性对话缺失</td></tr>
+<tr><td>extends</td><td>4+</td><td>2811→0678; 2996→0082; 2996→2976; 2994→2929</td><td>方法迭代链存在，但缺年份序列</td></tr>
+<tr><td>Time Evolution</td><td>全部 Unknown</td><td>全部矩阵论文</td><td>纵向趋势不可计算</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现二_Contradicts_0_掩盖了真实存在的定量冲突">核心发现二：Contradicts=0 掩盖了真实存在的定量冲突</h2>
+<p>最有诊断价值的反例出现在农业数字工具评估主线上。<sup class="cite"><a href="#ref-0678" style="text-decoration:none">[0678]</a></sup> 与 <sup class="cite"><a href="#ref-2811" style="text-decoration:none">[2811]</a></sup> 均用因果推断报告显著正向增产：<sup class="cite"><a href="#ref-0678" style="text-decoration:none">[0678]</a></sup> 报告跟种建议带来 12%–17% 产量提升（ATE 372–546 kg/ha，平均产量 3145 kg/ha），并通过 placebo/RCC/RSR/UCC 四项反驳检验<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；<sup class="cite"><a href="#ref-2811" style="text-decoration:none">[2811]</a></sup> 在 171 块棉田上复现出 372–546 kg/ha 的一致区间<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>（后者通过 extends 边扩展前者，confidence=0.95）。</p><p>然而，同一知识体系中的 <sup class="cite"><a href="#ref-0023" style="text-decoration:none">[0023]</a></sup>（数字农业推广章）记载了布基纳法索式反例：定制数字农艺建议使&quot;化肥使用可能性提升 2–5 倍&quot;，但&quot;the study observed no impact on self-reported cotton yields or satellite-based yields&quot;，归因于&quot;historically low rainfall… suppressing returns to fertilizers&quot;<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。这是一个教科书级的潜在矛盾——数字建议改变的是投入行为而非产量结果——但 KG 中没有任何边记录这一点。</p><p>此外 <sup class="cite"><a href="#ref-2959" style="text-decoration:none">[2959]</a></sup> 报告 AI 在印度农业的扩散&quot;remains fragmented and largely pilot-driven&quot;，对比其他行业 25–40% 的采纳率<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，直接质疑以单点因果研究为代表的&quot;数字工具有效&quot;叙事。这些冲突之所以未进入图谱，恰恰因为领域缺乏将&quot;投入采纳&quot;与&quot;产量/能效/鲁棒性结果&quot;分离度量并相互比对的评估协议。</p>
+<h3>未入谱的潜在定量冲突（据原文识别）</h3>
+<table><thead><tr><th>论文</th><th>核心定量结论</th><th>与谁形成张力</th><th>冲突来源</th></tr></thead><tbody><tr><td>[0678]</td><td>跟种建议带来 12%–17% 增产（ATE 372–546 kg/ha）</td><td>—</td><td>因果推断，四反驳检验通过</td></tr>
+<tr><td>[2811]</td><td>171 田块复现 372–546 kg/ha ATE</td><td>—</td><td>扩展 [0678]，一致</td></tr>
+<tr><td>[0023]</td><td>化肥使用可能性升 2–5 倍，但产量零效应</td><td>[0678]/[2811]</td><td>该年历史性低降雨</td></tr>
+<tr><td>[2959]</td><td>AI 扩散 fragmented / pilot-driven，远低于 25–40%</td><td>数字工具有效叙事</td><td>数据基础设施瓶颈</td></tr>
+<tr><td>[0712]</td><td>短期产量波动，长期可增产</td><td>[0713] 的短期减产质疑</td><td>时间尺度差异</td></tr>
+<tr><td>[0713]</td><td>&quot;meager yields&quot; 质疑 / better performance 不保证</td><td>[0712] 的长期乐观</td><td>实践不确定性</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现三_Time_Evolution_全_Unknown_使_收敛_vs_碎片化_无法判定">核心发现三：Time Evolution 全 Unknown 使&quot;收敛 vs 碎片化&quot;无法判定</h2>
+<p>证据矩阵中唯一带时间元信息的是 <sup class="cite"><a href="#ref-0680" style="text-decoration:none">[0680]</a></sup> 的系统综述——研究数量&quot;from 1 in 1994 to 22 in 2022&quot;，并指出存在&quot;a transition in research focus over time&quot;<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。这说明纵向数据是存在的，却未被图谱写为演化轨迹。</p><p><sup class="cite"><a href="#ref-2811" style="text-decoration:none">[2811]</a></sup> 扩展 <sup class="cite"><a href="#ref-0678" style="text-decoration:none">[0678]</a></sup> 本应是可标注的&quot;方法迭代&quot;节点，但除 extends 边外无年份序列，无法刻画&quot;同一任务上指标口径随时间是否收敛&quot;。同样，<sup class="cite"><a href="#ref-2996" style="text-decoration:none">[2996]</a></sup> 扩展 <sup class="cite"><a href="#ref-0082" style="text-decoration:none">[0082]</a></sup>、<sup class="cite"><a href="#ref-2994" style="text-decoration:none">[2994]</a></sup> 扩展 <sup class="cite"><a href="#ref-2929" style="text-decoration:none">[2929]</a></sup> 都是清晰的代际关系<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，却无法转化为可计算的时间序列。结果是：我们既不能说评估实践在收敛，也不能说在碎片化——这正是元评估最需要证据的地方，却恰是空白。</p>
+
+<h2 id="sec_核心发现四_评估维度的结构性盲区">核心发现四：评估维度的结构性盲区</h2>
+<p>对 metric 本体（132 个节点）的聚类显示，评估维度严重偏向精度/质量类：Accuracy、Precision/Recall/F1、mAP/IoU、Correlation(R)、Yield increase 等占据绝对多数。效率/能效指标在 KG 中仅零星存在——metric_gpu_memory（训练显存）、metric_latency_per_inference_ms（单次推理延迟）、metric_operational_latency、metric_reconstruction_efficiency，且使用率极低，构成&quot;能效&quot;维度的结构性缺口。</p><p>田间鲁棒性维度同样薄弱：大量方法在单一作物、单季、单区域验证，真正跨站点/跨季的分布外评估罕见。<sup class="cite"><a href="#ref-0073" style="text-decoration:none">[0073]</a></sup> 虽报告 SAM 零样本可检出约 58% 田块，但自承&quot;identifying correctly detected fields still relies on ground truth labels&quot;，且&quot;not considering aggregated polygons may underestimate our workflow's accuracy&quot;<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>，说明共识度量本身存在已知缺陷。</p><p><sup class="cite"><a href="#ref-2996" style="text-decoration:none">[2996]</a></sup> 示范了当前最接近&quot;可拆分评估协议&quot;的实践：Macro F1 0.78–0.996、0.96 mAP@50、54% 计数误差下降、ECE 校准、1,200 项测试套件<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>；但其亦自承&quot;evaluation protocol is not uniform: some figures are held-out, some full-pool&quot;，说明即便先进系统亦缺乏统一分层评估。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "评估维度本体的类别分布（按 KG metric 节点语义聚类，示意）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["精度/质量类", "相关性类(R)", "产量/因果效应类", "效率/能效类", "鲁棒性类", "采纳/用户类"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "指标节点数（近似）", "type": "bar", "data": [58, 22, 14, 4, 6, 8], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>评估盲区分类与支撑证据</h3>
+<table><thead><tr><th>盲区类型</th><th>具体表现</th><th>支撑论文数</th><th>代表证据</th></tr></thead><tbody><tr><td>能效缺口</td><td>效率/能效指标使用率 &lt;5%</td><td>≥3</td><td>metric_gpu_memory、latency；[2996][0558][2824]</td></tr>
+<tr><td>田间鲁棒性缺口</td><td>单作物单季单区域，缺分布外评估</td><td>≥3</td><td>[0678] cotton-only；[2917] 鲁棒性未知</td></tr>
+<tr><td>采纳-结果脱耦</td><td>行为改变与产量/结果未分离度量</td><td>≥3</td><td>[0023] 化肥采纳升但产量零效应</td></tr>
+<tr><td>公平性/分层缺口</td><td>缺跨子群体分层评估</td><td>≥2</td><td>[2959] 小农排除风险</td></tr>
+</tbody></table>
+
+<h2 id="sec_如何补足争议与趋势证据">如何补足争议与趋势证据</h2>
+<p>(1) 建立&quot;反例优先&quot;编码规则：强制将 <sup class="cite"><a href="#ref-0023" style="text-decoration:none">[0023]</a></sup> 类&quot;投入-结果脱耦&quot;与 <sup class="cite"><a href="#ref-0678" style="text-decoration:none">[0678]</a></sup>/<sup class="cite"><a href="#ref-2811" style="text-decoration:none">[2811]</a></sup> 类&quot;正向 ATE&quot;登记为 contradicts 候选边，并标注差异来源（作物、降雨、指标口径）。</p><p>(2) 为每篇论文补录 year 与 metric_version 字段：把 2811→0678、2996→0082、2994→2929 等 extends 链转化为可计算的时间序列，检测指标口径漂移，从而将&quot;Time Evolution Unknown&quot;转为可计算的趋势曲线。</p><p>(3) 将&quot;采纳&quot;&quot;能效&quot;&quot;田间鲁棒性&quot;从单一混合指标中拆出：借鉴 <sup class="cite"><a href="#ref-2996" style="text-decoration:none">[2996]</a></sup> 的拆分路径（分类指标 + ECE 校准 + 测试套件 + GPU/延迟）<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>，系统性补充分离的能效与鲁棒性度量，填补&quot;采纳—能效—田间鲁棒性&quot;统一评价缺口。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "论文间关系边类型构成（证据矩阵及相关论文）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "论文间关系边类型构成（证据矩阵及相关论文）", "type": "pie", "radius": "55%", "data": [{"name": "extends", "value": 4}, {"name": "supports", "value": 1}, {"name": "contradicts", "value": 0}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">方法论提示：contradicts=0 可能部分是知识图谱抽取保守所致（缺边不等于领域确实无矛盾）。本报告据原文识别出的 <sup class="cite"><a href="#ref-0023" style="text-decoration:none">[0023]</a></sup> 反例属&quot;未入谱的潜在矛盾&quot;而非已登记矛盾。因此&quot;领域缺乏争议&quot;这一结论应理解为&quot;争议未被显式化/编码&quot;，而非&quot;争议不存在&quot;。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>第一，争议结构判断主要依赖 6 篇冻结论文及少量支撑论文，样本规模有限；contradicts=0 可能反映图谱抽取保守而非领域无争议。第二，Time Evolution 全部 Unknown，导致趋势维度只能定性描述，无法给出收敛/碎片化的量化判定。第三，主张&quot;某维度被系统性忽视&quot;时，能效与田间鲁棒性两项虽均有 ≥3 篇论文的间接支撑（<sup class="cite"><a href="#ref-2996" style="text-decoration:none">[2996]</a></sup><sup class="cite"><a href="#ref-0558" style="text-decoration:none">[0558]</a></sup><sup class="cite"><a href="#ref-2824" style="text-decoration:none">[2824]</a></sup><sup class="cite"><a href="#ref-2854" style="text-decoration:none">[2854]</a></sup><sup class="cite"><a href="#ref-2917" style="text-decoration:none">[2917]</a></sup>），但直接以效率指标汇报的定量论文仍偏少，结论置信度为中等偏上。第四，<sup class="cite"><a href="#ref-0023" style="text-decoration:none">[0023]</a></sup> 与 <sup class="cite"><a href="#ref-0678" style="text-decoration:none">[0678]</a></sup>/<sup class="cite"><a href="#ref-2811" style="text-decoration:none">[2811]</a></sup> 的冲突可能被气候情境差异部分解释（低降雨年份 vs 一般年份），并非严格同条件矛盾。上述局限要求将本报告视为&quot;诊断性元评估&quot;而非终局结论。</p>
+<h3>关键结论与置信度汇总</h3>
+<table><thead><tr><th>编号</th><th>结论</th><th>置信度</th><th>核心证据论文</th></tr></thead><tbody><tr><td>C1</td><td>仅有 1 条 supports、0 条 contradicts</td><td>高</td><td>[1][2]</td></tr>
+<tr><td>C2</td><td>唯一 supports 为框架性背书非定量复现</td><td>高</td><td>[1][2]</td></tr>
+<tr><td>C3</td><td>因果推断报告 12-17% 增产并通过四反驳检验</td><td>高</td><td>[4][5]</td></tr>
+<tr><td>C4</td><td>存在未入谱定量冲突（投入-结果脱耦）</td><td>中</td><td>[3][4][5]</td></tr>
+<tr><td>C5</td><td>ENM 短期减产 vs 长期增产张力未登记</td><td>中</td><td>[1][2]</td></tr>
+<tr><td>C6</td><td>AI 扩散 fragmented / pilot-driven</td><td>高</td><td>[6]</td></tr>
+<tr><td>C7</td><td>Time Evolution 全 Unknown 致趋势不可计算</td><td>高</td><td>[7]</td></tr>
+<tr><td>C8</td><td>效率/能效指标为结构性盲区</td><td>中</td><td>[8][12][13]</td></tr>
+<tr><td>C9</td><td>先进系统亦缺统一分层评估协议</td><td>高</td><td>[8]</td></tr>
+<tr><td>C10</td><td>共识度量(IoU 0.5)存在已知合法性缺陷</td><td>高</td><td>[10]</td></tr>
+</tbody></table>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ5.2 所揭示的 `contradicts`=0、`supports`=1、Time Evolution 全 Unknown，并非数据瑕疵，而是本领域&quot;证据积累前范式阶段&quot;的精确画像：论文以平行声明堆积，证据单向累积，缺乏可辩论的共识层。唯一的 supports 边是框架性背书而非定量复现，且两篇被 support 的论文内部就存在短期减产与长期增产的张力；而据原文识别出的 <sup class="cite"><a href="#ref-0023" style="text-decoration:none">[0023]</a></sup> 投入-结果脱耦与 <sup class="cite"><a href="#ref-0678" style="text-decoration:none">[0678]</a></sup>/<sup class="cite"><a href="#ref-2811" style="text-decoration:none">[2811]</a></sup> 正向 ATE 之间的定量冲突，则完全未进入图谱。</p><p>要补足争议与趋势证据，需要三管齐下：以&quot;反例优先&quot;规则显式登记 contradicts；为论文补录年份与指标版本以构建可计算的演化轨迹；并将&quot;采纳—能效—田间鲁棒性&quot;从混合指标中拆分度量——这正是面向统一评价研究议程的结构性缺口所在。这一诊断与父问题 RQ5 关于&quot;评价体系与证据结构系统性缺口&quot;的判断形成闭环：缺的不仅是单一指标，而是让指标间可以相互辩论的元评估框架。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Advancing the science and practice of ecological nutrient management for smallholder farmers&nbsp;<code style="font-size:0.82em;color:#888">0712_Advancing_the_science_and_practice_of_ecological_nutrient_ma</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Agroecological techniques: adoption of safe and sustainable agricultural practices among the smallholder farmers in Africa&nbsp;<code style="font-size:0.82em;color:#888">0713_Agroecological_techniques_adoption_of_safe_and_sustainable_a</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Chapter 8: Digital Agricultural Extension for Development&nbsp;<code style="font-size:0.82em;color:#888">0023_Digital_Agricultural_Extension_for_Development</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Evaluating Digital Agriculture Recommendations with Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Evaluating Digital Tools for Sustainable Agriculture using Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">2811_evaluating_digital_tools_for_sustainable_agriculture_using_c</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Unlocking AI's Potential in Agriculture: The Critical Role of Data&nbsp;<code style="font-size:0.82em;color:#888">2959_unlocking_ais_potential_in_agriculture_the_critical_role_of</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Utilisation of Digital Technologies by Smallholder Farmers in South Africa: A Systematic Literature Review&nbsp;<code style="font-size:0.82em;color:#888">0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;PhenoIntel: A Lifecycle-Aligned Multi-Agent Web Application for Plant Phenotyping&nbsp;<code style="font-size:0.82em;color:#888">2996_phenointel_a_lifecyclealigned_multiagent_web_application_for</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Towards Scalable Organ-level 3D Plant Segmentation: Bridging the Data, Algorithm and Computing Gap&nbsp;<code style="font-size:0.82em;color:#888">2929_towards_scalable_organ_level_3d_plant_segmentation_bridging</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Investigating the Segment Anything Foundation Model for Mapping Smallholder Agriculture Field Boundaries Without Training Labels&nbsp;<code style="font-size:0.82em;color:#888">0073_investigating_the_segment_anything_foundation_model_for_mapp</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Agricultural technology adoption and its impact on smallholder farmers&nbsp;<code style="font-size:0.82em;color:#888">3033_Agricultural_technology_adoption_and_its_impact_on_smallhold</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Field Robot for High-throughput and High-resolution 3D Plant Phenotyping&nbsp;<code style="font-size:0.82em;color:#888">0558_field_robot_for_highthroughput_and_highresolution_3d_plant_p</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Generating high-quality 3DMPCs by adaptive data acquisition and NeREF-based radiometric calibration with UGV plant phenotyping system&nbsp;<code style="font-size:0.82em;color:#888">2824_generating_highquality_3dmpcs_by_adaptive_data_acquisition_a</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Contribution of smallholder farmers to food security and opportunities for resilient farming systems&nbsp;<code style="font-size:0.82em;color:#888">0714_Contribution_of_smallholder_farmers_to_food_security_and_opp</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.2 · 2026-10-19 15:58</footer>
+</div>
+</body>
+</html>

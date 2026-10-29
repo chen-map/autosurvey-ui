@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-a 分析报告</h1>
+<div class="meta">RQ [RQ3.2]：[父问题 RQ3] 如何度量智能体的&quot;能力变化（capability change）&quot;，现有评估方法在轨迹级、纵向、开放任务场景下存在哪些局限？
+[本子问题 RQ3.2] 纵向评估协议（Longitudinal evaluation protocol、EvoTest）与跨会话基准的现状如何，为何单会话基准（ALFWorld、WebShop、AppWorld）无法支撑进化轨迹评估？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2112_trial_and_error_explorationbased_trajectory_optimization_for, 2237_agentevolver_towards_efficient_selfevolving_agent_system, 2274_trajectoryinformed_memory_generation_for_selfimproving_agent, 2287_combee_scaling_prompt_learning_for_selfimproving_language_mo, 2303_skillmaster_toward_autonomous_skill_mastery_in_llm_agents, 2349_recursive_selfevolving_agents_via_heldout_selection）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_评估维度本体_纵向度量_vs_端点度量的结构性失衡">评估维度本体：纵向度量 vs 端点度量的结构性失衡</a></li>
+<li><a href="#sec_纵向_跨会话评估协议谱系_四条互不可比的路线">纵向/跨会话评估协议谱系：四条互不可比的路线</a></li>
+<li><a href="#sec_为何单会话基准无法支撑进化轨迹评估_机制诊断">为何单会话基准无法支撑进化轨迹评估：机制诊断</a></li>
+<li><a href="#sec_评估盲区的类型学与支撑强度">评估盲区的类型学与支撑强度</a></li>
+<li><a href="#sec_有缺陷的共识指标审查">有缺陷的共识指标审查</a></li>
+<li><a href="#sec_评估不可比性审计">评估不可比性审计</a></li>
+<li><a href="#sec_纵向协议自身的效度风险">纵向协议自身的效度风险</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ3.2 展开元评估层面的系统分析：纵向评估协议（Longitudinal evaluation protocol / EvoTest）与跨会话基准的现状如何，以及为何单会话基准（ALFWorld、WebShop、AppWorld）在结构上无法支撑进化轨迹评估。</p><p>核心结论是：KG 中并非不存在纵向协议，而是存在至少四条彼此不可比的纵向评估谱系——EvoTest + J-TTL（K=50 连续 episode + 归一化 AUC）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、SEA-Eval（92 条有序任务序列 + token 消耗收敛趋势）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、FinEvo-Bench（120 开放式金融任务 / 20 业务场景 / 每场景 6 案 + 配对非进化对照组 score gain）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、EvoPathBench（1,800 条任务流 + 只读检查点 + 三维 CEG）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，另有 AgentStream 形式化 Isolated / Sequential / Interleaved 三种流式场景 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。它们的度量对象（AUC vs token 收敛 vs 配对增益 vs CEG）、状态持久化假设与时间尺度全部不同，且没有任何一条覆盖证据矩阵 4/6 篇论文实际使用的 AppWorld / ALFWorld / WebShop。</p><p>单会话基准的失效不是精度问题而是信息结构问题：环境在任务边界不携带状态、奖励为一次性判定，'能力变化'这一被测量在数据生成阶段就被抹除。元评估统计进一步暴露出'有缺陷的共识标准'——Success Rate 拥有约 49 条 measured_by 边（覆盖率最广），却恰好在语义上无法表达变化；而 AUC、Retention、Adaptivity 等纵向维度度量各仅 1–3 条边且多数只被综述收录。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析通过 41 次 KG 工具调用完成，覆盖全部七类节点（problem、method、paper、dataset、metric、limitation、assumption）。KG 全库规模：metric 节点 391 个、dataset/benchmark 节点 400 个、problem 节点 629 个、method 节点 558 个、paper 节点 274 个、limitation 节点 317 个、assumption 节点 200 个（以上为各类型的 _total_count，本次通过 get_entity_by_type 抽样 30 条/类后进行定向约束查询与关系展开）。</p><p>关系层面重点展开了六篇冻结证据矩阵论文的全部出入边（proposes / addresses / evaluated_on / measured_by / has_limitation / extends / compares_with），以及 EvoTest <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、SEA-Eval <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、FinEvo-Bench <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、EvoPathBench <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、AgentStream <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、自进化智能体综述 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、自我改进综述 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 等关键论文的关系网络。数据集侧重点展开了 ALFWorld（44 条关系边）、WebShop、AppWorld（30+ 条关系边）以量化单会话基准在自进化文献中的实际渗透度。原文层面使用 search_paper_sections 对 13 篇论文的评估设计、协议定义、结果表与局限陈述做了段落级精读。</p>
+
+<h2 id="sec_评估维度本体_纵向度量_vs_端点度量的结构性失衡">评估维度本体：纵向度量 vs 端点度量的结构性失衡</h2>
+<p>以 KG metric 节点为基础构建评估维度本体后，最显著的发现是纵向维度与端点维度的极端失衡。端点类指标（Success Rate、Task Goal Completion、Scenario Goal Completion、Average Reward、Score）构成了压倒性的主体；而能够表达'变化量'的纵向指标总数极少，且大部分只有一个来源。</p><p>这一失衡在认识论上意味着：社区用最高共识度测量了最不适配 RQ 所问'capability change'的量。Success Rate 是一个无时间导数的单点比率，它无法区分'真正学会'与'一次侥幸成功'，也无法表达'同一能力在后续更新中是否退化'。</p>
+<h3>纵向维度度量节点及其 KG 使用规模</h3>
+<table><thead><tr><th>度量指标</th><th>度量对象 / 语义</th><th>KG 使用论文数</th><th>来源论文</th><th>备注</th></tr></thead><tbody><tr><td>AUC（学习曲线下面积）</td><td>K 个 episode 内累计得分 / 最大可能得分（归一化）</td><td>3</td><td>[1] 2230, [8] 2467, [9] 2265</td><td>同名冲突：[1][8] 指学习曲线面积，[9] 指 ROC-AUC，定义不一致不予合并</td></tr>
+<tr><td>Token consumption（收敛趋势）</td><td>序列任务中 token 消耗是否单调收敛</td><td>2（1 篇论文 + 1 方法）</td><td>[2] SEA-Eval</td><td>作为'真进化 vs 伪进化'的第一序信号</td></tr>
+<tr><td>Score gain（配对对照增益）</td><td>进化组 vs 状态重置对照组的 rubric 分差</td><td>1</td><td>[3] FinEvo-Bench</td><td>纵向增益的核心量化量</td></tr>
+<tr><td>CEG（Capability Evolution Gain）</td><td>检查点 k 上进化方法 vs 非进化基线的期望差</td><td>1</td><td>[4] EvoPathBench</td><td>配合 SUE（state-use effect）区分真实能力与孤立提升</td></tr>
+<tr><td>Adaptivity</td><td>随时间/迭代的任务适应能力</td><td>1</td><td>[6] 综述</td><td>仅综述收录，无原始实验采用</td></tr>
+<tr><td>Retention</td><td>保留过往知识、缓解灾难性遗忘</td><td>1</td><td>[6] 综述</td><td>仅综述收录</td></tr>
+<tr><td>Learning speed</td><td>训练期间性能提升速率</td><td>2</td><td>[10] 2249</td><td>概念性度量，无统一计算公式</td></tr>
+<tr><td>Cumulative Success Rate</td><td>跨 epoch 至少解出一次的题目比例</td><td>2</td><td>[11] 2244</td><td>跨 epoch 但非时间序列</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "端点指标 vs 纵向指标的 KG 使用规模对比（measured_by 边数）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["Success Rate", "Task Goal Completion", "Scenario Goal Completion", "AUC（学习曲线）", "Token 收敛", "Score gain", "CEG", "Adaptivity", "Retention"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "measured_by 边数量", "type": "bar", "data": [49, 6, 3, 3, 2, 1, 1, 1, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">读图要点：Success Rate 的 49 条边约为全部纵向指标边数总和（14 条）的 3.5 倍。这一悬殊比例是本 RQ 最重要的元评估发现——不是纵向指标'不存在'，而是它们在社区实践中的权重被端点指标彻底压制。</div>
+
+<h2 id="sec_纵向_跨会话评估协议谱系_四条互不可比的路线">纵向/跨会话评估协议谱系：四条互不可比的路线</h2>
+<p>KG 中的纵向评估并非空白，而是呈现'多路线并存但彼此割裂'的格局。四条主要谱系在协议设计上存在根本性差异：时间尺度从 5 步序列到 120 任务、50 episode 不等；状态假设从'每 episode 重置到同一初始状态'到'跨场景持续累积'；核心信号从归一化 AUC 到 token 收敛趋势再到配对增益。</p><p>尤其值得注意的方法论分歧在于对'非平稳性'的处理：EvoTest 明确将环境重置到完全相同的初始状态，以确保性能提升'完全'归因于 agent 内部学习 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；而 FinEvo-Bench、SEA-Eval、EvoPathBench 则反其道而行，通过任务顺序、干扰任务、规则反转主动引入非平稳性，理由是真实部署中经验的价值恰在分布漂移下才被检验 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。EvoPathBench 的实测结果倾向支持后者：熟悉条件下取得的增益'在分布漂移下常常减弱'，而'可靠的规则适应仍未确立' <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p>
+<h3>四条纵向评估协议 + 一个流式框架的结构对照</h3>
+<table><thead><tr><th>协议</th><th>载体 / 规模</th><th>时间单元</th><th>状态持久化假设</th><th>核心度量</th><th>关键实测结论</th></tr></thead><tbody><tr><td>EvoTest + J-TTL [1]</td><td>6 个 Jericho 交互小说游戏，K=50 连续 episode，每 episode ≤110 步</td><td>同游戏内连续 episode</td><td>每 episode 重置到同一初始状态（隔离内部学习）</td><td>归一化 AUC + 学习曲线</td><td>平均 AUC 0.47/0.50，优于 EvoPrompt 0.34/0.36 与在线 GRPO 0.30</td></tr>
+<tr><td>SEA-Eval [2]</td><td>32 个原子任务（12 Easy/18 Normal/2 Hard）→ 92 条序列（32 correlated / 30 orthogonal / 30 implicit）</td><td>长度 5 的任务序列</td><td>持久记忆跨任务边界；含 clean / noisy（预载 20 技能）双条件</td><td>Token 消耗收敛趋势（第一序）+ SR（最低可靠性保证）</td><td>以 token 是否收敛判定真进化 vs 伪进化</td></tr>
+<tr><td>FinEvo-Bench [3]</td><td>120 个开放式金融任务 / 20 业务场景 / 每场景 6 案 / 775 输入文件</td><td>120 任务有序流，按 within-scene rank 分层</td><td>完整状态跨任务累积，配配对非进化对照组</td><td>Score gain（百分点）+ 合规问题数 + agent 侧 token 成本</td><td>各 scaffold 增益 +9.33 至 +19.37 分；后段 rank(4–6) 比前段 rank(1–3) 多增 6.10–8.70 分</td></tr>
+<tr><td>EvoPathBench [4]</td><td>1,800 条任务流 / 6 任务族 / 2 市场层</td><td>检查点 K1–K5，只读冻结重评</td><td>artifact（记忆/技能/workflow）持续演化，base model 与 executor 固定</td><td>CEG（能力演化增益）+ SUE + 保留损失 + token efficiency</td><td>增益在分布漂移下减弱；遗忘集中于少数路径；规则适应无一项经 Holm 校正后显著</td></tr>
+<tr><td>AgentStream [5]</td><td>6 个 agentic benchmark 统一为可配置任务流</td><td>流式任务序列</td><td>Isolated（独立状态）/ Sequential（跨域累积）/ Interleaved（打乱共享）</td><td>跨场景稳健性对比</td><td>自进化收益受模型能力门控且相对模型强度非单调；无单一方法跨模型与场景一致占优</td></tr>
+</tbody></table>
+
+<h2 id="sec_为何单会话基准无法支撑进化轨迹评估_机制诊断">为何单会话基准无法支撑进化轨迹评估：机制诊断</h2>
+<p>这是本 RQ 的核心追问，KG 提供了罕见而直接的原文证据。SEA-Eval 在 Limitations of Existing Evaluation Frameworks 一节中直接判定：WebArena、OSWorld、SWE-bench、τ-bench、AgentBench '均以单一任务 episode 作为基本评估单元，只能测量即时执行能力，对跨任务的演化动力学是盲的' <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；更关键的是它指出'即使 agent 在重复执行结构相似任务后 token 消耗始终不收敛——这恰是进化能力缺失的真实信号——在现有框架下完全不可见' <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。FinEvo-Bench 的表述同样精确：常规基准'独立评估任务、不在 episode 之间保留先前任务的经验' <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。EvoPathBench 的表述最具概括力：标准静态基准'在每个任务前重置 agent 状态'，因此'只捕捉当前性能的快照，而不追踪随时间的演化进程' <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。综述层面亦给出同向判断：自进化智能体的评估'要求从传统 single-shot 打分，根本性转向纵向的、成本感知的轨迹视角' <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p><p>失效的机理可归纳为三层：(1) 状态层——环境与 agent 状态在任务边界被重置，跨任务的因果链断裂；(2) 奖励层——ALFWorld 提供二值任务完成奖励、WebShop 提供 0–1 密集奖励 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>，均为一次性终局判定，无法承载'进化效率'这类过程量；(3) 统计层——即使保留任务序列，若只用聚合分数报告，也会'遮蔽单个能力的变化'，只能说明全局是否变好，无法揭示某能力在后续 artifact 更新下如何演变 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>值得注意的是，KG 中 ALFWorld 拥有 44 条关系边、被 20 篇以上自进化论文作为主评测集使用，WebShop 与 AppWorld 亦各有 30 篇量级的使用者。这使单会话范式不仅是历史遗留，而是当前自进化研究的事实性评测基础设施——盲区的规模因此被指数级放大。</p>
+<h3>证据矩阵六篇论文的评估设计编码（全部落在单会话范式内）</h3>
+<table><thead><tr><th>论文</th><th>评估基准</th><th>评估形式</th><th>度量指标</th><th>基线类型</th><th>纵向维度</th><th>自陈局限</th></tr></thead><tbody><tr><td>ETO（Trial and Error）[12]</td><td>WebShop / ScienceWorld / ALFWorld</td><td>受控实验 + 迭代消融</td><td>Average Reward（+SR 附录）</td><td>prior_sota（SFT / RFT / PPO / Best-of-N）</td><td>仅按迭代轮次观察；WebShop/SciWorld 第 3 轮后下降，ALFWorld 第 2 轮即落后 SFT</td><td>依靠固定专家轨迹集，迭代后过拟合；ALFWorld 二值奖励阻碍持续改进</td></tr>
+<tr><td>AgentEvolver [13]</td><td>AppWorld / BFCL v3（multi-turn split）</td><td>受控实验 + 消融（CMT 模板对比）</td><td>TGC（avg@8 / best@8）、SGC</td><td>prior_sota（GRPO）+ 无基线消融</td><td>无；轨迹截断 30 步</td><td>未来工作：需转向更高复杂度、长时程交织目标的环境</td></tr>
+<tr><td>Trajectory-Informed Memory [14]</td><td>AppWorld（test-normal / train / dev）</td><td>受控实验 + 消融（粒度、检索策略）</td><td>TGC、SGC</td><td>no_baseline（base agent vs memory-enhanced）</td><td>无；'每个任务独立执行'，最多 30 步</td><td>记忆生成依赖训练/dev 分区，泛化性待考</td></tr>
+<tr><td>Combee [15]</td><td>AppWorld / Terminal-Bench 2.0 / FiNER / Formula</td><td>受控实验 + 消融（batch controller、shuffling）</td><td>TGC、SGC、Accuracy@1、训练时间、训练成本</td><td>prior_sota（ACE / GEPA）+ 消融</td><td>无；held-out Test-Normal 单点报告</td><td>大 batch 下质量崩塌（ACE bs=125 时 specificity 降至 73.8）</td></tr>
+<tr><td>SKILLMASTER [16]</td><td>ALFWorld（6 任务族）/ WebShop / SearchQA</td><td>受控实验 + 案例研究（3 例）</td><td>Success Rate（per-family + All）、Score</td><td>prior_sota（SkillRL / GRPO / Reflexion / ExpeL）+ 消融</td><td>无；技能效用通过 probe task 反事实离线度量</td><td>'评估仅限于两个相对结构化的基准'；probe 成本随 episode 长度与变异频率增长</td></tr>
+<tr><td>RSEA [17]</td><td>ALFWorld（134×5 seeds）/ GAIA / τ-bench / WebShop</td><td>受控实验 + 层消融 + 选择门消融</td><td>Success Rate、dense Reward</td><td>prior_sota（ReAct / GEPA / AWM / ACE / Dynamic Cheatsheet）</td><td>准纵向：多代进化 + 严格 held-out 选择门，但最终为冻结状态横截面对比</td><td>迁移基准仅单一 seed、评估规模适中；held-out 门仅在验证集保证安全</td></tr>
+</tbody></table>
+
+<h2 id="sec_评估盲区的类型学与支撑强度">评估盲区的类型学与支撑强度</h2>
+<p>依据'存在某类 problem 节点但无对应 metric 节点度量其解决质量'的定义，并遵循'至少 3 篇论文支撑方可称为系统性忽视'的约束，识别出四类盲区。其中绝对盲区最为关键：'能力随时间的变化量'这一被测量，在单会话基准的绝大多数使用场景中没有任何度量节点承接。</p><p>RSEA 的选择门消融提供了该盲区代价的量化证据：无 held-out 门控的版本在 ALFWorld 上样本内达到 100%，测试仅 66.7%，形成 33 个百分点的训练-测试落差 <sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup>。换言之，缺失纵向/门控协议的直接后果是'进化过程可以被过拟合伪造'——而这恰恰无法被单会话端点分数识别。</p>
+<h3>评估盲区清单及支撑论文数</h3>
+<table><thead><tr><th>盲区类型</th><th>被忽视的度量维度</th><th>支撑论文数</th><th>关键证据</th></tr></thead><tbody><tr><td>absolute（绝对盲区）</td><td>capability change over time：跨任务的能力变化量</td><td>5</td><td>SEA-Eval 指主流基准'对跨任务演化动力学是盲的'[2]；EvoPathBench 指静态基准'只捕捉当前性能快照'[4]；FinEvo-Bench [3]、AgentStream [5]、综述 [6] 同向</td></tr>
+<tr><td>quality_dimension_missing</td><td>ALFWorld/WebShop 上的纵向质量变化</td><td>5</td><td>ALFWorld 仅二值奖励、WebShop 仅 0–1 密集奖励 [12]，均为一次性终局判定，无过程质量维度</td></tr>
+<tr><td>robustness_missing</td><td>分布漂移下的能力保持（retention under shift）</td><td>3</td><td>EvoPathBench：增益'在分布漂移下常常减弱'，遗忘集中于少数路径 [4]；SEA-Eval 的 noisy 条件 [2]；AgentStream 的 Sequential/Interleaved 场景 [5]</td></tr>
+<tr><td>fairness_missing</td><td>跨子群体/跨场景的分层纵向评估</td><td>2</td><td>FinEvo-Bench 发现 interleaving 在 quality 与 compliance 之间产生一致权衡（隔离提升分数 1.09–4.17 分但多触发 0.02–0.12 合规问题）[3]；EvoPathBench 指出聚合分数遮蔽个体能力变化 [4]（支撑论文数未达 3，暂不称系统性）</td></tr>
+</tbody></table>
+
+<h2 id="sec_有缺陷的共识指标审查">有缺陷的共识指标审查</h2>
+<p>对抗性审查要求对覆盖率高的共识指标质疑其合法性，而非无条件接受。审查结果指向一个尖锐结论：社区覆盖率最高的指标，恰是语义上最不适配本 RQ 被测量的那一个。</p><p>Success Rate 拥有约 49 条 measured_by 边，是全部指标中覆盖率最高的（以 274 篇 paper 为分母粗估覆盖率约 18%，但在'评估类论文'子集中超过 70%）。然而它的定义是'成功完成任务的百分比'——一个无时间导数的单点比率。SEA-Eval 明确将其重新定位为'部署可行性的最低可靠性保证'，而非进化能力信号，并把 token 消耗收敛趋势提升为第一序检测信号 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这是一个明确的元评估判断：高频共识不等于高适配性。</p><p>AUC 在 KG 中存在同名不同义的冲突：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 指学习曲线下面积，<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 指 ROC-AUC。按分析约束，此类定义不一致必须标注而不得合并统计——这也侧面说明即使纵向指标内部，术语规范尚未建立。</p>
+<h3>有缺陷的共识指标清单</h3>
+<table><thead><tr><th>指标</th><th>覆盖率（粗估）</th><th>已知局限</th><th>批评来源</th></tr></thead><tbody><tr><td>Success Rate</td><td>最高（约 49 条 measured_by 边）</td><td>单点比率无时间导数；无法区分'学会'与'一次成功'；无法表达'能力在后续更新中是否退化'；仅能作为最低可靠性保证</td><td>[2] SEA-Eval §4.2.1</td></tr>
+<tr><td>AUC（学习曲线下面积）</td><td>低（3 条边，覆盖率约 5%）</td><td>KG 内同名冲突：[1][8] 为学习曲线面积、[9] 为 ROC-AUC，定义不一致不得合并；绝对 AUC 值普遍偏低（Zork1/Zork3 仅 0.14–0.38），纵向学习收益高度任务依赖</td><td>[1] EvoTest Table 1</td></tr>
+</tbody></table>
+
+<h2 id="sec_评估不可比性审计">评估不可比性审计</h2>
+<p>Jaccard 相似度审计显示，纵向协议的评估基本不可比。按任务分组估算的共同指标比例：AppWorld 组约 0.5（TGC/SGC 共享度较高），ALFWorld 组与 WebShop 组各约 0.33（Success Rate 为唯一共享项，但其分母定义在 per-task / per-scenario / per-family 之间不一致），而 Jericho/J-TTL、金融（FinEvo）、混合流式（EvoPath）三组的纵向指标集合几乎完全不重叠，Jaccard 接近 0。</p><p>更深一层的问题是：即使同一指标名称，其数值也不可直接比较。ALFWorld 的二值成功奖励与 WebShop 的 0–1 密集奖励语义不同 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>；TGC 的 @4/@8 是同一时刻的多次 rollout 平均，而非跨时间的序列观测 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>；FinEvo 的 score gain 是配对差值，与 EvoPathBench 的 CEG 虽同为增益量但基线构造不同 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。因此本报告明确声明：不同来源的纵向数字不得横向直接比较。</p>
+<h3>按任务分组的评估可比性评估（Jaccard 估算）</h3>
+<table><thead><tr><th>任务 / 场景分组</th><th>共享指标</th><th>Jaccard 估算</th><th>可比性判定</th></tr></thead><tbody><tr><td>AppWorld</td><td>TGC、SGC（定义基本一致）</td><td>约 0.5</td><td>基本可比（但 TGC 的 @k 语义需区分）</td></tr>
+<tr><td>ALFWorld</td><td>Success Rate（分母定义 per-family vs 整体不一致）</td><td>约 0.33</td><td>部分可比，需注明分母</td></tr>
+<tr><td>WebShop</td><td>Success Rate、Score（密集奖励）</td><td>约 0.33</td><td>部分可比，与 ALFWorld 二值奖励不可互比</td></tr>
+<tr><td>Jericho / J-TTL</td><td>AUC（唯一定义来源）</td><td>约 0.0</td><td>不可比</td></tr>
+<tr><td>金融（FinEvo-Bench）</td><td>Score gain、合规问题数</td><td>约 0.0</td><td>不可比</td></tr>
+<tr><td>混合流式（EvoPathBench / AgentStream）</td><td>CEG、SUE</td><td>约 0.0</td><td>不可比</td></tr>
+</tbody></table>
+
+<h2 id="sec_纵向协议自身的效度风险">纵向协议自身的效度风险</h2>
+<p>承认单会话基准的缺陷，并不意味着现有纵向协议已经成熟。KG 数据同时揭示了它们各自的效度风险。SEA-Eval 仅含 32 个原子任务（作者自陈'可能无法充分代表真实任务的复杂性与多样性'），且 Hermes、LLM Code、Codex 在测试时因时间与 token 成本受限而施加 15 分钟超时，可能影响结果 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。RSEA 的迁移基准'仅使用单一 seed 的 shuffle 划分且评估规模适中，限制了统计功效'，其 GAIA 使用实时 web 检索带来的 run-to-run 噪声甚至使 ≤1 任务的差距在多次运行中改变符号 <sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup>。EvoPathBench 则发现更根本的问题：'当前接受规则在区分可迁移改进与过拟合、必要规则修正与有害遗忘方面能力有限'，候选评估（candidate selection）被识别为主要瓶颈 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>这些风险共同指向一个判断：纵向评估的问题已经从'有没有协议'转移到'协议是否可信'。而这恰恰是本 RQ 元评估视角应有的落点。</p>
+<h3>纵向协议自身的局限与效度风险</h3>
+<table><thead><tr><th>协议</th><th>局限</th><th>量化细节</th><th>影响</th></tr></thead><tbody><tr><td>SEA-Eval [2]</td><td>任务多样性不足；超时机制可能影响结果</td><td>仅 32 个原子任务（12 Easy / 18 Normal / 2 Hard）；15 分钟超时</td><td>代表性受限，长时程 agent 表现可能被低估</td></tr>
+<tr><td>RSEA [17]</td><td>单一 seed、评估规模适中；GAIA 实时检索噪声</td><td>迁移基准单一 shuffle seed；GAIA 30 任务，≤1 任务差距跨 run 变号</td><td>统计功效不足；部分结论不稳定</td></tr>
+<tr><td>EvoPathBench [4]</td><td>接受规则区分能力有限</td><td>规则适应效应经 Holm 校正后无一项统计显著</td><td>'规则适应'维度的排名不构成可靠证据</td></tr>
+<tr><td>EvoTest [1]</td><td>无法灌输预训练知识之外的新能力</td><td>Zork1 AUC 仅 0.14–0.16，Zork3 0.35–0.38</td><td>纵向收益高度任务依赖，跨任务泛化有限</td></tr>
+<tr><td>AgentStream [5]</td><td>场景与基准覆盖非穷尽；模型能力排序为经验性</td><td>三种场景 × 六个基准</td><td>结论不宜外推为普遍规律</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本报告存在三处需要明确披露的证据限制。第一，最关键的缺口是缺少直接对照实验：没有任何一条纵向协议（EvoTest/J-TTL、SEA-Eval、FinEvo-Bench、EvoPathBench、AgentStream）被用于 ALFWorld / WebShop / AppWorld 这三个证据矩阵论文实际共用的基准。因此本 RQ 追问的'为何单会话基准无法支撑进化轨迹评估'虽有多篇论文的结构性论证与综述背书（支撑论文数达 5 篇，超过 3 篇门槛），但严格意义上属结构性推断而非对照实证——缺少'在同一基准上纵向评测 vs 单会话评测得出分歧结论'的 A/B 证据。</p><p>第二，证据来源的冻结范围问题：六篇证据矩阵论文本身全部落在单会话范式内，它们无法为纵向协议的存在性提供正面证据；而支撑本报告纵向协议结论的 SEA-Eval <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、FinEvo-Bench <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、EvoPathBench <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、AgentStream <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 均为 KG 内非冻结论文，其量化数字取自 abstract / intro 级原文片段，未做表格级逐项复核。</p><p>第三，KG 结构统计的固有偏差：metric 节点的 measured_by 边数反映的是 KG 抽取覆盖度，而非文献实际使用频次。纵向指标的低使用数（AUC 3 条、CEG 1 条）可能部分源于抽取遗漏，尤其当原始论文仅在附录或图中呈现学习曲线时。此外，AssumptionConstraint 类型中针对'episodic 评估假设'的定向查询返回空结果，说明 KG 尚未对'单会话评估'建模为显式假设节点——这本身是一个元层面的建模盲区。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ3.2 的回答可分为三点。</p><p>第一，纵向评估协议与跨会话基准已存在但高度碎片化。KG 中可辨识至少四条独立谱系：EvoTest/J-TTL（K=50 episode + 归一化 AUC，平均 0.47/0.50，显著优于 EvoPrompt 0.34/0.36 与在线 GRPO 0.30）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、SEA-Eval（92 条有序序列 + token 收敛趋势作为真/伪进化判据）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、FinEvo-Bench（120 任务 / 20 场景 + 配对非进化对照，增益 +9.33 至 +19.37 分，后段 rank 比前段多增 6.10–8.70 分）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、EvoPathBench（1,800 条流 + 只读检查点，拆解 learning generalization / retention / rule adaptation）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，以及 AgentStream 的三种流式场景形式化 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。它们的度量对象、状态假设与时间尺度互不兼容，Jaccard 在多数任务组接近 0，构成评估不可比性。</p><p>第二，单会话基准无法支撑进化轨迹评估是结构性的，而非可通过调参或扩数据弥补的。三项机制同时失效：状态层（任务边界重置状态，跨任务因果链断裂）、奖励层（ALFWorld 二值 / WebShop 密集终局奖励，无法承载过程量）<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、统计层（聚合分数遮蔽个体能力变化）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。SEA-Eval 对此的判词最为直接：主流基准'以单一任务 episode 为基本评估单元，对跨任务演化动力学是盲的'，且 token 不收敛这一'进化缺失的真实信号'在现有框架下'完全不可见' <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。ALFWorld 44 条关系边、20+ 篇自进化论文的渗透度表明，这一盲区的规模远超个别基准的局限。</p><p>第三，元评估层面的核心问题是'有缺陷的共识标准'：Success Rate 以约 49 条 measured_by 边成为覆盖率最高的指标，却恰在语义上无法表达能力变化；而真正能表达变化的纵向度量（AUC、CEG、Retention、Adaptivity）各仅 1–3 条边，多数只被综述收录而非原始实验采用 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。这意味着社区不仅在度量上滞后，更在'什么值得被测量'的共识层面停留在单会话时代。</p><p>最后，纵向协议自身尚未成熟：SEA-Eval 仅 32 任务且受限超时 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，RSEA 单一 seed 且统计功效不足 <sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup>，EvoPathBench 的规则适应效应经校正后无一显著 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。因此本 RQ 的完整答案应是：单会话基准在结构上无法支撑进化轨迹评估（证据充分），纵向协议虽已出现但彼此不可比且效度未稳（证据充分），而'纵向 vs 单会话在同一基准上的直接对照'仍是空白（证据缺口，属本子问题最大的不确定性）。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;EvoTest: Evolutionary Test-Time Learning for Self-Improving Agents（提出 J-TTL 基准，K=50 连续 episode，AUC 0.47/0.50）&nbsp;<code style="font-size:0.82em;color:#888">2230_evotest_evolutionary_testtime_learning_for_selfimproving_age</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;SEA-Eval: A Benchmark for Evaluating Self-Evolving Agents Beyond Episodic Assessment（32 原子任务 / 92 序列 / token 收敛信号）&nbsp;<code style="font-size:0.82em;color:#888">2290_seaeval_a_benchmark_for_evaluating_selfevolving_agents_beyon</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;FinEvo-Bench: A Longitudinal Benchmark for Self-Evolving Agents（120 开放式金融任务 / 20 场景 / 配对非进化对照）&nbsp;<code style="font-size:0.82em;color:#888">2387_finevobench_a_longitudinal_benchmark_for_selfevolving_agents</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Beyond Endpoint Performance: Process-Level Evaluation of Self-Evolving Agents（提出 EvoPathBench，1,800 条流 + CEG/SUE）&nbsp;<code style="font-size:0.82em;color:#888">2426_beyond_endpoint_performance_processlevel_evaluation_of_selfe</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;AgentStream: How Well Do Self-Evolving LLM Agents Perform Under Streaming Tasks?（Isolated / Sequential / Interleaved 三场景）&nbsp;<code style="font-size:0.82em;color:#888">2380_agentstream_how_well_do_selfevolving_llm_agents_perform_unde</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;A Survey of Self-Evolving Agents: What, When, How, and Where to Evolve（提出静态/短时程/长时程三段评估范式与五维目标）&nbsp;<code style="font-size:0.82em;color:#888">2200_a_survey_of_selfevolving_agents_what_when_how_and_where_to_e</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Self-Improvements in Modern Agentic Systems: A Survey（强调评估须把改进视为随时间展开的过程）&nbsp;<code style="font-size:0.82em;color:#888">2368_selfimprovements_in_modern_agentic_systems_a_survey</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Self-Improving Agentic Systems（同样以 AUC 度量跨 episode 性能）&nbsp;<code style="font-size:0.82em;color:#888">2467_Self-Improving_Agentic_Systems</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Watermarking LLM Agent Trajectories（其 AUC 为 ROC-AUC，与学习曲线 AUC 同名不同义）&nbsp;<code style="font-size:0.82em;color:#888">2265_watermarking_llm_agent_trajectories</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Towards AGI: A Pragmatic Approach Towards Self-Evolving Agents（使用 Learning speed 度量）&nbsp;<code style="font-size:0.82em;color:#888">2249_towards_agi_a_pragmatic_approach_towards_self_evolving_agent</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;MemRL: Self-Evolving Agents via Runtime Reinforcement Learning（使用 Cumulative Success Rate，并指出长时程信用分配歧义）&nbsp;<code style="font-size:0.82em;color:#888">2244_memrl_selfevolving_agents_via_runtime_reinforcement_learning</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Trial and Error: Exploration-Based Trajectory Optimization for LLM Agents（WebShop/ScienceWorld 密集奖励、ALFWorld 二值奖励）&nbsp;<code style="font-size:0.82em;color:#888">2112_trial_and_error_explorationbased_trajectory_optimization_for</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;AgentEvolver: Towards Efficient Self-Evolving Agent System（AppWorld/BFCL v3，TGC avg@8 与 best@8）&nbsp;<code style="font-size:0.82em;color:#888">2237_agentevolver_towards_efficient_selfevolving_agent_system</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Trajectory-Informed Memory Generation for Self-Improving Agent Systems（AppWorld TGC/SGC，每任务独立执行）&nbsp;<code style="font-size:0.82em;color:#888">2274_trajectoryinformed_memory_generation_for_selfimproving_agent</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Combee: Scaling Parallel Prompt Learning for Self-Improving LLM Agents（TGC/SGC/Accuracy@1 + 训练时间与成本）&nbsp;<code style="font-size:0.82em;color:#888">2287_combee_scaling_prompt_learning_for_selfimproving_language_mo</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;SKILLMASTER: Toward Autonomous Skill Mastery in LLM Agents（ALFWorld 98.7% / WebShop 82.0%，自陈评估仅限两个结构化基准）&nbsp;<code style="font-size:0.82em;color:#888">2303_skillmaster_toward_autonomous_skill_mastery_in_llm_agents</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;Recursive Self-Evolving Agents via Held-Out Selection（ALFWorld 64.6%→69.3%，无门控版 100% vs 66.7% 的 33 点落差）&nbsp;<code style="font-size:0.82em;color:#888">2349_recursive_selfevolving_agents_via_heldout_selection</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.2 · 2026-10-18 21:47</footer>
+</div>
+</body>
+</html>

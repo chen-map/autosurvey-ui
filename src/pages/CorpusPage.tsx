@@ -1,0 +1,426 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { X, FileText, Bookmark, Upload } from 'lucide-react';
+import type { PaperRecord, ScreenStage, PrismaLevel } from '@/types/data';
+import { getCorpus, USE_MOCK } from '@/services/api';
+import { useLibrary, fingerprint } from '@/store/library';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
+
+const STAGES: ScreenStage[] = ['标题筛选', '摘要筛选', '可获取性', '全文筛选', '质量评估', '已纳入'];
+
+function stageVariantOf(s: ScreenStage): 'neutral' | 'ok' {
+  return s === '已纳入' ? 'ok' : 'neutral';
+}
+
+export function CorpusPage() {
+  const { projectId = '' } = useParams();
+  const { items: libItems, toggleSave } = useLibrary();
+  const savedFps = useMemo(() => new Set(libItems.map((i) => i.fp ?? fingerprint(i.title, i.year))), [libItems]);
+  const [data, setData] = useState<{ papers: PaperRecord[]; funnel: PrismaLevel[]; total: number; page: number; pageSize: number } | null>(null);
+  const [query, setQuery] = useState('');
+  const [stage, setStage] = useState<'ALL' | ScreenStage | '需人工'>('ALL');
+  const [page, setPage] = useState(1);
+    const [active, setActive] = useState<PaperRecord | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadTip, setUploadTip] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const doUpload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    setUploadTip('');
+    try {
+      const API = import.meta.env.VITE_API_BASE ?? '/api';
+      const token = localStorage.getItem('as.token') ?? '';
+      const fd = new FormData();
+      Array.from(files).forEach((f) => fd.append('files', f));
+      const res = await fetch(`${API}/projects/${projectId}/corpus/upload`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setUploadTip(`上传失败：${d.detail ?? res.status}`);
+      } else {
+        setUploadTip(`补齐 ${d.matched} 篇（替换占位）+ 新增 ${d.added} 篇${d.failed ? `，${d.failed} 个文件无效` : ''}`);
+        setPage(1);
+      }
+    } catch (e) {
+      setUploadTip(`上传失败：${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setUploading(false);
+      setTimeout(() => setUploadTip(''), 6000);
+    }
+  };
+
+  useEffect(() => {
+    let alive = true;
+    // 后端分页：stage 过滤映射到 status 参数；query 仍在前端当前页内过滤
+    const status = stage === 'ALL' ? '' : stage === '已纳入' ? 'downloaded' : stage === '需人工' ? 'failed' : '';
+    getCorpus(projectId, { page, pageSize: 50, status }).then((d) => alive && setData(d));
+    return () => {
+      alive = false;
+    };
+  }, [projectId, page, stage]);
+
+  const shown = useMemo(() => {
+    const q = query.toLowerCase();
+    return (data?.papers ?? []).filter(
+      (p) => p.title.toLowerCase().includes(q) || p.authors.toLowerCase().includes(q),
+    );
+  }, [data, query]);
+
+  if (!data) return <div className="py-16 text-center text-[13px] text-t3">加载中…</div>;
+  const max = Math.max(...data.funnel.map((f) => f.count));
+
+  return (
+    <div className="flex gap-6">
+      {/* PRISMA 筛选漏斗 */}
+      <Card className="h-fit w-60 shrink-0 p-5">
+        <div className="text-[14px] font-medium">PRISMA 筛选漏斗</div>
+        <div className="mt-4 space-y-3">
+          {data.funnel.map((f, i) => (
+            <div key={f.stage} className="anim-rise" style={{ animationDelay: `${i * 40}ms` }}>
+              <div className="flex items-baseline justify-between text-[12px]">
+                <span className="text-t2">{f.stage}</span>
+                <span className="font-semibold tabular-nums">{f.count.toLocaleString()}</span>
+              </div>
+              <div className="mt-1 h-2 rounded-full bg-black/5">
+                <div
+                  className={cn('h-2 rounded-full', i === data.funnel.length - 1 ? 'bg-ok' : 'bg-ink/80')}
+                  style={{ width: `${Math.max((f.count / max) * 100, 2)}%` }}
+                />
+              </div>
+              {f.note && <div className="mt-0.5 text-[11px] text-t3">{f.note}</div>}
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* 论文表 */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-3">
+          <Input placeholder="搜索标题 / 作者…" value={query} onChange={(e) => setQuery(e.target.value)} className="flex-1" />
+          <select
+            value={stage}
+            onChange={(e) => setStage(e.target.value as 'ALL' | ScreenStage)}
+            className="h-10 rounded-lg border border-line bg-card px-3 text-[13px] text-t2 focus:border-ink focus:outline-none"
+            aria-label="筛选阶段"
+          >
+            <option value="ALL">全部阶段</option>
+            {STAGES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+            <option value="需人工">需人工（付费墙占位）</option>
+          </select>
+        </div>
+
+        <Card className="mt-4 overflow-hidden">
+          <table className="w-full text-left text-[13px]">
+            <thead>
+              <tr className="border-b border-line/60 text-[12px] uppercase tracking-wide text-t3">
+                <th className="px-4 py-2.5 font-medium">标题</th>
+                <th className="px-2 py-2.5 font-medium">作者</th>
+                <th className="px-2 py-2.5 font-medium">年份</th>
+                <th className="px-2 py-2.5 font-medium">发表处</th>
+                <th className="px-2 py-2.5 font-medium">筛选阶段</th>
+                <th className="px-4 py-2.5 font-medium">收藏</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((p, i) => {
+                const idx = Number(p.id.replace('paper-', '')) - 1;
+                const saved = savedFps.has(fingerprint(p.title, p.year));
+                return (
+                <tr
+                  key={p.id}
+                  className="anim-rise cursor-pointer border-b border-line/40 last:border-0 transition-colors hover:bg-black/[0.03]"
+                  style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
+                  onClick={() => setActive(p)}
+                >
+                  <td className="max-w-[340px] truncate px-4 py-2.5 font-medium text-t1" title={p.title}>{p.title}</td>
+                  <td className="px-2 py-2.5 text-t2">{p.authors}</td>
+                  <td className="px-2 py-2.5 tabular-nums text-t2">{p.year}</td>
+                  <td className="px-2 py-2.5 text-t2">{p.venue}</td>
+                  <td className="px-2 py-2.5"><Badge variant={stageVariantOf(p.stage)}>{p.stage}</Badge></td>
+                  <td className="px-4 py-2.5">
+                    <button
+                      type="button"
+                      title={saved ? '从知识库移除' : '收藏到知识库'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSave({ paperIdx: idx, source: 'corpus', title: p.title, authors: p.authors, venue: p.venue, year: p.year, citations: p.citations });
+                      }}
+                      className="rounded p-1.5 text-t3 transition-colors hover:bg-black/5"
+                    >
+                      <Bookmark size={14} className={saved ? 'fill-ink text-ink' : ''} />
+                    </button>
+                    {p.status !== 'downloaded' && !USE_MOCK && (
+                      <button
+                        type="button"
+                        title="手动上传该论文的 PDF 补齐"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const inp = document.createElement('input');
+                          inp.type = 'file';
+                          inp.accept = 'application/pdf';
+                          inp.onchange = async () => {
+                            const file = inp.files?.[0];
+                            if (!file || !p.rowId) return;
+                            const fd = new FormData();
+                            fd.append('file', file);
+                            const API = import.meta.env.VITE_API_BASE ?? '/api';
+                            const tk = localStorage.getItem('as.token') ?? '';
+                            const res = await fetch(`${API}/projects/${projectId}/corpus/${p.rowId}/upload`, {
+                              method: 'POST', headers: tk ? { Authorization: `Bearer ${tk}` } : {}, body: fd,
+                            });
+                            if (res.ok) window.location.reload();
+                            else alert('上传失败：' + (await res.json().catch(() => ({ detail: res.status }))).detail);
+                          };
+                          inp.click();
+                        }}
+                        className="rounded p-1.5 text-t3 transition-colors hover:bg-black/5 hover:text-t1"
+                      >
+                        <Upload size={14} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+                );
+              })}
+              {shown.length === 0 && (
+                <tr><td colSpan={7} className="px-4 py-10 text-center text-t3">没有匹配的论文</td></tr>
+              )}
+            </tbody>
+          </table>
+          <div className="flex items-center justify-between px-4 py-2.5 text-[12px] text-t3">
+            <span>
+              第 {data.page} 页 · 本页 {shown.length} 篇 · 共 {data.total} 篇
+              {uploadTip && <span className="ml-2 text-info-fg">{uploadTip}</span>}
+            </span>
+            <div className="flex items-center gap-2">
+              <input ref={fileRef} type="file" accept="application/pdf" multiple className="hidden"
+                onChange={(e) => { void doUpload(e.target.files); e.target.value = ''; }} />
+              {!USE_MOCK && (
+                <Button size="sm" variant="secondary" title="手动下载的付费墙 PDF 上传补齐（文件名以占位编号开头自动替换，否则按新论文入库）"
+                  disabled={uploading} onClick={() => fileRef.current?.click()}>
+                  <Upload size={13} className={uploading ? 'animate-pulse' : ''} />
+                  {uploading ? '上传中…' : '手动上传 PDF'}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={data.page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                上一页
+              </Button>
+              <span className="tabular-nums">
+                {data.page} / {Math.max(1, Math.ceil(data.total / data.pageSize))}
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={data.page >= Math.ceil(data.total / data.pageSize)}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                下一页
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* 论文详情抽屉（含 Paper Card） */}
+      {active && <PaperDrawer projectId={projectId} paper={active} onClose={() => setActive(null)} />}
+    </div>
+  );
+}
+
+function RowUploadButton({ projectId, rowId }: { projectId: string; rowId: number }) {
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={busy || done}
+      onClick={() => {
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'application/pdf';
+        inp.onchange = async () => {
+          const file = inp.files?.[0];
+          if (!file) return;
+          setBusy(true);
+          const fd = new FormData();
+          fd.append('file', file);
+          const API = import.meta.env.VITE_API_BASE ?? '/api';
+          const tk = localStorage.getItem('as.token') ?? '';
+          const res = await fetch(`${API}/projects/${projectId}/corpus/${rowId}/upload`, {
+            method: 'POST', headers: tk ? { Authorization: `Bearer ${tk}` } : {}, body: fd,
+          });
+          setBusy(false);
+          if (res.ok) {
+            setDone(true);
+            window.location.reload();
+          } else {
+            alert('上传失败：' + (await res.json().catch(() => ({ detail: res.status }))).detail);
+          }
+        };
+        inp.click();
+      }}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12.5px] font-medium transition-colors',
+        done ? 'border-ok text-ok' : 'border-line text-t2 hover:border-ink hover:text-t1',
+      )}
+    >
+      <Upload size={13} />
+      {done ? '已上传，刷新生效' : busy ? '上传中…' : '上传 PDF 补齐'}
+    </button>
+  );
+}
+
+const CARD_TABS = [
+  ['problems', '问题'],
+  ['methods', '方法'],
+  ['datasets', '数据集'],
+  ['metrics', '指标'],
+  ['limitations', '局限'],
+  ['assumptions', '假设'],
+] as const;
+
+function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClose: () => void; projectId: string }) {
+  const [tab, setTab] = useState<(typeof CARD_TABS)[number][0]>('problems');
+  const { items: libItems, toggleSave } = useLibrary();
+  const idx = Number(paper.id.replace('paper-', '')) - 1;
+  // Paper Card 六类对象：从 KG paper-card 端点拉取（W2 产出真值）
+  const [cardData, setCardData] = useState<{
+    abstract?: string; authors?: string; year?: number | string;
+    problems: { name: string; description: string }[];
+    methods: { name: string; description: string }[];
+    datasets: { name: string; description: string }[];
+    metrics: { name: string; description: string }[];
+    limitations: { name: string; description: string }[];
+    assumptions: { name: string; description: string }[];
+  } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const API = import.meta.env.VITE_API_BASE ?? '/api';
+    const tk = localStorage.getItem('as.token') ?? '';
+    fetch(`${API}/projects/${projectId}/paper-card/${encodeURIComponent(paper.rid || paper.id)}`, {
+      headers: tk ? { Authorization: `Bearer ${tk}` } : {},
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!alive || !d) return;
+        setCardData({
+          abstract: d.abstract ?? '', authors: d.authors ?? '', year: d.year ?? '',
+          problems: d.problems ?? [], methods: d.methods ?? [],
+          datasets: d.datasets_benchmarks ?? [], metrics: d.metrics ?? [],
+          limitations: d.limitations ?? [], assumptions: d.assumption_constraints ?? [],
+        });
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [paper.id]);
+  const saved = libItems.some((i) => (i.fp ?? fingerprint(i.title, i.year)) === fingerprint(paper.title, paper.year));
+  return (
+    <div className="fixed inset-0 z-[100]">
+      <div className="absolute inset-0 bg-black/45" style={{ animation: 'rise .15s ease-out' }} onClick={onClose} />
+      <aside
+        className="absolute right-0 top-0 h-full w-[460px] overflow-y-auto border-l border-line bg-card shadow-s3"
+        style={{ animation: 'slideIn .2s ease-out' }}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-line/60 p-5">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-[16px] font-semibold leading-6">{paper.title}</h3>
+            <div className="mt-1.5 text-[12px] text-t3">
+              {paper.authors} · {paper.venue} {paper.year}
+            </div>
+            <Badge variant={stageVariantOf(paper.stage)} className="mt-2">{paper.stage}</Badge>
+          </div>
+          <button type="button" onClick={onClose} className="rounded p-1 text-t3 hover:bg-black/5 hover:text-t1" title="关闭">
+            <X size={16} />
+          </button>
+        </div>
+        {paper.status !== 'downloaded' && paper.rowId != null && (
+          <div className="border-b border-line/60 px-5 py-3">
+            <RowUploadButton projectId={projectId} rowId={paper.rowId} />
+          </div>
+        )}
+
+        {/* 摘要与元数据：W2 解析卡摘要优先，缺卡时回退 W1 检索元数据摘要 */}
+        <div className="border-b border-line/60 p-5">
+          <div className="text-[13px] font-medium text-t2">摘要</div>
+          <p className="mt-1.5 text-[13px] leading-5 text-t1">
+            {(cardData?.abstract || paper.abstract)
+              ? (cardData?.abstract || paper.abstract)
+              : '本篇暂无摘要（检索源未提供且全文未成功下载）。'}
+          </p>
+          {((cardData?.authors || paper.authors) || (cardData?.year || paper.year)) && (
+            <p className="mt-2 text-[12px] text-t3">
+              {(cardData?.authors || paper.authors) && <span>{cardData?.authors || paper.authors} · </span>}
+              {(cardData?.year || paper.year) && <span>{cardData?.year || paper.year}</span>}
+            </p>
+          )}
+        </div>
+
+        {/* Paper Card：六类结构化对象（W2 产出） */}
+        <div className="p-5">
+          <div className="flex items-center gap-1.5 text-[13px] font-medium">
+            <FileText size={14} className="text-t3" />
+            Paper Card · 结构化对象
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1">
+            {CARD_TABS.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={cn(
+                  'rounded-md px-2.5 py-1 text-[12px] transition-colors',
+                  tab === key ? 'bg-ink text-white' : 'text-t2 hover:bg-black/5',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <ul className="mt-3 space-y-2">
+            {(cardData?.[tab] ?? []).map((it, gi) => (
+              <li key={gi} className="rounded-lg bg-page px-3 py-2">
+                <div className="text-[13px] font-medium text-t1">{it.name}</div>
+                {it.description && <div className="mt-1 text-[12.5px] leading-5 text-t2">{it.description}</div>}
+              </li>
+            ))}
+            {(!cardData || (cardData[tab] ?? []).length === 0) && (
+              <li className="px-3 py-2 text-[12.5px] text-t3">该类暂无结构化对象（本篇未抽取到，或 W2 未运行）。</li>
+            )}
+          </ul>
+        </div>
+
+        <div className="border-t border-line/60 p-5">
+          <div className="flex items-center gap-2">
+            <Button
+              variant={saved ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={() =>
+                toggleSave({ paperIdx: idx, source: 'corpus', title: paper.title, authors: paper.authors, venue: paper.venue, year: paper.year, citations: paper.citations })
+              }
+            >
+              <Bookmark size={13} className={saved ? 'fill-ink' : ''} />
+              {saved ? '已在知识库' : '收藏到知识库'}
+            </Button>
+            <span className="text-[12px] text-t3">PDF 全文预览在语料库深化阶段接入</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}

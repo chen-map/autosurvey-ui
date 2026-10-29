@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.1-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.1-a 分析报告</h1>
+<div class="meta">RQ [RQ4.1]：[父问题 RQ4] 多智能体协作与安全 / 联邦学习交叉地带存在哪些对抗鲁棒性与隐私风险，现有防护机制覆盖了哪些威胁面？
+[本子问题 RQ4.1] 多智能体 LLM 系统面临哪些被明确命名的对抗与安全威胁（如 adversarial risks、attacker capabilities、background knowledge）？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：3835_agent_drift_quantifying_behavioral_degradation_in_multiagent, 0689, 1454, 0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag, 0415_Specification_and_Evaluation_of_Multi-Agent_LLM_Systems_-_Pr, 1692）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_认知坐标系与维度选择">认知坐标系与维度选择</a></li>
+<li><a href="#sec_核心发现一_通信信道威胁面">核心发现一：通信信道威胁面</a></li>
+<li><a href="#sec_核心发现二_元数据_工具投毒威胁面">核心发现二：元数据/工具投毒威胁面</a></li>
+<li><a href="#sec_核心发现三_隐蔽信道与数据泄露威胁面">核心发现三：隐蔽信道与数据泄露威胁面</a></li>
+<li><a href="#sec_核心发现四_时序漂移威胁面">核心发现四：时序漂移威胁面</a></li>
+<li><a href="#sec_核心发现五_可追溯性与问责性威胁面">核心发现五：可追溯性与问责性威胁面</a></li>
+<li><a href="#sec_热点区与冷区分析">热点区与冷区分析</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>针对 RQ4.1「多智能体 LLM 系统面临哪些被明确命名的对抗与安全威胁（adversarial risks、attacker capabilities、background knowledge）」，本分析基于冻结证据矩阵（3835 / 0689 / 1454 / 0210 / 0415 / 1692）及其在知识图谱中被明确扩展、对比或综合的相关节点，归纳出五类被明确命名、且攻击者能力与背景知识被系统形式化的威胁面：通信信道威胁、元数据/工具投毒威胁、隐蔽信道与数据泄露威胁、时序漂移威胁、可追溯性与问责性威胁 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>分析采用二维认知坐标系——「攻击面/攻击者作用位置」× 「威胁性质（机密性/完整性/可用性/可问责性）」进行正交映射，结果显示热点区集中于提示注入与冒充、工具投毒、隐蔽信道三个象限，而「问责性×问责性」及「联邦学习×多智能体」交叉面则构成认知冷区，后者成因被判定为证据盲区（unknown_blind_spot）。整体回答判定为 answered，但联邦学习交叉子面为 partial。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析从知识图谱中系统提取了七类节点数据，覆盖问题（454 个节点，预览 30）、方法（380 个，预览 30）、论文（186 个，预览 30）、局限性（170 个，预览 30）、假设/约束（119 个，预览 30）、评估指标（278 个，预览 30）、数据集基准（243 个，预览 30）。</p><p>在实体分析之上，对 13 篇关键论文执行了 14 次 search_paper_sections 语义检索，深度精读其原文段落，包括冻结矩阵的六篇核心论文（Agent Drift 3835、Adversarial Attacks on Multi-Agent Communication 0689、MCPXKIT 1454、Traceability and Accountability 0210、Specification and Evaluation 0415、Whispering Agents 1692）以及被它们扩展/综合的相关论文（TAMAS 1728、AiTM 1719、MCP-TDP 0382、TRiSM 3831、Constraint Drift 3836、协议安全综述 3832、LLM 钓鱼 0235）。总工具调用次数 44 次。</p>
+
+<h2 id="sec_认知坐标系与维度选择">认知坐标系与维度选择</h2>
+<p>维度选择不采用先验假设，而是从 KG 节点 description 字段的结构性模式归纳。所有威胁节点均以「攻击注入位置 + 危害后果」双属性被明确形式化（例如 TAMAS 的 prompt/agent/environment 三层攻击面 + 攻击目标；MCPXKIT 的 attack entrance + risk level + persistent impact scope），两维之间不存在因果或包含关系，正交性成立，故选定为坐标轴：</p><p>维度 A（攻击面/攻击者作用位置）：prompt-level、agent-level、environment-tool-level、communication-channel-level、temporal-drift；</p><p>维度 B（威胁性质）：confidentiality、integrity、availability、accountability。</p><p>标签全部来自 KG 节点字段值或论文原文，无 AI 自创标签。</p>
+<h3>威胁-象限映射矩阵（攻击面 × 威胁性质）</h3>
+<table><thead><tr><th>象限（攻击面 × 威胁性质）</th><th>覆盖论文数</th><th>代表论文</th><th>密度等级</th><th>关键量化</th></tr></thead><tbody><tr><td>prompt-level × integrity</td><td>1</td><td>[1]</td><td>hot</td><td>DPI 81% / Impersonation 82% ARIA-4</td></tr>
+<tr><td>environment-tool-level × integrity</td><td>2</td><td>[2][3]</td><td>hot</td><td>TDP ASR &gt;82%（顶级 &gt;88%）；MCP 攻击至 100%</td></tr>
+<tr><td>communication-channel-level × confidentiality</td><td>2</td><td>[4][5]</td><td>hot</td><td>隐蔽信道判别 AUC 0.503；特征扰动 AP 82.09→0.90</td></tr>
+<tr><td>communication-channel-level × integrity</td><td>1</td><td>[6]</td><td>normal</td><td>AiTM ASR &gt;40%（多 &gt;70%）</td></tr>
+<tr><td>agent-level × availability</td><td>1</td><td>[1]</td><td>normal</td><td>Byzantine agent 高成功率</td></tr>
+<tr><td>temporal-drift × integrity/availability</td><td>2</td><td>[7][8]</td><td>normal</td><td>任务成功率 -42%，inter-agent conflicts +487.5%</td></tr>
+<tr><td>accountability × accountability</td><td>2</td><td>[9][10]</td><td>cold</td><td>结构化 handoff 提升 &gt;36 点，成本 2–3×</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各威胁面覆盖论文数（密度分布）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["工具投毒 [2][3]", "隐蔽信道/机密 [4][5]", "时序漂移 [7][8]", "问责性 [9][10]", "提示注入 [1]", "通信信道完整性 [6]", "agent 可用性 [1]"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "覆盖论文数", "type": "bar", "data": [2, 2, 2, 2, 1, 1, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心发现一_通信信道威胁面">核心发现一：通信信道威胁面</h2>
+<p>TAMAS <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 在 Threat Model 章节首次把多智能体攻击者拆解为三要素：目标（使良性任务失败或触发恶意动作）、背景知识（知道各 agent 的角色与可用工具，但不知道 LLM 参数、对齐策略与架构细节）、能力（可在 prompt/agent/environment 三层注入）。其核心论断是「即便这种有限知识也足以打击系统最弱环节，被攻陷 agent 的输出会对抗性地在系统中传播」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>在通信层面，AiTM（Agent-in-the-Middle）<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 把威胁从「攻陷 agent」推进到「拦截并操纵消息」：攻击者不改变 agent profiles 与 capabilities，仅操纵受害者 agent 收到的消息，即实现全场景 &gt;40%、多数实验 &gt;70% 的攻击成功率，并在 MetaGPT/ChatDev 上造成实质破坏。</p><p>底层机制由 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 提供：当 agent 共享中间特征表示时，ε-有界的对抗消息即可严重降级感知性能（2 个 agent 时 AP@0.7 由 82.09 降至 0.90），白盒攻击在 agent 少时最强、随良性 agent 增多而减弱，迁移攻击需经域自适应（ADDA）对齐中间表示分布方能生效。</p>
+
+<h2 id="sec_核心发现二_元数据_工具投毒威胁面">核心发现二：元数据/工具投毒威胁面</h2>
+<p>MCPXKIT <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 把 MCP 生态攻击系统化为 4 大类 31 种命名攻击（File-Based Injection、Rug Pull、Shadowing、Tool Preference Manipulation、Infectious Attack、Privilege Escalation、Token Theft 等），并用四维攻击效能度量（S 成功率 / L 风险级 / I 持久影响 / D 实现难度）量化，显示 File-Based Injection、Malicious Tool Coverage、SQL/API Theft、Malicious Tool Enforce Execute 等可达 100% 成功率。</p><p>MCP-TDP <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 将此类攻击命名为 Tool Description Poisoning（TDP），把攻击者能力形式化为「可在工具供应链发布/接管工具但不接触模型权重、仅修改 description 字段」，在 8 个 LLM 上取得 ASR&gt;82%（顶级模型 &gt;88%），并揭示「Firewall Fallacy」——关键词护栏对 LLM 仅降 15.3% ASR、对 Gemini 反而使 ASR 上升。</p>
+<h3>工具/元数据投毒攻击的效能量化对比</h3>
+<table><thead><tr><th>攻击名称</th><th>成功率 S</th><th>风险级 L</th><th>持久影响 I</th><th>来源</th></tr></thead><tbody><tr><td>File-Based Injection (Addition/Modification)</td><td>100%</td><td>3</td><td>2</td><td>[2]</td></tr>
+<tr><td>Malicious Tool Coverage</td><td>100%</td><td>3</td><td>2</td><td>[2]</td></tr>
+<tr><td>SQL Injection / API Stolen</td><td>100%</td><td>6</td><td>2</td><td>[2]</td></tr>
+<tr><td>Tool Description Poisoning (整体)</td><td>&gt;82%（顶级 &gt;88%）</td><td>6 风险类</td><td>—</td><td>[3]</td></tr>
+<tr><td>Multi-tool Cooperation</td><td>30%</td><td>3</td><td>2</td><td>[2]</td></tr>
+<tr><td>Functional Obfuscation</td><td>50%</td><td>3</td><td>2</td><td>[2]</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现三_隐蔽信道与数据泄露威胁面">核心发现三：隐蔽信道与数据泄露威胁面</h2>
+<p>由于 A2A 只保护消息内容、不保护「通信行为本身」，<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 把隐私威胁明确命名为针对 surveillance 与 traffic analysis 的漏洞，将攻击者能力形式化为「无处不在、可观测完整事件 Trace 的计算有界 Warden」，提出 Covert Event Channel（Storage/Timing/Behavioral 三维）；其实验中判别隐蔽事件的 LLM Warden 的 AUC 仅 0.503（等同随机猜测），证明该类威胁在现有监控下几乎不可检测。</p><p>TRiSM 综述 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 进一步把 AgentLeak 类数据泄露、记忆投毒（memory poisoning）、上下文操纵、语义欺骗、collusion/mode collapse 组织为 AMAS 特有威胁分类，并指出共享记忆与 agent 间通信会显著增加敏感信息非预期披露的概率。其延伸工作 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 用 AgentLeak 的 4,979 条轨迹证明「最终输出看似合规、而内部消息/工具调用/记忆写入仍在泄露敏感信息」。协议安全综述 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 则定义了经共享知识库与记忆模块的「内部/外部数字环境污染 + 慢性投毒」级联感染面。</p>
+<div class="note">隐蔽信道威胁的特殊性：标准 A2A 加密保护的是「消息内容」而非「通信行为」。当 agent 间存在频繁、并发、高度自动化的交互时，观察者即便无法读取内容，仅凭交互模式本身即可泄露战略信息（如物流 agent 与多艘自主舰船的加密通信模式可暴露资产调度）。<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup></div>
+
+<h2 id="sec_核心发现四_时序漂移威胁面">核心发现四：时序漂移威胁面</h2>
+<p>Agent Drift <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 命名了一个无需参数更新、无外部攻击者即可自发发生的威胁，分化为 semantic drift（意图偏离）、coordination drift（共识退化）、behavioral drift（策略涌现）三态，直接挑战以训练期目标为中心的 alignment 范式。关键机制在于：漂移无需重训练或微调，其根源在于上下文的累积条件化与采样过程，形成自反式反馈回路，近似于 specification gaming / reward hacking。</p><p>其直接延伸 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 将威胁命名为 Constraint Drift——安全关键约束在多智能体轨迹（摘要、委派、工具调用、记忆更新）中丢失操作性强制力，并明确区别于 prompt injection 与 reward hacking，属系统级保持失效。治理方案 Constraint State Governance（CSG）要求约束作为带签名的状态在委派中继承、关键动作前校验、事后可审计。</p>
+<h3>Agent Drift 对系统性能的量化影响（847 个仿真工作流）</h3>
+<table><thead><tr><th>性能维度</th><th>稳定基线</th><th>漂移系统</th><th>退化幅度</th><th>p 值</th></tr></thead><tbody><tr><td>任务成功率</td><td>87.3%</td><td>50.6%</td><td>-42.0%</td><td>&lt; 0.001</td></tr>
+<tr><td>响应准确率</td><td>91.2%</td><td>68.5%</td><td>-24.9%</td><td>&lt; 0.001</td></tr>
+<tr><td>完成时间 (min)</td><td>8.7</td><td>14.2</td><td>+63.2%</td><td>&lt; 0.001</td></tr>
+<tr><td>人工干预 / task</td><td>0.31</td><td>0.98</td><td>+216.1%</td><td>&lt; 0.001</td></tr>
+<tr><td>Token 使用量</td><td>12,400</td><td>18,900</td><td>+52.4%</td><td>&lt; 0.001</td></tr>
+<tr><td>Inter-agent 冲突 / task</td><td>0.08</td><td>0.47</td><td>+487.5%</td><td>&lt; 0.001</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现五_可追溯性与问责性威胁面">核心发现五：可追溯性与问责性威胁面</h2>
+<p><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 把威胁定义为「错误在串行管线中静默级联、最终输出错误却难以归因」的透明度丧失/调试困难问题。其研究采用 Planner→Executor→Critic 管线，量化角色特异风险：LLM Sonnet 4 作为 Executor 的 repair rate 达 10.01%（最高），Gemini 2.5 Pro harm rate 仅 0.25%（最低），LLM 作为 Critic 的 harm rate 最高（1.90%）。结构化 handoff 可防止失败级联、在 PythonIO 上提升超过 36 点准确率，代价是成本增加 2–3×、延迟从约 2s 升至 20–25s（8–10×）。</p><p><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 则提供了以规格语言 + 执行栈对多智能体系统进行评测的基础设施，把网络安全/服务器安全任务作为可自动评估的应用，用于威胁评测而非威胁本体。</p>
+
+<h2 id="sec_热点区与冷区分析">热点区与冷区分析</h2>
+<p>热点区（密度前列）：① prompt-level × integrity（提示注入/冒充）；② environment-tool-level × integrity（工具投毒）；③ communication-channel-level × confidentiality（隐蔽信道/中间特征扰动）。这三类威胁均有成熟的命名分类体系与大量实证量化，是当前研究的密集地带。</p><p>冷区：① accountability × accountability（可追溯/问责，仅 2 篇且以评测基础设施为主）；② federated-learning × multi-agent 交叉面（证据缺口，成因判定为 unknown_blind_spot/数据集缺失）。<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 仅在 Related Work 指出 FL 采用不同的 threat model（data/model poisoning），未对 LLM 多智能体给出 FL 对抗结论；<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 对 FL 启发式隐私通信仅作展望。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "五类威胁面的文献覆盖占比（示意）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "五类威胁面的文献覆盖占比（示意）", "type": "pie", "radius": "55%", "data": [{"name": "通信信道", "value": 2}, {"name": "工具投毒", "value": 2}, {"name": "隐蔽信道/数据泄露", "value": 3}, {"name": "时序漂移", "value": 2}, {"name": "问责性", "value": 2}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，RQ4 父问题强调「多智能体协作 × 联邦学习」交叉地带，但冻结矩阵中直接刻画 FL 场景隐私/投毒攻击的节点很少，该交叉子面的对抗证据以推断性关联为主，标记为 partial，置信度受到限制。</p><p>其二，<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 为仿真/理论建模研究，其 42% 等量化值为 projected，作者明确自承漂移与性能退化为相关而非因果，且最长观测窗仅 18 个月。</p><p>其三，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的结论主要基于 AutoGen/CrewAI 两框架，泛化性受限；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的沙箱评测规模有限；<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的结论基于 V2VNet/ShapeNet 感知任务，向 LLM 文本多智能体的迁移性未直接验证。</p><p>其四，<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 作为 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的延伸引用，未列为 RQ4.1 冻结核心论文，其结论应视为补充证据而非核心证据。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>多智能体 LLM 系统面临的对抗与安全威胁可被明确收敛为五大命名威胁面：①通信信道攻击（TAMAS 攻击者模型、AiTM 消息拦截、中间特征对抗扰动）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；②元数据/工具投毒（MCPXKIT 31 种命名攻击、Tool Description Poisoning）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；③隐蔽信道与数据泄露（Covert Event Channel、记忆投毒、AgentLeak）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>；④时序漂移（Agent Drift 三态、Constraint Drift）<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>；⑤可追溯性与问责性失效（错误静默级联）<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。</p><p>关键共识是：多智能体协作引入了单智能体场景不存在的涌现性风险——即便攻击者背景知识有限（仅知角色与工具、不知模型参数），也能通过弱链接与级联传播造成系统性破坏 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。防御层面普遍暴露出「外围护栏失效」（Firewall Fallacy）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 与「问责代价高昂」<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 的两难。最大的认知缺口在于联邦学习与多智能体安全交叉地带，建议后续以 A1.1-c 分层堆栈分析补充该维度。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;TAMAS: Benchmarking Adversarial Risks in Multi-Agent LLM Systems&nbsp;<code style="font-size:0.82em;color:#888">1728_tamas_benchmarking_adversarial_risks_in_multiagent_llm_syste</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;MCPXKIT: The Unified Toolkit for Analyzing Model Context Protocol Security&nbsp;<code style="font-size:0.82em;color:#888">1454</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;When the Manual Lies: A Realistic Benchmark to Evaluate MCP Poisoning Attacks for LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">0382_When_the_Manual_Lies_A_Realistic_Benchmark_to_Evaluate_MCP_P</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Whispering Agents: An Event-Driven Covert Communication Protocol for the Internet of Agents&nbsp;<code style="font-size:0.82em;color:#888">1692</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Adversarial Attacks On Multi-Agent Communication&nbsp;<code style="font-size:0.82em;color:#888">0689</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Red-Teaming LLM Multi-Agent Systems via Communication Attacks&nbsp;<code style="font-size:0.82em;color:#888">1719_redteaming_llm_multiagent_systems_via_communication_attacks</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Agent Drift: Quantifying Behavioral Degradation in Multi-Agent LLM Systems Over Extended Interactions&nbsp;<code style="font-size:0.82em;color:#888">3835_agent_drift_quantifying_behavioral_degradation_in_multiagent</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Safe Multi-Agent Behavior Must Be Maintained, Not Merely Asserted: Constraint Drift in LLM-Based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3836_safe_multiagent_behavior_must_be_maintained_not_merely_asser</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Traceability and Accountability in Role-Specialized Multi-Agent LLM Pipelines&nbsp;<code style="font-size:0.82em;color:#888">0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Specification and Evaluation of Multi-Agent LLM Systems - Prototype and Cybersecurity Applications&nbsp;<code style="font-size:0.82em;color:#888">0415_Specification_and_Evaluation_of_Multi-Agent_LLM_Systems_-_Pr</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;TRiSM for Agentic AI: A Review of Trust, Risk, and Security Management in LLM-based Agentic Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3831_trism_for_agentic_ai_a_review_of_trust_risk_and_security_man</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;A Survey of LLM-Driven AI Agent Communication Protocols: Security and Beyond&nbsp;<code style="font-size:0.82em;color:#888">3832_a_survey_of_llmdriven_ai_agent_communication_protocols_secur</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.1 · 2026-09-30 18:45</footer>
+</div>
+</body>
+</html>

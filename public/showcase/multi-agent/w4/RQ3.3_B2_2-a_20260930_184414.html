@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.2-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.2-a 分析报告</h1>
+<div class="meta">RQ [RQ3.3]：[父问题 RQ3] 多智能体协作的评测基准与指标呈现何种碎片化格局，如何构建跨任务可比的统一评测框架？
+[本子问题 RQ3.3] 构建统一评测框架需要哪些维度（任务类型、协作规模、错误容忍、成本），现有工作提供了哪些可复用组件？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：1454, 1765_Marco_Configurable_Graph-Based_Task_Solving_and_Multi-AI_Age, 3828_beyond_selftalk_a_communicationcentric_survey_of_llmbased_mu, 3839_guardian_safeguarding_llm_multiagent_collaborations_with_tem, 0798_Hallucination-Free_Automatic_Question_Answer_Generation_fo, 2121_hybrid_transceiver_optimization_for_multihop_communications）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_维度一_任务类型_已有可操作骨架但不共享字段">维度一：任务类型——已有可操作骨架但不共享字段</a></li>
+<li><a href="#sec_维度二_协作规模_已出现可量化探针但未标准化">维度二：协作规模——已出现可量化探针但未标准化</a></li>
+<li><a href="#sec_维度三_错误容忍_鲁棒性_唯一出现即插用组件的维度">维度三：错误容忍/鲁棒性——唯一出现即插用组件的维度</a></li>
+<li><a href="#sec_维度四_成本_已拆解为可测子指标并有现成优化器">维度四：成本——已拆解为可测子指标并有现成优化器</a></li>
+<li><a href="#sec_补充维度_通信_协调效率_与_信任_安全_可解释">补充维度：通信/协调效率 与 信任-安全-可解释</a></li>
+<li><a href="#sec_核心分析结果_可复用组件清单">核心分析结果：可复用组件清单</a></li>
+<li><a href="#sec_跨任务可比性的关键证据">跨任务可比性的关键证据</a></li>
+<li><a href="#sec_分歧点_证据缺口与不确定性">分歧点、证据缺口与不确定性</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ3.3「构建多智能体协作统一评测框架需要哪些维度、现有工作提供了哪些可复用组件」，对知识图谱中 186 篇论文（含评测基准、防御框架、工程脚手架、协议与安全五类文献）进行系统分析。结论：文献证据支持把统一评测框架拆解为 **六个正交维度**——任务类型、协作规模、错误容忍/鲁棒性、成本，以及 RQ 未列但证据反复出现的通信/协调效率、信任-安全-可解释维度。现有工作已沉淀出一批可复用组件（可配置任务图、断言式评测 harness、时序图异常检测器、双 agent 验证循环、对抗攻击基准、token 效率优化器、协议比较框架、MCP 安全工具箱），但它们分属评测、防御、工程三类文献，**没有任何一个工作把它们整合成端到端跨任务可比的框架**——这正是 RQ3 所述碎片化格局的技术根源 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>按证据交叉验证，六个维度中「错误容忍/鲁棒性」是唯一已出现即插即用组件的维度（Guardian 异常检测器 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> + TAMAS 对抗基准 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）；「成本」维度已拆解为成本倍数/延迟/token 三个可测子指标并有现成优化器（AgentDropout <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、payload referencing <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>）；「协作规模」虽有三套可量化探针（DynTaskMAS <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、AgentNet <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、Guardian <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）但缺乏统一报告协议；「任务类型」有可操作分类骨架（通信中心两层框架 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、基准元数据横评 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>）但彼此不共享字段定义。综合判定完整性为 partial：维度可枚举、组件可复用、框架未闭合。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于 KG 结构化数据与论文原文语义检索两层证据。KG 节点规模：problem 454 个、method 380 个、paper 186 篇、dataset/benchmark 243 个、metric 278 个、limitation 170 个、assumption 119 个，覆盖六类节点。分析共执行 44 次工具调用，对六类节点均做了针对性查询（problem/method/paper/dataset/metric/limitation/assumption）。使用 search_paper_sections 对 19 篇关键论文做了原文精读，其中证据矩阵冻结论文 4 篇（1765 Marco、3839 Guardian、0798 Hallucination-Free AQG、2121 Hybrid Transceiver），扩展关键论文 15 篇（3828、0210、3825、0102、3827、3831、1728、1713、1695、1454、1805、1771、3818、3840、0571 等）。通过 get_relation 对 Marco、Guardian 两篇做了完整一跳关系边抽取，其余通过 search_paper_sections 与 get_candidate_entity 定位原文段落证据。</p>
+<div class="note">认知坐标：S2.2 · IPO数据流解剖 · 通用骨架 v1（基于证据矩阵 6 篇 + 扩展 13 篇，覆盖 LLM-MAS 评测/防御/工程脚手架/协议/安全五类文献）。证据矩阵中被冻结的 2121（多跳 MIMO 混合收发机优化）属物理层通信，其「统一 objective 下的解耦优化」是可迁移元模式而非 LLM-MAS 评测组件，已在结论中作为异质文献处理。</div>
+
+<h2 id="sec_维度一_任务类型_已有可操作骨架但不共享字段">维度一：任务类型——已有可操作骨架但不共享字段</h2>
+<p>通信中心综述提出「系统级通信（架构/目标/协议）+ 系统内部通信（策略/范式/对象/内容）」两层分析框架，覆盖 flat/hierarchical/team/society/hybrid 五类架构与合作/竞争/混合三类目标，并系统对比 MCP、A2A、ANP 三种协议 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。全面综述用「多模态/任务多样性/推理/agentic」四列元数据横评约 60 个 2019–2025 基准：GAIA 人类准确率 92% vs LLM 仅 15%；MultiAgentBench 覆盖研究写作、Minecraft 建造、数据库错误分析等六域，测试 star/chain/tree/graph 拓扑，规划带来 3% 里程碑提升，但增加 agent 反而降低性能 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。涌现编排研究把拓扑细分为 chain/tree/graph 三型六子型，并证明拓扑会随演化从链式收敛为带环图 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。这些骨架彼此不兼容，直接印证碎片化。</p>
+<h3>表 1 · 任务类型维度的可复用分类骨架对比</h3>
+<table><thead><tr><th>工作</th><th>分类骨架</th><th>覆盖范围</th><th>是否附评测指标</th></tr></thead><tbody><tr><td>通信中心综述 [1]</td><td>系统级(架构/目标/协议) + 系统内部(策略/范式/对象/内容)</td><td>覆盖全部 LLM-MAS 类型</td><td>否（仅分类，不解决可比性）</td></tr>
+<tr><td>全面综述 [3]</td><td>多模态/任务多样性/推理/agentic 四列元数据</td><td>约 60 个基准，2019–2025</td><td>否（对照表，无统一指标）</td></tr>
+<tr><td>涌现编排 [10]</td><td>chain / tree / graph 三型六子型</td><td>协作拓扑演化</td><td>部分（拓扑密度/环长）</td></tr>
+<tr><td>具身协作综述 [2]</td><td>extrinsic / intrinsic / hybrid 三类架构</td><td>具身多智能体</td><td>否（指出缺统一标准）</td></tr>
+</tbody></table>
+
+<h2 id="sec_维度二_协作规模_已出现可量化探针但未标准化">维度二：协作规模——已出现可量化探针但未标准化</h2>
+<p>多条限制证据明确指出方法「仅测试到最多 6 个 agent」「主要聚焦两 agent 系统」<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>；具身协作综述直陈「当前参与协作的 agent 数量仍很小，规模化会带来计算、通信、协调、任务分配与资源管理的复杂度」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。现有可复用探针包括：DynTaskMAS 的 4→16 agents 吞吐近线性增长（12.3→42.7 tasks/s），32 agents 出现次线性（8×agent 仅 6.21×吞吐）；AgentNet 的规模×异质性实验显示 3 agents 时同质配置最优（0.86），5 agents 时异质配置反超（0.85），说明异质性仅在大团队获益；Guardian 在 MATH 上测 3–7 agents 及连接稀疏度 25%/50%/75%，准确率分别为 52.2%/56.1%/57.3%。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1 · DynTaskMAS 协作规模-吞吐量探针（tasks/s）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["4 agents", "8 agents", "16 agents", "32 agents"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "吞吐量 (tasks/s)", "type": "bar", "data": [12.3, 23.1, 42.7, 76.4], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_维度三_错误容忍_鲁棒性_唯一出现即插用组件的维度">维度三：错误容忍/鲁棒性——唯一出现即插用组件的维度</h2>
+<p>Guardian 把协作建模为离散时间属性图（节点=agent、边=通信），用无监督编码器-解码器 + 信息瓶颈做异常检测，无需修改 LLM 即达 SOTA：异常检测率平均 &gt;80%（FEVER 上 94.74%），FDR 最低 8.32%，靠协作天然冗余做到「每轮只移除一个 agent」的优雅降级；在 MATH 上连接稀疏度 25%/50%/75% 均优于基线。TAMAS 提供对抗鲁棒性协议：300 对抗 + 100 良性场景、5 域（教育/金融/医疗/法律/新闻）、6 类攻击、4-agent 系统，测 10 个 backbone 模型，并提出 Effective Robustness Score（安全×效用调和平均）与 ARIA 四级分类。二者构成「错误注入协议 + 错误检测缓解组件」的可复用组合。此外 MCPXKIT 提供 MCP 安全的四维 31 类攻击分类（直接/间接工具注入、恶意用户、LLM 固有权）与统一可复现攻击框架 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。</p>
+<h3>表 2 · 错误容忍/鲁棒性维度的可复用组件</h3>
+<table><thead><tr><th>组件</th><th>来源</th><th>功能</th><th>关键指标</th></tr></thead><tbody><tr><td>时序图异常检测器</td><td>Guardian [4]</td><td>不修改 LLM 检测幻觉放大与错误注入</td><td>检测率&gt;80%（峰值94.74%），FDR 8.32%</td></tr>
+<tr><td>对抗鲁棒性基准 TAMAS</td><td>TAMAS [5]</td><td>300对抗+100良性场景、5域6攻击</td><td>ERS 安全×效用调和平均、ARIA 四级</td></tr>
+<tr><td>MCP 安全攻击工具箱</td><td>MCPXKIT [13]</td><td>四维 31 类 MCP 攻击分类+可复现框架</td><td>attack efficacy 定量分析</td></tr>
+<tr><td>双 agent 验证循环</td><td>Hallucination-Free AQG [14]</td><td>Generator+Detector 迭代纠错</td><td>7 轮降幻觉&gt;90%</td></tr>
+</tbody></table>
+
+<h2 id="sec_维度四_成本_已拆解为可测子指标并有现成优化器">维度四：成本——已拆解为可测子指标并有现成优化器</h2>
+<p>可问责流水线量化了协作的代价：可问责流水线相对单体基线成本增加约 2–3×、中位延迟从 ~2s 升到 20–25s（约 8–10×），并得出「准确率-成本-延迟权衡依任务而定，异构流水线常处于 Pareto 前沿」<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>。AgentDropout 通过优化通信图邻接矩阵动态剔除冗余 agent/边，prompt token 降 21.6%、completion token 降 18.4%，同时性能提升 1.14 分 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。企业级 MAC 证明 payload referencing 在代码密集任务上相对提升 23%、通信开销降 27%，GSR 达 90% <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。双 agent 验证循环用廉价 LLM（成本仅 o3-mini 的 1/11）即把幻觉降 &gt;90% <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。</p>
+<h3>表 3 · 成本维度的可测子指标与优化组件</h3>
+<table><thead><tr><th>子指标</th><th>证据来源</th><th>量化数值</th></tr></thead><tbody><tr><td>成本倍数</td><td>可问责流水线 [15]</td><td>相对单体基线 +2–3×</td></tr>
+<tr><td>中位延迟</td><td>可问责流水线 [15]</td><td>~2s → 20–25s（8–10×）</td></tr>
+<tr><td>prompt token</td><td>AgentDropout [6]</td><td>-21.6%</td></tr>
+<tr><td>completion token</td><td>AgentDropout [6]</td><td>-18.4%</td></tr>
+<tr><td>代码密集任务 GSR</td><td>企业级 MAC [7]</td><td>payload referencing +23%，开销 -27%</td></tr>
+<tr><td>模型选型成本</td><td>双 agent 循环 [14]</td><td>LLM 为 o3-mini 的 1/11</td></tr>
+</tbody></table>
+
+<h2 id="sec_补充维度_通信_协调效率_与_信任_安全_可解释">补充维度：通信/协调效率 与 信任-安全-可解释</h2>
+<p>通信/协调效率维度：TRiSM 提出 Component Synergy Score（CSS）度量一个 agent 对同伴下游表现的使能程度（例：Planner 使 Coder 提速 35%、Tester 达 92% 覆盖率，单链路 CSS≈0.32），并用 Tool Utilization Efficacy（TUE）把工具调用分解为选择/参数/执行/结果/效率五分量 <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>。信任-安全-可解释维度：TRiSM 给出信任度指数 T = wacc·A + wrob·R + walign·L，并主张报告完整指标向量 M=(MT,ME,MU,MCo) 而非加权标量，以避免掩盖单维度失败与 Goodhart 效应；MCPXKIT 的四维攻击分类量化「agent 盲信工具描述」「共享上下文链式攻击」等漏洞 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>；协议层 MCP/A2A/ANP/ACP 的架构-发现-格式-安全四字段对比表亦可复用 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup><sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup>。</p>
+
+<h2 id="sec_核心分析结果_可复用组件清单">核心分析结果：可复用组件清单</h2>
+<p>综合五个来源类别的证据，现有工作可被提炼为九类可复用组件。它们分别对应六个维度的不同环节，但缺乏统一接口，无法直接被一个端到端框架组装。</p>
+<h3>表 4 · 统一评测框架的九类可复用组件</h3>
+<table><thead><tr><th>组件</th><th>来源论文</th><th>对应维度</th><th>关键量化证据</th></tr></thead><tbody><tr><td>可配置任务图（任务图/单-多AI配置/工具技能三层解耦）</td><td>Marco [19]</td><td>任务类型</td><td>时序路径调试解决率 86% vs 朴素标准解法 0%</td></tr>
+<tr><td>断言式评测 harness（数据+模拟器+自动断言裁判，GSR 主指标）</td><td>企业级 MAC [7]</td><td>任务类型/成本</td><td>GSR 达 90%，人机一致率高</td></tr>
+<tr><td>时序图异常检测器</td><td>Guardian [4]</td><td>错误容忍</td><td>检测率&gt;80%，FDR 8.32%</td></tr>
+<tr><td>双 agent 验证循环（Generator+Detector）</td><td>Hallucination-Free AQG [14]</td><td>错误容忍/成本</td><td>7 轮降幻觉&gt;90%</td></tr>
+<tr><td>对抗攻击基准 + ERS 评分</td><td>TAMAS [5]</td><td>错误容忍/安全</td><td>300对抗+100良性、5域6攻击</td></tr>
+<tr><td>token 效率优化器（动态 agent 剔除）</td><td>AgentDropout [6]</td><td>成本</td><td>token -18~22%，性能 +1.14</td></tr>
+<tr><td>统一评测模板 + CSS/TUE 指标</td><td>TRiSM [16]</td><td>信任/协调</td><td>主张报告指标向量而非标量</td></tr>
+<tr><td>MCP 安全攻击工具箱（四维 31 类）</td><td>MCPXKIT [13]</td><td>安全</td><td>31 类攻击、统一可复现框架</td></tr>
+<tr><td>协议对比框架（MCP/A2A/ANP/ACP）</td><td>通信中心综述 [1]、协议对比 [17][18]</td><td>任务类型</td><td>架构/发现/格式/安全四字段</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2 · 九类可复用组件按维度分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 2 · 九类可复用组件按维度分布", "type": "pie", "radius": "55%", "data": [{"name": "任务类型", "value": 2}, {"name": "错误容忍/鲁棒性", "value": 3}, {"name": "成本", "value": 2}, {"name": "信任-安全", "value": 1}, {"name": "通信/协调", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_跨任务可比性的关键证据">跨任务可比性的关键证据</h2>
+<p>支撑「跨任务可比」的三条核心证据：其一，Marco 的三层解耦使同一框架支持 RTL/DRC 代码生成、时序分析、布局优化等异构任务，是现有最接近跨任务骨架的组件 <sup class="cite"><a href="#ref-19" style="text-decoration:none">[19]</a></sup>。其二，可问责流水线在 AgiEval/PythonIO/LogiQA 三个基准上得出「结构化 handoff 使 PythonIO 准确率提升 &gt;36 分、planner 质量主导（最佳 7.35% 错误率 vs 最差 40.49%）」的结论，并主张用「玻璃箱」而非「黑箱」评测 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>。其三，TRiSM 明确指出标量化会掩盖单维度失败，应报告完整向量 M=(MT,ME,MU,MCo) 并用阈值/Pareto 选择模型 <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>。这三条共同指向：跨任务可比需要「解耦的任务骨架 + 不改写轨迹的评测协议 + 向量化报告」三要素，而当前没有任何工作同时满足。</p>
+
+<h2 id="sec_分歧点_证据缺口与不确定性">分歧点、证据缺口与不确定性</h2>
+<p>第一，碎片化被多个工作独立确认为核心痛点——「缺乏标准化评测标准」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、「现有评测无法区分聚合强单体 agent 与真正涌现协作的架构」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、「单 agent 基准与多 agent 协作基准之间存在明确 gap」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-20" style="text-decoration:none">[20]</a></sup>——但没有任何证据集内工作交付端到端统一可比框架，故本子问题答案形态是「维度可枚举、组件可复用、框架未闭合」。第二，证据矩阵含异质文献：2121（多跳 MIMO 混合收发机）属物理层通信，其「统一 objective 函数下模拟/数字收发机无损解耦」是可迁移的元模式，但不提供 LLM-MAS 评测组件 <sup class="cite"><a href="#ref-21" style="text-decoration:none">[21]</a></sup>；这提示用户将其列入证据矩阵可能是想借用其「统一框架+解耦优化」的方法论范式。第三，多数成本/规模数字来自单一研究单任务族（如 2–3× 成本、21.6% token 降幅），跨研究可迁移性未经验证；协作规模维度除 DynTaskMAS/AgentNet/Guardian 三探针外缺乏统一报告协议。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>（1）数据覆盖：KG 中 186 篇论文主题高度异质（含无线通信、量子通信、物理层优化等非 LLM-MAS 论文），通用骨架的归纳主要依据其中约 20 篇直接相关的 LLM-MAS 评测/防御/工程文献，可能遗漏证据矩阵外的重要评测工作。（2）推断置信度：六维度集合是跨论文归纳而非任何单一论文原生提出，属综合推断（confidence high 但非直接引用）；成本/规模的具体数值均标注为 medium 置信度，因来自单一研究且跨域迁移性未验证。（3）异质文献：证据矩阵冻结的 2121 属物理层通信，本报告仅将其「统一框架+解耦」作为元模式参考，未纳入 LLM-MAS 组件清单，构成证据边界而非结论。（4）鲁棒性声明的实验证据：TAMAS 与 Guardian 均仅在 Autogen/CrewAI 两框架或 3–7 agent 规模验证，「不兼容」类声明未在本报告中作出（因缺乏理论或实验证据，遵守不凭低共现率推断不兼容的约束）。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ3.3，回答分三层：（1）**需要哪些维度**——至少六个正交维度：任务类型、协作规模、错误容忍/鲁棒性、成本，加上证据反复出现的通信/协调效率与信任-安全-可解释维度 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>。（2）**现有工作提供了哪些可复用组件**——至少九类：Marco 可配置任务图 <sup class="cite"><a href="#ref-19" style="text-decoration:none">[19]</a></sup>、企业级 MAC 断言式评测 harness <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、Guardian 时序图异常检测器 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、双 agent 验证循环 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>、TAMAS 对抗基准+ERS <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、AgentDropout token 优化器 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、TRiSM 评测模板+CSS/TUE 指标 <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>、MCPXKIT 安全工具箱 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、协议对比框架 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup><sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup>。（3）**如何构建跨任务可比框架**——证据指向「解耦的任务骨架 + 不改写轨迹的评测协议（断言/handoff/ARIA）+ 向量化指标报告（非标量）」三要素组合，但当前无一工作同时满足，这正是下一步整合研究的方向。综上，答案完整性判定为 partial：维度可枚举、组件可复用，但端到端统一可比框架尚未闭合。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Beyond Self-Talk: A Communication-Centric Survey of LLM-Based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3828_beyond_selftalk_a_communicationcentric_survey_of_llmbased_mu</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Generative Multi-Agent Collaboration in Embodied AI: A Systematic Review&nbsp;<code style="font-size:0.82em;color:#888">3827_generative_multiagent_collaboration_in_embodied_ai_a_systema</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;From LLM Reasoning to Autonomous AI Agents: A Comprehensive Review&nbsp;<code style="font-size:0.82em;color:#888">0102_From_LLM_Reasoning_to_Autonomous_AI_Agents_A_Comprehensive_R</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;GUARDIAN: Safeguarding LLM Multi-Agent Collaborations with Temporal Graph Modeling&nbsp;<code style="font-size:0.82em;color:#888">3839_guardian_safeguarding_llm_multiagent_collaborations_with_tem</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;TAMAS: Benchmarking Adversarial Risks in Multi-Agent LLM Systems&nbsp;<code style="font-size:0.82em;color:#888">1728_tamas_benchmarking_adversarial_risks_in_multiagent_llm_syste</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;AgentDropout: Dynamic Agent Elimination for Token-Efficient and High-Performance LLM-Based Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1713_agentdropout_dynamic_agent_elimination_for_tokenefficient_an</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Towards Effective GenAI Multi-Agent Collaboration: Design and Evaluation for Enterprise Applications&nbsp;<code style="font-size:0.82em;color:#888">3825_towards_effective_genai_multiagent_collaboration_design_and</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;DynTaskMAS: A Dynamic Task Graph-driven Framework for Asynchronous and Parallel LLM-based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">1695</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;AgentNet: Decentralized Evolutionary Coordination for LLM-based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3840_agentnet_decentralized_evolutionary_coordination_for_llmbase</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Scaling Large Language Model-based Multi-Agent Collaboration (chain/tree/graph topologies)&nbsp;<code style="font-size:0.82em;color:#888">3818_scaling_large_language_modelbased_multiagent_collaboration</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Improving coordination in small-scale multi-agent deep reinforcement learning through memory-driven communication&nbsp;<code style="font-size:0.82em;color:#888">0014_improving_coordination_in_smallscale_multiagent_deep_reinfor</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;OPTIMA: Optimizing Effectiveness and Efficiency for LLM-based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">1720_optima_optimizing_effectiveness_and_efficiency_for_llmbased</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;MCPXKIT: The Unified Toolkit for Analyzing Model Context Protocol Security&nbsp;<code style="font-size:0.82em;color:#888">1454</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Hallucination-Free Automatic Question &amp; Answer Generation for Intuitive Learning&nbsp;<code style="font-size:0.82em;color:#888">0798_Hallucination-Free_Automatic_Question_Answer_Generation_fo</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Traceability and Accountability in Role-Specialized Multi-Agent LLM Pipelines&nbsp;<code style="font-size:0.82em;color:#888">0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;TRiSM for Agentic AI: A Review of Trust, Risk, and Security Management in LLM-based Agentic Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3831_trism_for_agentic_ai_a_review_of_trust_risk_and_security_man</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;A Survey of Agent Interoperability Protocols: MCP, ACP, A2A, and ANP&nbsp;<code style="font-size:0.82em;color:#888">1805</code></li>
+<li id="ref-18" style="margin-bottom:4px"><span class="ref-id">[18]</span>&nbsp;Comparative Analysis of Agent Protocols (MCP/ACP/A2A/ANP)&nbsp;<code style="font-size:0.82em;color:#888">1771</code></li>
+<li id="ref-19" style="margin-bottom:4px"><span class="ref-id">[19]</span>&nbsp;Marco: Configurable Graph-Based Task Solving and Multi-AI Agents Framework for Hardware Design&nbsp;<code style="font-size:0.82em;color:#888">1765_Marco_Configurable_Graph-Based_Task_Solving_and_Multi-AI_Age</code></li>
+<li id="ref-20" style="margin-bottom:4px"><span class="ref-id">[20]</span>&nbsp;Multi-Agent Collaboration: Harnessing the Power of Intelligent LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">3809_multiagent_collaboration_harnessing_the_power_of_intelligent</code></li>
+<li id="ref-21" style="margin-bottom:4px"><span class="ref-id">[21]</span>&nbsp;Hybrid Transceiver Optimization for Multi-Hop Communications&nbsp;<code style="font-size:0.82em;color:#888">2121_hybrid_transceiver_optimization_for_multihop_communications</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.3 · 2026-09-30 18:44</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,210 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Trash2 } from 'lucide-react';
+import type { Project } from '@/types';
+import { listProjects, deleteProject } from '@/services/api';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Input } from '@/components/ui/Input';
+import { WorkflowProgress } from '@/components/WorkflowProgress';
+import { FileText, Network, ListChecks, ShieldCheck } from 'lucide-react';
+
+// status 含后端可能派生的 failed（有失败阶段）；未知状态回退 draft，避免 ProjectCard 崩白屏
+const statusBadge: Record<string, { variant: 'info' | 'ok' | 'neutral' | 'danger'; label: string }> = {
+  running: { variant: 'info', label: '运行中' },
+  completed: { variant: 'ok', label: '已完成' },
+  draft: { variant: 'neutral', label: '草稿' },
+  failed: { variant: 'danger', label: '有失败阶段' },
+};
+
+function Stat({ icon: Icon, value, label }: { icon: typeof FileText; value: string; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 text-t2" title={label}>
+      <Icon size={14} className="text-t3" />
+      <span className="text-[13px] font-medium text-t1">{value}</span>
+      <span className="text-[12px] text-t3">{label}</span>
+    </div>
+  );
+}
+
+function ProjectCard({ p, onDeleted }: { p: Project; onDeleted: (id: string) => void }) {
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
+  const s = statusBadge[p.status] ?? statusBadge.draft;
+  const claims = (p.stats ?? { claims: { verified: 0 } }).claims;
+  const claimsText =
+    claims.verified + claims.needsRevision + claims.shouldRemove > 0
+      ? `${claims.verified + claims.needsRevision + claims.shouldRemove} 条`
+      : '—';
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // 不触发卡片跳转
+    if (deleting) return;
+    if (!window.confirm(`确定删除项目「${p.title}」？\n该项目的语料、KG、RQ、综述等工作目录将一并删除，不可恢复。`)) return;
+    setDeleting(true);
+    try {
+      await deleteProject(p.id);
+      onDeleted(p.id);
+    } catch (err) {
+      alert(`删除失败：${err instanceof Error ? err.message : String(err)}`);
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/projects/${p.id}/rq`)}
+      onKeyDown={(e) => e.key === 'Enter' && navigate(`/projects/${p.id}/rq`)}
+      className="flex cursor-pointer flex-col gap-3 p-5 transition-shadow hover:shadow-s2"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-[16px] font-semibold leading-6">{p.title}</h3>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {p.demo && (
+            <Badge variant="info" title="来自真实运行的静态快照">
+              真实快照
+            </Badge>
+          )}
+          <Badge variant={s.variant} withDot={p.status === 'running'}>
+            {s.label}
+          </Badge>
+          {!p.demo && (
+            <button
+              type="button"
+              aria-label={`删除项目 ${p.title}`}
+              title="删除项目"
+              disabled={deleting}
+              onClick={handleDelete}
+              className="rounded-md p-1.5 text-t3 transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-40"
+            >
+              <Trash2 size={15} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {p.fieldTags.map((t) => (
+          <Badge key={t}>{t}</Badge>
+        ))}
+      </div>
+
+      <WorkflowProgress workflows={p.workflows ?? []} />
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line/60 pt-3">
+        <Stat icon={FileText} value={String(p.stats.papers)} label="论文" />
+        <Stat
+          icon={Network}
+          value={p.stats.kgEdges > 0 ? String(p.stats.kgEdges) : '—'}
+          label="KG 边"
+        />
+        <Stat
+          icon={ListChecks}
+          value={p.stats.rqs > 0 ? String(p.stats.rqs) : p.status === 'running' ? '设计中' : '—'}
+          label="RQ"
+        />
+        <Stat icon={ShieldCheck} value={claimsText} label="claims" />
+      </div>
+
+      <div className="text-[12px] text-t3">更新于 {p.updatedAt}</div>
+    </Card>
+  );
+}
+
+type SortKey = 'updated' | 'created' | 'title';
+
+export function ProjectsPage() {
+  const [projects, setProjects] = useState<Project[] | null>(null);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<SortKey>('updated');
+
+  useEffect(() => {
+    let alive = true;
+    listProjects().then((ps) => alive && setProjects(ps));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const shown = useMemo(() => {
+    // 防御：后端项目列表只有 updated_at（取自 created_at），无 createdAt 字段——
+    // 直接 localeCompare(undefined) 会抛 TypeError 打崩整页
+    const t = (v: unknown) => String(v ?? '');
+    const list = (projects ?? []).filter((p) => (p.title ?? '').includes(query.trim()));
+    const key = (p: { createdAt?: string; updatedAt?: string }, k: SortKey) =>
+      t(k === 'updated' ? p.updatedAt : p.createdAt) || t(p.updatedAt) || t(p.createdAt);
+    return [...list].sort((a, b) => {
+      if (sort === 'title') return (a.title ?? '').localeCompare(b.title ?? '', 'zh-CN');
+      return key(b, sort).localeCompare(key(a, sort));
+    });
+  }, [projects, query, sort]);
+
+  return (
+    <div className="mx-auto max-w-6xl px-8 py-8">
+      <div className="flex items-baseline justify-between">
+        <h1 className="text-[24px] font-semibold leading-8">全部项目</h1>
+        <span className="text-[13px] text-t3">
+          {projects ? `共 ${projects.length} 个项目` : '加载中…'}
+        </span>
+      </div>
+
+      {(projects ?? []).some((p) => p.demo) && (
+        <div className="mt-4 rounded-lg border border-info/40 bg-info/10 px-4 py-3 text-[13px] leading-6 text-t2">
+          <span className="mr-1.5 font-medium text-t1">真实运行快照</span>
+          标有「真实快照」的项目来自真实全流程运行，静态导出、只读展示：可查看语料筛选、论文关系图、RQ
+          与证据矩阵、逐条结论的原文页码与高亮截图，以及生成的综述 PDF。公开快照不含账号、路径、密钥或后端源码。
+        </div>
+      )}
+
+      <div className="mt-5 flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-t3" />
+          <Input
+            className="pl-9"
+            placeholder="搜索项目标题…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          className="h-10 rounded-lg border border-line bg-card px-3 text-[13px] text-t2 focus:border-ink focus:outline-none"
+          aria-label="排序方式"
+        >
+          <option value="updated">最近更新 ↓</option>
+          <option value="created">创建时间 ↓</option>
+          <option value="title">名称 A-Z</option>
+        </select>
+      </div>
+
+      {projects === null ? (
+        <div className="mt-16 text-center text-[13px] text-t3">加载中…</div>
+      ) : shown.length === 0 ? (
+        <div className="mt-16 text-center">
+          <p className="text-[14px] text-t2">
+            {query ? `没有匹配「${query}」的项目` : '还没有项目，点击左侧「新建综述项目」开始'}
+          </p>
+        </div>
+      ) : (
+        <div className="stagger mt-6 grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
+          {shown.map((p) => (
+            <ProjectCard
+              key={p.id}
+              p={p}
+              onDeleted={(id) => setProjects((ps) => (ps ?? []).filter((x) => x.id !== id))}
+            />
+          ))}
+        </div>
+      )}
+
+      {projects !== null && shown.length > 0 && (
+        <p className="mt-6 text-center text-[13px] text-t3">
+          Showing {shown.length} out of {projects.length} projects
+        </p>
+      )}
+    </div>
+  );
+}

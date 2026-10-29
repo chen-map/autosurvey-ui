@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ5.2]：[父问题 RQ5] LLM 安全领域的不确定性建模与风险预测能力，能否迁移到 CRISPR 临床前安全评估，形成 LLM-assisted risk prediction 的交叉框架？
+[本子问题 RQ5.2] 能否用 LLM 从序列 / 载体 / 剂量等输入预测脱靶与免疫风险，KG 中是否存在任何跨聚类的 `extends` / `compares_with` / `supports` 边作为先例？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0233_Feature_representation_for_explainable_CRISPR_off-target_pre, 0098_Genome-wide_CRISPR_off-target_prediction_and_optimization_us, 0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e, 0477_how_should_ai_safety_benchmarks_benchmark_safety, 0101_A_versatile_CRISPRCas9_system_off-target_prediction_tool_usi）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_认知坐标_以_脱靶预测_可学的序列_风险映射_为公理">认知坐标：以&quot;脱靶预测=可学的序列→风险映射&quot;为公理</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_主线一_序列_脱靶风险预测已充分验证并进入语言模型范式">主线一：序列→脱靶风险预测已充分验证并进入语言模型范式</a></li>
+<li><a href="#sec_主线二_免疫风险预测已有_LLM_先例_输入维度对应载荷_载体_剂量">主线二：免疫风险预测已有 LLM 先例，输入维度对应载荷/载体/剂量</a></li>
+<li><a href="#sec_主线三_跨聚类边的类型学_先例存在但仅限技术桥">主线三：跨聚类边的类型学——先例存在但仅限技术桥</a></li>
+<li><a href="#sec_定义蕴含关系的推演链与对抗性检验">定义蕴含关系的推演链与对抗性检验</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ5.2——能否用 LLM 从序列/载体/剂量等输入预测 CRISPR 脱靶与免疫风险，以及 KG 中是否存在跨聚类的 extends/compares_with/supports 边作为先例——进行系统分析。结论为：技术路径的&quot;桥&quot;已经搭好，但&quot;安全不确定性建模&quot;这一特定知识的迁移在 KG 中无先例边支撑。</p><p>具体而言：（1）用深度学习/语言模型从序列输入预测脱靶风险的能力已被充分验证，CCLMoff 以 RNA 语言模型在跨数据集泛化上达到 AUROC=0.996、AUPRC=0.520，显著优于 CRISPR-Net 等基线<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；DNABERT/DNABERT-Epi 首次将 DNA 基础模型用于该任务<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；CRISOT 用分子动力学指纹获得可泛化到碱基/先导编辑器的预测<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。（2）免疫风险预测同样已有 LLM 先例：Profluent 用大语言模型工程化低免疫原性核酸酶 OpenCRISPR-1<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，ARDitox 用 AI 预测 TCR 脱靶表位交叉反应<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>，AAV 免疫原性由剂量/途径/载体设计驱动<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。（3）KG 中确有跨聚类先例：域内脱靶预测方法谱系边密集（0101↔0098/0203），并存在 LLM→CRISPR 桥接边（CRISPR-LLM<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）与 AI→生物安全框架延伸（可解释 AI 用于 gRNA 设计安全<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>）。</p><p>关键缺口：RQ5 母问题真正要迁移的是&quot;不确定性建模与概率化风险量化&quot;，而 KG 中没有任何一条边把安全基准不确定性建模（81% 仅测已知风险、79% 把频率当概率<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>）连接到 CRISPR 预测。因此判定 answer_completeness=partial。</p>
+
+<h2 id="sec_认知坐标_以_脱靶预测_可学的序列_风险映射_为公理">认知坐标：以&quot;脱靶预测=可学的序列→风险映射&quot;为公理</h2>
+<p>本分析以公理系统视角展开：将&quot;CRISPR 脱靶/免疫风险是可由序列、载体、剂量等输入预测的函数&quot;这一操作性定义作为公理，推演 RQ5.2 中各项输入维度对应的问题类别。KG 中该定义以操作性形式存在（而非数学式），典型表述为 CCLMoff 的&quot;给定 sgRNA 序列与候选靶位点，输出该候选是否为脱靶的概率&quot;<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，以及 CRISOT 的 RNA-DNA 相互作用指纹编码<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>由此公理可分解出三类本质约束：①序列约束（错配数、bulge、PAM、seed region）；②载体/递送约束（病毒/非病毒载体、剂量、给药途径）；③免疫约束（效应蛋白表位、载体衣壳抗原、MHC 呈递）。每一类约束被违反时，必然对应一类问题实例。这一分类是定义驱动的逻辑后果，而非经验归纳。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析调用了知识图谱（KG）全部七类节点的批量查询与针对性深挖，并按技能规范使用 search_paper_sections 对关键论文原文段落做语义检索精读。</p><p>- 节点类型覆盖：problem（312 个）、method（312 个）、paper（138 篇）、dataset（114 个）、metric（175 个）、limitation（190 个）、assumption（108 个），共七类节点全部执行针对性查询。</p><p>- 关系边：系统查询了 extends、compares_with、supports、proposes、addresses、evaluated_on、measured_by、has_limitation 等边类型，覆盖证据矩阵全部 5 篇冻结论文及若干关联论文。</p><p>- 原文精读：对 10 篇以上关键论文（0101、0203、0098、0233、0201、0371、0477、0575、0383、0143、0036、0237、0440、0239、0238）执行了 search_paper_sections 检索，核验具体数字与论述。</p><p>- 工具调用总量：42 次。</p>
+<h3>证据矩阵论文的核心定量结果对比</h3>
+<table><thead><tr><th>论文/方法</th><th>技术路线</th><th>关键指标/数据</th><th>局限</th></tr></thead><tbody><tr><td>CCLMoff[1]</td><td>RNA 语言模型（RNAcentral 预训练）</td><td>跨数据集 AUROC=0.996、AUPRC=0.520；训练集 418 sgRNA / 82,699 脱靶位点 / 13 种检测技术</td><td>GUIDE-seq 直接对比时 AUROC 仅 0.279（方法特异性强）</td></tr>
+<tr><td>DNABERT / DNABERT-Epi[2]</td><td>DNA 基础模型 + 表观多模态</td><td>SHAP 显示 H3K27ac 最强；IG 定位 PAM 近端 14-17、远端 4-6 双热区</td><td>仅验证 SpCas9；表观多模态仅单一 GUIDE-seq 数据集；高错配(5-6)误判严重</td></tr>
+<tr><td>CRISOT[3]</td><td>分子动力学 RNA-DNA 指纹 + XGBoost</td><td>193 维特征×20 位=3860 维指纹；可泛化到 BE/PE；获湿实验验证</td><td>仅考虑 NGG PAM、不含 bulge；以 in silico 验证为主</td></tr>
+<tr><td>CRISPR-M[6]</td><td>多视图 CNN+BiLSTM 深度网络</td><td>三视图编码，处理 indel 与错配，优于现有方法</td><td>依赖人工压缩编码方案</td></tr>
+<tr><td>CRISPR-LLM[4]</td><td>LLM agent + 领域知识 + 外部工具</td><td>12 专家四维评分显著优于 ChatGPT-3.5/4.0；A375 细胞系湿实验验证</td><td>复杂/罕见场景表现下降；无法从自然语言生成完整载体构建体</td></tr>
+<tr><td>AI 辅助低免疫原性核酸酶[5]</td><td>LLM + 机器学习表位预测</td><td>OpenCRISPR-1；SaCas9.Redi 保持 &gt;90% 编辑活性</td><td>以编辑效率换免疫逃逸；无个性化设计标准</td></tr>
+<tr><td>ARDitox[10]</td><td>计算免疫学 + AI 预测 TCR 脱靶表位</td><td>整合序列相似性/SNV/HLA 呈递/物化性质；发现已知及新交叉反应表位</td><td>TCR 可对序列高度不相似 epitope 交叉反应</td></tr>
+</tbody></table>
+
+<h2 id="sec_主线一_序列_脱靶风险预测已充分验证并进入语言模型范式">主线一：序列→脱靶风险预测已充分验证并进入语言模型范式</h2>
+<p>证据矩阵中的四篇核心论文构成了完整技术谱系。CCLMoff<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 采用问题-答案框架，把 sgRNA 序列作为&quot;问题&quot;、候选靶位点作为&quot;答案&quot;，用 RNAcentral 预训练的 RNA 语言模型提取序列信息与基因组上下文，在 13 种全基因组检测技术、21 项研究、418 条 sgRNA、82,699 个验证脱靶位点上训练。跨数据集泛化实验（CIRCLE-seq 训练、GUIDE-seq 测试）显示 AUROC=0.996、AUPRC=0.520，显著优于 CRISPR-Net（AUPRC=0.210）、CRISPR-IP（0.337）、MOFF（0.282）、CCLMoff-Hyena（DNA 预训练，AUPRC=0.180）、CRISPR-BERT（0.150）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。注意力分析证实模型聚焦 PAM 近端 16-20 位（seed region），与已知生物学机制一致。</p><p>DNABERT/DNABERT-Epi<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 首次把 DNA 基础模型用于脱靶预测，采用两阶段微调（先错配位置预测、后二分类），并在七个数据集上与五种 SOTA 方法基准对比。消融实验定量证明基因组预训练与表观特征整合均为关键增益因子；SHAP 分析显示 H3K27ac（活跃增强子标记）为最具影响力的表观特征，Integrated Gradients 揭示 PAM-近端（14-17）与 PAM-远端（4-6）双热区，提示 R-loop 形成与构象激活两个关键阶段<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>CRISOT<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 走另一条路：用分子动力学模拟计算 RNA-DNA 相互作用特征（氢键、结合自由能、原子位置、碱基对/步几何特征），经特征工程得到 193 维特征×20 位=3860 维指纹，用 XGBoost 分类。它可泛化到碱基编辑器与先导编辑器，并获得 PCSK9/BCL11A 靶点的全基因组测序湿实验验证<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。这三条路线（语言模型 / 表观多模态 / 分子动力学）互相 compares_with，共同证明&quot;序列等输入→脱靶风险&quot;是可学的映射<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p>
+
+<h2 id="sec_主线二_免疫风险预测已有_LLM_先例_输入维度对应载荷_载体_剂量">主线二：免疫风险预测已有 LLM 先例，输入维度对应载荷/载体/剂量</h2>
+<p>免疫风险的可预测性由多个 AI 平台佐证。<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 明确记录 Profluent 公司用大语言模型工程化非天然 CRISPR 样核酸酶（如 OpenCRISPR-1），&quot;生成序列多样性以规避免疫&quot;；其自建框架用机器学习预测免疫显性表位（基于 IEDB 数据库）同时保留催化域，使 SaCas9.Redi 变体保持 &gt;90% 编辑活性。该文指出 Cas9 蛋白可触发先天炎症反应与适应性抗体反应，而 AI 驱动的理性设计可快速设计低免疫原性核酸酶。</p><p><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> ARDitox 是一个基于计算免疫学与 AI 的平台，用于预测 TCR 的潜在脱靶结合。它通过五步流程（识别邻近序列、加入 SNV 表位、选择被呈递表位、排序、最终打分）识别脱靶表位，结合序列相似性、单核苷酸变异、HLA 呈递概率与物化性质，成功识别已知的交叉反应表位及一个新的 NLGN4X 来源表位<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p><p>AAV 载体免疫原性<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 明确了剂量、给药途径、载体设计是免疫原性的关键决定因素——这正好对应 RQ5.2 中&quot;从载体/剂量输入预测&quot;的输入维度。该文指出静脉内给药使载体广泛暴露于血浆蛋白与抗体，而直接注射路径（如视网膜下）可部分绕过预存抗体；持续高剂量静脉 AAV 才能观察到某些宿主反应，提示存在阈值效应<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。</p>
+
+<h2 id="sec_主线三_跨聚类边的类型学_先例存在但仅限技术桥">主线三：跨聚类边的类型学——先例存在但仅限技术桥</h2>
+<p>对 RQ5.2 的核心问句&quot;KG 中是否存在跨聚类 extends/compares_with/supports 边作为先例&quot;，系统查询结果可归纳为三层：</p><p>（a）域内方法谱系边（密集存在于脱靶预测子领域）：0101↔0098（compares_with, 0.7）、0101↔0203（compares_with, 0.7）、0101↔0201（compares_with, 0.9）、0233→0221（extends, 0.85）、0233↔0101/0203（compares_with, 0.7）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。这些边证明脱靶预测领域内部方法演进与经验对比关系完整。</p><p>（b）LLM→CRISPR 桥接边：CRISPR-LLM<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 是一个 LLM agent，其 `proposes` 边指向 LLM-powered 设计规划引擎，`addresses` 边指向&quot;CRISPR 实验设计复杂性&quot;与&quot;LLM 缺乏生物设计特定知识&quot;两个 problem；12 位专家在 accuracy/reasoning/completeness/conciseness 四维评分中 CRISPR-LLM 显著优于 ChatGPT-3.5/4.0<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。这是 LLM 能力迁入 CRISPR 领域的直接先例。</p><p>（c）AI→生物安全框架延伸：可解释 AI 用于 gRNA 设计安全<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>（extends 0032/0221/0239），主张把 XAI 用于脱靶预测，并指出 FDA/EMA 已要求多正交方法（in silico 预测+细胞实验+无偏测序）刻画安全性。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "AI 安全基准的已知-未知风险覆盖分布（[7] 对 210 个基准的分析）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["已知的已知 (Known knowns)", "已知的未知 (Known unknowns)", "未知的已知 (Unknown knowns)", "未知的未知 (Unknown unknowns)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "基准数量", "type": "bar", "data": [170, 33, 5, 2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>定义约束 → 问题类别映射（定义驱动推演）</h3>
+<table><thead><tr><th>约束维度</th><th>约束被违反时必然产生的问题</th><th>对应 KG Problem/证据</th><th>关联论文</th></tr></thead><tbody><tr><td>序列约束（错配/bulge/PAM/seed）</td><td>脱靶切割、脱靶效应</td><td>problem_crispr_cas9_off_target_effects_23900d7555</td><td>[1][2][3]</td></tr>
+<tr><td>序列泛化约束（未见序列）</td><td>现有预测方法泛化受限</td><td>problem_limited_generalization_fe1a254f26</td><td>[1]</td></tr>
+<tr><td>载体/递送约束（AAV 容量、免疫原性）</td><td>病毒载体安全性、AAV 免疫原性</td><td>problem_safety_concerns_of_viral_vectors / AAV_immunogenicity</td><td>[11]</td></tr>
+<tr><td>剂量/途径约束</td><td>剂量依赖的宿主免疫反应（阈值效应）</td><td>assumption AA V dose/route</td><td>[11]</td></tr>
+<tr><td>免疫约束（效应蛋白表位/MHC 呈递）</td><td>核酸酶免疫原性、疗效-免疫权衡</td><td>problem_immunogenicity_of_therapeutic_nucleases</td><td>[5]</td></tr>
+<tr><td>预测-现实鸿沟（in silico 无微环境）</td><td>预测必须实验验证</td><td>limitation_in_silico_methods_do_not_account_for_the_intricate_cellular</td><td>[9]</td></tr>
+</tbody></table>
+
+<h2 id="sec_定义蕴含关系的推演链与对抗性检验">定义蕴含关系的推演链与对抗性检验</h2>
+<p>从&quot;脱靶预测=序列→风险映射&quot;操作性定义出发，可推演两条问题间关系，并执行跳步与反例检验：</p><p>推演 1（强蕴含）：若定义输入仅含序列而不含染色质/表观状态，则任何&quot;高错配位点&quot;的预测在定义域内无法区分&quot;可切割&quot;与&quot;不可切割&quot;——因为定义缺少判别变量。KG 证据支持：DNABERT-Epi<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 必须额外引入表观特征才提升精度；<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 反复强调 in silico 预测不考虑细胞微环境、&quot;预测必须实验验证&quot;。推导步骤完整，无 external_assumption，判为 strong。</p><p>推演 2（弱蕴含/被证伪风险）：若&quot;序列泛化能力提升&quot;则&quot;脱靶预测整体可靠性提升&quot;。反例检验：CCLMoff<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 在 GUIDE-seq 直接对比场景下 AUROC 仅 0.279，说明泛化提升不必然带来任一具体检测平台上的最优表现；DNABERT<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 亦承认 CrisprBERT 在部分数据集上表现相当或更优。故该关系降级为 weak，并标注反例。</p><p>需要特别说明：将 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的&quot;AI 安全基准不确定性建模缺陷&quot;（79% 把经验频率当概率、94% 仅以免责声明承认不确定性）迁移到 CRISPR 预测，属于外部假设迁移而非定义内部蕴含——KG 中无任何边支撑该迁移，故本报告将其标记为 inference_strength=weak 的定性推断。</p>
+<div class="note">认知纪律说明：本报告严格遵循&quot;从定义演绎到问题关系&quot;的方向。凡只能由归纳得到、无法从定义演绎的关系（如不确定性建模的跨域迁移），均已降级为 weak 推断；凡证据仅来自单篇论文的免疫预测能力（如 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>），置信度标记为 medium。禁止将自然语言的&quot;因为...所以...&quot;等同于数学蕴含。</div>
+<h3>RQ5.2 双重问句的逐项判定</h3>
+<table><thead><tr><th>子问句</th><th>判定</th><th>核心证据</th><th>缺口</th></tr></thead><tbody><tr><td>能否用 LLM 从序列输入预测脱靶风险？</td><td>能（已回答）</td><td>CCLMoff AUROC=0.996[1]；DNABERT-Epi[2]；CRISOT[3]</td><td>高错配(5-6)位点系统性误判；无微环境</td></tr>
+<tr><td>能否用 LLM 从载体/剂量输入预测免疫风险？</td><td>部分能（部分回答）</td><td>AAV 剂量/途径/载体设计驱动免疫[11]；OpenCRISPR-1[5]</td><td>缺乏标准免疫检测方案；无合适动物模型；临床前模型无法精确预测人体[11]</td></tr>
+<tr><td>KG 是否存在跨聚类 extends/compares_with/supports 先例？</td><td>存在（已回答）</td><td>域内边 0101↔0098↔0203↔0201[1][2][3][6]；LLM 桥 0371[4]；AI→安全框架 0440[13]</td><td>无连接 LLM 安全基准不确定性[7]与 CRISPR 预测的边</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>1. 核心机制缺口：RQ5 母问题核心是&quot;不确定性建模与概率化风险量化&quot;的迁移，但 KG 中不存在任何把 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的安全基准不确定性建模连接到 CRISPR 脱靶/免疫预测的 extends/compares_with/supports 边。该迁移环节仅为定性推断，不构成有先例的演绎结论。</p><p>2. 免疫预测证据薄弱：免疫风险预测的 LLM 先例主要来自 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>（LLM 工程化核酸酶）与 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>（TCR 脱靶表位预测），二者均非直接&quot;从载体/剂量输入预测免疫风险&quot;，而是反向的&quot;设计低免疫原性&quot;或&quot;表位交叉反应预测&quot;。AAV 免疫原性<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 为综述性证据，缺乏可量化的预测模型基准。</p><p>3. 形式化定义缺位：KG 中脱靶预测以操作性定义（二分类任务）存在，无严格数学形式化定义（含量词、符号）。故本报告所有&quot;蕴含&quot;关系均为操作性推演，定义类型标记为 operational，未表述为&quot;数学证明&quot;。</p><p>4. 单论文依赖：<sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 的报告指标（准确率 94.36%、召回 73.43%）来自车辆智能网联系统安全评估，与 CRISPR 领域无直接证据链，本报告未将其作为 CRISPR 结论支撑。</p><p>5. 跨物种/跨平台泛化未验证：DNABERT<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 仅验证 SpCas9，CRISOT<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 仅考虑 NGG PAM，预测方法向 Cas12/Cas13 及其他高保真变体的迁移性在 KG 中无充分证据。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ5.2 的最终回答分三层：</p><p>第一，技术可行性成立。用深度学习/语言模型从序列等输入预测脱靶风险已被充分验证且进入语言模型范式——CCLMoff<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的 RNA 语言模型跨数据集泛化 AUROC=0.996，DNABERT/DNABERT-Epi<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 首次引入 DNA 基础模型，CRISOT<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 用分子动力学指纹实现可泛化预测。免疫风险预测亦已有 LLM 先例（OpenCRISPR-1<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）与 AI 平台（ARDitox<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>），输入维度（载体/剂量）由 AAV 免疫原性研究<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 佐证。</p><p>第二，跨聚类先例存在但仅限&quot;技术桥&quot;。KG 中脱靶预测子领域内部 extends/compares_with/supports 边密集<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，并存在 LLM→CRISPR 的明确桥接边（CRISPR-LLM<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）与 AI→生物安全框架延伸（可解释 AI 用于 gRNA 设计安全<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>）。这些构成&quot;LLM-assisted risk prediction 交叉框架&quot;的真实先例。</p><p>第三，核心机制缺口明确。RQ5 母问题真正要迁移的是&quot;不确定性建模与概率化风险量化&quot;，而 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 揭示的 AI 安全基准不确定性缺陷（81% 仅测已知风险、79% 把频率当概率、94% 仅以免责声明承认不确定性）与 CRISPR 预测之间，在 KG 中没有任何边连接。因此最终判定 answer_completeness=partial：技术路径的桥已搭好，但特定知识（不确定性建模）的迁移在 KG 中无先例边，只能作为定性推断。建议后续将 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的概率风险量化框架（PRA、乘性安全因子）与 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的脱靶预测输出（AUPRC 等概率化分数）做显式的跨域建模对照，以补全这一缺口。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;A versatile CRISPR/Cas9 system off-target prediction tool using language model (CCLMoff)&nbsp;<code style="font-size:0.82em;color:#888">0101_A_versatile_CRISPRCas9_system_off-target_prediction_tool_usi</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Improved CRISPR/Cas9 off-target prediction with DNABERT and epigenetic features&nbsp;<code style="font-size:0.82em;color:#888">0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Genome-wide CRISPR off-target prediction and optimization using RNA-DNA interaction fingerprints (CRISOT)&nbsp;<code style="font-size:0.82em;color:#888">0098_Genome-wide_CRISPR_off-target_prediction_and_optimization_us</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;CRISPR-LLM for Agentic Automation of Gene-editing Experiments&nbsp;<code style="font-size:0.82em;color:#888">0371_crisprgpt_for_agentic_automation_of_geneediting_experiments</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Research on Reducing the Immunogenicity of Nucleases in Gene Therapy&nbsp;<code style="font-size:0.82em;color:#888">0575_Research_on_Reducing_the_Immunogenicity_of_Nucleases_in_Gene</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;CRISPR-M: Predicting sgRNA off-target effect using a multi-view deep learning network&nbsp;<code style="font-size:0.82em;color:#888">0201_CRISPR-M_Predicting_sgRNA_off-target_effect_using_a_multi-vi</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;How Should AI Safety Benchmarks Benchmark Safety?&nbsp;<code style="font-size:0.82em;color:#888">0477_how_should_ai_safety_benchmarks_benchmark_safety</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Feature representation for explainable CRISPR off-target prediction and base editing efficiency&nbsp;<code style="font-size:0.82em;color:#888">0233_Feature_representation_for_explainable_CRISPR_off-target_pre</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Beyond the promise: evaluating and mitigating off-target effects&nbsp;<code style="font-size:0.82em;color:#888">0239_Beyond_the_promise_evaluating_and_mitigating_off-target_effe</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;ARDitox: platform for the prediction of TCRs potential off-target binding&nbsp;<code style="font-size:0.82em;color:#888">0143_arditox_platform_for_the_prediction_of_tcrs_potential_offtar</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Immunogenicity of Recombinant Adeno-Associated Virus (AAV) Vectors for Gene Transfer&nbsp;<code style="font-size:0.82em;color:#888">0036_Immunogenicity_of_Recombinant_Adeno-Associated_Virus_AAV_Vec</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Off-target effects in CRISPR/Cas9 gene editing&nbsp;<code style="font-size:0.82em;color:#888">0238_Off-target_effects_in_CRISPRCas9_gene_editing</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Artificial Intelligence for CRISPR Guide RNA Design: Explainable Models and Off-Target Safety&nbsp;<code style="font-size:0.82em;color:#888">0440_artificial_intelligence_for_crispr_guide_rna_design_explaina</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;VSRQ: Quantitative Assessment Method for Safety Risk of Vehicle Intelligent Connected System&nbsp;<code style="font-size:0.82em;color:#888">0167_vsrq_quantitative_assessment_method_for_safety_risk_of_vehic</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Immunogenicity of CRISPR therapeutics—Critical considerations for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0237_immunogenicity_of_crispr_therapeuticscritical_considerations</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;DeepFM-Crispr: Prediction of CRISPR On-Target Effects via Deep Learning&nbsp;<code style="font-size:0.82em;color:#888">0383_deepfmcrispr_prediction_of_crispr_ontarget_effects_via_deep</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.2 · 2026-10-13 20:39</footer>
+</div>
+</body>
+</html>

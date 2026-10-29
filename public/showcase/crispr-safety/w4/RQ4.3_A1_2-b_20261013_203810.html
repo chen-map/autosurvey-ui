@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ4.3]：[父问题 RQ4] 如何把大量定性 limitation 与 assumption/constraint 结构化为可计算的风险模型（风险矩阵 / 概率图模型 / 贝叶斯网络），以支撑临床前到临床的可复现决策？
+[本子问题 RQ4.3] 现有临床转化路线图（如 #5/#8 roadmap 论文）提供了哪些可结构化的风险要素，能否映射为风险矩阵或贝叶斯网络的节点与条件概率？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0109_beyond_probabilityimpact_matrices_in_project_risk_management, 0350_the_digital_divide_in_process_safety_quantitative_risk_analy, 0389_safebench_a_safety_evaluation_framework_for_multimodal_large, 0396_a_geometric_analysisbased_safety_assessment_framework_for_ma, 0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing, 0189_Current_and_prospective_strategies_for_advancing_the_targete）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心形式化定义_分析公理">核心形式化定义（分析公理）</a></li>
+<li><a href="#sec_定义到问题的映射_roadmap_风险要素的结构化归属">定义到问题的映射：roadmap 风险要素的结构化归属</a></li>
+<li><a href="#sec_roadmap_提供的定量支点">roadmap 提供的定量支点</a></li>
+<li><a href="#sec_跨域_BN_风险图模板的可迁移性">跨域 BN/风险图模板的可迁移性</a></li>
+<li><a href="#sec_对抗性验证_推演链的逻辑完整性检验">对抗性验证：推演链的逻辑完整性检验</a></li>
+<li><a href="#sec_关键推论_Key_Claims">关键推论（Key Claims）</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告以「定义驱动推演」视角回答 RQ4.3：现有临床转化路线图（如 #5/#8 roadmap 论文）提供了哪些可结构化的风险要素，能否映射为风险矩阵或贝叶斯网络（BN）的节点与条件概率。分析锚定两条核心形式化定义——风险的概率—后果定义 R=P×I（含 Bernoulli/Uniform 不确定性建模）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，与贝叶斯网络 DAG 定义（边编码条件依赖、CPT 基于专家知识）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>核心结论为「partial（部分可行）」：roadmap 论文提供了三类可结构化风险要素——可计参数变量（体外/体内效率、表达时长、递送效率、off-target 频率）、可枚举风险类别（off-target、免疫原性、递送屏障、插入突变、可制造性）与可作条件依赖的因果链（载体→表达时长→off-target→后果）。这些要素足以构造风险矩阵骨架与 BN 拓扑，但条件概率表（CPT）的填充存在真实证据缺口，必须注入领域外先验（external_assumption），因此所有依赖频率数据的推演须降级为弱推演。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）六类节点与关系边，并对 132 篇 paper card 原文进行语义检索：</p><p>• **Problem 节点**：全量 312 个，覆盖递送屏障、off-target（多平台）、免疫原性、插入突变、低体内效率等；</p><p>• **Method 节点**：全量 312 个，含决策框架、自动化风险图、Monte Carlo 风险优先化、BN+LOPA、VSRQ(I-FAHP+FCA)、FMECA 等；</p><p>• **Paper 节点**：138 篇；</p><p>• **Limitation 节点**：190 个；</p><p>• **AssumptionConstraint 节点**：108 个（如 ISO 13849 风险图、AAV 尺寸限制、r-stable ground truth 等）；</p><p>• **DatasetBenchmark 节点**：114 个；**Metric 节点**：175 个。</p><p>对 6 篇冻结证据论文（0109/0350/0389/0396/0032/0189）及关键领域论文（0195/0034/0032/0194/0409/0026/0509/0173/0167/0400 等）进行了原文段落精读，检索总段落数逾 60 段，涵盖 formal_definition、causal_chain、quantitative_evidence 与 evidence_gap 等证据类型。</p>
+
+<h2 id="sec_核心形式化定义_分析公理">核心形式化定义（分析公理）</h2>
+<p>定义驱动推演要求先精确定位核心形式化定义，并区分数学定义与操作性/定性定义，因为二者的推演效力本质不同。下表列出 6 条核心定义及其类型与推演效力。其中 BN 定义 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 与危害链公式 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 为数学/概率定义，可支撑演绎性推演；R=P×I <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、ISO 13849 风险图 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、FMECA 三维 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、Risk–Benefit Index <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 为操作性定义，支撑的是「归纳—操作性」结论。</p>
+<h3>表 1：核心形式化定义及其推演效力</h3>
+<table><thead><tr><th>定义名称</th><th>形式化表达</th><th>类型</th><th>来源论文</th><th>推演效力</th></tr></thead><tbody><tr><td>概率—后果风险矩阵 R=P×I</td><td>risk:=不确定事件若发生则影响目标; R=P×I; aleatoric=PDF, epistemic=Uniform</td><td>operational</td><td>0109 [1]</td><td>归纳—操作性</td></tr>
+<tr><td>贝叶斯网络 BN</td><td>基于 Bayes 定理的 DAG 概率图模型；边编码条件依赖；CPT 基于专家知识</td><td>mathematical</td><td>0350 [2]</td><td>演绎—概率性</td></tr>
+<tr><td>安全完整性危害链 BN</td><td>λi,s = (λs · pb) · pc · pi</td><td>mathematical</td><td>0409 [3]</td><td>演绎—概率性</td></tr>
+<tr><td>ISO 13849 风险图</td><td>PLr = f(S, F, P)</td><td>operational</td><td>0026 [4]</td><td>归纳—操作性</td></tr>
+<tr><td>FMECA (O/S/D)</td><td>RPN = Occurrence × Severity × Detectability（5 点有序量表）</td><td>operational</td><td>0509 [5]</td><td>归纳—操作性</td></tr>
+<tr><td>Risk–Benefit Index</td><td>RBI = 疗效×0.5 − 严重不良反应率×0.3 + QoL×0.2</td><td>operational</td><td>0194 [6]</td><td>归纳—操作性</td></tr>
+</tbody></table>
+
+<h2 id="sec_定义到问题的映射_roadmap_风险要素的结构化归属">定义到问题的映射：roadmap 风险要素的结构化归属</h2>
+<p>将 roadmap 提取的风险要素代入定义约束后可得一张「定义→问题」映射表。off-target、递送屏障、低体内效率等 Problem 节点均可作为 BN 事件节点或风险矩阵实例，其对应关系与推演强度见下表。强蕴含指在定义约束下逻辑链完整（如「载体类型」可设为父节点、「off-target」为子节点并注入专家 CPT）；弱蕴含指需借外部先验补充（如插入突变频率在 CRISPR 领域数据稀缺）。</p>
+<h3>表 2：定义→问题映射及推演强度</h3>
+<table><thead><tr><th>定义</th><th>问题节点</th><th>关系</th><th>推演强度</th><th>证据来源论文</th></tr></thead><tbody><tr><td>R=P×I</td><td>Off-target effects</td><td>instantiates</td><td>strong</td><td>0195 [7]</td></tr>
+<tr><td>BN DAG</td><td>Low in vivo efficacy in non-liver tissues</td><td>instantiates</td><td>strong</td><td>0195 [7]</td></tr>
+<tr><td>Risk–Benefit Index</td><td>AAV immunogenicity</td><td>violates</td><td>strong</td><td>0194 [6]</td></tr>
+<tr><td>BN DAG</td><td>Delivery barriers</td><td>instantiates</td><td>strong</td><td>0195 [7]</td></tr>
+<tr><td>R=P×I</td><td>Safety concerns of viral vectors</td><td>instantiates</td><td>weak</td><td>0032 [8]</td></tr>
+</tbody></table>
+
+<h2 id="sec_roadmap_提供的定量支点">roadmap 提供的定量支点</h2>
+<p>roadmap 论文与领域综述给出了可直接标定风险矩阵概率轴与后果轴的定量证据。下表汇总关键数值，其中 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 提供了可映射的量化支点，<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 甚至给出可直接作为风险模型输出节点的加权公式与信号阈值。这些数值多为区间/中位估计，跨研究测量方式异质，构成概率轴标定的主要障碍。</p>
+<h3>表 3：可映射为风险矩阵/BN 参数的定量证据</h3>
+<table><thead><tr><th>风险要素</th><th>量化证据</th><th>来源论文</th></tr></thead><tbody><tr><td>编辑效率反差</td><td>体外 &gt;80%，非肝组织体内 &lt;30%</td><td>0195 [7]</td></tr>
+<tr><td>平台效率区间</td><td>AAV(CNS/视网膜) 30–80%；LNP(肝) 60–80%</td><td>0195 [7]</td></tr>
+<tr><td>off-target 频率</td><td>RNP &lt;1% vs 质粒 5–15%；mRNA 比质粒低约 5 倍</td><td>0195 [7]</td></tr>
+<tr><td>AAV 预存免疫</td><td>30–50% 人群有预存中和抗体</td><td>0195 [7]</td></tr>
+<tr><td>制造可扩展性</td><td>AAV 每批 $1–5M</td><td>0195 [7]</td></tr>
+<tr><td>大片段缺失</td><td>base/prime editor 约比 Cas9 低 20 倍</td><td>0032 [8]</td></tr>
+<tr><td>NHP 编辑效率</td><td>PCSK9 编辑 25%→&gt;60%（不同方案）</td><td>0034 [9]</td></tr>
+<tr><td>安全性信号阈值</td><td>同批次 ≥3 例相似不良事件（rule of three）</td><td>0194 [6]</td></tr>
+<tr><td>风险—获益公式</td><td>RBI = 疗效×0.5 − 严重AE×0.3 + QoL×0.2</td><td>0194 [6]</td></tr>
+<tr><td>量化评估精度</td><td>VSRQ 准确率 94.36%、召回 73.43%</td><td>0167 [10]</td></tr>
+</tbody></table>
+
+<h2 id="sec_跨域_BN_风险图模板的可迁移性">跨域 BN/风险图模板的可迁移性</h2>
+<p>本分析识别到数个可直接迁用的风险建模模板。其中 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的四层危害链最完整，提供完整的因果链式结构；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 提供 BN+CPT 的完整方法论并以区间概率(credal network)处理数据不确定性；<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 提供工业标准化的风险图自动化；<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 提供三维有序量表。将 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的危害链映射到基因编辑：λs（给药场景率）→ pb（编辑行为有效概率）→ pc（off-target 命中概率）→ pi（临床伤害概率），其结构与基因编辑的风险链逻辑同构。</p>
+<h3>表 4：跨域风险建模模板及其可迁移要素</h3>
+<table><thead><tr><th>模板/方法</th><th>核心形式结构</th><th>可迁移要素</th><th>来源论文</th></tr></thead><tbody><tr><td>安全完整性危害链 BN</td><td>λi,s=(λs·pb)·pc·pi</td><td>四层因果链→基因编辑风险链</td><td>0409 [3]</td></tr>
+<tr><td>BN + LOPA + credal network</td><td>DAG + CPT + 区间概率</td><td>节点/CPT 方法论、区间不确定性</td><td>0350 [2]</td></tr>
+<tr><td>SQUADfps + ISO 13849</td><td>PLr=f(S,F,P), 元模型</td><td>自动化 pFMEA、风险图自动化</td><td>0026 [4]</td></tr>
+<tr><td>FMECA 三维量表</td><td>RPN=O×S×D（5 点）</td><td>后果节点的有序状态量表</td><td>0509 [5]</td></tr>
+<tr><td>VSRQ (I-FAHP+FCA)</td><td>区间模糊权重 + 模糊聚类</td><td>概率-严重度区间化风险矩阵</td><td>0167 [10]</td></tr>
+<tr><td>RAM (pmi)</td><td>输入空间分片 + pmi 上推</td><td>局部证据→系统级安全声明</td><td>0173 [11]</td></tr>
+<tr><td>SafeBench 分类学</td><td>8 大类 23 子类层级分类</td><td>风险节点集合（需重命名）</td><td>0389 [12]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1：各来源论文提供的可结构化风险要素数量（按引用论文统计）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["0195[7]", "0194[6]", "0409[3]", "0032[8]", "0350[2]", "0509[5]", "0026[4]", "0167[10]"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "可结构化要素数", "type": "bar", "data": [9, 4, 4, 3, 3, 3, 3, 2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_对抗性验证_推演链的逻辑完整性检验">对抗性验证：推演链的逻辑完整性检验</h2>
+<p>定义驱动推演最常见的错误是「跳步」。本分析对每条推演关系执行了完整的逻辑检验，识别出两处必须标注 external_assumption 的跳步：</p><p>**跳步一（数据依赖性）**：各 BN/风险图模板（<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）均依赖可获得的失效频率数据或行业手册，而 CRISPR 临床转化尚无足够事件频率——<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 指出早期试验患者群小，<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 指出标准化检测工作流缺失。因此这部分条件概率须借用流程工业/汽车行业先验，推演强度降级为 weak。</p><p>**跳步二（独立性假设）**：R=P×I 与 RPN 均假设维度独立、等权（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>），而基因编辑的 off-target 与免疫原性/表达时长**非独立**（高表达同时增二者），故纯风险矩阵会系统性低估耦合风险，必须用 BN 或 credal network（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的区间概率）取代简单乘积。此外 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 明确指出 RPN 的乘积结构遭 236 篇 FMECA 研究综述批评（等权与独立性不成立、相同 RPN 可对应本质不同风险）。</p>
+<div class="note">关键方法论区分：风险矩阵（R=P×I）结论属「归纳—操作性」，贝叶斯网络（DAG+CPT）结论属「演绎—概率性」，二者推演效力不同，报告中不可混同。禁止将自然语言的「因为…所以…」直接等同于数学蕴含关系（→）。</div>
+
+<h2 id="sec_关键推论_Key_Claims">关键推论（Key Claims）</h2>
+<p>基于上述证据，得出如下可核查结论：</p><p>C1 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>：roadmap 明确给出可作 BN 边的因果链——载体/货物选择→表达时长→off-target 风险（RNP &lt;1%、质粒 5–15%）。置信度 high。</p><p>C2 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>：BN 形式化定义可直接作为把 roadmap 风险要素组织为节点+条件概率的模板。置信度 high。</p><p>C3 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>：风险矩阵为操作性定义 R=P×I，提供概率轴分段模板，但未编码条件依赖。置信度 high。</p><p>C4 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>：四层危害链 λi,s=(λs·pb)·pc·pi 与基因编辑风险链逻辑同构。置信度 medium。</p><p>C5 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>：roadmap 提供可量化支点（体外&gt;80%/体内&lt;30%、预存抗体 30–50%、大片段缺失低 20 倍）。置信度 high。</p><p>C6 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>：FMECA 三维可操作化为 5 点有序量表，可复用为 CRISPR 后果节点状态。置信度 medium。</p><p>C7 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>：领域内已有可直接映射的定量风险公式 RBI 与信号阈值（≥3 例，rule of three）。置信度 high。</p><p>C8 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>：风险分类学与自动化风险图可作 BN 节点集（8 大类 23 子类；四类元模型+ISO 13849）。置信度 medium。</p><p>C9 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>：对抗性检验发现两处跳步（频率数据缺口、独立性假设），须降级为 weak。置信度 high。</p><p>C10 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>：细胞类型/表观状态须作 BN 条件节点而非固定参数（chromatin accessibility）。置信度 high。</p><p>C11 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>：映射只能达到 partial，条件概率填充须以外部先验代替。置信度 high。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>**证据缺口**：6 篇冻结证据论文均无现成的完整 CPT 用例，亦无 CRISPR 特异的临床事件频率表。这构成从「骨架可映射」到「参数可填充」之间的关键断层。</p><p>**置信度降级**：<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 明确指出发生概率（occurrence）因样本过小（4 患者 / 36 摘要）无法稳健估计，RPN 遭系统性批评；<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的 BN 明确「需要大量数据才能准确估计失效概率与率」，数据通常是限制因素。</p><p>**领域迁移风险**：SafeBench <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、SQUADfps <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、VSRQ <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、GARSA <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 等提供的是领域特定的纯定量实例，迁移到基因编辑需重新校准节点命名与依赖关系。</p><p>**多定义并列**：同一概念存在不同形式化定义（如 R=P×I 的操作性定义 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 与 BN 的数学定义 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>），二者推演效力不同，且定义了不同层级的问题，本报告并列呈现而未选择性采纳。</p><p>**不确定性**：所有依赖频率先验的推演均标注为 external_assumption 下的弱推演；RBI 公式权重（0.5/0.3/0.2）主观且未经大规模验证，映射可行性因此只能判定为 partial。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>本子问题 RQ4.3 的答案为 **partial（部分可行）**。现有临床转化路线图（以 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 为代表、综合 67 篇研究的 roadmap，<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的 off-target 安全综述，<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 的高胆固醇基因编辑路线图，<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> 的 EV 递送综述）确实提供了三类可结构化风险要素（可计参数、可枚举风险类别、可作条件依赖的因果链），它们足以构造风险矩阵骨架与贝叶斯网络拓扑。</p><p>具体而言，能构造出：以 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的「载体→表达时长→off-target」因果链为 BN 边、以其 67 研究效率区间为概率轴分段的离散化 BN；以 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 的 8 大类 23 子类或 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的四类元模型为节点集合的层级风险拓扑；以 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 的 RBI 公式与 ≥3 例信号阈值为输出节点的量化决策层；并可直接借用 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的四层危害链、<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的 BN+CPT 方法论、<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 的 I-FAHP+FCA 区间化方法作为跨域模板。</p><p>但映射存在两个真实的逻辑跳步：(1) 条件概率填充依赖可获频率数据，而 CRISPR 临床转化尚无足够事件频率，须借外部先验（external_assumption）；(2) R=P×I 与 RPN 的独立性/等权假设与基因编辑风险的耦合性冲突，须以 BN/credal network 取代简单乘积。因此，可复现决策所依赖的条件概率目前只能以外部假设代替，映射结论须显式标注为「外部假设下的弱推演」，不可表述为数学证明。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Beyond probability-impact matrices in project risk management: A quantitative methodology for risk prioritisation&nbsp;<code style="font-size:0.82em;color:#888">0109_beyond_probabilityimpact_matrices_in_project_risk_management</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;The Digital Divide in Process Safety: Quantitative Risk Analysis of Human-AI Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0350_the_digital_divide_in_process_safety_quantitative_risk_analy</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Safety Integrity Framework for Automated Driving&nbsp;<code style="font-size:0.82em;color:#888">0409_safety_integrity_framework_for_automated_driving</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;SQUADfps: Integrated model-based machine safety and product quality for flexible production systems&nbsp;<code style="font-size:0.82em;color:#888">0026_squadfps_integrated_modelbased_machine_safety_and_product_qu</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Evaluating patient safety risks in generative AI development (FMECA framework for LLM-generated clinical summaries)&nbsp;<code style="font-size:0.82em;color:#888">0509_evaluating_patient_safety_risks_in_generative_ai_development</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Addressing the challenges of immunogenicity, heterogeneity and tumorigenicity in the clinical translation of human embryonic stem cells&nbsp;<code style="font-size:0.82em;color:#888">0194_addressing_the_challenges_of_immunogenicity_heterogeneity_an</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Navigating off-target effects in CRISPR-based genome editing for safer gene therapies&nbsp;<code style="font-size:0.82em;color:#888">0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Gene Editing for the Treatment of Hypercholesterolemia&nbsp;<code style="font-size:0.82em;color:#888">0034_Gene_Editing_for_the_Treatment_of_Hypercholesterolemia</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;VSRQ: Quantitative Assessment Method for Safety Risk of Vehicle Intelligent Connected System&nbsp;<code style="font-size:0.82em;color:#888">0167_vsrq_quantitative_assessment_method_for_safety_risk_of_vehic</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Reliability Assessment and Safety Arguments for Machine Learning&nbsp;<code style="font-size:0.82em;color:#888">0173_reliability_assessment_and_safety_arguments_for_machine_lear</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;SafeBench: A Safety Evaluation Framework for Multimodal Large Language Models&nbsp;<code style="font-size:0.82em;color:#888">0389_safebench_a_safety_evaluation_framework_for_multimodal_large</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Risk prediction in spine surgery: a scoping review of traditional models, artificial intelligence, and the challenge of clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0040_Risk_prediction_in_spine_surgery_a_scoping_review_of_traditi</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;A Geometric Analysis-Based Safety Assessment Framework for Marine Vehicle Route Decision-Making&nbsp;<code style="font-size:0.82em;color:#888">0396_a_geometric_analysisbased_safety_assessment_framework_for_ma</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Current and prospective strategies for advancing the targeted delivery of CRISPR/Cas system via extracellular vesicles&nbsp;<code style="font-size:0.82em;color:#888">0189_Current_and_prospective_strategies_for_advancing_the_targete</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.3 · 2026-10-13 20:38</footer>
+</div>
+</body>
+</html>

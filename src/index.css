@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   设计 token —— 基线取自 skill design-db tokens.css，
+   覆盖项依据 docs/ui-design.md（xept 实拍：黑白账本，彩色证据）
+   ============================================================ */
+:root {
+  --bg-page: #f5f5f5;
+  --bg-card: #ffffff;
+  --bg-hover: #fafafa;
+  --border: #d9d9d9;
+  --border-light: #f0f0f0;
+
+  --text-1: rgba(0, 0, 0, 0.88);
+  --text-2: rgba(0, 0, 0, 0.65);
+  --text-3: rgba(0, 0, 0, 0.45);
+  --text-disabled: rgba(0, 0, 0, 0.25);
+
+  --ink: #111111; /* 品牌色：黑（实底黑主按钮/黑字） */
+  --info-bg: #eff6ff;
+  --info-fg: #1e40af;
+  --danger: #e53935;
+  --ok: #16a34a;
+  --run: #1677ff;
+  --warn-bg: #fffbe6;
+  --warn-fg: #9a6700;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02),
+    0 2px 4px rgba(0, 0, 0, 0.02);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-3: 0 6px 16px rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+    0 9px 28px 8px rgba(0, 0, 0, 0.05);
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    @apply bg-page font-sans text-[14px] leading-[22px] text-t1 antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+}
+
+/* ============================================================
+   动效基建（implementation-guide §2：时长三档 150/250/400ms；
+   只动 transform/opacity；尊重 prefers-reduced-motion）
+   ============================================================ */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+@keyframes gauge {
+  from {
+    stroke-dashoffset: 250;
+  }
+}
+.anim-rise {
+  animation: rise 150ms ease-out backwards;
+}
+.stagger > * {
+  animation: rise 150ms ease-out backwards;
+}
+.stagger > *:nth-child(2) { animation-delay: 30ms; }
+.stagger > *:nth-child(3) { animation-delay: 60ms; }
+.stagger > *:nth-child(4) { animation-delay: 90ms; }
+.stagger > *:nth-child(5) { animation-delay: 120ms; }
+.stagger > *:nth-child(6) { animation-delay: 150ms; }
+.stagger > *:nth-child(7) { animation-delay: 180ms; }
+.stagger > *:nth-child(8) { animation-delay: 210ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .stagger > *,
+  [animation],
+  [style*='animation'] {
+    animation: none !important;
+  }
+}
+
+/* KG 画布全屏：shell 铺满视口，画布弹性占满（修复全屏后高度仍为 560px 的问题） */
+.kg-shell:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  padding: 16px;
+  background: var(--bg-page);
+  overflow: hidden;
+}
+.kg-shell:fullscreen .kg-canvas {
+  flex: 1;
+  height: auto;
+}
+
+/* Agent 分析结果 markdown 渲染样式 */
+.prose-agent h1, .prose-agent h2, .prose-agent h3 { font-weight: 600; margin: 1.2em 0 0.5em; color: #111; }
+.prose-agent h1 { font-size: 1.2em; } .prose-agent h2 { font-size: 1.1em; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; } .prose-agent h3 { font-size: 1em; }
+.prose-agent p { margin: 0.6em 0; line-height: 1.7; }
+.prose-agent ul, .prose-agent ol { margin: 0.6em 0; padding-left: 1.5em; }
+.prose-agent li { margin: 0.3em 0; line-height: 1.6; }
+.prose-agent strong { font-weight: 600; color: #111; }
+.prose-agent table { width: 100%; border-collapse: collapse; margin: 0.8em 0; font-size: 0.9em; }
+.prose-agent th, .prose-agent td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; }
+.prose-agent th { background: #f9fafb; font-weight: 600; }
+.prose-agent blockquote { border-left: 3px solid #d1d5db; margin: 0.8em 0; padding: 0.3em 1em; color: #6b7280; }
+.prose-agent code { background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 0.9em; }
+
+/* Human Loop 侧边栏 AI 回复（紧凑版 prose） */
+.hl-md { font-size: 12.5px; line-height: 1.75; color: #44403c; }
+.hl-md h1, .hl-md h2, .hl-md h3, .hl-md h4 { font-weight: 600; margin: 0.9em 0 0.35em; color: #3f3829; }
+.hl-md h1 { font-size: 1.12em; } .hl-md h2 { font-size: 1.05em; } .hl-md h3, .hl-md h4 { font-size: 1em; }
+.hl-md h1:first-child, .hl-md h2:first-child, .hl-md h3:first-child, .hl-md p:first-child { margin-top: 0; }
+.hl-md p { margin: 0.45em 0; }
+.hl-md ul, .hl-md ol { margin: 0.45em 0; padding-left: 1.4em; }
+.hl-md li { margin: 0.22em 0; }
+.hl-md ul { list-style: disc; } .hl-md ol { list-style: decimal; }
+.hl-md strong { color: #3f3829; }
+.hl-md code { background: #f5efe0; padding: 1px 4px; border-radius: 3px; font-size: 0.88em; color: #6b5a36; }
+.hl-md pre { background: #faf6ea; border: 1px solid #f0eada; border-radius: 8px; padding: 8px 10px; overflow-x: auto; margin: 0.5em 0; }
+.hl-md pre code { background: none; padding: 0; }
+.hl-md blockquote { border-left: 3px solid #e4d9be; margin: 0.5em 0; padding: 0.2em 0.8em; color: #78716c; }
+.hl-md table { width: 100%; border-collapse: collapse; margin: 0.6em 0; font-size: 0.9em; }
+.hl-md th, .hl-md td { border: 1px solid #f0eada; padding: 4px 8px; text-align: left; }
+.hl-md th { background: #faf6ea; font-weight: 600; }
+.hl-md a { color: #a08c5f; text-decoration: underline; }
+
+/* 引用刷模式：选区淡黄预览 */
+.hl-brushing ::selection { background: #FFF3C4; color: inherit; }
+.hl-brushing ::selection * { background: #FFF3C4; }

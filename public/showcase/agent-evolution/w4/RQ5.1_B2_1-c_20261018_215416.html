@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.1-c 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.1-c 分析报告</h1>
+<div class="meta">RQ [RQ5.1]：[父问题 RQ5] 该领域的演化脉络如何（从 ReAct 式推理到符号学习、技能库 RL、协议化自进化），当前开放挑战与未来路径是什么？
+[本子问题 RQ5.1] 基于方法簇的 `extends` 关系与代表论文，能否人工重建一条&quot;推理范式 → 符号学习 → 技能库/RL → 协议化自进化&quot;的方法演化链，并标注各阶段主导的进化载体？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2292_autogenesis_a_selfevolving_agent_protocol, 0004_Symbolic_learning_enables_self-evolving_agents）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_演化链四阶段与主导进化载体">演化链四阶段与主导进化载体</a></li>
+<li><a href="#sec_谱系结构的拓扑特征_双枢纽而非单链">谱系结构的拓扑特征：双枢纽而非单链</a></li>
+<li><a href="#sec_反事实检验_演化并非线性单向">反事实检验：演化并非线性单向</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告基于知识图谱的 extends/contradicts 谱系边与原文段落，重建了 RQ5.1 所问的“推理范式 → 符号学习 → 技能库/RL → 协议化自进化”方法演化链。结论是：该链可以被重建，且中间三段有密集的结构化 extends 边直接支撑；KG 呈现的是以符号学习论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 和技能库 RL 论文 SAGE <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 两个高入度枢纽为核心向外辐射的谱系树，而非单根有向路径。</p><p>各阶段主导的进化载体依次为：符号学习阶段的“prompt/tool/pipeline 可学符号组件”；技能库/RL 阶段的“可复用可执行的 skill”，由 RL（GRPO + Sequential Rollout + Skill-integrated Reward）驱动 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；协议化自进化阶段的“资源本体（RSPL）+ 闭环进化算子（SEPL）”，由 Autogenesis Protocol 收束 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，并向递归元技能进化延伸 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。综述 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 给出的 Verbal→Procedural→Structural 三载体分类与本四段链高度吻合。需要强调，链起点 ReAct 与 Procedural 奠基作 Voyager 在本 KG 中无独立论文节点，链首端衔接依赖综述二手引用，这是最主要的证据缺口。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析通过知识图谱工具进行了 26 次结构化查询，覆盖六类节点（problem / method / paper / dataset / metric / limitation / assumption 全部被针对性查询）。KG 全库包含 558 个方法节点、274 篇论文节点、200 个假设/约束节点、317 个局限节点。</p><p>在关系层面，重点拉取了四篇核心论文的全部一跳关系：符号学习论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>（113 条关系，含 30+ 条 extends 入边）、SAGE 技能库论文 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>（43 条关系）、Autogenesis 协议论文 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、以及 DARWIN 结构进化论文 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。同时通过 RAG 原文检索精读了 13 篇关键论文的摘要、引言、方法与结论段落，用于提取动机（motivation）、量化结果与局限。所有关键结论均以论文 id 内联标注。</p>
+
+<h2 id="sec_演化链四阶段与主导进化载体">演化链四阶段与主导进化载体</h2>
+<p>下表给出 RQ5.1 追问的演化主线。每一阶段标注其“进化载体”（evolvable substrate）与代表性论文。</p><p>阶段一（推理范式）：以 ReAct 式 think-act-observe 为隐式基线，KG 中仅以方法节点 method_method_react 出现（origin_paper_id 为空），在 ALFWorld、GAIA、WebShop 等基准上作为 baseline 被评测，无其自身的谱系出边。</p><p>阶段二（符号学习）：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 将 agent 视为 symbolic network，用手写所有符号组件的语言化 loss/gradient/optimizer 联合优化，完成 engineering-centric → data-centric 的转向，成为谱系根（30+ extends 入边）。</p><p>阶段三（技能库/RL）：<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 明确以 RL 取代“仅靠 LLM prompting 的技能库”，把进化载体升级为可执行、可复用、可保存/更新的程序化 skill，并在 AppWorld 上量化收益。</p><p>阶段四（协议化自进化）：<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 把零散 ad-hoc 自进化抽象为两层协议（RSPL 资源本体 + SEPL 闭环算子），<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 进一步把“改进过程本身”作为可进化对象，实现递归自进化。</p>
+<h3>四阶段演化链与主导进化载体</h3>
+<table><thead><tr><th>阶段</th><th>范式/代表方法</th><th>主导进化载体</th><th>关键论文</th><th>关键量化证据</th></tr></thead><tbody><tr><td>一、推理范式</td><td>ReAct 式 think-act-observe</td><td>隐式（无持久可学状态）</td><td>method_react（基线方法，无独立论文节点）[5]</td><td>作为 ALFWorld/GAIA/WebShop baseline 被评测</td></tr>
+<tr><td>二、符号学习</td><td>Agent Symbolic Learning</td><td>prompt / tool / pipeline（可学符号组件）</td><td>Symbolic Learning [1]</td><td>用语言 loss/gradient/optimizer 联合优化；engineering→data-centric</td></tr>
+<tr><td>三、技能库/RL</td><td>SAGE (Skill Augmented GRPO)</td><td>可执行/可复用 skill 库</td><td>SAGE [2]</td><td>SGC +8.9%，交互步数 -26%，token -59%</td></tr>
+<tr><td>四、协议化自进化</td><td>Autogenesis Protocol (AGP)</td><td>RSPL 资源本体 + SEPL 进化算子</td><td>Autogenesis [3]</td><td>GAIA Test 89.04%/Val 93.33%，Agent-Evo 平均 +12.6%</td></tr>
+<tr><td>四+、递归自进化</td><td>MetaSkill-Evolve（双时间尺度）</td><td>meta-skill（进化改进过程本身）</td><td>MetaSkill-Evolve [4]</td><td>OfficeQA/SealQA/ALFWorld +23.54/+16.09/+1.92；慢循环 +6.38/+8.05/+1.92</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各枢纽论文的 extends 下游继承数（谱系影响力）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["[1] Symbolic Learning", "[2] SAGE 技能库", "[3] Autogenesis 协议", "[6] DARWIN 结构进化"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "extends 入边数（下游继承方）", "type": "bar", "data": [30, 20, 2, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_谱系结构的拓扑特征_双枢纽而非单链">谱系结构的拓扑特征：双枢纽而非单链</h2>
+<p>KG 的 extends 边揭示了演化链的真实拓扑：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 与 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 是两个“超级枢纽”。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 被 AVATAR <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、ToolMaker <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、Agentic Context Engineering <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、MemSkill <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、Combee <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、CoEvoSkills <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、MetaSkill-Evolve <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 等 30+ 篇论文 extends 继承，下游横跨 prompt 优化、工具生成、上下文工程、记忆技能、进化搜索、验证合成等多个子方向，证明它是范式根的候选。</p><p><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> SAGE 则成为第二枢纽，被 CoEvoSkills <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、SkillOS <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、SkillPyramid <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>、EVOSOP <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>、MetaSkill-Evolve <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 等 20 篇左右 extends，把载体从“文本符号”推进到“可执行程序化技能”。这种双枢纽结构意味着：RQ 所设想的“线性链”更准确的描述是“符号学习根 → RL 技能库升级 → 协议收束”的三级放大树状谱系。</p>
+<h3>范式迁移拐点与驱动因素</h3>
+<table><thead><tr><th>迁移</th><th>拐点触发论文</th><th>驱动类型</th><th>驱动描述（原文证据）</th></tr></thead><tbody><tr><td>推理 → 符号学习</td><td>[1]</td><td>效果/工程驱动</td><td>从 engineering-centric 转向 data-centric 是通向 AGI 的关键；手工设计 prompt/tool/pipeline 需大量人力</td></tr>
+<tr><td>符号学习 → 技能库/RL</td><td>[2]</td><td>性能/工程驱动</td><td>现有技能库方法主要依赖 LLM prompting，导致一致实现困难，故改用 RL</td></tr>
+<tr><td>技能库/RL → 协议化</td><td>[3]</td><td>问题驱动</td><td>自进化实现碎片化、ad-hoc，prompt/tool/memory 与 agent 逻辑紧耦合，缺生命周期管理与安全接口；MCP/A2A 未覆盖版本溯源与回滚</td></tr>
+</tbody></table>
+
+<h2 id="sec_反事实检验_演化并非线性单向">反事实检验：演化并非线性单向</h2>
+<p>按分析框架要求，主动寻找“曾试图替代旧范式但未成功或仅部分成功”的挑战者，避免把演化叙述为必然进程。</p><p>【失败挑战者 1：结构进化 DARWIN <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>】DARWIN 尝试用遗传算法改写 LLM 训练代码以直接进化架构，但其自述在 50 次训练中遭遇 18 次错误（错误率 37.5%）、错误解决率仅 16.67%，且“无显著改进”，是典型的“结构进化尝试效果不足”分支。</p><p>【强挑战但受能力边界限制：<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>】“Rethinking Self-Evolving Agents” 直接质问“还需要预设优化流水线吗”，其 Open-Ended Optimization 在 8 个基准 14 组对比中 12 胜 1 平 1 负，仅用 SKILLOPT 34.3% token 预算；但也自承弱优化器无法通过 OEO 接口运作、中等优化器下 SKILLOPT 反超——说明范式共存的“能力边界”，而非替代。</p><p>【自进化的非单调性修正：<sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup><sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup>】Do Self-Evolving Agents Forget? 指出跨 workflow/skill/model/memory 四通道的 capability erosion，workflow 进化下简单任务保持率需靠 CPE 从 41.8% 提至 52.8% <sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup>；LLM-as-a-Judge Is Not an Oracle 指出自进化管线需确定性护栏 <sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup>。二者把“纯自进化”叙事修正为“需保留 + 可治理”的混合路径。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "四阶段代表论文的迁移驱动因素分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "四阶段代表论文的迁移驱动因素分布", "type": "pie", "radius": "55%", "data": [{"name": "性能/效果驱动", "value": 1}, {"name": "工程/人力驱动", "value": 1}, {"name": "问题/治理驱动", "value": 1}, {"name": "待定/综述归纳", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">认知坐标：[认知坐标: S2.1 · 谱系边驱动的演化重建 · 跨四阶段范式集合（推理→符号学习→技能库/RL→协议化自进化）· 时间跨度 insufficient_data]。因 KG 节点未结构化提供 year 字段，每年种群统计与“兴起/高峰/衰退”阶段识别无法量化，演化结论以 extends 边的拓扑与原文动机为主证据、时间序列为辅。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>1) 链起点证据缺口：ReAct 在本 KG 中仅作为基线方法节点（origin_paper_id 为空），Voyager、Reflexion、AlphaEvolve 均无独立论文节点，只作为综述 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的引用出现。因此“ReAct → 符号学习”的直接 extends 边不存在，链首端衔接依赖二手引用与 <sup class="cite"><a href="#ref-19" style="text-decoration:none">[19]</a></sup> 的反思机制论文，属重建而非 KG 直证。</p><p>2) extends 边的推断性质：大量 extends 边（confidence 0.85）为 citation-based 语义推断而非作者显式声明，部分下游（如 SkillOS <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、SkillMaster）实为并行竞争路线，谱系树在节点边界存在模糊。</p><p>3) 时间维度缺失：节点无结构化 year 字段，无法完成框架要求的年度范式种群统计、兴起/高峰/衰退阶段划分与 &lt;3 年数据充分性检验，故未输出 paradigm_timelines 的量化曲线。</p><p>4) 量化结果可比性：各论文的 benchmark 不同（AppWorld、GAIA、HLE、OfficeQA 等），跨阶段数字不可直接横向比较，仅作各阶段内部有效性证据。</p><p>5) 反事实样本有限：仅识别出 DARWIN <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 这一明确的失败挑战者，<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup> 属“受能力边界限制”而非彻底失败，失败挑战者样本不足以支撑统计性结论。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ5.1 的答案是可以重建，且呈四段式：ReAct 式推理（隐式基线）→ 符号学习（载体 = prompt/tool/pipeline）→ 技能库/RL（载体 = 可执行 skill）→ 协议化/递归自进化（载体 = 资源本体 + 进化算子 + meta-skill）。各阶段主导进化载体已逐段标注：符号学习用语言化符号梯度优化组件 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，技能库/RL 用 RL 训练可复用程序化技能 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，协议化用两层 AGP 把进化治理化 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，递归层用双时间尺度进化“改进过程本身” <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。综述 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的 Verbal→Procedural→Structural 三载体分类与之一致。</p><p>但演化链的真实拓扑是“以 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 和 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 为双枢纽的放大谱系树”，而非单根直线；且链起点衔接与时间序列维度存在明确证据缺口，反事实检验（<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 失败、<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup> 能力边界、<sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup><sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup> 安全修正）显示演化终点是“协议化 + 递归 + 可治理”的收敛，而非旧范式被简单取代。后续研究应补齐 ReAct/Voyager 等奠基论文的独立节点，并结构化年份字段以支撑真正的时序演化分析。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Symbolic Learning Enables Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">0004_Symbolic_learning_enables_self-evolving_agents</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Reinforcement Learning for Self-Improving Agent with Skill Library (SAGE)&nbsp;<code style="font-size:0.82em;color:#888">0073_Reinforcement_Learning_for_Self-Improving_Agent_with_Skill_L</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Autogenesis: A Self-Evolving Agent Protocol&nbsp;<code style="font-size:0.82em;color:#888">2292_autogenesis_a_selfevolving_agent_protocol</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;MetaSkill-Evolve: Recursive Self-Improvement of LLM Agents via Two-Timescale Meta-Skill Evolution&nbsp;<code style="font-size:0.82em;color:#888">2359_metaskillevolve_recursive_selfimprovement_of_llm_agents_via</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Agentic Reasoning for Large Language Models: Foundations · Evolution · Collaboration&nbsp;<code style="font-size:0.82em;color:#888">2250_a_survey_of_agentic_reasoning_for_large_language_models_towa</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;DARWIN: Dynamic Agentically Rewriting Self-Improving Network&nbsp;<code style="font-size:0.82em;color:#888">2260_darwin_dynamic_agentically_rewriting_selfimproving_network</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;AVATAR: Optimizing LLM Agents for Tool Usage via Contrastive Reasoning&nbsp;<code style="font-size:0.82em;color:#888">2129_avatar_optimizing_llm_agents_for_tool_usage_via_contrastive</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;LLM Agents Making Agent Tools (ToolMaker)&nbsp;<code style="font-size:0.82em;color:#888">2167_llm_agents_making_agent_tools</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Agentic Context Engineering: Evolving Contexts for Self-Improving Agents (ACE)&nbsp;<code style="font-size:0.82em;color:#888">2222_agentic_context_engineering_evolving_contexts_for_selfimprov</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;MemSkill: Learning and Evolving Memory Skills for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2257_memskill_learning_and_evolving_memory_skills_for_selfevolvin</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Combee: Scaling Prompt Learning for Self-Improving Language Models&nbsp;<code style="font-size:0.82em;color:#888">2287_combee_scaling_prompt_learning_for_selfimproving_language_mo</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;CoEvoSkills: Self-Evolving Agent Skills via Co-Evolutionary Verification&nbsp;<code style="font-size:0.82em;color:#888">2286_coevoskills_selfevolving_agent_skills_via_coevolutionary_ver</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;SkillOS: Learning Skill Curation for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2302_skillos_learning_skill_curation_for_selfevolving_agents</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;SkillPyramid: A Hierarchical Skill Consolidation Framework&nbsp;<code style="font-size:0.82em;color:#888">2328_skillpyramid_a_hierarchical_skill_consolidation_framework_fo</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;From Atomic Actions to Standard Operating Procedures (EVOSOP)&nbsp;<code style="font-size:0.82em;color:#888">2360_from_atomic_actions_to_standard_operating_procedures_iterati</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;Rethinking Self-Evolving Agents: Do We Still Need Prescribed Optimization Pipelines?&nbsp;<code style="font-size:0.82em;color:#888">2391_rethinking_selfevolving_agents_do_we_still_need_prescribed_o</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;Do Self-Evolving Agents Forget? Capability Degradation and Preservation&nbsp;<code style="font-size:0.82em;color:#888">2306_do_selfevolving_agents_forget_capability_degradation_and_pre</code></li>
+<li id="ref-18" style="margin-bottom:4px"><span class="ref-id">[18]</span>&nbsp;LLM-as-a-Judge Is Not an Oracle: Why Self-Improving Agents Need Deterministic Guardrails&nbsp;<code style="font-size:0.82em;color:#888">2415_llmasajudge_is_not_an_oracle_why_selfimproving_agents_need_d</code></li>
+<li id="ref-19" style="margin-bottom:4px"><span class="ref-id">[19]</span>&nbsp;Self-Reflection in LLM Agents: Effects on Problem-Solving Performance&nbsp;<code style="font-size:0.82em;color:#888">0014_selfreflection_in_llm_agents_effects_on_problemsolving_perfo</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.1 · 2026-10-18 21:54</footer>
+</div>
+</body>
+</html>

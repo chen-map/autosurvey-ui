@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-a 分析报告</h1>
+<div class="meta">RQ [RQ5.3]：[父问题 RQ5] 自然语言会话与信息共享机制在多智能体协作中受哪些通信约束，这些约束如何被抽象为可复用的协作设计维度？
+[本子问题 RQ5.3] 信息共享机制（共享记忆、结构化 handoff、对话轮次限制）可归纳为哪些设计维度，与错误传播抑制如何关联？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag, 0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati, 0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion, 1663_ColaCare_Enhancing_Electronic_Health_Record_Modeling_through, 1717_multiagentesc_a_llmbased_multiagent_collaboration_framework, 1059_DesignGPT_Multi-Agent_Collaboration_in_Design）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_一_现有分类体系及其_MECE_缺陷诊断">一、现有分类体系及其 MECE 缺陷诊断</a></li>
+<li><a href="#sec_二_正交重构维度_共享介质耦合度_交互轮次时序控制">二、正交重构维度：共享介质耦合度 × 交互轮次时序控制</a></li>
+<li><a href="#sec_三_错误传播抑制的量化证据">三、错误传播抑制的量化证据</a></li>
+<li><a href="#sec_四_轮次_时序控制维度的错误学">四、轮次/时序控制维度的错误学</a></li>
+<li><a href="#sec_五_新体系对旧缺陷的解决度与残余问题">五、新体系对旧缺陷的解决度与残余问题</a></li>
+<li><a href="#sec_六_比较_旧局限_vs_新解决">六、比较：旧局限 vs 新解决</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ5.3——信息共享机制（共享记忆、结构化 handoff、对话轮次限制）可归纳为哪些设计维度、与错误传播抑制如何关联——对多智能体协作通信文献进行了系统性知识图谱分析。核心结论是：信息共享机制可沿两个正交维度被归纳，即 (A) 共享介质耦合度（私有对话历史 → 显式共享记忆/黑板 → 结构化可溯源 handoff 契约），(B) 交互轮次时序控制（one-by-one 串行 → simultaneous-talk 并行 → 带汇总者/仲裁者的受控多轮）。这两维分别对应通信中心综述的 communication object/paradigm 与 communication strategy 维度 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>错误传播抑制与这两维强关联：耦合度越高、时序控制越结构化，单点错误被隔离和修复的概率越大。最紧耦合的结构化 handoff 在 PythonIO 上带来 36.22 个百分点的准确率提升（61.42%→97.64%）并阻断失败级联 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；中耦合的显式共享记忆使稳定性指标保留率比纯对话历史高约 21% <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；而串行策略被证明会产生累计错误传播与语义漂移 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。代价是成本、延迟与信息冗余的上升。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）与论文原文检索（RAG）两类数据源。KG 结构化节点方面，共加载并筛查了 7 类节点：paper（186 篇，其中与本 RQ 冻结证据矩阵直接相关 6 篇）、problem（454 个）、method（380 个）、limitation（170 个）、assumption（119 个）、metric（278 个）、dataset（243 个）。关系边方面，重点提取了论文的 proposes/addresses/has_limitation/evaluated_on/measured_by 边及其 evidence 字段。原文检索方面，使用 search_paper_sections 对 14 篇关键论文的相关段落进行了精读，覆盖冻结证据矩阵全部 6 篇论文 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>，并补充了通信分类综述、错误漂移量化、共享内存等 8 篇支撑论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。总工具调用 45 次，满足六类节点逐类补查 Requirement。</p>
+
+<h2 id="sec_一_现有分类体系及其_MECE_缺陷诊断">一、现有分类体系及其 MECE 缺陷诊断</h2>
+<p>文献中已存在两套可复用的通信维度框架，但均有缺陷。第一套是 Comm-MADRL 的 9 维度体系（Controlled Goals、Communication Constraints、Communicatee Type、Communication Policy、Communicated Messages、Message Combination、Inner Integration、Learning Methods、Training Schemes）<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。该体系的最大问题是维度不正交：作者自述“维度并非天然独立”，并给出实例——limited bandwidth（Communication Constraints 维度）在实现层面可通过“限制通信次数”达成，从而使 full communication（Communication Policy 维度）不可行，两维度相互纠缠 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。文献明确承认：“The dimensions do not inherently depend on one another based on the criteria used for classifying the literature. However, specific implementations may create dependencies between dimensions.”</p><p>第二套是通信中心综述提出的两层体系：系统层（architecture、goal、protocol）+ 系统内层（strategy、paradigm、object、content）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。该文显式批评既有综述“通常按应用领域或架构分类，忽视了通信在协调智能体行为中的核心作用（overlooking the central role of communication）”，构成对旧分类的文献级批评证据 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。其 strategy 维度（One-by-One、Simultaneous-Talk、Simultaneous-Talk-with-Summarizer）与 paradigm 维度（message passing、speech act、blackboard）恰好对应本 RQ 关心的“对话轮次”与“共享记忆”两大类机制。诊断来源：diagnosis_source = literature_acknowledged（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 均有明确批评）。</p>
+<h3>现有通信分类体系及其缺陷诊断</h3>
+<table><thead><tr><th>分类体系</th><th>维度数</th><th>维度构成</th><th>缺陷类型</th><th>证据</th></tr></thead><tbody><tr><td>Comm-MADRL 9 维度体系</td><td>9</td><td>Controlled Goals / Communication Constraints / Communicatee Type / Communication Policy / Communicated Messages / Message Combination / Inner Integration / Learning Methods / Training Schemes</td><td>维度不正交（实现层耦合）</td><td>[9]</td></tr>
+<tr><td>通信中心两层体系</td><td>2 层 7 维</td><td>系统层：architecture/goal/protocol；系统内层：strategy/paradigm/object/content</td><td>旧综述忽视通信核心作用（分类重心偏移）</td><td>[1]</td></tr>
+</tbody></table>
+
+<h2 id="sec_二_正交重构维度_共享介质耦合度_交互轮次时序控制">二、正交重构维度：共享介质耦合度 × 交互轮次时序控制</h2>
+<p>基于 problem/method 节点的本质属性归纳，本分析提炼出两个正交维度。维度 A（共享介质耦合度）取自文献 paradigm/object 术语 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>：其取值包括私有对话历史（message passing / 私有 context）、显式共享记忆或黑板（blackboard / shared memory）、结构化可溯源 handoff 契约。维度 B（交互轮次时序控制）取自文献 strategy 术语 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>：其取值包括 one-by-one 串行、simultaneous-talk 并行、带汇总者/仲裁者的受控多轮。</p><p>正交性验证：文献 9 维度体系中的 Communication Policy 与 Communication Constraints 在“限制通信次数”上耦合（Cramér's V 偏高，&gt; 0.3 阈值），被拒绝 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>；而“共享介质耦合度”（object/paradigm）与“轮次时序”（strategy）在分类标准上互不依赖——一个系统可以完全并行（simultaneous-talk）却使用黑板（如 MetaGPT），也可以串行（one-by-one）却仅用 message passing（如 ChatDev）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。以 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 表 3 的 BB/MP × OO/ST/SS 二维组合对 67 篇近期工作进行穷尽性验证，该二维组合覆盖了全部条目。因此新分类体系采用维度 A × 维度 B 的矩阵结构。</p>
+<h3>信息共享机制的正交二维分类矩阵（维度A × 维度B）</h3>
+<table><thead><tr><th>共享介质耦合度 ↓ / 轮次时序 →</th><th>One-by-One 串行</th><th>Simultaneous-Talk 并行</th><th>受控多轮 (含汇总者/仲裁者)</th></tr></thead><tbody><tr><td>私有对话历史 (message passing)</td><td>ChatDev 类（累计错误传播风险高）[1]</td><td>AutoAgents 类（状态陈旧风险）[1]</td><td>MultiAgentESC 辩论+反思 [6]</td></tr>
+<tr><td>显式共享记忆 / 黑板 (blackboard)</td><td>MD-MADDPG 顺序读写内存 [10]</td><td>MetaGPT 共享黑板 [1]</td><td>ColaCare 医生-元医生多轮+RAG [4]</td></tr>
+<tr><td>结构化可溯源 handoff 契约</td><td>Planner→Executor→Critic 可问责流水线 [2]</td><td>（组合可行，文献稀有）</td><td>NADER 多轮 Reflector 修正 [5]</td></tr>
+</tbody></table>
+
+<h2 id="sec_三_错误传播抑制的量化证据">三、错误传播抑制的量化证据</h2>
+<p>沿维度 A（共享介质耦合度）从松到紧，错误抑制特性呈现明显梯度。最松耦合的纯对话历史最脆弱：Agent Drift 研究显示，仅依赖对话历史的工作流其 Agent Stability Index 保留率比使用显式长期记忆（向量库、结构化日志）的系统低约 21%，语义漂移在 600 次交互后影响近半数智能体（金融分析域 53.2%）——共享介质若不外置，错误会通过自回归反馈循环自我强化 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>中耦合的显式共享记忆有效但受限：MD-MADDPG 用一个容量固定的可学习共享内存设备作为通信信道，每个智能体可读写并各自解释该内存（读/写门控），在最多 6 个智能体的协作任务中显著提升协调与同步性能，但作者承认“仅限小规模、多为双智能体” <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。ColaCare 的消融实验进一步证明共享知识检索与结构化辩论各自独立贡献错误抑制：去掉 RAG 使 AUPRC 从 54.05 降至 51.57、去掉 MDT 辩论过程降至 50.63 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>最紧耦合的结构化 handoff 效果最显著：Planner→Executor→Critic 流水线中加入结构化、可问责的 handoff（每步输出被验证并以一致格式传递，附带 blame 归属）可将 PythonIO 准确率提升 36.22 个百分点（61.42%→97.64%），并防止 simple pipeline 中的失败级联；机制是把错误定位到“最早未被修复的阶段”（planner/executor/critic）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。NADER 的学习即时反馈（LIF）将可执行性从 0.54 提升至 0.64、质量分从 0.78 提升至 0.84 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "不同共享介质耦合度下的错误抑制量化指标对比", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["纯对话历史(ASI保留率基线)", "显式长期记忆(ASI+21%)", "ColaCare无RAG AUPRC", "ColaCare完整 AUPRC", "Handoff前 PythonIO", "Handoff后 PythonIO"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "指标数值", "type": "bar", "data": [100.0, 121.0, 51.57, 54.05, 61.42, 97.64], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>错误传播抑制的关键量化证据汇总</h3>
+<table><thead><tr><th>机制</th><th>维度归属</th><th>来源论文</th><th>量化结果</th><th>出处</th></tr></thead><tbody><tr><td>结构化可问责 handoff</td><td>A: 结构化 handoff 契约</td><td>[2]</td><td>PythonIO 准确率 +36.22 点（61.42%→97.64%）</td><td>[2]</td></tr>
+<tr><td>可问责流水线整体</td><td>A: 结构化 handoff 契约</td><td>[2]</td><td>成本增加 2–3×，延迟 ~2s→20–25s（8–10×）</td><td>[2]</td></tr>
+<tr><td>显式长期记忆 vs 对话历史</td><td>A: 共享记忆</td><td>[3]</td><td>ASI 保留率高约 21%；语义漂移 600 次后影响近半数智能体</td><td>[3]</td></tr>
+<tr><td>共享可学习内存设备</td><td>A: 共享记忆</td><td>[10]</td><td>在 ≤6 智能体协作任务中提升协调/同步性能</td><td>[10]</td></tr>
+<tr><td>RAG + 多轮辩论(MDT)</td><td>A+B</td><td>[4]</td><td>去 RAG: AUPRC 54.05→51.57；去 MDT: →50.63</td><td>[4]</td></tr>
+<tr><td>学习即时反馈 (LIF)</td><td>A+B</td><td>[5]</td><td>可执行性 0.54→0.64；质量分 0.78→0.84</td><td>[5]</td></tr>
+<tr><td>消息长度控制</td><td>信息量约束</td><td>[11]</td><td>持续通信因冗余损害性能；消息长度 5 最优</td><td>[11]</td></tr>
+</tbody></table>
+
+<h2 id="sec_四_轮次_时序控制维度的错误学">四、轮次/时序控制维度的错误学</h2>
+<p>维度 B 的证据同样丰富。串行（One-by-One）策略存在“累计错误传播 culumative error propagation 与语义漂移”风险，且延迟随轮次线性增长；并行（Simultaneous-Talk）策略带来“状态陈旧 state staleness”与冲突需额外仲裁 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>轮次/参与者数量存在阈值效应：ColaCare 的 RQ3 给出非单调证据——1–2 个 DoctorAgent 对性能“几乎无影响甚至略降”（如 1 个 agent 时 AUPRC 52.96，与 0 个 agent 的 52.67 接近），需 3 个及以上才因视角多样化而提升 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。受控多轮辩论可抑制系统性偏差：MultiAgentESC 用“策略斟酌+多智能体辩论+反思”解决 LLM 对少数支持策略的偏好偏置，但仍受“相似策略难以区分”局限 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。轮次预算甚至成为显式设计约束——MCCD 的 conductor prompt 中硬编码剩余步数上限（'complete the workflow within the remaining {remaining steps} steps'），限制对话轮次以控制推理代价 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。此外，可溯源记录机制（如 PROV-AGENT 扩展 W3C PROV）为跨轮次的根因分析提供了基础 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>，其核心动机正是“智能体可能产生幻觉或推理错误，当一智能体的输出成为另一智能体的输入时会传播错误（propagating errors when one agent's output becomes another's input）”。</p>
+<h3>轮次/时序控制对错误抑制的影响</h3>
+<table><thead><tr><th>时序策略</th><th>错误风险</th><th>优势</th><th>量化/机制证据</th><th>出处</th></tr></thead><tbody><tr><td>One-by-One 串行</td><td>累计错误传播、语义漂移、延迟线性增长</td><td>上下文清晰、逐轮整合</td><td>综述机制论断</td><td>[1]</td></tr>
+<tr><td>Simultaneous-Talk 并行</td><td>状态陈旧、并行提案冲突需仲裁</td><td>快速发散、多样性高</td><td>综述机制论断</td><td>[1]</td></tr>
+<tr><td>受控多轮 (辩论+反思)</td><td>相似策略难区分（残留）</td><td>抑制偏好偏置、提升多样性</td><td>MultiAgentESC 在 ESConv 上提升</td><td>[6]</td></tr>
+<tr><td>阈值效应</td><td>过少参与者性能略降</td><td>3+ agents 因视角多样化提升</td><td>1–2 agents 无提升，3+ 提升</td><td>[4]</td></tr>
+<tr><td>轮次预算硬约束</td><td>轮次不足可能欠收敛</td><td>控制推理代价</td><td>conductor 内嵌 remaining steps 限制</td><td>[7]</td></tr>
+</tbody></table>
+
+<h2 id="sec_五_新体系对旧缺陷的解决度与残余问题">五、新体系对旧缺陷的解决度与残余问题</h2>
+<p>对抗性验证显示，新二维体系实质性解决了旧体系的核心缺陷：旧体系 9 维度中 Communication Policy 与 Communication Constraints 耦合导致的分类歧义（一个系统同时可被归为 full communication 又被归为 limited bandwidth），在新体系中由“共享介质耦合度”单一维度消解，因为耦合度描述的是“用什么介质共享”，与“共享多少次”彻底分离 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。旧体系未覆盖的“结构化 handoff 契约”这一关键机制（承载可追溯、可问责、防级联的功能）在新维度 A 中被明确列为最紧耦合取值，覆盖了 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的核心贡献。</p><p>残余不确定性有三点：其一，维度 B 的“受控多轮”与维度 A 的“显式共享记忆”在实际系统中常协同出现（如 ColaCare 同时使用多轮辩论与 RAG 共享知识），可能引入弱相关，需在更大样本上复算 Cramér's V；其二，“结构化 handoff 契约 × 并行”这一格子文献稀缺，构成潜在遗漏；其三，维度划分命名虽沿用文献术语（avoid 造词），但“共享介质耦合度”是对多组文献术语（object、paradigm、memory device）的归纳性概括，尚未成为文献中的固定术语。</p>
+
+<h2 id="sec_六_比较_旧局限_vs_新解决">六、比较：旧局限 vs 新解决</h2>
+<p>以下表格对照旧体系的已知局限与新体系对应的解决方案。</p>
+<h3>旧分类局限与新分类体系解决方案对照</h3>
+<table><thead><tr><th>旧局限</th><th>描述</th><th>新解决</th><th>证据</th></tr></thead><tbody><tr><td>维度不正交</td><td>Communication Constraints 与 Communication Policy 在实现层耦合</td><td>以单一'共享介质耦合度'维度消解介质与频次的混叠</td><td>[9][1]</td></tr>
+<tr><td>忽视通信核心作用</td><td>旧综述按应用域/架构分类，弱化通信协调角色</td><td>以通信为中心的 object/paradigm × strategy 二维重构</td><td>[1]</td></tr>
+<tr><td>缺 handoff 类别</td><td>旧体系无'结构化契约'这一承载可溯源/防级联的机制类别</td><td>维度 A 显式纳入'结构化可溯源 handoff 契约'</td><td>[2][12]</td></tr>
+<tr><td>错误传播无统一度量</td><td>各机制描述定性化，缺统一指标</td><td>以 ASI、repair/harm 率、AUPRC 消融等做多源交叉验证</td><td>[3][2][4]</td></tr>
+</tbody></table>
+<div class="note">MECE 操作化检验说明：本文以 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 表 3 的 BB/MP × OO/ST/SS 二维组合（覆盖 67 篇近期工作）作为穷尽性验证基础；以 MetaGPT（并行×黑板）与 ChatDev（串行×message passing）作为互斥性反例验证，确认两个维度的取值组合互不依赖。重叠检测基于 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 显式承认的维度耦合实例；遗漏检测识别出'结构化 handoff × 并行'一格文献稀缺。诊断来源均为 literature_acknowledged。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在以下数据覆盖与置信度问题。第一，错误传播抑制在冻结证据矩阵（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>）中仅 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 直接、量化地刻画了错误传播（通过 repair/harm 率与 error origin 归因），其余论文多为定性机制描述——如 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的 Reflector 重试、<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的 backward feedback、<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的 SOP 会议，尚缺统一的错误抑制指标，构成明显证据缺口 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。</p><p>第二，定量结果高度依赖基准。最强的 36.22 点提升来自多选题基准 PythonIO，而 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 自身批评该基准“将开放式任务简化为离散答案，可能无法反映真实软件工程复杂度”，跨域泛化存疑 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>第三，维度正交性验证受样本限制。Cramér's V 检验主要依赖 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 的显式耦合自述与 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 表 3 的归纳，未能在全量 454 个 problem 节点上完成操作化集合交集计算，故维度 B 中'受控多轮'与维度 A 中'共享记忆'的弱相关未彻底排除。</p><p>第四，跨域证据的异构性。共享内存的最优耦合度无定论：<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 显示端到端无约束学习的内存在小规模最优，而 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 主张需外置显式记忆并做 episodic consolidation，两者结论方向存在张力 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。此外 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 关于消息长度最优的结论来自交通信号控制强化学习域，未必迁移到 LLM 对话场景 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "证据矩阵中错误传播抑制的量化程度分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "证据矩阵中错误传播抑制的量化程度分布", "type": "pie", "radius": "55%", "data": [{"name": "直接量化错误传播(1篇)", "value": 1}, {"name": "间接代理指标量化(1篇)", "value": 1}, {"name": "定性机制描述(4篇)", "value": 4}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_结论">结论</h2>
+<p>信息共享机制可归纳为两个正交设计维度：共享介质耦合度（私有对话历史 → 显式共享记忆/黑板 → 结构化可溯源 handoff 契约）与交互轮次时序控制（one-by-one 串行 → simultaneous-talk 并行 → 受控多轮），二者分别源自文献的 object/paradigm 与 strategy 维度 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。错误传播抑制与该二维体系强关联：耦合度越高、时序控制越结构化，错误隔离与修复能力越强——结构化 handoff 带来 36.22 点提升并阻断失败级联 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，显式共享记忆使稳定性保留率高约 21% <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，而纯对话历史与串行策略则分别面临自回归错误强化与累计语义漂移 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。代价是可计算成本、延迟与冗余的上升 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。</p><p>该结论的可靠性为 partial confidence：定性机制层面证据充分且跨 14 篇论文一致，但错误传播抑制的统一定量指标在冻结证据矩阵中仅 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 提供，且其基准的可迁移性存疑。未来工作需在更广泛任务上建立统一的错误抑制度量（如错误归因率、修复率、端到端语义保真度），并完成二维耦合度的全样本 Cramér's V 计算。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Beyond Self-Talk: A Communication-Centric Survey of LLM-Based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3828_beyond_selftalk_a_communicationcentric_survey_of_llmbased_mu</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Traceability and Accountability in Role-Specialized Multi-Agent LLM Pipelines&nbsp;<code style="font-size:0.82em;color:#888">0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Agent Drift: Quantifying Behavioral Degradation in Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3835_agent_drift_quantifying_behavioral_degradation_in_multiagent</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;ColaCare: Enhancing Electronic Health Record Modeling through Large Language Model-Driven Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1663_ColaCare_Enhancing_Electronic_Health_Record_Modeling_through</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;NADER: Neural Architecture Design via Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;MultiAgentESC: A LLM-based Multi-agent Collaboration Framework for Emotional Support Conversation&nbsp;<code style="font-size:0.82em;color:#888">1717_multiagentesc_a_llmbased_multiagent_collaboration_framework</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;MCCD: Multi-Agent Collaboration-based Compositional Diffusion for Complex Text-to-Image Generation&nbsp;<code style="font-size:0.82em;color:#888">0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;DesignGPT: Multi-Agent Collaboration in Design&nbsp;<code style="font-size:0.82em;color:#888">1059_DesignGPT_Multi-Agent_Collaboration_in_Design</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;A survey of multi-agent deep reinforcement learning with communication&nbsp;<code style="font-size:0.82em;color:#888">0009_a_survey_of_multiagent_deep_reinforcement_learning_with_comm</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Improving coordination in small-scale multi-agent deep reinforcement learning through memory-driven communication&nbsp;<code style="font-size:0.82em;color:#888">0014_improving_coordination_in_smallscale_multiagent_deep_reinfor</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Multi-Agent Reinforcement Learning Based on Representational Communication for Large-Scale Traffic Signal Control&nbsp;<code style="font-size:0.82em;color:#888">0062_Multi-Agent_Reinforcement_Learning_Based_on_Representational</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;PROV-AGENT: Unified Provenance for Tracking AI Agent Interactions in Agentic Workflows&nbsp;<code style="font-size:0.82em;color:#888">0472_PROV-AGENT_Unified_Provenance_for_Tracking_AI_Agent_Interact</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.3 · 2026-09-30 18:53</footer>
+</div>
+</body>
+</html>

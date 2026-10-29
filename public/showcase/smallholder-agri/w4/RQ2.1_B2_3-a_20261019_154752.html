@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-a 分析报告</h1>
+<div class="meta">RQ [RQ2.1]：[父问题 RQ2] 从技术可行性到小农田间采纳之间存在怎样的转化机制，现有研究在多大程度上识别并检验了这一机制中的因果路径？
+[本子问题 RQ2.1] 采纳效应研究用了哪些因果推断方法与识别假设，其在小农场景的成立条件被讨论到什么程度？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0655_Agricultural_insurance_access_and_acceptability_examining_th, 0714_Contribution_of_smallholder_farmers_to_food_security_and_opp, 2950_building_aibased_advisory_services_for_smallholder_farmers_t, 0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i, 2850_corn_yield_prediction_model_with_deep_neural_networks_for_sm, 2874_farmerchat_scaling_aipowered_agricultural_services_for_small）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析一_因果推断方法与识别假设的技术栈">核心分析一：因果推断方法与识别假设的技术栈</a></li>
+<li><a href="#sec_核心分析二_识别假设在小农异质性场景下的根本两难">核心分析二：识别假设在小农异质性场景下的根本两难</a></li>
+<li><a href="#sec_核心分析三_其余四篇的方法论缺口">核心分析三：其余四篇的方法论缺口</a></li>
+<li><a href="#sec_核心分析四_评估不可比性与指标异质性">核心分析四：评估不可比性与指标异质性</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ2.1（采纳效应研究用了哪些因果推断方法与识别假设，其在小农场景的成立条件被讨论到什么程度）对证据矩阵 6 篇论文进行了系统分析。核心结论：在 6 篇论文中，仅 2 篇真正实施了因果推断，且二者是同一研究团队在同一棉花播种决策数据集上前后迭代的同一框架——观察性因果推断 + 后门准则（back-door criterion），配合线性回归、匹配、IPS 加权、T-learner、X-learner 五种估计量与四类反驳检验 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。该框架报告遵循推荐使产量提升 12%–17%（ATE 372–546 kg/ha，观测均值 3145 kg/ha）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>然而，识别假设在小农场景下的成立条件几乎未被系统检验：两篇因果论文均以「合作社管理实践同质」这一强假设来满足「无未观测混杂」，并自认这牺牲了结果的外部效度 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。其余 4 篇论文（横截面问卷、系统综述、采纳频率统计、预测精度评估）均未做因果识别 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，且明确承认偏倚检验缺失或仅停留于相关性。这表明采纳效应的因果证据高度集中于单一同质场景，跨群体、跨地区、跨作物的因果证据基本缺失。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）结构化数据与论文原文语义检索（RAG）双重证据。节点层面，调用了 metric、paper、problem、method、limitation、assumption、dataset 六类节点：metric 节点体系用于提取因果类与采纳类评估维度本体；paper 节点共 132 篇，从中链接出证据矩阵 6 篇；problem、method、limitation、assumption、dataset 节点用于还原每篇论文的评估设计与识别假设。</p><p>边层面，重点追踪了 proposes、addresses、measured_by、evaluated_on、has_limitation、relaxes、requires 等关系，定位了因果推断框架（method_causal_inference_framework）与观察性因果推断框架（method_observational_causal_inference_framework）两套方法节点，及其关联的识别假设节点（no_unmeasured_confounding、back_door_criterion、positivity、SUTVA、need_for_randomized_controlled_trials）与因果度量节点（ATE、statistical_significance、yield_increase_percentage、p_value、confidence_interval）。</p><p>原文层面，使用 search_paper_sections 对 8 篇以上论文（0678、2811、0655、0680、0714、0761、2850、2874、2950）精读了 Methods、Results、Discussion、Appendix 等段落，为 10 条关键结论全部取得了直接原文证据支撑（≥20 字直接引用）。</p>
+<h3>证据矩阵论文的评估设计编码</h3>
+<table><thead><tr><th>论文</th><th>评估形式</th><th>因果识别</th><th>主要度量</th><th>基线类型</th></tr></thead><tbody><tr><td>[1] 0678 因果推断评估推荐</td><td>controlled_experiment（观察性）+ 反驳检验</td><td>后门准则 DAG，ATE 识别</td><td>产量增幅 12–17%、p 值/置信区间</td><td>无处理对照（treated/control 字段）</td></tr>
+<tr><td>[2] 2811 因果推断评估数字工具</td><td>controlled_experiment（观察性）+ 反驳检验</td><td>后门准则 DAG，ATE 识别</td><td>ATE 372–546 kg/ha、ATE、p 值、CI</td><td>treated/control（51/120 字段）</td></tr>
+<tr><td>[3] 0655 保险可得性（加纳）</td><td>mixed_methods（问卷+质性访谈）</td><td>无（描述性/相关性）</td><td>采纳率 14%、感知有用性 90%、原因频率</td><td>no_baseline</td></tr>
+<tr><td>[4] 0680 数字技术利用（南非综述）</td><td>systematic_literature_review</td><td>无</td><td>类型统计、感知、约束因素</td><td>no_baseline</td></tr>
+<tr><td>[5] 0714 气候智能农业采纳综述</td><td>systematic_review（PRISMA）</td><td>无（仅频率，无偏倚检验）</td><td>发表趋势、实践频次、挑战</td><td>no_baseline</td></tr>
+<tr><td>[6] 2850 玉米产量预测 DNN</td><td>controlled_experiment（建模对比）</td><td>无（预测拟合，非因果）</td><td>RMSE、MAE、ARSE</td><td>prior_sota（RFR/XGBR 对比）</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析一_因果推断方法与识别假设的技术栈">核心分析一：因果推断方法与识别假设的技术栈</h2>
+<p><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 与 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 使用完全相同的技术栈。二者均先构建农场系统因果图（DAG），依据后门准则确定调整集 Z，再以线性回归、距离匹配、逆倾向得分加权（IPS）、T-learner 与 X-learner 五种估计量估计处理效应 ATE。为避免极端倾向得分破坏重叠性，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 报告将倾向得分 &lt;0.2 或 &gt;0.8 的样本剔除（修剪后剩 48 处理/37 对照），并检查了重叠性 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>稳健性检验方面，两篇论文都实施了四类反驳：安慰剂（Placebo，随机置换处理，效应应降至 0）、随机混杂（RCC，加入随机混杂因子，估计应不变）、随机子集剔除（RSR，估计应稳定）、未观测混杂（UCC，注入未观测混杂因子，估计应相对稳定）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。从方法披露的规范性看，两篇论文对调整集变量、倾向得分建模、修剪、反驳检验的报告相当完整，是本证据矩阵中因果识别严谨度最高的研究。</p><p>需要指出的是，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 与 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 本质是同一研究路线的迭代：<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 明确 extend 了 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的因果推断框架，将其应用于更大数据集（171 块地）并报告了相似的效应量（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 报告 12–17% 增幅，<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 报告 372–546 kg/ha 的 ATE，二者在数值区间上一致）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这意味着本矩阵名义上的「两篇因果研究」实际上并非两个独立的证据来源，而是同一团队、同一棉花播种推荐系统、同一数据谱系下的两次报告。</p>
+<h3>因果推断识别假设与在小农场景的成立条件讨论程度</h3>
+<table><thead><tr><th>识别假设</th><th>在论文中的处理方式</th><th>小农场景成立条件讨论程度</th><th>来源</th></tr></thead><tbody><tr><td>后门准则 / 调整集 Z</td><td>显式给出 Z，含天气、土壤、品种、几何等协变量</td><td>较规范但完全依赖领域知识</td><td>[1][2]</td></tr>
+<tr><td>无未观测混杂</td><td>承认不可穷尽，仅靠领域知识+反驳检验『最小化』</td><td>薄弱：承认现实中不可能考虑所有因素</td><td>[1][2]</td></tr>
+<tr><td>正向性 / 重叠性（Positivity）</td><td>倾向得分修剪 &lt;0.2/&gt;0.8 + 分布检查</td><td>仅技术性处理，未讨论小农异质性下的重叠</td><td>[1]</td></tr>
+<tr><td>SUTVA</td><td>未显式检验</td><td>无讨论</td><td>KG 假设节点未被论文显式 require</td></tr>
+<tr><td>管理实践/AK 同质性</td><td>将 AbS/AdS/AaS 与农业知识(AK)设为常数</td><td>以『合作社同质』强假设替代，自认限制外部效度</td><td>[2]</td></tr>
+<tr><td>随机对照试验(RCT)必要性</td><td>以观察性框架『relax』RCT 要求</td><td>承认 RCT 昂贵、危害作物，故改用观察法</td><td>[1][2]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "证据矩阵论文的因果识别强度分布", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["真正因果推断", "观察性+反驳检验", "描述/相关性", "系统综述(无偏倚检验)", "预测精度(非因果)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "论文数", "type": "bar", "data": [2, 2, 1, 1, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析二_识别假设在小农异质性场景下的根本两难">核心分析二：识别假设在小农异质性场景下的根本两难</h2>
+<p>识别假设在本地成立的条件，恰恰与推广到异质小农群体的诉求相冲突，构成采纳机制因果证据的根本两难。其一，<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 明确以「合作社规模不大、追求一致高质量产出、已形成高度固化惯例（统一管理、均质施肥、共享机械）」为由，将 AbS/AdS/AaS 等管理实践变量视为常数，并省略了「农业知识（AK）」节点，因为「农业知识只通过管理实践作用于作物」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。论文自己写道：「上述假设限制了结果的外部效度」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>其二，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 更直白地承认：「给定数据中农户管理实践的同质性，估计的外部效度较低，结果不能推广到遵循不同惯例的其他农场」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。换言之，正是「同质」这一使无未观测混杂假设近似成立的条件，使结论无法外推到管理碎片化、资源禀赋差异巨大的小农群体。</p><p>其三，「无未观测混杂」这一不可检验假设的辩护是领域知识而非小农现实。<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 承认「在现实中不可能考虑系统中所有交互因素以声称估计无偏倚」，只能靠「变量选择深植于成熟的农业环境知识」与反驳检验来「最小化」偏倚 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这意味着在农业知识积累充分的作物（如棉花播种）上，该方法可行；但对知识匮乏、约束复杂的其他小农场景，识别假设的成立更缺乏保障。这不只是统计问题，而是采纳机制因果路径能否被真实识别的认识论前提问题。</p>
+
+<h2 id="sec_核心分析三_其余四篇的方法论缺口">核心分析三：其余四篇的方法论缺口</h2>
+<p><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 用混合方法（100 份问卷 + 100 名农户质性访谈）报告保险可得/可接受率仅 14% 而感知有用性达 90%，并把 64% 的不采纳归因于「知识不足」、23% 归因于「产品不可得」、5% 归因于「昂贵」<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。但这些均是描述性与相关性的，论文未做任何因果识别，无法区分「知识不足导致不采纳」还是「潜在采纳者更主动获取知识」的内生性——这正是采纳研究中经典的反向因果/遗漏变量问题 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的 PRISMA 系统综述明确声明：「不仅只评估了频率，偏倚检验也未进行」，因此其气候智能农业采纳障碍证据不具备因果效力 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 系统综述与延伸的 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>（100 人问卷）同样停留在采纳因素的相关分析层面 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 的深度神经网络玉米产量预测报告了极低的误差（如 RFR 的 ARSE 达 0.0001 t/ha），但这是预测拟合精度而非推荐对产量的因果效应 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。预测力强不等于干预有效，二者不可混淆。服务类论文进一步印证这一模式：<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 以参与度、RAGAS 忠实度/相关性、满意度度量成效，<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 以 NPS≈60 度量用户满意，并明确把「严格评估对产量与生计的因果影响」列为「下一步」，说明其采纳效应的因果证据尚缺 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。</p>
+<h3>评估维度本体：因果类 vs 采纳类指标对照</h3>
+<table><thead><tr><th>指标类别</th><th>代表指标</th><th>使用论文</th><th>证据效力</th></tr></thead><tbody><tr><td>因果效应类</td><td>Average Treatment Effect (ATE)</td><td>[1][2]</td><td>高（识别+反驳检验）</td></tr>
+<tr><td>统计推断类</td><td>p 值 / 95% 置信区间</td><td>[1][2]</td><td>高</td></tr>
+<tr><td>效应量类</td><td>产量增幅百分比（12–17%）</td><td>[1][2]</td><td>高</td></tr>
+<tr><td>采纳描述类</td><td>采纳/可得率（14%）、感知有用性（90%）</td><td>[3]</td><td>低（描述性）</td></tr>
+<tr><td>归因频率类</td><td>原因频率（知识 64%/不可得 23%）</td><td>[3]</td><td>低（相关性）</td></tr>
+<tr><td>满意度类</td><td>Net Promoter Score（≈60）</td><td>[9]</td><td>低（主观满意）</td></tr>
+<tr><td>预测精度类</td><td>RMSE / MAE / ARSE</td><td>[6]</td><td>中（拟合，非因果）</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "证据矩阵论文的采纳效应证据效力构成", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "证据矩阵论文的采纳效应证据效力构成", "type": "pie", "radius": "55%", "data": [{"name": "因果推断(高)", "value": 2}, {"name": "描述/综述(低)", "value": 3}, {"name": "预测精度(中，非因果)", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析四_评估不可比性与指标异质性">核心分析四：评估不可比性与指标异质性</h2>
+<p>两类研究使用了几乎完全不重叠的指标集合。因果论文使用 ATE、p 值/置信区间、产量增幅百分比 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；采纳论文使用采纳率、感知有用性、原因频率、NPS 等描述性或满意度指标 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。两者的指标集合 Jaccard 相似度接近 0，意味着不同论文之间无法就「何为解决了采纳问题」进行数字层面的直接比较。</p><p>这一指标异质性揭示了一个重要的领域诊断：社区尚未就「采纳效应的有效证据」达成共识。将 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的「14% 采纳率」与 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的「12–17% 产量增幅」放在同一表格中比较毫无意义——前者是采纳现状描述，后者是干预因果效应。因此，本报告严格拒绝将不同指标体系的数字直接比较，而将其视为「方法碎片化」的证据：因果证据被少数团队在单一场景内产出，大多数研究停留在描述层面，两者之间缺乏可通约的度量桥梁。</p>
+<div class="note">关键提醒：本证据矩阵的「两篇因果研究」（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>）并非独立证据，而是同一团队、同一棉花播种推荐系统、同一数据谱系下的迭代报告。因此，尽管报告中「2 篇实施因果推断」在计数上成立，但在证据独立性上应视为约 1 个独立的因果证据来源，这对「采纳机制因果路径被识别并检验」的总体判断具有重要削弱作用。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>第一，证据覆盖集中于单一场景：真正提供因果证据的只有棉花播种推荐这一场景 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，且两篇来自同一团队与数据谱系，跨作物、跨地区、跨小农群体的因果证据基本缺失。第二，识别假设的检验深度有限：SUTVA 未被论文显式检验，正向性仅做倾向得分修剪的技术处理而未讨论小农异质性下的重叠问题，无未观测混杂假设本质不可检验，只能靠反驳检验间接佐证 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。第三，其余 4 篇为描述性、综述性或预测精度研究，其采纳因素结论均为相关性而非因果性，不能作为采纳机制因果路径的证据 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。第四，部分原文证据来自附录与参考文献段落（如 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的 UCC 热图说明、<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的偏倚检验声明），引用为语义检索命中的高相关片段，个别数值（如 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的样本量在不同段落出现 100/200 的表述差异）需回到全文核对。综上，本分析对「方法是什么、假设如何被讨论」判断为高置信度，对「因果路径被检验到何种程度」的判断倾向于保守——答案是讨论极不充分。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ2.1 的回答是「部分回答」：采纳效应研究在方法上高度集中于「观察性因果推断 + 后门准则」，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 与 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 提供了规范的技术栈（DAG 调整集、五种估计量、四类反驳检验）并报告了 12–17% 的产量增幅因果效应；但这一方法的识别假设在小农场景下的成立条件几乎没有被系统检验——为使识别成立，两篇论文均以「合作社管理实践同质」这一强假设将管理变量与农业知识设为常数，并自认因此牺牲了外部效度 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。其余 4 篇论文未做因果识别，仅提供描述性、相关性或预测精度证据 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。由此，采纳机制中「技术可行→田间采纳→产量提升」的因果链条，目前仅在一个同质、知识充分的棉花合作社场景中被识别并验证过一次（且为同一团队的迭代报告），面向异质小农群体的因果路径识别与检验仍是显著的结构性空白。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Evaluating Digital Agriculture Recommendations with Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Evaluating Digital Tools for Sustainable Agriculture using Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">2811_evaluating_digital_tools_for_sustainable_agriculture_using_c</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Agricultural insurance access and acceptability: examining the case of smallholder farmers in Ghana&nbsp;<code style="font-size:0.82em;color:#888">0655_Agricultural_insurance_access_and_acceptability_examining_th</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Utilisation of Digital Technologies by Smallholder Farmers in South Africa: A Systematic Literature Review&nbsp;<code style="font-size:0.82em;color:#888">0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Contribution of smallholder farmers to food security and opportunities for resilient farming systems&nbsp;<code style="font-size:0.82em;color:#888">0714_Contribution_of_smallholder_farmers_to_food_security_and_opp</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Corn Yield Prediction Model with Deep Neural Networks for a Smallholder Farmer Decision Support System&nbsp;<code style="font-size:0.82em;color:#888">2850_corn_yield_prediction_model_with_deep_neural_networks_for_sm</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Adoption of ICT-in-Agriculture Innovations by Smallholder Farmers in Kenya&nbsp;<code style="font-size:0.82em;color:#888">0761_Adoption_of_ICT-in-Agriculture_Innovations_by_Smallholder_Fa</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Farmer.Chat: Scaling AI-Powered Agricultural Services for Smallholder Farmers&nbsp;<code style="font-size:0.82em;color:#888">2874_farmerchat_scaling_aipowered_agricultural_services_for_small</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Building AI-based advisory services for smallholder farmers: Technical learnings from the AIEP Initiative&nbsp;<code style="font-size:0.82em;color:#888">2950_building_aibased_advisory_services_for_smallholder_farmers_t</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.1 · 2026-10-19 15:47</footer>
+</div>
+</body>
+</html>

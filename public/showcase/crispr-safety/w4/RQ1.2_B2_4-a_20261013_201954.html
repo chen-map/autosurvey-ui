@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.4-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.4-a 分析报告</h1>
+<div class="meta">RQ [RQ1.2]：[父问题 RQ1] 如何将 CRISPR 递送效率与编辑安全性（脱靶效应、免疫原性）统一到同一可量化的目标函数中，从而给出「单位风险下的编辑收益」这一可比较指标？
+[本子问题 RQ1.2] 递送剂量 / 载体载量与编辑效率、脱靶率、免疫原性之间是否存在可提取的 trade-off 关系，这些关系在 KG 中以何种边类型表达或缺失？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0093_Cytosine_base_editing_systems_with_minimized_off-target_effe, 0034_Gene_Editing_for_the_Treatment_of_Hypercholesterolemia, 0212_Gene_Editing_for_Duchenne_Muscular_Dystrophy_From_Experiment, 0238_Off-target_effects_in_CRISPRCas9_gene_editing, 0249_CRISPR_medicine_for_blood_disorders_Progress_and_challenges, 0585_CRISPR-CAS9_AND_BASE_EDITING_RECENT_CLINICAL_PROGRESS_AND_DE）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_KG_边类型表达与缺失分析_RQ1_2_核心">KG 边类型表达与缺失分析（RQ1.2 核心）</a></li>
+<li><a href="#sec_场景化的条件性最优推荐">场景化的条件性最优推荐</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ1.2（递送剂量/载体载量与编辑效率、脱靶率、免疫原性之间是否存在可提取的 trade-off 关系，及其在知识图谱中以何种边类型表达或缺失）进行系统分析。综合 KG 中的 problem、method、paper、dataset、metric、limitation、assumption 七类节点与 has_limitation、addresses、requires、measured_by、evaluated_on 等边，以及对 11 篇关键论文的原文片段精读，结论是：**递送系统确实存在可提取的三角权衡关系，但其在 KG 中并非以参数化的 trade-off 边表达，而是被拆解为定性的 problem / limitation / assumption 节点**。</p><p>具体地，KG 中不存在任何剂量→脱靶率或剂量→免疫原性的定量关系边；唯一的直接权衡陈述是一个定性 problem 节点「efficacy-immunogenicity trade-off」，其描述为工程化核酸酶变体「常为免疫逃逸牺牲编辑效率」<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。三条可提取的权衡轴为：（1）载体表达持久性同时驱动效率↑与累积脱靶↑，DNA 型载体（AAV/慢病毒）持续表达提升效率却「increases the probability of cleavage at off-target genomic sites」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；（2）给药剂量与免疫毒性单调正相关，AAV 衣壳特异性 T 细胞反应「is dose-dependent」<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，DMD 全身治疗所需剂量高达 5.5×10¹⁴–1.8×10¹⁵ vg/kg，而 ≥1.5×10¹⁴ vg/kg 已与肝肾毒性相关<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；（3）载体载量受 AAV ~4.7 kb 上限约束，碱基编辑器（5.2–6.3 kb）被迫拆分或换用 SaCas9，导致更高剂量与效率损失<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。非病毒 LNP 载体并未消除权衡，只是把「剂量→脱靶」置换为「剂量→瞬时肝毒性」<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。因此，构建「单位风险编辑收益」目标函数时，可将三条轴建模为共享剂量驱动的约束，但当前 KG 缺乏剂量分层数据，斜率与阈值不可靠，跨研究比较亦受标准化缺失限制<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>分析基于 KG 中七类节点与相应边关系的系统性提取，并对证据矩阵冻结论文执行了原文语义检索（search_paper_sections）。主要统计如下：problem 节点 312 个（截断显示前 30）；method 节点 312 个；paper 节点 138 个；dataset 节点 114 个；metric 节点 175 个；limitation 节点 190 个；assumption 节点 108 个。核心深度精读论文 11 篇，覆盖递送方法综述、DMD/高胆固醇血症/血液病基因编辑、脱靶效应机制与免疫原性四大主题。所有节点均含 origin_paper_id，用于证据溯源。</p><p>关键效能维度的 KG 覆盖情况（基于 measured_by 边计数）：编辑效率（editing efficiency）被 0195、0249、0575 等多个方法/论文测量，为社区共识核心维度；脱靶突变率（off-target mutation rate）被 0093 等方法测量；细胞毒性（cell toxicity）被 0249 测量；碱基编辑效率被 0093 测量。这些维度共同支撑帕累托前沿的方向性判断。</p>
+<h3>核心权衡轴与文献证据</h3>
+<table><thead><tr><th>权衡轴</th><th>正向维度（提升）</th><th>代价维度（恶化）</th><th>关键证据</th><th>代表论文</th></tr></thead><tbody><tr><td>表达持久性 vs 脱靶</td><td>编辑效率↑（持久表达）</td><td>累积脱靶↑</td><td>「sustained expression and increased editing efficiency; however, this also increases the probability of cleavage at off-target genomic sites」</td><td>0025[1], 0238[4], 0577[2]</td></tr>
+<tr><td>剂量 vs 免疫原性</td><td>编辑效率/暴露量↑</td><td>肝毒性、衣壳 T 细胞反应↑</td><td>衣壳特异性 T 细胞反应「is dose-dependent」；高剂量 AAV8-hFIX 致肝酶升高</td><td>0036[5]</td></tr>
+<tr><td>剂量 vs 器官毒性</td><td>肌肉/心脏编辑↑</td><td>肝/肾/心肺毒性↑</td><td>DMD 需 5.5×10¹⁴–1.8×10¹⁵ vg/kg；≥1.5×10¹⁴ vg/kg 与毒相关</td><td>0212[6]</td></tr>
+<tr><td>载量 vs 剂量</td><td>大编辑器功能↑</td><td>剂量↑、效率↓</td><td>碱基编辑 5.2–6.3 kb 超 AAV 4.7 kb 上限，需双 AAV 拆分</td><td>0093[7], 0212[6]</td></tr>
+<tr><td>载体类型 vs 风险位置</td><td>瞬转降低长期脱靶</td><td>转换为瞬时肝毒性</td><td>LNP 成分「can induce dose-dependent hepatotoxicity and pro-inflammatory cytokine release」</td><td>0195[4]</td></tr>
+<tr><td>cargo 形式 vs 脱靶</td><td>RNP 脱靶 &lt;1%</td><td>蛋白稳定性/配方难度↑</td><td>RNP 脱靶 &lt;1%，质粒高同源位点 5–15%</td><td>0195[4]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各递送方式报告的关键量化区间（脱靶/效率相关）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["RNP 脱靶率(%)", "质粒脱靶率(下界,%)", "质粒脱靶率(上界,%)", "AAV 前置NAb阻隔率(下界,%)", "AAV 前置NAb阻隔率(上界,%)", "AAV循环抗衣壳T细胞(下界,%)", "AAV循环抗衣壳T细胞(上界,%)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "百分比", "type": "bar", "data": [1, 5, 15, 30, 50, 10, 100], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>关键编辑器/载体的效率—安全—尺寸帕累托特征</h3>
+<table><thead><tr><th>方法/载体</th><th>效率表现</th><th>脱靶/安全表现</th><th>尺寸/剂量约束</th><th>权衡结论</th><th>来源论文</th></tr></thead><tbody><tr><td>AID-3S（内嵌 tCDA1EQ）</td><td>保持可接受 on-target 活性</td><td>R-loop 脱靶降约 13.7 倍</td><td>SaAID-3S 全长 4036 bp 可入单 AAV</td><td>罕见的效率—脱靶—尺寸三赢点</td><td>0093[7]</td></tr>
+<tr><td>AID-2S（N 端融合）</td><td>与 AID-3S 相当</td><td>R-loop 脱靶降约 4.5 倍</td><td>装入单 AAV 体系</td><td>改进幅度弱于 AID-3S</td><td>0093[7]</td></tr>
+<tr><td>AAV（DNA 型）</td><td>高转导、持久表达</td><td>免疫原性中-高、整合风险</td><td>~4.7 kb 上限</td><td>效率优先、安全次之</td><td>0025[1], 0598[3]</td></tr>
+<tr><td>LNP（mRNA/RNP）</td><td>肝内编辑 60–80%</td><td>免疫原性低-中、瞬转</td><td>剂量依赖性肝毒</td><td>安全优先、肝外靶向受限</td><td>0195[4], 0025[1]</td></tr>
+<tr><td>慢病毒（LV/IDLV）</td><td>&gt;98%（部分体系）</td><td>整合致插入突变风险高</td><td>~8 kb 载量</td><td>效率高但基因毒性显著</td><td>0025[1]</td></tr>
+<tr><td>物理方法（电转等）</td><td>HSPC &gt;96%（体外）</td><td>细胞死亡率高、侵袭性</td><td>不适体内全身应用</td><td>体外高效、体内不可行</td><td>0025[1]</td></tr>
+</tbody></table>
+
+<h2 id="sec_KG_边类型表达与缺失分析_RQ1_2_核心">KG 边类型表达与缺失分析（RQ1.2 核心）</h2>
+<p>RQ1.2 的第二个子问题——「这些关系在 KG 中以何种边类型表达或缺失」——的答案是明确的：**权衡以定性节点存在、以量化边缺失**。</p><p>已存在（承载权衡事实的边）：`has_limitation`（如 0036→免疫原性、0238→检测灵敏度局限）<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、`addresses`/`targets`（如 0575→problem_efficacy_immunogenicity_trade_off）<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、`requires`/`assumption`（如「AAV vector size limit」~4-5 kb、「Cargo choice determines delivery window」、「Context-dependent delivery」）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。这些边编码了「存在约束」和「方向性」，例如 limitation 节点「Long-term expression of CRISPR–Cas9 increases off-target activity」隐含了表达持久性→脱靶的方向<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>缺失（未能承载权衡参数的结构）：KG 中**没有任何 edge_type 表示 dose→off-target、dose→immunogenicity 的定量函数关系**。唯一的 trade-off 命名节点是一个 problem（efficacy_immunogenicity_trade_off），其描述仍是自然语言「often sacrifice editing efficiency for immune evasion」<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>，无数值、无斜率、无剂量分层。这意味着 KG 无法直接支撑「单位风险编辑收益」目标函数的参数化，因为目标函数的系数（边际风险/单位剂量）在 KG 中无处可提取。这是本子问题识别出的最大结构性数据缺口。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "权衡证据在 KG 中的承载方式分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "权衡证据在 KG 中的承载方式分布", "type": "pie", "radius": "55%", "data": [{"name": "qualitative problem 节点（定性）", "value": 1}, {"name": "has_limitation 边（方向性约束）", "value": 6}, {"name": "requires/assumption 边（边界条件）", "value": 4}, {"name": "parametric dose-response 边（缺失）", "value": 0}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">对抗验证：对声称『工程化核酸酶可同时实现低免疫原性与高效率』的论点 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 执行了 limitation 检查——0575 自身列出的限制包括『Engineered nucleases exhibit reduced editing efficiency and stability』与『No personalized design standards』<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>，故该论点不成立为全面领先。对 0093 的 AID-3S 执行 limitation 检查：其原文段落显示『no significant editing was observed for any of the A3S series』<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，证明在换用更小 SaCas9 时效率出现损失，其前沿地位为条件性（仅在特定载体构型下）。因此不存在任何真正意义上的『万能方法』，三角权衡不可被单点方案打破。</div>
+
+<h2 id="sec_场景化的条件性最优推荐">场景化的条件性最优推荐</h2>
+<p>**肝靶向单基因病（高优效率、可接受瞬转）**：推荐 LNP-mRNA（SORT 增强）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。代价：肝外靶向差、剂量依赖性肝毒——VERVE-101 在第 6 例出现 Grade 3 ALT 与血小板减少而暂停入组<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>**罕见重症/不可治愈病（高优效率、风险容忍度高）**：推荐 AAV+LNP/RNP 混合体系<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。代价：前置 NAb 使 30–50% 患者被排除，且高剂量毒性限制剂量爬坡<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p><p>**需长期表达的静脉/全身编辑（如中枢/视网膜）**：推荐 AAV9/AAV9-PHP.B<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。代价：持久表达显著抬高累积脱靶风险，须配合高保真 Cas9 或瞬时调控<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>**需极高安全性的干细胞/外显子编辑**：推荐 RNP 电转（体外）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。代价：体内递送效率低、不适合全身应用——RNP 脱靶 &lt;1% 但配方与稳定性受限<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>1. **缺乏剂量分层数据**：KG 中所有剂量数字均为单点剂量—单点结局，无 dose-response 曲线点集，故无法拟合边际斜率，这是构建「单位风险编辑收益」指标的最大障碍。</p><p>2. **免疫原性测量不标准化**：0036 明确指出「lack of standard protocols for immune assays」导致跨研究 NAb / T 细胞数字定义不一致<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，禁止直接合并比较。</p><p>3. **脱靶测定的异质性**：0238 列出 Digenome-seq 需 4–5 亿 reads、WGS 对低频位点昂贵、Cas9 ChIP-seq 验证率低<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，导致「脱靶率」维度本身跨研究不可比。</p><p>4. **毒性证据的外推风险**：0093 之外的 AAV 毒性数据主要来自 DMD 动物模型与临床个案（0212 引 Lek 等）<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，人类剂量—毒性阈值仍为外推。</p><p>5. **KG 边覆盖偏斜**：本分析中大量节点无 origin_paper_id 或来自非基因编辑领域（如脊柱手术风险预测、驾驶自动化），相关节点已排除，但需注意 KG 的领域噪声。</p><p>6. **维度选取受限于 KG 覆盖**：核心效能维度由 measured_by 边计数驱动，但 usage_count 的数据受截断（每类节点仅显示前 30）影响，可能低估部分维度的真实使用频次。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ1.2 得到部分回答（partial）：递送剂量/载体载量与编辑效率、脱靶率、免疫原性之间**确实存在可提取的 trade-off 关系**，可归纳为三条共享剂量驱动的权衡轴——（a）持久表达提升效率但抬高累积脱靶<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；（b）剂量与免疫毒性/器官毒性单调正相关<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；（c）载量受限迫使剂量上升而效率下降<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。这些关系在 KG 中**以定性 problem / limitation / assumption 节点及 has_limitation / addresses / requires 边表达，但缺失任何参数化的 dose-response 关系边**。这一结构性缺口意味着：当前 KG 证据足以确认「不可逃避的三角约束」这一定性事实，却不足以参数化「单位风险下的编辑收益」这一可比较指标。未来需补充剂量分层实验数据并将其编码为参数化 trade-off 边，才能支撑父问题 RQ1 所要求的统一目标函数。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Overview of Delivery Methods for Gene Editing&nbsp;<code style="font-size:0.82em;color:#888">0025_Overview_of_Delivery_Methods_for_Gene_Editing</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;How to Mitigate CRISPR-Cas9 Off-Target Effects: Evaluation of Delivery Methods&nbsp;<code style="font-size:0.82em;color:#888">0577_How_to_Mitigate_CRISPR-Cas9_Off-Target_Effects_Evaluation_of</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;In vivo delivery strategies for therapeutic CRISPR genome editing&nbsp;<code style="font-size:0.82em;color:#888">0598_In_vivo_delivery_strategies_for_therapeutic_CRISPR_genome_ed</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Immunogenicity of Recombinant Adeno-Associated Virus (AAV) Vectors for Gene Transfer&nbsp;<code style="font-size:0.82em;color:#888">0036_Immunogenicity_of_Recombinant_Adeno-Associated_Virus_AAV_Vec</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Gene Editing for Duchenne Muscular Dystrophy: From Experimental Models to Emerging Therapies&nbsp;<code style="font-size:0.82em;color:#888">0212_Gene_Editing_for_Duchenne_Muscular_Dystrophy_From_Experiment</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Cytosine base editing systems with minimized off-target effect and molecular size&nbsp;<code style="font-size:0.82em;color:#888">0093_Cytosine_base_editing_systems_with_minimized_off-target_effe</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Research on Reducing the Immunogenicity of Nucleases in Gene Therapy&nbsp;<code style="font-size:0.82em;color:#888">0575_Research_on_Reducing_the_Immunogenicity_of_Nucleases_in_Gene</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Off-target effects in CRISPR/Cas9 gene editing&nbsp;<code style="font-size:0.82em;color:#888">0238_Off-target_effects_in_CRISPRCas9_gene_editing</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;CRISPR-Cas9 and base editing: recent clinical progress and delivery&nbsp;<code style="font-size:0.82em;color:#888">0585_CRISPR-CAS9_AND_BASE_EDITING_RECENT_CLINICAL_PROGRESS_AND_DE</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;CRISPR medicine for blood disorders: Progress and challenges in delivery&nbsp;<code style="font-size:0.82em;color:#888">0249_CRISPR_medicine_for_blood_disorders_Progress_and_challenges</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Gene Editing for the Treatment of Hypercholesterolemia&nbsp;<code style="font-size:0.82em;color:#888">0034_Gene_Editing_for_the_Treatment_of_Hypercholesterolemia</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.2 · 2026-10-13 20:19</footer>
+</div>
+</body>
+</html>

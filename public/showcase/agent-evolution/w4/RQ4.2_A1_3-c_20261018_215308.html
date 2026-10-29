@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.3-c 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.3-c 分析报告</h1>
+<div class="meta">RQ [RQ4.2]：[父问题 RQ4] 安全约束与能力进化之间存在怎样的张力，哪些进化机制天然放大攻击面，哪些约束可保进化可控？
+[本子问题 RQ4.2] 现有安全综述（Safety in Self-Evolving Agents: A Survey）与进化机制综述各自为政，二者整合后可提出哪些&quot;进化可控性（controllability of evolution）&quot;约束条件？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2209_building_selfevolving_agents_via_experiencedriven_lifelong_l, 2205_a_comprehensive_survey_of_selfevolving_ai_agents_a_new_parad, 2290_seaeval_a_benchmark_for_evaluating_selfevolving_agents_beyon, 2302_skillos_learning_skill_curation_for_selfevolving_agents, 2295_on_safety_risks_in_experiencedriven_selfevolving_agents, 0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_范式识别与断裂编码">范式识别与断裂编码</a></li>
+<li><a href="#sec_核心分析一_哪些进化机制天然放大攻击面">核心分析一：哪些进化机制天然放大攻击面</a></li>
+<li><a href="#sec_核心分析二_六条进化可控性约束">核心分析二：六条进化可控性约束</a></li>
+<li><a href="#sec_约束的证据成熟度分布">约束的证据成熟度分布</a></li>
+<li><a href="#sec_量变到质变的临界点分析">量变到质变的临界点分析</a></li>
+<li><a href="#sec_旧范式假设的失效点与有效边界">旧范式假设的失效点与有效边界</a></li>
+<li><a href="#sec_分歧点_证据缺口与不确定性">分歧点、证据缺口与不确定性</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告以 A1.3-c 范式对比框架为分析骨架，针对子问题 RQ4.2——现有安全综述与进化机制综述&quot;各自为政&quot;，二者整合后可提出哪些&quot;进化可控性（controllability of evolution）&quot;约束条件——进行系统性 KG 分析。核心结论是：两大综述并非学科偏好的分岔，而是共享同一本体（reusable state，可复用状态）却在分析单位上错位：进化综述（如 MASE 框架）衡量&quot;状态如何变得更有用&quot;，安全综述（SAVER 框架）衡量&quot;复用状态如何变得不安全&quot;。整合的切口在于二者共用同一批状态载体（memory/skill/tool/workflow/parameter），但优化回路只看 utility、风险回路只看 violation。</p><p>基于跨论文证据，本报告提出六条可操作的进化可控性约束：（C1）状态写入许可门；（C2）作用域保持抽象；（C3）组合感知选择；（C4）时序有效统计接受门；（C5）后代追踪的修复与可争辩性；（C6）进化节律/伪进化检测。同时对&quot;哪些进化机制天然放大攻击面&quot;给出机制级答案：经验驱动终身学习、experience-to-skill 提炼管道、结果导向效用门、经验数量诱导退化、动态图级联传播，五者构成攻击面的结构性放大器。分析判定为 partial——框架与约束均有跨论文证据支撑，但尚无数篇工作在同一系统、同一进化链条上同时验证全部六条约束。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析通过知识图谱工具进行 42 次调用，覆盖全部六类节点的针对性查询：</p><p>• paper（论文）：加载 274 篇，定位冻结证据矩阵全部 6 篇核心论文。</p><p>• method（方法/技术）：加载 558 个，提取 SAVER、SkillOS、ELL、Evolutionary Flywheel、CASS/u-SMCO、SkillJack、PACE 等关键方法节点及其关系边。</p><p>• problem（研究问题/挑战）：加载 629 个，提取 authority collapse during abstraction、relinking of benign fragments、model safety regression、safety degradation、pseudo-evolution、episodic evaluation 等问题节点。</p><p>• assumption（假设/约束）：加载 200 个，提取 reusable influence、transition as unit of analysis 等 SAVER 前提节点；对 SkillOS 方法节点的 requires 边查询返回空，故相关假设降级为文本证据支撑。</p><p>• limitation（局限性）：通过 has_limitation 边提取（0038 后代修复证据稀疏、2295 基准多样性不足、2383 单模型代理、2290 任务仅 32 个）。</p><p>• dataset/metric：通过 evaluated_on 与 measured_by 边提取（WebArena、BrowserART、SafeAgentBench、ALFWorld、StuLife、SkillX、Anything2Skill；ASR、routing success rate、persistence rate、token consumption、LLM-judge detection rate 等）。</p><p>原文溯源方面，使用 search_paper_sections 对 10 余篇关键论文的精读段落进行 RAG 检索，获取带章节号与语义分值的直接引文（如 2383 的 &quot;4.3 Extraction Substantially Reduces Raw-Trajectory Detectability&quot;、0038 的 &quot;2 SAVER formalization&quot;、2335 的 &quot;6 Discussion and Limitations&quot; 等）。范式断裂在 KG 中通过 extends 边可编码：0038 扩展 0037，0037 扩展 symbolic learning，说明两大综述本属同一谱系。</p>
+
+<h2 id="sec_范式识别与断裂编码">范式识别与断裂编码</h2>
+<p>KG 中的 extends 边与 contradicts 语义直接编码了新范式对旧范式的拒绝，构成范式断层的客观证据。进化综述明确将发展轨迹刻画为 MOP（Model Offline Pretraining）→ MOA（Model Online Adaptation）→ MAO（Multi-Agent Orchestration）→ MASE（Multi-Agent Self-Evolving）的四阶段，并称其为&quot;从静态、人工配置架构到自适应、数据驱动系统的根本转变&quot;。安全综述则把安全对象从&quot;单次输出/单次动作&quot;扩展到&quot;跨状态转移的可复用影响&quot;，指出&quot;适应本身成为安全变化的来源&quot;。</p><p>下表对两个范式在五个 KG 锚点上的分歧进行定位：</p>
+<h3>新旧范式在 KG 节点层面的对比定位</h3>
+<table><thead><tr><th>对比维度</th><th>旧范式（静态/单次安全）</th><th>新范式（自进化/状态转移安全）</th><th>KG 锚点节点</th></tr></thead><tbody><tr><td>安全分析单位</td><td>单次响应是否对齐、单次动作是否授权</td><td>可复用影响在状态转移中的演变</td><td>0038 method_method_saver_framework; assumption_transition_as_unit_of_analysis [1]</td></tr>
+<tr><td>状态本体</td><td>冻结参数、无跨会话持久状态</td><td>memory/skill/tool/workflow/parameter 作为可复用载体</td><td>problem_structural_evolution_of_agent_states; 0037 [2][3]</td></tr>
+<tr><td>优化目标</td><td>任务效用优先</td><td>Endure &gt; Excel &gt; Evolve 分层约束</td><td>2205 method_three_laws [4]</td></tr>
+<tr><td>失效来源</td><td>外生攻击、恶意输入</td><td>内生的合法状态经抽象/复用变得不安全</td><td>problem_authority_collapse_during_abstraction [1]</td></tr>
+<tr><td>评估方式</td><td>单点快照、episodic 评估</td><td>横向-纵向、跨任务流、生命周期覆盖</td><td>problem_evaluation_and_governance_gap; 2290 [3][5]</td></tr>
+</tbody></table>
+<div class="note">范式断裂判定：属于质变而非量变。旧范式的核心假设是&quot;输入受控 + 状态不跨会话持久 + 单点评估充分&quot;，而自进化范式下状态持久化复用、经验累积改变未来决策条件，使这三个前提同时被违反——不是&quot;安全效果变差&quot;，而是&quot;安全检查的单位本身失效&quot;。</div>
+
+<h2 id="sec_核心分析一_哪些进化机制天然放大攻击面">核心分析一：哪些进化机制天然放大攻击面</h2>
+<p>文献给出五类机制级的攻击面放大器。第一，经验驱动终身学习（ELL）以经验探索+长期记忆+技能学习+知识内化四原则构建，但无一把安全属性绑定到状态上；其 StuLife 基准上最优模型 LLM 仅得 17.90/100（人类 85.24），说明内化机制本身极其脆弱 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。第二，experience-to-skill 提炼管道是最危险的放大面：提炼操作剥离溯源元数据，本身就是&quot;洗白&quot;过程 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。第三，结果导向效用门在结构上无法识别负贡献，存在理论上的不可辨识性 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。第四，经验数量本身即可诱导安全退化，即使全部为良性经验 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。第五，动态图中局部更新会沿依赖/溯源边级联传播，而现有方法极少暴露级联轨迹 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>下列柱状图展示 skill 提炼管道洗白效应的量化幅度（2383 实测）：</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "技能提炼前后的可检测性衰减（SkillJack, 2383）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["原始轨迹-模式检测", "提炼技能-模式检测", "原始轨迹-LLM judge", "提炼技能-LLM judge"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "检测率 (%)", "type": "bar", "data": [44.6, 11.0, 98.5, 11.4], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>五类攻击面放大机制及其量化证据（多论文交叉）</h3>
+<table><thead><tr><th>放大机制</th><th>攻击面放大方式</th><th>关键量化证据</th><th>支撑论文</th></tr></thead><tbody><tr><td>经验驱动终身学习 (ELL)</td><td>四原则未把安全属性绑定到状态，内化机制脆弱</td><td>StuLife 最优 LLM 仅 17.90/100 vs 人类 85.24</td><td>[6] 2209</td></tr>
+<tr><td>experience-to-skill 提炼</td><td>剥离溯源元数据，提炼即洗白</td><td>LLM judge 98.5%→11.4%；80% 触发在删除源记录后存活</td><td>[7] 2383</td></tr>
+<tr><td>结果导向效用门</td><td>只看 bank 级标量，结构性盲于负贡献</td><td>被接受技能 Δ=−0.005，真正支撑者 Δ=+0.084</td><td>[8] 2403</td></tr>
+<tr><td>经验数量累积</td><td>数量本身诱导退化，无需有害内容</td><td>ASR 随检索经验条数增加持续上升</td><td>[9] 2295</td></tr>
+<tr><td>动态图级联传播</td><td>局部编辑静默影响下游依赖链</td><td>现有方法&quot;极少暴露级联轨迹&quot;（定性）</td><td>[3] 0037</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析二_六条进化可控性约束">核心分析二：六条进化可控性约束</h2>
+<p>将两大综述整合后，可为&quot;进化可控性&quot;提出六条彼此互补的约束条件。它们不是安全侧单方面施加的限制，而是从两综述共同承认的范式差距中&quot;缝&quot;出来的控制面。下表给出每条约束的失效机理、量化证据与证据成熟度：</p>
+<h3>六条进化可控性约束：定义、失效机理、量化证据与置信度</h3>
+<table><thead><tr><th>约束</th><th>定义</th><th>针对的失效机理</th><th>量化证据</th><th>置信度</th><th>支撑论文</th></tr></thead><tbody><tr><td>C1 状态写入许可门</td><td>promotion gate 先过资格条件 c_t(δ) 再让 utility 排序</td><td>任务效用充当隐式许可</td><td>provenance-diversity 门将 SER 从 25/25 降至 0/25</td><td>中</td><td>[1] 0038</td></tr>
+<tr><td>C2 作用域保持抽象</td><td>抽象保留前置条件/作用域/权限/时序有效性/来源谱系</td><td>authority collapse（抽象丢弃 permitted-use）</td><td>定性 + AUTHMEM/AuthMem-Bench 案例</td><td>中</td><td>[1] 0038</td></tr>
+<tr><td>C3 组合感知选择</td><td>采样 Shapley 边际替代 bank 级标量</td><td>coalition pollution（bank 增益掩盖负贡献）</td><td>Theorem 1 不可辨识；Δ=−0.005 vs +0.084</td><td>高</td><td>[8] 2403</td></tr>
+<tr><td>C4 anytime-valid 接受门</td><td>e-process 累积证据，证据足够才提交</td><td>贪心在噪声上持续误提交</td><td>false-commit 30%–100% → 0%</td><td>高</td><td>[10] 2335</td></tr>
+<tr><td>C5 后代追踪修复与可争辩性</td><td>恢复范围限于已发现后代，提供争辩流程</td><td>回滚只删可见对象，后代仍可激活</td><td>文献&quot;后代修复与可争辩性证据稀疏&quot;</td><td>低（最薄弱）</td><td>[1] 0038</td></tr>
+<tr><td>C6 进化节律/伪进化检测</td><td>以 token 消耗时序收敛区分真进化</td><td>成功率高但为伪进化（能力幻觉）</td><td>同等成功率下 token 消耗差达 31.2×</td><td>中</td><td>[5] 2290</td></tr>
+</tbody></table>
+<div class="note">C4 与 C6 互补：C4 管&quot;何时提交&quot;（统计门），C6 管&quot;提交是否真进化&quot;（效率收敛信号）。二者共同把&quot;进化节律&quot;从&quot;看到上涨就提交&quot;改为&quot;证据累积够、且效率真收敛才认可&quot;。C3 与 C1/C2 的层次关系：C1/C2 作用于单次转移的准入与抽象，C3 作用于 bank 级选择，三者对应 SAVER 的 Substrate×Adaptation 不同粒度。</div>
+
+<h2 id="sec_约束的证据成熟度分布">约束的证据成熟度分布</h2>
+<p>六条约束中，C3（组合感知选择）与 C4（anytime-valid 接受门）证据最硬，均含形式化定理加实测数字；C5（后代追踪修复与可争辩性）证据最薄弱，0038 明确自陈&quot;所选研究在激活与暴露覆盖强，但后代修复与可争辩性证据少&quot;。下列饼图按证据成熟度对六条约束分类：</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "六条约束的证据成熟度分布（依据形式化+实测强度）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "六条约束的证据成熟度分布（依据形式化+实测强度）", "type": "pie", "radius": "55%", "data": [{"name": "高（定理+实测数字）", "value": 2}, {"name": "中（定性+局部实测）", "value": 3}, {"name": "低（仅文献缺口声明）", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_量变到质变的临界点分析">量变到质变的临界点分析</h2>
+<p>本分析定位了若干可操作的临界点，它们是&quot;旧方法从效果差变为根本不能用&quot;的分界。</p><p>• 提炼检测临界点：当 LLM judge 对原始轨迹检测率约 98.5% 而对提炼技能仅 11.4% 时，纯文本层防御在&quot;提炼管道&quot;处发生质变失效——不是精度下降，而是检测对象（原始轨迹）与部署对象（提炼技能）不再是同一实体 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>• 数量诱导退化临界点：2295 图 3/图 14 显示，随检索经验条数从 1 增至 9，ASR 持续上升；&quot;仅数量即可诱导退化&quot;表明安全约束的失效不是内容问题而是累积规模问题 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。</p><p>• 统计接受临界点：PACE 实测贪心规则的误提交率在 30%–100% 区间，而 anytime-valid 门为 0%；当评估噪声主导时（小/复用的 dev 集、随机 agent），贪心会持续&quot;churn on noise&quot;，属质变失效 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p><p>• 效用反转临界点：技能在源域贡献 Δ&gt;0 但在目标域 Δ&lt;0（insert: +0.084 → −0.035），该交叉点即&quot;源域有效性不再保证目标域有效性&quot;的质变分界 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。</p>
+
+<h2 id="sec_旧范式假设的失效点与有效边界">旧范式假设的失效点与有效边界</h2>
+<p>旧范式（静态/单次安全）的隐含假设可从 KG 的 requires 边与文本证据反向提取，其失效点如下表。有效边界描述均为可操作条件，避免模糊表述：</p>
+<h3>旧范式核心假设及其失效点与可操作有效边界</h3>
+<table><thead><tr><th>旧假设</th><th>新范式如何违反</th><th>有效区间（可操作）</th><th>质变临界点</th></tr></thead><tbody><tr><td>状态不跨会话持久复用</td><td>自进化持久化 memory/skill 并跨会话复用</td><td>单会话内、内存状态不落地时旧安全检查仍有效</td><td>一旦状态被持久化并被后续任务检索激活</td></tr>
+<tr><td>单点/单次动作授权充分</td><td>同一内容在不同载体上安全含义不同（transient vs persistent vs skill）</td><td>仅评估当前动作边界且无后续复用</td><td>状态经抽象/迁移后权限被提升</td></tr>
+<tr><td>任务效用=安全代理</td><td>效用增益可掩盖负贡献技能</td><td>技能库规模小、无跨域迁移、单技能独立贡献时</td><td>outcome-only 门接受的 margin 接近噪声（0.006–0.02）</td></tr>
+<tr><td>文本层检测足以防护</td><td>提炼洗白使检测对象与部署对象分离</td><td>对象未经 experience-to-skill 转换时</td><td>提炼后 judge 检测率跌破 ~11%</td></tr>
+<tr><td>episodic 评估足以刻画能力</td><td>伪进化在单点成功率下不可见</td><td>单一任务一次性评估</td><td>token 消耗不随任务频次收敛（同等 SR 下差 31.2×）</td></tr>
+</tbody></table>
+
+<h2 id="sec_分歧点_证据缺口与不确定性">分歧点、证据缺口与不确定性</h2>
+<p>三个关键不确定点需明确标注：</p><p>1. 三难命题未被独立复现。0038 转引的 Devil's Moltbook 三难结果（连续自进化、完全隔离、安全不变三者不可兼得）被该文自身定位为&quot;设计约束而非普适经验定律&quot;，目前尚无独立复现 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>2. 防御协调假设证据单薄。SkillJack 发现 D3（提取审查+运行时监控）反而比 D2 单独更差（重新引入 13.3% 触发），提出&quot;防御协调假设&quot;，但样本仅 15 个任务、零计数置信区间宽、clean-task 假阳率未测，作者自述为探索性 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>3. 多数控制证据为代理级或有界级。2282 SEVerA 的零约束违反仅在其任务集与局部契约内成立；0038 明确&quot;局部控制结果只在其报告范围内评估&quot;；2403 的 u-SMCO 在目标域反转的 95% CI 仍含零，作者读作&quot;方向性反转而非显著伤害&quot; <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。</p><p>此外，SkillOS 的 requires 边查询返回空、SAVER 方法的 has_limitation 直接边返回空（局限通过 paper 层 has_limitation 边获得），说明部分方法级假设与局限未在 KG 中编码为独立节点，相应结论降级为文本证据支撑。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析的证据覆盖存在以下结构性不足，影响结论置信度：</p><p>• 证据碎片化：现有控制证据分散在不同载体（memory/skill/model）、不同生命周期切片、不同基准（WebArena、BrowserART、SafeAgentBench、ALFWorld、StuLife 等）上，尚无统一基准能在一次完整进化链条上同时度量准入、抽象、选择、接受、修复与效率收敛。</p><p>• 单模型/小样本限制：2383 全部结果基于单一模型（LLM），成功以策略违规代理而非真实服务执行，报告为路由级而非部署级；2290 仅含 32 个原子任务；0037 明确其动态图映射&quot;主要为概念性，未提供实证评估&quot;。</p><p>• 规范性与实证混用：三定律（Endure/Excel/Evolve）为类比 Asimov 的规范性主张，缺形式化与实证，故作为约束骨架使用时置信度较低（0.72）。</p><p>• KG 节点缺失：SkillOS 方法无 requires 边、SAVER 方法无直接 has_limitation 边，部分方法级假设与局限未独立编码，相关判断依赖文本检索而非结构化主轴。</p><p>• 时间与范围：分析基于冻结的 132 篇论文语料与特定 KG 快照，未覆盖所有自进化安全前沿工作。</p><p>综合判定 answer_completeness = partial：整合框架与六条约束均有跨论文证据支撑，但&quot;集成式可控性约束端到端有效性&quot;尚未被实证。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ4.2 的答案可判定为 partial（框架级 answered，端到端有效性 partial）。核心结论有三：</p><p>第一，两大综述&quot;各自为政&quot;的根源是分析单位错位而非学科分歧。二者共享 reusable state 本体，但进化侧优化 utility、安全侧检测 violation。整合的切口是把&quot;状态转移 S×A→V→E→R&quot;与&quot;优化回路 Inputs→Agent→Objectives→Optimisers&quot;对齐到同一批状态载体上，以三定律（Endure&gt;Excel&gt;Evolve）作为优先级骨架 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>第二，六条进化可控性约束可被提出并有差异化证据：C3 组合感知选择与 C4 anytime-valid 接受门证据最强（含定理与实测数字）；C1 写入许可门、C2 作用域保持抽象、C6 伪进化检测证据为中等；C5 后代追踪修复与可争辩性是最薄弱环节，恰是未来最需补齐的控制面 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>第三，攻击面放大是机制性的，可被具名：experience-to-skill 提炼（检测率 98.5%→11.4%）、结果导向门的结构性不可辨识（Δ=−0.005 vs +0.084）、经验数量诱导退化、动态图级联传播，共同构成自进化范式的&quot;内生&quot;风险源，无法用外生单点防御解决 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>方法论上，本分析印证了 A1.3-c 框架的判断：范式转移本质是旧假设被新场景系统性违反，而非性能数字的替换。旧范式的&quot;状态不持久、单点授权、效用即安全、文本层可防、episodic 评估&quot;五假设在新范式下逐一失效，其有效边界均可操作化为具体触发条件（见&quot;旧范式假设失效点&quot;表）。剩余的关键待办是把六条约束收敛到同一系统、同一进化链条上的端到端验证，并独立复现三难命题与防御协调假设。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Safety in Self-Evolving Agents: A Survey&nbsp;<code style="font-size:0.82em;color:#888">0038_Safety_in_Self-Evolving_Agents_A_Survey</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;A Comprehensive Survey of Self-Evolving AI Agents: A New Paradigm Bridging Foundation Models and Lifelong Agentic Systems&nbsp;<code style="font-size:0.82em;color:#888">2205_a_comprehensive_survey_of_selfevolving_ai_agents_a_new_parad</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Self-Evolving Agents as Dynamic Graph Transformation: A Survey and New Perspective&nbsp;<code style="font-size:0.82em;color:#888">0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;A Comprehensive Survey of Self-Evolving AI Agents (Three Laws of Self-Evolving AI Agents, §2)&nbsp;<code style="font-size:0.82em;color:#888">2205_a_comprehensive_survey_of_selfevolving_ai_agents_a_new_parad</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;SEA-Eval: A Benchmark for Evaluating Self-Evolving Agents Beyond Episodic Assessment&nbsp;<code style="font-size:0.82em;color:#888">2290_seaeval_a_benchmark_for_evaluating_selfevolving_agents_beyon</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Building Self-Evolving Agents via Experience-Driven Lifelong Learning: A Framework and Benchmark&nbsp;<code style="font-size:0.82em;color:#888">2209_building_selfevolving_agents_via_experiencedriven_lifelong_l</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;SkillJack: Persistent Skill Backdoors in Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2383_skilljack_persistent_skill_backdoors_in_selfevolving_agents</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Coalition-Aware Skill Reliability for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2403_coalitionaware_skill_reliability_for_selfevolving_agents</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;On Safety Risks in Experience-Driven Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2295_on_safety_risks_in_experiencedriven_selfevolving_agents</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;PACE: Anytime-Valid Acceptance Tests for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2335_pace_anytimevalid_acceptance_tests_for_selfevolving_agents</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.2 · 2026-10-18 21:53</footer>
+</div>
+</body>
+</html>

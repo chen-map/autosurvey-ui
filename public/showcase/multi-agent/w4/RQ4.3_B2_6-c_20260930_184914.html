@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.6-c 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.6-c 分析报告</h1>
+<div class="meta">RQ [RQ4.3]：[父问题 RQ4] 多智能体协作与安全 / 联邦学习交叉地带存在哪些对抗鲁棒性与隐私风险，现有防护机制覆盖了哪些威胁面？
+[本子问题 RQ4.3] 现有防护机制（鲁棒聚合、对抗检测、隐私约束）在协作编排层面是否可组合，缺口在哪里？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：1717_multiagentesc_a_llmbased_multiagent_collaboration_framework, 0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion, 1706_longagent_achieving_question_answering_for_128ktokenlong_doc, 0216, 0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati, 0636_Agentic_AI_for_Autonomous_Defense_in_Software_Supply_Chain_S）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_分析框架">分析框架</a></li>
+<li><a href="#sec_核心发现一_单层检测有效但不可组合">核心发现一：单层检测有效但不可组合</a></li>
+<li><a href="#sec_核心发现二_编排层是被共同忽视的盲区">核心发现二：编排层是被共同忽视的盲区</a></li>
+<li><a href="#sec_核心发现三_隐私_鲁棒_检测三角张力">核心发现三：隐私—鲁棒—检测三角张力</a></li>
+<li><a href="#sec_对证据矩阵论文的定位">对证据矩阵论文的定位</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ4.3「现有防护机制（鲁棒聚合、对抗检测、隐私约束）在协作编排层面是否可组合，缺口在哪里」进行系统性证据分析。核心结论是：三类防护机制在协作编排层面**仅能实现单层局部组合，无法形成端到端的可组合防线**，系统性缺口集中在编排层（orchestration layer）。</p><p>证据显示，轻量对抗防御只能降低而不能消除攻击——TAMAS 基准中 delimiter 防御对直接提示注入的 ASR 仅下降 5.2 个点，paraphrasing 防御虽移除 94% 注入指令却破坏 48% 良性查询，monitor-based 检测则频繁假阳性且决策不稳定<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；TRiSM 综述将「Agent orchestration」列为被现有防护共同忽视的独立威胁面，其被攻陷或错误配置会触发级联失败<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；MCPXKIT 实证表明 MCP 共享上下文缺乏隔离，成为攻击传导通道<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。隐私侧证据（iDLG 可从梯度以 100% 准确率提取标签<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）与鲁棒聚合侧证据（FedDANE 在异质下稳定劣于 FedAvg<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；鲁棒性仅随良性/恶意 agent 比例上升而增强<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）共同揭示隐私—鲁棒—检测三角张力。最优干预点是编排层的统一策略执行点与通信通道内建鲁棒性。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）的结构化节点与边，以及 132 篇论文原文的语义检索。共执行 24 次工具调用，覆盖全部六类节点：problem（研究问题）、method（方法）、paper（论文）、dataset（数据集）、metric（指标）、limitation（局限性）、assumption（假设）。</p><p>- 加载并探查 problem 节点 454 个、method 节点 380 个、limitation 节点 170 个、assumption 节点 119 个（均为截断展示前的总数）。</p><p>- 深度精读关键论文 14 篇，对其相关段落执行 embedding 语义检索，包括 TAMAS 基准、MCPXKIT、TRiSM 综述、多智能体对抗通信研究、iDLG 梯度泄漏、FedDANE 联邦优化、LONGAGENT、CaMeL、AgentNet 等。</p><p>- 证据矩阵冻结论文（1717 MultiAgentESC、0406 MCCD、1706 LONGAGENT、0216 OSINT 框架、0401 NADER、0636 Agentic AI 供应链防御）均通过关系边查询确认其提出方法、处理问题、评估数据集与局限性。</p><p>数据来源以多智能体 LLM 协作安全（TAMAS/MCPXKIT/TRiSM）与联邦/分布式学习安全（iDLG/FedDANE/对抗通信）两大证据社区为主。</p>
+
+<h2 id="sec_分析框架">分析框架</h2>
+<p>依据 B2.6-c「反馈回路识别」技能规范，分析按六个步骤展开：(1) 从 KG 双源构建「解法→次生问题」链接；(2) 识别反馈闭环（路径查询）；(3) 分析放大效应（严重度累加）；(4) 识别最优干预点（最弱因果边）；(5) 确定改进优先级；(6) 原文溯源验证。</p><p>关键纪律：所有回路节点必须有已验证证据支撑；「总风险超过原始问题」若无定量严重度数据只能标注为「可能超过」；干预可行性必须引用文献中已有尝试；因果方向须用原文检索验证。</p>
+<h3>三类防护机制在协作编排层面的可组合性评估</h3>
+<table><thead><tr><th>防护类别</th><th>代表证据</th><th>单独有效性</th><th>与编排层耦合问题</th><th>可组合性判定</th></tr></thead><tbody><tr><td>对抗检测（delimiter/paraphrasing/monitor）</td><td>TAMAS[1]</td><td>部分有效：DPI ASR 88.4→83.2</td><td>假阳性、语义破坏、决策不稳定，转化为可用性损耗</td><td>不可直接叠加</td></tr>
+<tr><td>鲁棒聚合（Byzantine/异质感知）</td><td>FedDANE[5]、Tu et al.[6]</td><td>理论有收敛保证但经验脆弱</td><td>依赖对客户端更新的可见性与分布假设，与隐私约束冲突</td><td>与隐私约束张力</td></tr>
+<tr><td>隐私约束（DP/SMPC/HE/梯度保护）</td><td>iDLG[4]、TRiSM[2]</td><td>可阻断梯度泄漏</td><td>降低聚合可观测性，计算代价高，削弱交叉验证信号</td><td>削弱鲁棒检测</td></tr>
+<tr><td>编排层统一控制（Policy-as-code）</td><td>TRiSM[2]</td><td>概念上可协调前两者</td><td>文献仅给治理建议，无组合实验</td><td>唯一被倡导的跨机制干预</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "TAMAS 基准中对抗攻击与防御的有效性（ARIA-4 / ASR 百分比）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["Impersonation(注入)", "DPI(注入)", "IPI(注入)", "DPI+delimiter防御", "Byzantine agent", "Colluding agents"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "攻击成功率或残留ASR（%）", "type": "bar", "data": [82, 81, 56.4, 83.2, 60, 16], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>TAMAS 轻量防御的量化效果与副作用</h3>
+<table><thead><tr><th>防御机制</th><th>目标攻击</th><th>效果</th><th>副作用</th><th>来源</th></tr></thead><tbody><tr><td>delimiter 分隔符</td><td>DPI 直接提示注入</td><td>ASR 均值 -5.2 点（88.4→83.2）</td><td>效果有限</td><td>[1]</td></tr>
+<tr><td>paraphrasing 改写</td><td>DPI</td><td>94% 案例移除注入指令</td><td>48% 实例破坏良性查询语义</td><td>[1]</td></tr>
+<tr><td>delimiter/tagging</td><td>IPI 间接提示注入</td><td>ASR 均值 -11.2 点</td><td>配置依赖性强</td><td>[1]</td></tr>
+<tr><td>monitor 运行时监控</td><td>交互式攻击</td><td>可停止系统执行</td><td>大量假阳性 + 决策随时间不稳定</td><td>[1]</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现一_单层检测有效但不可组合">核心发现一：单层检测有效但不可组合</h2>
+<p>TAMAS 是首个系统评测多智能体 LLM 系统安全性的基准，包含 300 个对抗场景与 100 个良性场景，覆盖 5 个高风险域与 6 类攻击<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。其防御实验揭示了一个关键矛盾：检测类防护一旦与协作流程耦合，会把「安全增益」转化为「可用性损耗」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>具体而言，delimiter 防御对直接提示注入仅带来 5.2 个点的 ASR 下降；paraphrasing 虽在 94% 情况下移除注入指令，却在 48% 的实例中同时删除了良性指令本身，导致「表面防御成功实为任务移除」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。monitor-based 防御虽能停止系统执行，但触发大量假阳性，且同一 trace 在不同步骤的判定相互矛盾（先判危险后判安全）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。作者自述这些防御「只能降低而非消除漏洞」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。这种可用性损耗会倒逼系统引入更多 agent 或更多轮交互来补偿，从而扩大攻击面，构成反馈回路的起点。</p>
+
+<h2 id="sec_核心发现二_编排层是被共同忽视的盲区">核心发现二：编排层是被共同忽视的盲区</h2>
+<p>TRiSM 综述明确列出「Agent orchestration」为 Agentic AI 的独立威胁面：集中式或分布式 orchestrator 中介角色与工作流，其被攻陷或错误配置会导致信息错路并触发级联失败<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。同一综述指出，Agentic AI 系统「攻击面大于传统 agent，需要分层防御保护数据、执行、通信与模型鲁棒性」，但现有机制「针对多智能体设定的一致性不足」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>MCPXKIT 的实证进一步印证该盲区。它系统归类了 31 种 MCP 攻击（四大类：直接工具注入、间接工具注入、恶意用户攻击、LLM 固有攻击），并给出四条关键洞察：MCP agent 盲目依赖工具描述（「盲目服从」）；共享上下文缺乏隔离导致链式攻击（感染式攻击可将漏洞复制到新工具）；agent 难以区分外部数据与可执行指令<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。其攻击效能量化表显示，SQL 注入/API 窃取、文件注入、工具覆盖等攻击成功率高达 90–100%<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。现有防御（MCP-Scan 扫描器、MCP Guardian 中间件、defense-in-depth 策略）仅沿「服务端扫描」与「交互监控」两条单一路径，彼此未在编排层做联合决策，MCPXKIT 将「设计动态防御框架」列为未来工作<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>TAMAS 亦发现：面对 Byzantine agent、Colluding agents、Contradicting agents 这类**编排层特有**攻击，系统整体「高度脆弱」；提示注入类攻击跨模型基本一致（model-agnostic），交互式攻击成功率随配置在 27.4%–56.4% 波动<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。这说明检测与聚合机制都没有把「交互拓扑」本身当作防护对象。</p>
+
+<h2 id="sec_核心发现三_隐私_鲁棒_检测三角张力">核心发现三：隐私—鲁棒—检测三角张力</h2>
+<p>在联邦/分布式协作中，三类机制存在可量化的内在张力。</p><p>隐私侧：iDLG 证明可从交叉熵损失对正确标签激活的梯度符号（位于 (−1,0) 区间）与错误标签（位于 (0,1) 区间）的相反规律中，**以 100% 准确率**提取真实标签，并据此显著提升数据提取保真度<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。这证明隐私约束无法与「明文梯度可见的聚合」共存，必须引入加密或扰动。</p><p>鲁棒侧：FedDANE 旨在处理统计异质与低参与，虽有凸与非凸收敛保证，但经验评估显示其「稳定地劣于 FedAvg 与 FedProx」，作者将原因归于梯度校正项的代价与统计异质<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。这印证异质感知聚合本身已很脆弱。Tu et al. 的对抗通信实验给出更强约束：系统鲁棒性**仅随良性/恶意 agent 比例上升而增加**；单一攻击者随良性 agent 增多而减弱，但多攻击者可协同优化扰动增强攻击，且迁移攻击需对齐中间表示分布<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p><p>检测侧：上述鲁棒性依赖参与规模与交叉验证信号，而隐私约束（最小化数据交换、去中心化）恰恰限制了这些信号；鲁棒性的不足又需更强检测；而更强检测需要更多运行时遥测与数据暴露<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。三者叠置形成闭合张力。TRiSM 指出 SMPC 可用于跨组织联合计算而无数据泄漏，但同态加密「计算昂贵」，且侧信道仍是未解难题<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p>
+<h3>可识别的反馈回路（基于已验证证据）</h3>
+<table><thead><tr><th>回路ID</th><th>链路节点</th><th>长度</th><th>证据强度</th><th>总风险是否超过原始问题</th><th>最弱边（最优干预点）</th></tr></thead><tbody><tr><td>FL-1</td><td>对抗检测/监控 → 假阳性与语义破坏[1] → 协作可用性下降 → 引入更多agent/轮次补偿 → 交互拓扑与共享上下文扩张[2][3] → 编排层攻击面扩大 → 再依赖检测</td><td>5</td><td>moderate</td><td>可能超过（仅定性）</td><td>假阳性→可用性下降（evidence_count=1）</td></tr>
+</tbody></table>
+<div class="note">反馈回路纪律说明：FL-1 的因果方向已由原文部分验证（TAMAS 明确描述 monitor 防御的假阳性与决策不稳定<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>），但闭环长度为 5，超过 4 跳的可信度阈值，故标注为「部分可验证」。其最弱边（假阳性→可用性下降）缺乏 ASR/效用联合曲线的定量证据，仅能定性论证。「总风险超过原始问题」因缺可比的严重度累加数据，只能标注为「可能超过」，属不确定性结论。</div>
+<h3>干预点优先级排序</h3>
+<table><thead><tr><th>干预解法</th><th>优先级</th><th>涉及回路</th><th>可行性依据（文献已有尝试）</th></tr></thead><tbody><tr><td>编排层统一策略执行点（Policy-as-code）</td><td>高</td><td>FL-1</td><td>TRiSM 提出在 orchestrator 中编码 allow/deny 规则、前置检查与人签核闸门[2]</td></tr>
+<tr><td>通信通道内建鲁棒（对抗训练/鲁棒消息聚合）</td><td>高</td><td>通信通道回路</td><td>Tu et al. 证明威胁模型已知时对抗训练近乎完美，未知时可设计鲁棒聚合模块[6]</td></tr>
+<tr><td>上下文隔离设计约束</td><td>中</td><td>MCP 共享上下文链式攻击</td><td>MCPXKIT 指出需输入验证与上下文隔离[3]</td></tr>
+<tr><td>末端隐私加固（SMPC/HE）</td><td>低</td><td>—</td><td>iDLG 显示梯度泄漏为原理性[4]，末端加密计算昂贵[2]</td></tr>
+</tbody></table>
+
+<h2 id="sec_对证据矩阵论文的定位">对证据矩阵论文的定位</h2>
+<p>本子问题冻结的证据矩阵论文主要提供协作编排框架与安全防御的上下文，而非直接回答可组合性问题：</p><p>- MultiAgentESC<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 提出三阶段（对话分析、策略审议、响应生成）免训练协作框架，局限性为难以区分相似策略与策略使用偏置——均属任务性能层面，未涉及安全防护组合。</p><p>- LONGAGENT<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 采用 leader-member 协作处理 128k 长文档问答，其错误主要源于成员 agent 在 chunk 无相关信息时虚构答案（成员幻觉），通过共享文本块缓解——这一幻觉传播机制正是编排层「错误级联」的实例，佐证编排层风险传导，但原文未做安全防御分析。</p><p>- NADER<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、MCCD<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 分别提出神经架构设计、组合扩散生成的多智能体协作框架，其局限性（推理开销随对象数增加、探索低效）亦与安全无关。</p><p>- OSINT 框架<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 与 Agentic AI 供应链防御<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 涉及工具编排层与安全（BFT 共识、区块链安全账本），是最接近「编排层防护」的正面案例，但聚焦单一域、未做跨机制组合评测。</p><p>这表明：协作框架论文普遍聚焦任务性能，其局限性均不涉及防护机制可组合性，佐证「编排层防护组合」为系统性文献空白。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "本分析所用证据来源分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "本分析所用证据来源分布", "type": "pie", "radius": "55%", "data": [{"name": "多智能体LLM安全（TAMAS/MCPXKIT/TRiSM）", "value": 5}, {"name": "联邦/分布式学习安全（iDLG/FedDANE/对抗通信）", "value": 4}, {"name": "协作编排框架（证据矩阵）", "value": 5}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，**缺乏联合评测基准**。尚无任何基准同时评测「鲁棒聚合+对抗检测+隐私约束」的组合效果。TAMAS 自认「仅评测攻击，防御基线非常有限、不作全面防御研究」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；MCPXKIT 将「动态防御框架」列为未来工作<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；TRiSM 仅给出防御纵深的概念清单与治理对照表，未做组合实验<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。因此「可组合性」判定部分依赖间接证据。</p><p>其二，**反馈回路严重度无法定量累加**。由于缺乏可比的严重度数据，FL-1「总风险是否超过原始问题」只能声明为「可能超过」，属不确定性结论。</p><p>其三，**跨社区外推风险**。多智能体 LLM 协作安全（TAMAS/MCPXKIT/TRiSM）与联邦学习安全（iDLG/FedDANE/Tu et al.）分属两个证据社区，二者交集——即在 LLM 多智能体编排上同时施加 FL 式隐私与鲁棒聚合——在 132 篇语料中缺乏直接实验证据，本报告中该部分为跨社区外推，置信度较低。</p><p>其四，**回路证据强度不均衡**。FL-1 的最弱边（假阳性→可用性下降）仅有定性描述，闭环长度超过 4 跳的可信度阈值。</p><p>其五，**因果方向验证仅部分完成**。部分因果边依赖单篇论文的叙述性证据，缺乏多源交叉验证。</p><p>上述局限使本分析的 `answer_completeness` 评为 `partial`（部分回答）。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ4.3 的核心答案是：现有防护机制（鲁棒聚合、对抗检测、隐私约束）在协作编排层面**仅能实现单层局部组合，无法形成端到端的可组合防线**，缺口集中在未被任何单一机制覆盖的**编排层**。</p><p>三条证据主线支撑该结论：(1) 单层检测有效但不可组合，检测与协作流程耦合会把安全增益转化为可用性损耗<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；(2) 编排层（orchestrator、共享上下文、工具调用）是被现有防护共同忽视的独立威胁面，恰是次生风险的传导节点<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；(3) 隐私约束、鲁棒聚合与对抗检测在目标上存在可量化的内在张力，三者交集在编排层为空，形成隐私—鲁棒—检测三角张力<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p><p>可识别的反馈回路 FL-1（检测→假阳性→可用性下降→增补 agent→攻击面扩大→再依赖检测）长度为 5，方向部分验证、证据强度中等，其最弱因果边即最优干预点。改进优先级为：高优先级——编排层统一策略执行点（Policy-as-code）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 与通信通道内建鲁棒性<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；中优先级——上下文隔离设计约束<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；低优先级——末端隐私加固<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>最终判断：跨机制防护的组合成效**尚无任何基准联合评测**，编排层的可组合防护是本领域最突出的系统性空白，也是以最小代价打断反馈回路的关键着力点。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;TAMAS: Benchmarking Adversarial Risks in Multi-Agent LLM Systems&nbsp;<code style="font-size:0.82em;color:#888">1728_tamas_benchmarking_adversarial_risks_in_multiagent_llm_syste</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;TRiSM for Agentic AI: A Review of Trust, Risk, and Security Management in LLM-based Agentic Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3831_trism_for_agentic_ai_a_review_of_trust_risk_and_security_man</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;MCPXKIT: The Unified Toolkit for Analyzing Model Context Protocol Security&nbsp;<code style="font-size:0.82em;color:#888">1454</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;iDLG: Improved Deep Leakage from Gradients&nbsp;<code style="font-size:0.82em;color:#888">3413_idlg_improved_deep_leakage_from_gradients</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;FedDANE: A Federated Newton-Type Method&nbsp;<code style="font-size:0.82em;color:#888">3296_feddane_a_federated_newtontype_method</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Adversarial Attacks On Multi-Agent Communication&nbsp;<code style="font-size:0.82em;color:#888">0689</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;MultiAgentESC: A LLM-based Multi-Agent Collaboration Framework&nbsp;<code style="font-size:0.82em;color:#888">1717_multiagentesc_a_llmbased_multiagent_collaboration_framework</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;LONGAGENT: Achieving Question Answering for 128k-token Long Documents&nbsp;<code style="font-size:0.82em;color:#888">1706_longagent_achieving_question_answering_for_128ktokenlong_doc</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;NADER: Neural Architecture Design via Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;MCCD: Multi-Agent Collaboration-based Compositional Diffusion&nbsp;<code style="font-size:0.82em;color:#888">0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;A Framework for Embedding Generative AI for OSINT&nbsp;<code style="font-size:0.82em;color:#888">0216</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Agentic AI for Autonomous Defense in Software Supply Chain Security: Beyond Provenance to Vulnerability Mitigation&nbsp;<code style="font-size:0.82em;color:#888">0636_Agentic_AI_for_Autonomous_Defense_in_Software_Supply_Chain_S</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.3 · 2026-09-30 18:49</footer>
+</div>
+</body>
+</html>

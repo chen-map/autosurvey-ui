@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.4-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.4-b 分析报告</h1>
+<div class="meta">RQ [RQ3.2]：[父问题 RQ3] 面对多源脱靶检测基准（CHANGE-seq、GUIDE-seq、Yeast CAN1 assay 等）与异构指标（Accuracy、Recall、Precision、Editing efficiency），如何建立跨基准的归一化风险标度？
+[本子问题 RQ3.2] 现有通用指标（Accuracy、Recall、Precision）在表达「临床可接受脱靶率」时的语义缺口是什么？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0221_Machine_Learning-Driven_Prediction_of_CRISPR-Cas9_Off-Target, 0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing, 0233_Feature_representation_for_explainable_CRISPR_off-target_pre, 0577_How_to_Mitigate_CRISPR-Cas9_Off-Target_Effects_Evaluation_of, 0449_radar_a_riskaware_dynamic_multiagent_framework_for_llm_safet, 0101_A_versatile_CRISPRCas9_system_off-target_prediction_tool_usi）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_缺口一_对称计权掩盖_FN_与_FP_的非对称临床代价">缺口一：对称计权掩盖 FN 与 FP 的非对称临床代价</a></li>
+<li><a href="#sec_缺口二_极端类别不平衡使指标数值失去可解释性并阻断跨基准归一化">缺口二：极端类别不平衡使指标数值失去可解释性并阻断跨基准归一化</a></li>
+<li><a href="#sec_缺口三_指标不含_可接受度_与后果严重性量纲_且未与编辑效率联合">缺口三：指标不含「可接受度」与后果严重性量纲，且未与编辑效率联合</a></li>
+<li><a href="#sec_系统性低估机制与对抗性验证">系统性低估机制与对抗性验证</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ3.2「现有通用指标（Accuracy、Recall、Precision）在表达『临床可接受脱靶率』时的语义缺口是什么？」进行系统性评估审计。审计发现，通用指标与「临床可接受脱靶率」之间存在三层递进的语义缺口：（1）**后果语义缺口**——通用指标对称计权每次误分类，而脱靶安全评估中漏报（FN）意味着把潜在致癌事件判为安全、误报（FP）仅增加验证成本，两类错误后果非对称 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；（2）**先验语义缺口**——主流脱靶基准存在极端类别不平衡（CHANGE-seq 约 97% 阴性），使 Accuracy/AUROC 被多数类主导，与 Precision/F1/AUPRC 出现巨大落差 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；（3）**规范语义缺口**——临床可接受性本质是「针对特定适应症，意外基因组事件的频率、位置与类型是否足够低」的规范判断 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，而 Accuracy/Recall/Precision 是适应症盲的描述性统计量，不含后果严重性或可接受度量纲。</p><p>审计进一步识别了系统性低估（systemic underestimation）机制：高 Accuracy 可与高漏报率并存（RADAR 中同源评估器 FNR 比稳健框架高出至少 11.4% <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>），且模型对分布尾部的高效应/高风险样本系统性回归均值 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。结论是：仅更换单一指标无法弥合该语义鸿沟，需引入风险加权的非对称代价、不平衡鲁棒的排序指标（AUPRC）以及显式、适应症相对的可接受度阈值。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）结构化数据与 132 篇论文原文段落的语义检索，覆盖六类节点：problem（312 个）、method、dataset（114 个）、metric（175 个）、limitation（190 个）、assumption（108 个）、paper（138 篇）。</p><p>核心证据来自证据矩阵冻结的 6 篇论文，并扩展到 8 篇关键论文的原文精读：0221（机器学习脱靶预测）<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、0032（脱靶效应综述）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、0233（特征表示与基准评估）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、0577（缓解策略评估）<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、0449（RADAR 安全评估框架）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、0101（CCLMoff 语言模型工具）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、0031（体内脱靶缓解）<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、0093（碱基编辑系统）<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。数据集—方法关联通过 `evaluated_on` 边获取，指标使用通过 `measured_by` 边获取，偏差方向判断均附原文证据片段（evidence_snippets，语义相似度分值 0.40–0.65）。</p>
+<h3>表 1：评估形式分布（按评估设计编码统计）</h3>
+<table><thead><tr><th>评估形式</th><th>论文数</th><th>代表论文</th></tr></thead><tbody><tr><td>基准分类指标评估（Accuracy/Recall/Precision/F1/AUPRC）</td><td>5</td><td>0221 [5], 0233 [2], 0101 [3], 0449 [4], 0167 [9]</td></tr>
+<tr><td>文献综述/跨研究综合（无统一指标）</td><td>2</td><td>0032 [1], 0577 [6]</td></tr>
+</tbody></table>
+<div class="note">评估实践全景显示：脱靶预测领域的评估形式高度集中于「在固定基准上用分类指标评分」。这一集中性意味着——当这些分类指标本身缺乏临床风险语义时，整个领域的评估结论会系统性地共享同一偏差。</div>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1：主流脱靶基准的类别不平衡度（阴性占比 %）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["CHANGE-seq", "GUIDE-seq", "13-technique 整合集(最高)", "13-technique 整合集(最低)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "阴性样本占比 (%)", "type": "bar", "data": [97.0, 99.9, 99.976, 96.3], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>表 2：极端不平衡下「头部聚合指标」与「稀有阳性判别指标」的落差（原文数据）</h3>
+<table><thead><tr><th>数据集/模型</th><th>Accuracy</th><th>AUROC/BalAcc</th><th>Precision</th><th>F1</th><th>AUPRC</th></tr></thead><tbody><tr><td>0233 K-mer @ GUIDE-seq [2]</td><td>0.918</td><td>0.976</td><td>0.009</td><td>0.018</td><td>0.473</td></tr>
+<tr><td>0233 Bulges @ GUIDE-seq [2]</td><td>0.988</td><td>0.984</td><td>0.066</td><td>0.113</td><td>0.555</td></tr>
+<tr><td>0101 CCLMoff @ CIRCLE-seq [3]</td><td>—</td><td>0.985 (AUROC) / 0.998 (BalAcc)</td><td>—</td><td>0.409</td><td>0.524</td></tr>
+<tr><td>0221 Extra Trees（人为平衡 472:472）[5]</td><td>0.9656</td><td>—</td><td>0.9741</td><td>0.9682</td><td>—</td></tr>
+</tbody></table>
+
+<h2 id="sec_缺口一_对称计权掩盖_FN_与_FP_的非对称临床代价">缺口一：对称计权掩盖 FN 与 FP 的非对称临床代价</h2>
+<p>通用指标把每次误分类视作等价损失，但在脱靶安全评估中，两类错误的后果天差地别。0032 明确指出：「A false-negative computational prediction—failure to flag an active off-target site—represents the most consequential error type in a clinical safety assessment context」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。即漏报一个真实脱靶位点等于把潜在致癌的基因组事件判为「安全」，而误报仅增加一次昂贵的实验验证成本。</p><p>0221 是这一缺口的典型实证：其 Extra Trees Classifier 报告 Accuracy 96.56%–96.92%、Precision 96.83%、Recall 96.34% <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，看似「接近临床可用」。然而这些高值来自人为平衡的正负样本（472 正 vs 472 负），完全未刻画在真实基因组尺度上「在数百万非脱靶位点中不漏掉那几个活性位点」的核心难度 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。跨领域的 RADAR 给出同构证据：单一评估器的 Accuracy 看似很高，但其 False Negative Rate 比稳健框架「increases at least 11.4%」<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>——高 Accuracy 可与高漏报率并存，因为 Accuracy 对 FN 不敏感。</p>
+
+<h2 id="sec_缺口二_极端类别不平衡使指标数值失去可解释性并阻断跨基准归一化">缺口二：极端类别不平衡使指标数值失去可解释性并阻断跨基准归一化</h2>
+<p>0233 披露了两个主流基准的真实不平衡度：CHANGE-seq 有 67,476 个 active 与 2,806,152 个 inactive（约 97% 阴性），GUIDE-seq 有 1,702 个 active 与 1,476,301 个 inactive <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；0101 的整合数据集正负比更从 26:1 陡增到 4189:1 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。在此先验下，Accuracy 与 AUROC 几乎被多数类主导。</p><p>如「表 2」所示，0233 在 GUIDE-seq 上报告 Accuracy ≈ 0.99，但同一表格的 Precision 低至 0.009（K-mer）、0.066（Bulges）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；0101 的 CCLMoff 更给出 Balanced Accuracy 0.998、AUROC 0.985，而 F1 仅 0.409、AUPRC 仅 0.524 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。这意味着一个「Accuracy 99%」的模型可能对真正需要被抓住的阳性只想对了不到一成；单看 Accuracy/Recall 会把模型描述得远比其真实临床可用性更乐观。更关键的是，0233 的误差分析表明模型对「Worst 10%」极端样本（真实 z-score &lt; −4.0）「consistently under-predicts the magnitude of the effect… regresses towards the mean」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>——即最危险的高效应/高风险尾部恰被系统性低估。这正是父问题所述「跨基准无法归一化」的根源：同一个 Accuracy 数值在 26:1 与 4189:1 的基准上含义完全不同。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup></p>
+
+<h2 id="sec_缺口三_指标不含_可接受度_与后果严重性量纲_且未与编辑效率联合">缺口三：指标不含「可接受度」与后果严重性量纲，且未与编辑效率联合</h2>
+<p>0032 的结论明确把安全性定义为「whether the frequency, location, and type of unintended genomic events are acceptably low for the specific clinical indication」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>——即临床可接受性是**适应症相对、多维**的规范性判断，而 Accuracy/Recall/Precision 是适应症盲的纯描述性分类统计量。0032 还指出大结构变异频次低但「genotoxic potential disproportionate relative to their frequency」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，频次型指标天然低估这类低频高危事件；并强调现有随访期「insufficient to exclude low-frequency genotoxic events with long latency」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，说明指标层面缺失低频/长潜伏维度。</p><p>此外，编辑效率（以「成功编辑事件的百分比」定义 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>）与脱靶风险是彼此独立的两条度轴，0577 的缓解策略表显示二者常呈 trade-off（如 nickase「afford lower editing efficiencies」）<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，通用指标体系不提供把「效率—风险」合成单一可接受性标度的机制。</p>
+<h3>表 3：数据集谱系审查（偏差类型与方向）</h3>
+<table><thead><tr><th>数据集</th><th>来源</th><th>粒度</th><th>覆盖</th><th>偏差类型</th><th>偏差方向</th></tr></thead><tbody><tr><td>CHANGE-seq [2][3]</td><td>自动（体外环形 DNA+RNP）</td><td>位点级</td><td>hg19，单一物种</td><td>极端不平衡；非染色质环境</td><td>过度乐观</td></tr>
+<tr><td>GUIDE-seq (Tsai/Kleinstiver) [5][2]</td><td>自动（dsODN 标签）；阴性算法构造</td><td>位点级</td><td>U2OS/HEK293</td><td>极端不平衡；Double-Negative 风险</td><td>过度乐观</td></tr>
+<tr><td>13-technique 整合集 [3]</td><td>混合（13 种检测技术汇合）</td><td>位点级</td><td>2 物种/4 参考基因组</td><td>异构 assay；不平衡 26:1~4189:1</td><td>失真</td></tr>
+<tr><td>Hanna（碱基编辑效率）[2]</td><td>自动（大规模平行筛选，z-score）</td><td>gRNA 级</td><td>人类细胞系</td><td>尾部数据稀缺</td><td>低估严重性</td></tr>
+<tr><td>Hard Case Testset / RedTeam (RADAR) [4]</td><td>人工（800 对，专家标注）</td><td>样本级</td><td>对话安全</td><td>Accuracy 对 FN 不敏感</td><td>过度乐观</td></tr>
+</tbody></table>
+<div class="note">表 3 显示五类数据集的偏差方向以「过度乐观」为主（4/5），唯一「低估严重性」的 Hanna 数据集恰好对应高效应尾部——而尾部正是临床最危险的区间。这构成系统偏离「保守估计」方向的一致证据。</div>
+
+<h2 id="sec_系统性低估机制与对抗性验证">系统性低估机制与对抗性验证</h2>
+<p>综合证据，领域对脱靶后果严重性的评估存在三层叠加的系统性低估机制：（1）对称计权的 Accuracy/Recall/Precision 把致命的 FN 与可耐受的 FP 等同，而 0032 明确 FN 是临床最严重错误 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；（2）极端类别不平衡（97% 阴性 / 26:1~4189:1）使头部聚合指标被多数类抬高，F1/AUPRC 却可低至 0.4~0.5 甚至 Precision 0.009 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；（3）模型对分布尾部系统性回归均值 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，0221 等又用人为平衡样本报告乐观指标 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>**对抗性验证**：我们检索了是否有论文使用更严格评估并得到不同（更高）危害估计。结论是——文献集中无一篇用统一的「临床可接受脱靶率」标度量化低估幅度；0032 虽承认随访不足以排除低频长潜伏事件 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，但属定性披露而非数值化结论。因此本报告将 systemic_underestimation 标注为 `identified: true`（机制层面成立），同时标注其「统一标度化结论」受证据缺口限制，不主动构造更强主张。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>1. **证据停留在机制层面**：文献集缺乏对「临床可接受脱靶率」显式阈值与「效率—风险」联合归一化的实证实现，故本报告无法给出完整数值标度方案，answer_completeness 判定为 partial。</p><p>2. **跨领域类比的谨慎性**：RADAR <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 属 LLM 安全域，其「Accuracy 掩盖 FNR」的结论对 CRISPR 脱靶场景只能作方法学类比，非直接证据，对应 claim 置信度标为 medium。</p><p>3. **数据集来源披露不全**：部分数据集（如 Lazzarotto/Yeast CAN1 相关节点）origin_paper_id 为空，label_source 依据原文/引用论文推断，存在不确定性；已按约束对未披露者不予臆测。</p><p>4. **共评上下文规模有限**：GUIDE-seq 共评方法数最多（6），CHANGE-seq 达 4，其余多为单方法使用，高频数据集判定严格依据 `get_head_entity(evaluated_on)` 返回数，未凭「知名度」主观加权。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ3.2 的答案可凝练为三个语义缺口：**后果缺口**（对称计权 vs 非对称风险代价）、**先验缺口**（数值意义随不平衡先验漂移，阻断跨基准归一化）、**规范缺口**（缺乏适应症相对的可接受度与后果严重性量纲）。量化证据即：Accuracy≈0.99 与 Precision 低至 0.009 并存 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；BalAcc 0.998/AUROC 0.985 与 F1 0.409/AUPRC 0.524 并存 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；且尾部高风险效应被系统性回归均值低估 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>对父问题 RQ3.2 的直接启示是：建立「跨基准归一化风险标度」不能仅靠统一某个通用指标，而必须（a）采用非对称代价函数，将 FN 的临床后果显式加权；（b）使用对不平衡鲁棒的排序指标（AUPRC 等）并报告先验；（c）引入显式的、适应症相对的可接受度阈值，把「脱靶率」映射到「临床可接受性」这一规范维度。这正是当前通用指标无法表达的语义缺口所在。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Navigating off-target effects in CRISPR-based genome editing for safer gene therapies&nbsp;<code style="font-size:0.82em;color:#888">0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Feature representation for explainable CRISPR off-target prediction and base editing efficiency&nbsp;<code style="font-size:0.82em;color:#888">0233_Feature_representation_for_explainable_CRISPR_off-target_pre</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;A versatile CRISPR/Cas9 system off-target prediction tool using language model (CCLMoff)&nbsp;<code style="font-size:0.82em;color:#888">0101_A_versatile_CRISPRCas9_system_off-target_prediction_tool_usi</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;RADAR: A Risk-Aware Dynamic Multi-Agent Framework for LLM Safety Evaluation&nbsp;<code style="font-size:0.82em;color:#888">0449_radar_a_riskaware_dynamic_multiagent_framework_for_llm_safet</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Machine Learning-Driven Prediction of CRISPR-Cas9 Off-Target Effects and Mechanistic Insights&nbsp;<code style="font-size:0.82em;color:#888">0221_Machine_Learning-Driven_Prediction_of_CRISPR-Cas9_Off-Target</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;How to Mitigate CRISPR-Cas9 Off-Target Effects: Evaluation of Current Detection, Prediction, and Mitigation Strategies&nbsp;<code style="font-size:0.82em;color:#888">0577_How_to_Mitigate_CRISPR-Cas9_Off-Target_Effects_Evaluation_of</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Mitigating off-target effects in CRISPR/Cas9-mediated in vivo gene editing&nbsp;<code style="font-size:0.82em;color:#888">0031_Mitigating_off-target_effects_in_CRISPRCas9-mediated_in_vivo</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Cytosine base editing systems with minimized off-target effect and molecular size&nbsp;<code style="font-size:0.82em;color:#888">0093_Cytosine_base_editing_systems_with_minimized_off-target_effe</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;VSRQ: Quantitative Assessment Method for Safety Risk of Vehicle Intelligent Connected System&nbsp;<code style="font-size:0.82em;color:#888">0167_vsrq_quantitative_assessment_method_for_safety_risk_of_vehic</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;CRISPR medicine for blood disorders: Progress and challenges&nbsp;<code style="font-size:0.82em;color:#888">0249_CRISPR_medicine_for_blood_disorders_Progress_and_challenges</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Research on Reducing the Immunogenicity of Nucleases in Gene Editing&nbsp;<code style="font-size:0.82em;color:#888">0575_Research_on_Reducing_the_Immunogenicity_of_Nucleases_in_Gene</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Multidimensional Engineering of CRISPR Systems: Synergistic Benefits&nbsp;<code style="font-size:0.82em;color:#888">0576_Multidimensional_Engineering_of_CRISPR_Systems_Synergistic_B</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.2 · 2026-10-13 20:31</footer>
+</div>
+</body>
+</html>

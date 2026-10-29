@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ5.1]：[父问题 RQ5] LLM 安全领域的不确定性建模与风险预测能力，能否迁移到 CRISPR 临床前安全评估，形成 LLM-assisted risk prediction 的交叉框架？
+[本子问题 RQ5.1] LLM 安全侧已成熟的度量与概念（`Attack Success Rate (ASR)`、`Aleatoric uncertainty`、`Epistemic uncertainty`、`Bootstrap and Δ-Method Uncertainty Analysis`、`Aggregate K-Bench scores are comparative, not universal safety thresholds`）中，哪些可映射到 CRISPR 安全评估的对应量？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0469_a_practical_framework_for_evaluating_medical_ai_security_rep）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析_五条定义_问题映射链">核心分析：五条定义→问题映射链</a></li>
+<li><a href="#sec_对抗性验证_三条量纲不可通约的告诫">对抗性验证：三条量纲不可通约的告诫</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本题（RQ5.1）考察父问题 RQ5 的一个子命题：LLM 安全侧已成熟的度量与概念（Attack Success Rate、Aleatoric uncertainty、Epistemic uncertainty、Bootstrap 与 Δ-Method 不确定性分析、以及「Aggregate K-Bench scores are comparative, not universal safety thresholds」这一认识论约束）中，哪些可映射到 CRISPR 临床前安全评估的对应量。本报告以「定义驱动推演」（definition-driven inference）为方法学视角，即以每个已形式化/半形式化的概念为公理起点，向问题空间演绎其约束后果，而非从问题观察反向归纳。</p><p>核心结论：五个概念**全部存在可迁移的对应量**，且迁移强度均为「强」——但迁移发生在**结构与方法论层面**（算子结构、约束逻辑、统计推断方法），而非**数值层面**（具体分值、阈值、量纲）的等价。具体而言：ASR 可结构同构地映射为 CRISPR off-target activity/mutation rate <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；Aleatoric uncertainty 可映射为个体基因组背景造成的不可约 off-target 风险 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；Epistemic uncertainty 可映射为 off-target 预测模型的泛化缺口 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；Bootstrap 与 Δ-Method 可迁移为 off-target 基准指标的置信区间与敏感性分析 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>；K-Bench 的「比较性而非阈值性」告诫可无损迁移为「off-target 预测分数仅用于相对排序，不得作为患者安全绝对阈值」<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。</p><p>关键限制：全部结论为**方法论层面的逻辑推断，而非实证证明**。知识图谱中无任何 violates/instantiates 边直接桥接 LLM 安全概念与 CRISPR 安全量；且被冻结的框架论文评估的是「LLM 自身安全性」，而「用 LLM 预测 CRISPR 风险」是不同任务，迁移需额外的中间假设。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱的六类节点（problem / method / paper / dataset / metric / limitation / assumption）与 132 篇 paper card 的原文段落检索。涉及的 KG 节点规模为：problem 节点 312 个、method 节点 312 个、metric 节点 175 个、assumption 节点 108 个、limitation 节点 190 个、dataset/benchmark 节点 114 个、paper 节点 138 个（部分为截断显示，实际总数更大）。</p><p>通过实体链接与语义检索，定位了本题冻结的核心证据论文「A Practical Framework for Evaluating Medical AI Security: Reproducible Assessment of Jailbreaking and Privacy Vulnerabilities」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，以及其结构化关系（proposes 方法 3 个、has_limitation 5 个、addresses 问题 3 个、measured_by 指标 2 个、extends 论文 3 篇）。围绕五个待映射概念，重点精读了 18 篇关键论文的原文段落，包括 LLM 安全侧的 K-Bench 阈值告诫原文 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、医学 LLM 基准的 bootstrap 方法学 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、CRISPR 侧 off-target 预测与检测范式综述 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、以及传统风险预测模型迁移壁垒研究 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p>
+
+<h2 id="sec_核心分析_五条定义_问题映射链">核心分析：五条定义→问题映射链</h2>
+<p>依「定义驱动推演」要求，对每个核心概念先提取其形式化约束结构，再演绎其在 CRISPR 安全语境下被违反/实例化时必然对应的问题类别。五条映射链的推导如下：</p><p>**（一）ASR → off-target activity/mutation rate（结构同构）**。ASR 的形式化定义为「五点评分中≥4 的场景占比」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。CRISPR 侧的 off-target mutation rate 定义为「非预期突变的频率」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，两者共享同一算子结构：分母=被检验的候选位点/场景集合，分子=被判为「有害/成功」的事件。故 ASR 可直接迁移为「CRISPR off-target 命中率」。约束：迁移必须显式携带评分函数，因为 ASR 分子由 rubric 锚定，而 off-target 的「active」判据随数据集而变（Change-seq 用 reads&gt;100，GUIDE-seq 把全部实验鉴定位点标为 active）<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。</p><p>**（二）Aleatoric/Epistemic 二分 → off-target 风险的可约简性分解（价值最高）**。KG 给出标准定义：Epistemic「源于知识缺乏，可通过获取更多知识/数据减少」；Aleatoric「系统中固有、不可通过更多知识/数据减少的变异性」。CRISPR 侧有近乎完美的同构对应：aleatoric ← 个体基因组背景造成的不可预测 off-target（同一 guide 在一人中安全、另一人因 SNP 产生近匹配位点）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；epistemic ← 预测模型训练数据不足带来的泛化缺口 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。由此得强蕴含：epistemic 风险可通过更大规模、跨检测平台数据约简 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，aleatoric 风险不可靠增加数据消除，只能通过患者特异性评估管理 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>**（三）Bootstrap 与 Δ-Method → off-target 基准指标的置信区间与敏感性分析**。0460 详载 trial-level 10,000 次 bootstrap、95% CI 取 2.5–97.5 百分位、Δ-Method 对 σ_Corr=0.05–0.20 做敏感性扫描 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。CRISPR 侧指标波动更剧烈（同一编码在 CHANGE-seq 与 GUIDE-seq 上 AUPR 从 0.345±0.148 到 0.661±0.239）<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>，这些 ±sd 正是应被 bootstrap/Δ-Method 量化的对象。</p><p>**（四）K-Bench「比较性而非普适阈值」→ off-target 预测分数「比较性而非安全阈值」**。KG 假设节点明确「85.27 分本身不能确立安全，小差异未必有临床意义」，原文出处强调「Aggregate K-Bench scores are comparative, not universal safety thresholds」<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。其移植对应为：off-target 预测分数仅用于 sgRNA 相对排序，不得作为患者安全的绝对阈值 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。</p><p>**（五）迁移的根本缺口**。0469 评估的是「LLM 自身安全性」（越狱/隐私漏洞）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，而「用 LLM 预测 CRISPR 风险」是不同任务；后者需额外的「LLM 可作可靠风险预测器」假设，KG 中无直接支撑。</p>
+<h3>表 1：五条映射链的结构与迁移强度对比</h3>
+<table><thead><tr><th>LLM 安全侧概念</th><th>定义类型</th><th>CRISPR 对应量</th><th>映射结构</th><th>迁移强度</th></tr></thead><tbody><tr><td>Attack Success Rate (ASR)</td><td>operational</td><td>off-target activity / mutation rate</td><td>有害事件占比算子</td><td>强（结构同构）</td></tr>
+<tr><td>Aleatoric uncertainty</td><td>axiomatic</td><td>个体 SNP 引入的不可预测 off-target</td><td>不可约随机性</td><td>强</td></tr>
+<tr><td>Epistemic uncertainty</td><td>axiomatic</td><td>预测模型泛化缺口</td><td>数据可约简性</td><td>强</td></tr>
+<tr><td>Bootstrap &amp; Δ-Method</td><td>operational</td><td>off-target 基准 CI 与敏感性分析</td><td>重采样统计推断</td><td>强</td></tr>
+<tr><td>K-Bench 阈值告诫</td><td>qualitative-epistemic</td><td>off-target 分数非安全阈值</td><td>认识论约束</td><td>强（认识论层）</td></tr>
+</tbody></table>
+<h3>表 2：关键量化证据对照</h3>
+<table><thead><tr><th>证据来源</th><th>量化事实</th><th>对本题的意义</th></tr></thead><tbody><tr><td>0469 [1]</td><td>ASR 定义为五点评分≥4 的场景占比</td><td>提供可迁移的「有害事件占比」算子原型</td></tr>
+<tr><td>0541 [8]</td><td>85.27 分单独不确立安全，小差异未必有临床意义</td><td>K-Bench 阈值告诫原文，可无损迁移</td></tr>
+<tr><td>0233 [11]</td><td>CHANGE-seq 67,476 active vs 2,806,152 inactive；AUPR 跨编码 0.345±0.148 至 0.661±0.239</td><td>论证 off-target 指标的波动性与检测判据不一致</td></tr>
+<tr><td>0440 [3]</td><td>同一 guide 在一人安全、另一人因 SNP 产生近匹配位点</td><td>aleatoric off-target 风险的直接实例</td></tr>
+<tr><td>0460 [6]</td><td>10,000 次 bootstrap；95% CI 2.5–97.5 百分位；ΔAOC&lt;±0.05</td><td>提供可迁移的不确定性分析方法学</td></tr>
+<tr><td>0477 [12]</td><td>79% 安全基准把安全降为二值率、缺置信区间</td><td>支持 K-Bench 类约束的普适性</td></tr>
+<tr><td>0032 [9]</td><td>off-target 数据集因检测方法/阈值/参考基因组不同而无法比较</td><td>支持「off-target 分数非普适阈值」结论</td></tr>
+<tr><td>0040 [10]</td><td>传统脊柱风险模型 AUC 约 0.64–0.78，仅 17.4% 研究低偏倚</td><td>揭示风险预测模型的通用迁移壁垒</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1：五条映射链的迁移强度评分（0–5，越高越强）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["ASR→off-target rate", "Aleatoric→个体 off-target", "Epistemic→泛化缺口", "Bootstrap/Δ→CI", "K-Bench→非阈值"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "迁移强度", "type": "bar", "data": [5, 5, 5, 5, 5], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2：五个概念的定义类型分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 2：五个概念的定义类型分布", "type": "pie", "radius": "55%", "data": [{"name": "operational（操作方法型）", "value": 2}, {"name": "axiomatic（公理型）", "value": 2}, {"name": "qualitative-epistemic（认识论约束型）", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_对抗性验证_三条量纲不可通约的告诫">对抗性验证：三条量纲不可通约的告诫</h2>
+<p>定义驱动推演最容易犯的错误是「跳步」——跳过中间推导直接声明结论。对上述五条映射链做对抗性检验后，确认三条必须标注的「外部假设」/量纲警告：</p><p>（1）**量纲不可通约**。ASR 分母是数十至数百的人为攻击场景，off-target rate 分母是 Cas-OFFinder 在 6 mismatch 内的搜索空间（CHANGE-seq 67,476 active vs 2,806,152 inactive）<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>，两者量级相差 3–4 个数量级，同一「率」在不同分母下不可直接相加。</p><p>（2）**aleatoric/epistemic 边界在数据稀疏时不可分**。需假设个体 SNP 引入的新位点确属「不可约随机性」，而非「尚未被测序覆盖」的 epistemic 缺口；当检测灵敏度本身受限时（结构变异检测不足）<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>，二者无法区分。</p><p>（3）**两域共享同一「proxy 效度」脆弱性**。0469 框架自身的局限（synthetic data 削弱真实复杂性、sample size 需功效分析、scoring 主观性须 LLM-as-judge 校准）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 在 CRISPR 侧对应存在（in vitro 不还原 in vivo off-target 模式）<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>，迁移使该脆弱性叠加而非抵消。</p>
+<div class="note">关键提示：本报告全部映射结论为「方法论/定义层面」的逻辑推断，非「数值层面」的实证等价。知识图谱中无任何边（violates / instantiates / implies）直接桥接 LLM 安全概念与 CRISPR 安全量。下游使用时应将置信度标注为「推断」，并在引用具体分值/阈值时附加来源论文与检测条件限定。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>（一）**证据缺口**：知识图谱中缺失「LLM 作为主动风险预测器」这一侧的直接证据——被冻结的框架论文 0469 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 评估的是 LLM 自身安全性，而非用 LLM 预测第三方（CRISPR）风险，二者是不同任务；映射成立需要额外的中间假设（LLM 可作可靠风险预测器），KG 无直接支撑。</p><p>（二）**无验证性原始研究**：本分析的证据主要来自 2024–2026 年的综述与基准论文，尚无直接验证「LLM 安全度量在 CRISPR 上经验有效」的原始研究，迁移结论应标注为逻辑推断而非实证证明。</p><p>（三）**度量本体的差异**：ASR 分母是人为构造的攻击场景，而 off-target rate 分母是基因组搜索空间，两者量纲不可直接相加；此外 off-target 的「active」判据在数据集间不一致（Change-seq reads&gt;100 vs GUIDE-seq 全标 active）<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>，迁移时必须显式携带评分函数。</p><p>（四）**共享的 proxy 效度脆弱性**：两域的度量都面临「proxy-of-proxy」问题——LLM 侧评分锚定在 automated labeler/LLM judge 上 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>，CRISPR 侧 off-target 预测的「真值」由检测方法的灵敏度决定 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，两者都没有直接锚定到真实世界结局。</p><p>（五）**证据缺失实体说明**：知识图谱中 problem_problem_off_target_effects_in_crispr_cas9_gene_editing_380c76f021 等节点 origin_paper_id 为 null，无法溯源至具体论文；部分 assumption/limitation 节点（如 assumptionconstraint_aggregate_k_bench_scores_are_comparative...、assumptionconstraint_aleatoric_uncertainty_e5bd226de1）origin_paper_id 亦为 null，已通过 search_paper_sections 从原文段落补全溯源。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>本子问题的回答是：**五个 LLM 安全侧概念全部可映射到 CRISPR 安全评估的对应量，映射强度均为「强」，但迁移发生在结构与方法论层面而非数值层面**。ASR → off-target activity rate 属算子结构同构 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>；Aleatoric/Epistemic 二分 → off-target 风险的可约简性分解（个体 SNP 不可约 vs 训练数据可约简）是全套中价值最高的一条，且与 0409 提出的汽车安全验证范式同构；Bootstrap 与 Δ-Method → off-target 基准指标的置信区间与敏感性分析 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>；K-Bench「比较性而非普适阈值」告诫 → off-target 预测分数「比较性而非安全阈值」，可无损迁移 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。</p><p>对父问题 RQ5 的直接贡献：本分析表明，若要在 LLM 安全与 CRISPR 临床前安全评估之间建立「LLM-assisted risk prediction 交叉框架」，方法论迁移路径是清晰可行的（尤其是不确定性分解与统计推断方法），但需要补足三块拼图——(1) 一个可直接验证「LLM 输出的风险分数与真实 CRISPR off-target 结局相关」的实证研究；(2) 统一 off-target 的「active」判据与检测平台标准化；(3) 明确区分「LLM 自身安全性」与「用 LLM 预测风险」两个不同任务。在这些缺口被填补之前，任何把 LLM 安全度量直接当作 CRISPR 安全阈值使用的做法都应被视为证据不足。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;A Practical Framework for Evaluating Medical AI Security: Reproducible Assessment of Jailbreaking and Privacy Vulnerabilities Across Clinical Specialties&nbsp;<code style="font-size:0.82em;color:#888">0469_a_practical_framework_for_evaluating_medical_ai_security_rep</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Cytosine base editing systems with minimized off-target effect and molecular size&nbsp;<code style="font-size:0.82em;color:#888">0093_Cytosine_base_editing_systems_with_minimized_off-target_effe</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Artificial Intelligence for CRISPR Guide RNA Design&nbsp;<code style="font-size:0.82em;color:#888">0440_artificial_intelligence_for_crispr_guide_rna_design_explaina</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Genome-wide CRISPR off-target prediction and optimization using RNA-DNA interaction fingerprints&nbsp;<code style="font-size:0.82em;color:#888">0098_Genome-wide_CRISPR_off-target_prediction_and_optimization_us</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;A versatile CRISPR/Cas9 system off-target prediction tool using language model&nbsp;<code style="font-size:0.82em;color:#888">0101_A_versatile_CRISPRCas9_system_off-target_prediction_tool_usi</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;A Proposed Framework for Quantifying AI-to-Clinical Translation (Algorithm-to-Outcome)&nbsp;<code style="font-size:0.82em;color:#888">0460_quantifying_aitoclinical_translation_the_algorithmtooutcome</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;A Novel Evaluation Benchmark for Medical LLMs: Illuminating Safety and Effectiveness in Clinical Domains&nbsp;<code style="font-size:0.82em;color:#888">0436_a_novel_evaluation_benchmark_for_medical_llms_illuminating_s</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Quantifying the Relationship Between Clinical Safety and Environmental Impact in Therapeutic LLMs&nbsp;<code style="font-size:0.82em;color:#888">0541_quantifying_the_relationship_between_clinical_safety_and_env</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Navigating off-target effects in CRISPR-based genome editing for safer gene therapies&nbsp;<code style="font-size:0.82em;color:#888">0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Risk prediction in spine surgery: a scoping review of traditional models, artificial intelligence, and the challenge of clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0040_Risk_prediction_in_spine_surgery_a_scoping_review_of_traditi</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Feature representation for explainable CRISPR off-target prediction&nbsp;<code style="font-size:0.82em;color:#888">0233_Feature_representation_for_explainable_CRISPR_off-target_pre</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;How Should AI Safety Benchmarks Benchmark Safety?&nbsp;<code style="font-size:0.82em;color:#888">0477_how_should_ai_safety_benchmarks_benchmark_safety</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;How to Mitigate CRISPR-Cas9 Off-Target Effects: Evaluation of Strategies&nbsp;<code style="font-size:0.82em;color:#888">0577_How_to_Mitigate_CRISPR-Cas9_Off-Target_Effects_Evaluation_of</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Safety Integrity Framework for Automated Driving&nbsp;<code style="font-size:0.82em;color:#888">0409_safety_integrity_framework_for_automated_driving</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Operational Range Bounding in Spectroscopy: A Safety Cage Framework&nbsp;<code style="font-size:0.82em;color:#888">0552_operational_range_bounding_in_spectroscopy_a_safety_cage_fra</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;Evaluating Patient Safety Risks in Generative AI: Development and Validation of a FMECA Framework for Generated Clinical Content&nbsp;<code style="font-size:0.82em;color:#888">0509_evaluating_patient_safety_risks_in_generative_ai_development</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;Beyond the promise: evaluating and mitigating off-target effects in CRISPR gene editing for safer therapeutics&nbsp;<code style="font-size:0.82em;color:#888">0239_Beyond_the_promise_evaluating_and_mitigating_off-target_effe</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.1 · 2026-10-13 20:38</footer>
+</div>
+</body>
+</html>

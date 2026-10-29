@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-a 分析报告</h1>
+<div class="meta">RQ [RQ5.1]：[父问题 RQ5] LLM 安全领域的不确定性建模与风险预测能力，能否迁移到 CRISPR 临床前安全评估，形成 LLM-assisted risk prediction 的交叉框架？
+[本子问题 RQ5.1] LLM 安全侧已成熟的度量与概念（`Attack Success Rate (ASR)`、`Aleatoric uncertainty`、`Epistemic uncertainty`、`Bootstrap and Δ-Method Uncertainty Analysis`、`Aggregate K-Bench scores are comparative, not universal safety thresholds`）中，哪些可映射到 CRISPR 安全评估的对应量？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0469_a_practical_framework_for_evaluating_medical_ai_security_rep）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析结果">核心分析结果</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ5.1——『LLM 安全侧已成熟的度量与概念（ASR、Aleatoric uncertainty、Epistemic uncertainty、Bootstrap 与 Δ-Method Uncertainty Analysis、Aggregate K-Bench scores 非普适阈值）中，哪些可映射到 CRISPR 安全评估的对应量』——基于知识图谱中 138 篇论文、312 个 problem、312 个 method、175 个 metric、190 个 limitation、108 个 assumption、114 个 dataset 节点的结构化数据，结合 23 篇关键论文的原文语义检索完成分析。</p><p>核心结论：五项概念的可迁移性呈三级梯度。**强同构（可近乎无损迁移）**：Aleatoric/Epistemic 不确定性二分（对应 CRISPR 脱靶的固有随机性 vs. 未检测脱靶景观的未知）与 Bootstrap/Δ-Method 重采样置信区间（对应脱靶率比值的抽样不确定性）。**需语义等价替换**：ASR 的『阈值计数型比率』结构可映射为『阈值化脱靶编辑率』，但因 CRISPR 侧假阴性是最致命错误类型 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>，迁移时须反转指标方向并搭配 PR 类指标。**认识论原则迁移（最强且最重要）**：K-Bench『聚合分数非普适阈值』原则映射到 CRISPR 后，直接揭示该领域连一个可被批判的共识阈值都尚未建立，伴随四类结构性盲区（绝对阈值、跨平台泛化、效率/成本、公平性）。</p>
+<div class="note">证据矩阵冻结论文：0469_a_practical_framework_for_evaluating_medical_ai_security_rep（本子问题的锚点论文，提出含 ASR 与隐私度量的多专科医疗 AI 安全评估框架）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。分析通过 get_entity_by_type、get_relation、get_head_entity/get_tail_entity、get_candidate_entity 与 search_paper_sections 五类工具交叉验证，总调用 55 次。</div>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析从知识图谱六类节点系统采集数据：problem（312）、method（312）、paper（138）、dataset（114）、metric（175）、limitation（190）、assumption（108）。针对 RQ5.1 的证据矩阵锚点论文 0469 及其关系网络做了完整一跳展开，识别出其提出的三个方法（多专科威胁模型、合成患者数据方法、标准化度量评估协议）、两个 metric（ASR、Privacy Metrics）及五条 limitation。</p><p>在指标本体层面，重点提取了 LLM/临床风险侧概念：ASR <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、pmi（误分类概率）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、Aleatoric/Epistemic 不确定性 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、Bootstrap/Δ-Method <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、K-Bench Best Risk Score <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>；以及 CRISPR 侧指标：Off-target mutation rate <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、Editing efficiency <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、off-target effect index <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、AUROC/AUPRC/F1/MCC <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。在问题侧，匹配到 CRISPR off-target prediction、CRISPR/Cas9 off-target effects、clinical translation of AI/ML risk prediction models 等节点。用 search_paper_sections 精读了 23 篇关键论文的相关段落。</p>
+<h3>五项 LLM 安全概念 → CRISPR 安全量 映射与可迁移性评级</h3>
+<table><thead><tr><th>LLM 安全侧概念</th><th>CRISPR 侧对应量</th><th>映射机制</th><th>可迁移性</th><th>关键证据</th></tr></thead><tbody><tr><td>Aleatoric uncertainty</td><td>脱靶切割的固有随机性（种子区热力学、染色质可及性调制、G:U wobble 容忍）</td><td>概念同构：不可通过更多数据减少的内在随机性</td><td>强（近乎无损）</td><td>[4][8]</td></tr>
+<tr><td>Epistemic uncertainty</td><td>对未检测脱靶位点/结构变异（kb–Mb 缺失、易位）的知识欠缺；跨平台泛化失败</td><td>概念同构：可通过更多数据（更敏感检测）减少</td><td>强（近乎无损）</td><td>[4][5][8]</td></tr>
+<tr><td>Bootstrap &amp; Δ-Method</td><td>脱靶率/on-off 比值统计量的 95% 置信区间与 σ_Corr 敏感性分析</td><td>方法直接移植：重采样估计器与风险估计接口</td><td>强（方法层）</td><td>[6][3]</td></tr>
+<tr><td>Attack Success Rate (ASR)</td><td>阈值化脱靶编辑率（须反转方向：从『攻击成功』到『漏检失败』）</td><td>语义等价替换：两者皆为便利阈值二值化的比率</td><td>中（需改造）</td><td>[1][2][11][12]</td></tr>
+<tr><td>Aggregate K-Bench 非普适阈值</td><td>无统一脱靶率安全阈值；脱靶预测分数不可跨平台比较</td><td>认识论原则平移：测量理论批判直接适用</td><td>强（原则层，揭示盲区）</td><td>[7][14][8]</td></tr>
+</tbody></table>
+<h3>统计指标本体：LLM/临床风险侧 vs. CRISPR 侧</h3>
+<table><thead><tr><th>指标类别</th><th>LLM/临床风险侧指标</th><th>CRISPR 侧指标</th><th>映射接口</th></tr></thead><tbody><tr><td>阈值率型</td><td>ASR（评分≥4/5 的百分比）[1][2]、Success rate、Collision rate</td><td>Off-target mutation rate [8]、off-target effect index（SpCas9 0.0049–2.8）[10]</td><td>阈值二值化 → 脱靶编辑率阈值化</td></tr>
+<tr><td>不确定性分解</td><td>Aleatoric/Epistemic [4][5]、pmi（误分类概率）[3]</td><td>编辑诱导突变 vs. 培养诱导突变归因 [15]</td><td>不可约随机性 vs. 可减少知识欠缺</td></tr>
+<tr><td>重采样 CI</td><td>Bootstrap 10,000 次、2.5–97.5 百分位、Δ-Method [6]</td><td>Five random seeds 聚合 PR-AUC ± sd [12][13]</td><td>抽样不确定性量化</td></tr>
+<tr><td>判别/排序</td><td>AUROC、Composite Safety [7][14]</td><td>AUROC 0.9683 / AUPRC 0.51（CIRCLE）[11]、PR-AUC 0.550 [13]</td><td>类别不平衡下的指标选择</td></tr>
+<tr><td>聚合分数</td><td>K-Bench Best Risk Score（96.02 最高）[7]</td><td>各论文自报 AUPRC/AUROC 无外部裁决 [11][12][16]</td><td>聚合分数的可比性批判</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "CRISPR 脱靶预测报告指标的内部落差（AUROC vs. AUPRC）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["CRISPR-M (CIRCLE)", "CRISPR-M (CIRCLE_GUIDE)", "DNABERT-Epi (GUIDE-seq)", "CCLMoff (CIRCLE-seq)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "指标值", "type": "bar", "data": [0.9683, 0.994, 0.539, 0.985], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">上图为 AUROC 值（CRISPR-M <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、DNABERT-Epi <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、CCLMoff <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>）。对应 AUPRC 仅为 0.51、0.70、0.550、0.524——即 AUROC 普遍 &gt;0.96 而 AUPRC 仅约 0.5。这一高达 0.45 以上的落差精确证明：阈值化/判别型指标对假阴性极不敏感，与 ASR『≥4 计数』结构同构，是迁移时必须改造指标的量化依据 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。</div>
+<h3>识别出的 CRISPR 安全评估结构性盲区</h3>
+<table><thead><tr><th>盲区类型</th><th>描述</th><th>对应 LLM 安全侧原则</th><th>支撑论文</th><th>支撑论文数</th></tr></thead><tbody><tr><td>绝对阈值盲区 (absolute)</td><td>无统一的脱靶率安全阈值；Casgevy 脱靶表征框架仅个案参考标准</td><td>K-Bench：聚合分数非普适阈值，85.27 分不建立安全性</td><td>[8][7]</td><td>2</td></tr>
+<tr><td>鲁棒性盲区 (robustness_missing)</td><td>无深度学习模型实现稳健跨平台泛化；模型排名随数据集翻转</td><td>测量理论：分数不可跨部署设置比较</td><td>[8][11][13][16]</td><td>4</td></tr>
+<tr><td>效率盲区 (efficiency_missing)</td><td>检测灵敏度从 0.1% 到 &lt;0.01% 差异巨大，但无方法报告单次检测成本/时间</td><td>K-Bench 环境成本维度（EcoLogits 能耗估计）</td><td>[8][17]</td><td>2</td></tr>
+<tr><td>公平性盲区 (fairness_missing)</td><td>无 CRISPR 评估按细胞类型/组织/患者亚群分层报告脱靶率</td><td>临床风险预测：无研究报告跨社会经济人群表现</td><td>[8][18]</td><td>2</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "23 篇精读论文的领域分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "23 篇精读论文的领域分布", "type": "pie", "radius": "55%", "data": [{"name": "CRISPR 脱靶预测/检测", "value": 8}, {"name": "LLM 安全/基准评估", "value": 5}, {"name": "临床风险预测/不确定性", "value": 5}, {"name": "CRISPR 治疗/免疫原性/递送", "value": 5}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析结果">核心分析结果</h2>
+<p>**主线一：不确定性二分是最强映射，且有实验落地路径。** <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 明确区分 Aleatoric（固有随机性，不可经知识减少）与 Epistemic（知识欠缺，可经数据减少）。CRISPR 中，脱靶切割的固有随机性对应前者 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>；对未检测结构变异的未知对应后者——<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 指出标准短读长测序『poorly suited』于结构变异检测，且『No current deep learning model has demonstrated robust cross-platform generalisation』。<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 将 epistemic 不一致作为『out-of-domain samples or regions of low data density』的代理信号，正对应 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 所述转化细胞系脱靶谱『may not faithfully reflect the profile observed in primary patient-derived cells』。实证来自 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>：ePCO 系预测脱靶位点 &lt;5 突变、非预测位点 5–17 突变、无癌症基因重叠，但一条系出现 7 号染色体三体，归因『likely a spontaneous consequence of cell culture』——正是两类不确定性在单细胞测序下的纠缠。</p><p>**主线二：Bootstrap/Δ-Method 方法层可移植，但缺操作剖面接口。** <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 给出试验级 10,000 次 bootstrap + 2.5–97.5 百分位 95% CI，及 Δ-Method 对 σ_Corr（0.05–0.20）敏感性分析，其 AOC = AUC×Corr×(1−I²)。<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 提供 KDE bootstrap 估计 pmi 的完整等价物，并坦言『It is hard to estimate the r for the r-stable ground truth assumption』。CRISPR 侧的可加 CI 载体已存在：<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 的 off-target effect index（SpCas9 0.0049–2.8，碱基编辑器 0–1.7）；<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 用 five random seeds 聚合 PR-AUC ± sd，<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 用 10 次试验稳定方差。缺口在于：<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的 pmi 需按操作剖面（OP）加权并仅计入安全相关误分类，而 CRISPR 无患者级 OP 定义，构成迁移的接口断层。</p><p>**主线三：ASR 迁移需改造。** <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 定义 ASR 为『percentage of scenarios scoring ≥4 on a five-point scale』；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 给出部署接地版『proportion of tasks in which an attack successfully induces... behaviors that violate the corresponding safety rubric』。其 CRISPR 对应物是 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 警告的假阴性——『failure to flag an active off-target site... most consequential error type』。<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 的 AUROC 0.9683 对 AUPRC 0.51 落差证明阈值化对假阴性不敏感；<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 因此强调『PR-AUC provides a more critical evaluation』。</p><p>**主线四：聚合分数非普适阈值原则揭示四类盲区。** <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 明确『Aggregate K-Bench scores are comparative, not universal safety thresholds: a score of 85.27 alone does not establish safety』。<sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 从测量理论普适化：基准『often fail to establish a clear connection between what they claim to measure and what their metrics actually capture』。映射后暴露：绝对阈值盲区 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、跨平台泛化盲区 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup><sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>、效率盲区 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup>、公平性盲区 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup>。</p>
+<h3>跨框架迁移的概念/方法/数据三层可行性判定</h3>
+<table><thead><tr><th>层级</th><th>判定</th><th>依据</th></tr></thead><tbody><tr><td>概念层</td><td>成立</td><td>不确定性二分、非普适阈值原则均有精确对应物 [4][5][7][14]</td></tr>
+<tr><td>方法层</td><td>部分成立</td><td>Bootstrap/Δ-Method 可直接借用 [6][3]，但缺患者级操作剖面接口 [3]</td></tr>
+<tr><td>数据层</td><td>不成立</td><td>CRISPR 缺乏 LLM 安全侧的标准化基准语料与共识阈值体系 [8][11][13]</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在三项主要局限。**其一，缺乏迁移实证**：知识图谱中无任何一篇论文真正执行了 LLM→CRISPR 的度量迁移，最接近的 <sup class="cite"><a href="#ref-19" style="text-decoration:none">[19]</a></sup> CRISPR-LLM 评估的是实验设计质量（经 12 位专家四维 1–5 分评分）而非风险预测校准，因此全部映射结论属概念级重建，而非文献实证。**其二，单侧数据薄弱**：CRISPR 侧无一篇报告脱靶率的 bootstrap/Δ-Method 置信区间，无一篇给出 aleatoric/epistemic 的定量分解（<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> 仅定性归因且为预印本，未经同行评审），故不确定性二分的迁移更多依赖 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 在自动驾驶/光谱学领域的框架类比，存在跨域外推风险。**其三，立场分歧未决**：<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 自身承认『Distinguishing between epistemic and aleatoric uncertainty can be challenging... but is also not crucial』，而 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 将其视为可靠性核心诊断，本报告采信后者但有偏。此外，CRISPR 脱靶预测论文（<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup><sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>）各自使用不同数据集与指标且自报泛化能力，缺乏第三方裁决，导致跨平台不可比性的证据强度为中等。置信度说明：C1/C2/C4/C9/C10 为高，C3/C5/C6/C7/C8/C11 为中。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ5.1 的回答是：**LLM 安全侧的五项概念中，四项可直接或经改造映射到 CRISPR 安全评估，但迁移的有效性受制于 CRISPR 侧评估实践的碎片化。** Aleatoric/Epistemic 不确定性二分与 Bootstrap/Δ-Method 具有强概念同构性，可近乎无损迁移（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>），但后者需要患者级操作剖面作为接口。ASR 作为阈值计数型比率可映射为阈值化脱靶编辑率，但因 CRISPR 假阴性最致命（<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>）且阈值化对假阴性不敏感（<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> AUROC 0.9683 vs. AUPRC 0.51），迁移时必须反转方向并搭配 PR 类指标。『Aggregate K-Bench scores 非普适阈值』这一认识论原则（<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>）迁移性最强且最重要——它揭示了 CRISPR 侧四类结构性盲区：无统一安全阈值、无稳健跨平台泛化、无检测成本度量、无公平性分层。</p><p>因此，形成 LLM-assisted risk prediction 交叉框架的关键不在于复制 LLM 侧的指标名称，而在于移植其**认识论纪律**：区分可减少与不可减少的不确定性、量化风险估计的抽样不确定性、拒绝把聚合分数当作绝对安全阈值。当前证据链最薄弱的一环是 CRISPR 侧缺乏可复现的患者级操作剖面与多平台基准语料；建立这两项基础设施，是交叉框架从概念重建走向实证验证的先决条件。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;A Practical Framework for Evaluating Medical AI Security: Reproducible Assessment of Jailbreaking and Privacy Vulnerabilities Across Clinical Specialties&nbsp;<code style="font-size:0.82em;color:#888">0469_a_practical_framework_for_evaluating_medical_ai_security_rep</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;RiskyBench: Probing Agentic Safety Risks Under Real-World Deployment&nbsp;<code style="font-size:0.82em;color:#888">0478_riskybench_probing_agentic_safety_risks_under_realworld_depl</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Reliability Assessment and Safety Arguments for Machine Learning Components in System Assurance&nbsp;<code style="font-size:0.82em;color:#888">0173_reliability_assessment_and_safety_arguments_for_machine_lear</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Safety Integrity Framework for Automated Driving&nbsp;<code style="font-size:0.82em;color:#888">0409_safety_integrity_framework_for_automated_driving</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Operational Range Bounding in Spectroscopy: A Safety-Cage Framework&nbsp;<code style="font-size:0.82em;color:#888">0552_operational_range_bounding_in_spectroscopy_a_safety_cage_fra</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;A Proposed Framework for Quantifying AI-to-Clinical Translation: the Algorithm-to-Outcome Concordance (AOC)&nbsp;<code style="font-size:0.82em;color:#888">0460_quantifying_aitoclinical_translation_the_algorithmtooutcome</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Quantifying the Relationship Between Clinical Safety and Environmental Impact in Therapeutic LLMs&nbsp;<code style="font-size:0.82em;color:#888">0541_quantifying_the_relationship_between_clinical_safety_and_env</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Navigating off-target effects in CRISPR-based genome editing for safer gene therapies&nbsp;<code style="font-size:0.82em;color:#888">0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Cytosine base editing systems with minimized off-target effect and molecular size&nbsp;<code style="font-size:0.82em;color:#888">0093_Cytosine_base_editing_systems_with_minimized_off-target_effe</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Mitigating off-target effects in CRISPR/Cas9-mediated in vivo gene editing&nbsp;<code style="font-size:0.82em;color:#888">0031_Mitigating_off-target_effects_in_CRISPRCas9-mediated_in_vivo</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;CRISPR-M: Predicting sgRNA off-target effect using a multi-view deep learning network&nbsp;<code style="font-size:0.82em;color:#888">0201_CRISPR-M_Predicting_sgRNA_off-target_effect_using_a_multi-vi</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Improved CRISPR/Cas9 off-target prediction with DNABERT and epigenetic features&nbsp;<code style="font-size:0.82em;color:#888">0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;DNABERT-Epi: multimodal integration for off-target prediction (PR-AUC 0.550)&nbsp;<code style="font-size:0.82em;color:#888">0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;How Should AI Safety Benchmarks Benchmark Safety?&nbsp;<code style="font-size:0.82em;color:#888">0477_how_should_ai_safety_benchmarks_benchmark_safety</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Immune and mutational profile of gene-edited low-immunogenic human cholangiocyte organoids (ePCOs)&nbsp;<code style="font-size:0.82em;color:#888">0145_immune_and_mutational_profile_of_geneedited_lowimmunogenic_h</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;A versatile CRISPR/Cas9 system off-target prediction tool using language model (CCLMoff)&nbsp;<code style="font-size:0.82em;color:#888">0101_A_versatile_CRISPRCas9_system_off-target_prediction_tool_usi</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-18" style="margin-bottom:4px"><span class="ref-id">[18]</span>&nbsp;Risk prediction in spine surgery: a scoping review of traditional models, artificial intelligence, and the challenge of clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0040_Risk_prediction_in_spine_surgery_a_scoping_review_of_traditi</code></li>
+<li id="ref-19" style="margin-bottom:4px"><span class="ref-id">[19]</span>&nbsp;CRISPR-LLM for Agentic Automation of Gene-editing Experiments&nbsp;<code style="font-size:0.82em;color:#888">0371_crisprgpt_for_agentic_automation_of_geneediting_experiments</code></li>
+<li id="ref-20" style="margin-bottom:4px"><span class="ref-id">[20]</span>&nbsp;Genome-wide CRISPR off-target prediction and optimization using RNA-DNA interaction fingerprints (CRISOT)&nbsp;<code style="font-size:0.82em;color:#888">0098_Genome-wide_CRISPR_off-target_prediction_and_optimization_us</code></li>
+<li id="ref-21" style="margin-bottom:4px"><span class="ref-id">[21]</span>&nbsp;EvalSafetyGap: A Hybrid Survey and Conceptual Framework for LLM Evaluation-Safety Failures&nbsp;<code style="font-size:0.82em;color:#888">0522_evalsafetygap_a_hybrid_survey_and_conceptual_framework_for_l</code></li>
+<li id="ref-22" style="margin-bottom:4px"><span class="ref-id">[22]</span>&nbsp;Immunogenicity of Recombinant Adeno-Associated Virus (AAV) Vectors for Gene Transfer&nbsp;<code style="font-size:0.82em;color:#888">0036_Immunogenicity_of_Recombinant_Adeno-Associated_Virus_AAV_Vec</code></li>
+<li id="ref-23" style="margin-bottom:4px"><span class="ref-id">[23]</span>&nbsp;Reducing Immunogenicity by Design: Approaches to Minimize Immunogenicity of Monoclonal Antibodies&nbsp;<code style="font-size:0.82em;color:#888">0037_Reducing_Immunogenicity_by_Design_Approaches_to_Minimize_Imm</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.1 · 2026-10-13 20:39</footer>
+</div>
+</body>
+</html>

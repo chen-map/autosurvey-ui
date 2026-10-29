@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.4-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.4-b 分析报告</h1>
+<div class="meta">RQ [RQ5.3]：[父问题 RQ5] LLM 安全领域的不确定性建模与风险预测能力，能否迁移到 CRISPR 临床前安全评估，形成 LLM-assisted risk prediction 的交叉框架？
+[本子问题 RQ5.3] 如何区分并传播 CRISPR 安全评估中的 aleatoric 与 epistemic uncertainty，并给出阈值校准方案以支撑监管沟通？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0455_an_advanced_twostage_model_with_high_sensitivity_and_general, 0432_quantitative_risk_management_in_volatile_markets_with_an_exp, 0543_calibrated_predictive_safety_for_heterogeneous_robots_an_act, 0381_weighted_brier_score_an_overall_summary_measure_for_risk_pre）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析一_aleatoric_epistemic_的区分与传播机制">核心分析一：aleatoric/epistemic 的区分与传播机制</a></li>
+<li><a href="#sec_核心分析二_阈值校准与失效边界的具体数字">核心分析二：阈值校准与失效边界的具体数字</a></li>
+<li><a href="#sec_核心分析三_CRISPR_侧的约束与最危险的盲区">核心分析三：CRISPR 侧的约束与最危险的盲区</a></li>
+<li><a href="#sec_核心分析四_跨方法边界对比与阈值校准依赖的显性假设">核心分析四：跨方法边界对比与阈值校准依赖的显性假设</a></li>
+<li><a href="#sec_适用性建议矩阵">适用性建议矩阵</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ5.3「如何区分并传播 CRISPR 安全评估中的 aleatoric 与 epistemic 不确定性，并给出阈值校准方案以支撑监管沟通？」进行系统性知识图谱分析。核心结论为：区分与传播两类不确定性的机制完全可跨域迁移，但 CRISPR 领域目前是「元件齐备、装配缺位」——即机器学习安全工程已提供成熟范式，而 CRISPR 安全评估尚未把二者接合。</p><p>分析显示，自动驾驶安全完整性框架 SIFAD 已在 2-out-of-3 冗余传感器例子中给出「量化—传播」完整链条：单传感器失效事件视为 aleatoric，失效概率本身视为 epistemic，经贝叶斯网络传播得到投票器输出失效概率 p=1.1×10⁻⁵，且基于系统设计可将所需数据量降低 100 倍<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。机器人预测安全框架则证明「排序能力」与「校准质量」可分离：去掉校准损失后 AUROC 仅从 0.88 微降到 0.87，但 ECE 恶化约 3.5 倍（0.14 vs 0.04）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。医学两阶段模型用 z=2 的不确定性分诊阈值将灵敏度从 0.341 提升到 0.717<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，expectile 框架验证了区制化校准纪律（EVaR 违规率 5.0% vs 历史模拟 12.1%）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，加权 Brier 分数则提供了 MCB−DSC+UNC 的严格误差分解<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。整体答案状态判定为 partial。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）的结构化数据与 132 篇论文原文段落检索完成。使用的 KG 数据覆盖六类节点：problem（312 个）、method（312 个）、paper（138 个）、dataset（114 个）、metric（175 个）、limitation（190 个）、assumption（108 个）。其中难度最高的 assumption 节点被完整加载并逐一筛查，用于识别 CRISPR 安全评估的隐性约束（如 seed 区敏感性、染色质可及性、PAM 依赖等）。</p><p>在证据获取上，本分析对证据矩阵冻结的 4 篇论文（0455、0432、0543、0381）执行了全部一跳关系边查询，并对 15 篇关键论文（含 0409、0533、0371、0032、0238、0201、0098、0101、0203、0173、0040）进行了原文段落语义检索。共完成 42 次工具调用（其中 search_paper_sections 精读调用 13 次），超过深度分析的最低要求。</p>
+
+<h2 id="sec_核心分析一_aleatoric_epistemic_的区分与传播机制">核心分析一：aleatoric/epistemic 的区分与传播机制</h2>
+<p>在 KG 的 assumption 节点中，未检索到任何以「uncertainty」为名的约束节点，这本身即是一个信号：CRISPR 安全评估的 KG 建模层面尚未把不确定性视为一等约束。相比之下，非 CRISPR 领域的论文明确给出了区分定义。SIFAD 框架把 aleatoric 定义为系统或环境中不可通过增加数据消除的固有随机性（如行人突然出现、制动系统失效），把 epistemic 定义为可通过获取更多知识降低的认知缺失<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。该框架的关键贡献是给出可复制的传播链条：在 2-out-of-3 传感器投票场景中，用贝叶斯后验把 epistemic 不确定性积分进单传感器失效概率，再经贝叶斯网络传播到系统级风险估计；黑盒测试需约 10⁵ 次成功停车证据，而基于系统设计可把所需数据量降低 100 倍<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>另一个医学域的实例提供了「不确定性分诊」的落地模板。两阶段髋骨骨折风险模型用 50 个 bootstrap 集成计算 z-score = |预测概率 − 最优阈值| / 跨模型标准差，以 z=2 为不确定分诊阈值，把高不确定样本送入第二阶段引入 DXA 影像证据<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。映射到 CRISPR 语境即为：低认知不确定性位点直接用 in silico 评分，高不确定位点才升级到实验确证。</p>
+<h3>不确定性区分、传播与校准机制的可迁移组件对比</h3>
+<table><thead><tr><th>来源论文/方法</th><th>aleatoric/epistemic 处理</th><th>核心量化机制</th><th>关键数字</th><th>CRISPR 迁移价值</th></tr></thead><tbody><tr><td>SIFAD 安全完整性框架[1]</td><td>显式区分两类，假事件为 aleatoric、失效概率为 epistemic</td><td>贝叶斯后验积分 + 贝叶斯网络传播</td><td>2oo3 投票器 p=1.1×10⁻⁵；数据量降低 100 倍</td><td>提供脱靶「事件随机性 vs 位点无知」分离的传播骨架</td></tr>
+<tr><td>预测安全机器人框架[2]</td><td>以校准目标的显式训练替代后验补救</td><td>ECE(B=15 等质量分箱) + conformal wrapper + FNR</td><td>ECE 0.04 vs 0.14（3.5×）；AUROC 0.88；FNR 0.21→0.14</td><td>提供分布无关阈值与 FNR 主安全统计量范式</td></tr>
+<tr><td>两阶段风险预测模型[3]</td><td>用 bootstrap 集成方差度量 epistemic 分诊不确定性</td><td>z-score 阈值(z=2) + Youden 指数选阈</td><td>MrOS 灵敏度 0.341→0.717；AUC 0.699→0.806</td><td>提供「高不确定才升级证据」的分诊规则</td></tr>
+<tr><td>expectile 风险管理框架[4]</td><td>以区制区分结构性尾部风险变化</td><td>EVaR + 回测(UC/CC/DQ) + 区制切换</td><td>95% 违规率 5.0% vs 历史模拟 12.1%</td><td>提供按染色质/细胞类型分层的区制化阈值原型</td></tr>
+<tr><td>加权 Brier 分数[5]</td><td>把不确定性作为独立分解分量 UNC</td><td>MCB−DSC+UNC 严格分解（Murphy 分解）</td><td>分解精确，连续风险仅在离散时精确</td><td>提供监管沟通所需的可解释分解校准指标</td></tr>
+<tr><td>临床路径安全规范[6]</td><td>conformal 子系统分离「发生了什么」与「有多大把握」</td><td>Signal Temporal Logic + 一致性置信度 ρ</td><td>伪轨迹中 ρ 0.42–0.97</td><td>提供规范式安全契约 + 置信度报警范式</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析二_阈值校准与失效边界的具体数字">核心分析二：阈值校准与失效边界的具体数字</h2>
+<p>证据矩阵中的方法均提供了可操作的阈值校准机制与量化拐点。机器人预测安全框架把校准当作显式训练目标，其校准消融是关键发现：去掉校准损失后 AUROC 仅从 0.88 微降到 0.87、Brier 从 0.08 到 0.09 几乎不变，但 ECE 恶化约 3.5 倍（0.14 vs 0.04），证明一个排序正确但阈值错位的模型不可部署<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。该框架的阈值不是手工常数，而是用 conformal wrapper 把碰撞概率转为用户指定 miscoverage 水平 α 下的集合值判决，带分布无关保证，并以碰撞预测 FNR 为主安全统计量，在固定召回工作点上比较<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>在 CRISPR 侧，脱靶预测器的校准数据揭示了单独使用 AUROC 的危险性。CRISPR-M 在 CIRCLE 数据上 AUROC≈0.9683，但 AUPRC 仅约 0.51；在跨数据集 CIRCLE_GUIDE 迁移测试中，AUPRC 相对旧方法约翻倍至 0.70，作者明确指出 AUROC 因类别极不平衡而可能高估可用性、AUPRC 才是少数类场景更合适的指标<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。这对临床安全至关重要——脱靶是稀有正类，必须用 AUPRC/FNR 而非 AUROC 设阈值。expectile 框架则提供了「拐点必须回到原文图表」的校准纪律：EVaR 在 95% 水平违规率 5.0%（UC 检验 p=0.998），而历史模拟 12.1%、参数正态 8.5% 均违反校准，并识别出 calm(70%)/stress(25%)/extreme(5%) 三种区制<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "不同风险度量在 95% 水平下的违规率对比（理论值 5%）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["EVaR（expectile）[4]", "Filtered Historical[4]", "GARCH-t[4]", "参数化正态[4]", "历史模拟[4]"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "违规率 (%)", "type": "bar", "data": [5.0, 5.5, 6.4, 8.5, 12.1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>两阶段模型的不确定性分诊效界（z=2 阈值）</h3>
+<table><thead><tr><th>队列</th><th>Stage-1 灵敏度</th><th>两阶段灵敏度</th><th>Stage-1 AUC</th><th>两阶段 AUC</th><th>保留在 Stage-1 比例</th></tr></thead><tbody><tr><td>MrOS 男性[3]</td><td>0.341</td><td>0.717</td><td>0.699</td><td>0.806</td><td>62.3%</td></tr>
+<tr><td>SOF 女性[3]</td><td>0.484</td><td>0.678</td><td>0.613</td><td>0.761</td><td>75.2%</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析三_CRISPR_侧的约束与最危险的盲区">核心分析三：CRISPR 侧的约束与最危险的盲区</h2>
+<p>CRISPR 领域的不确定性相关约束是显性的：PAM 依赖、seed 区（8–12 nt）错配敏感、染色质可及性决定脱靶谱（异染色质限制 Cas9 结合）[assumption_seed_region_sensitivity, assumption_chromatin_accessibility]。但关键发现是：这些约束在现有脱靶预测模型中从未被系统消融以界定其有效区间——即不存在任何 CRISPR 领域的 Ablation/Sensitivity 章节来支撑有效的阈值校准。更严重的是，CRISPR-LLM 类 LLM agent 虽已把 off-target prediction 作为辅助功能集成，但其安全机制是「规则式护栏」（阻断人类生殖系编辑、提示国际禁令）而非概率式不确定性量化，且其局限被明确声明为「无法从自然语言生成完整载体、缺少端到端验证」<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。</p><p>最危险的盲区在检测工具自身的高假阴性。Discover-seq 因 MRE11 结合瞬时性存在潜在高假阴性率且无标准化灵敏度确认方法；GUIDE-seq 因 dsODN 递送效率只检出约 30%–50% 的 DSB；BLESS 需数百万细胞才能降低假阴性率<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。若把这种高假阴性的检测结果当作 ground truth 去训练/校准 in silico 预测器，则 epistemic 不确定性会被系统性低估，形成自我强化的失控回路。这是跨域迁移时必须优先消融的约束。</p>
+<div class="note">约束盲区警告：高敏感约束（依赖方法多、松弛方法少）在本分析中表现为——种子区敏感性与染色质可及性这两条 CRISPR 显性约束在全部 108 个 assumption 节点中均存在，但 KG 中无任何方法通过 relaxes 边与之关联，也无任何 CRISPR 论文提供分层校准的消融数据。此即「sensitivity_data: absent」状态，是领域最需要消融研究的地方。</div>
+
+<h2 id="sec_核心分析四_跨方法边界对比与阈值校准依赖的显性假设">核心分析四：跨方法边界对比与阈值校准依赖的显性假设</h2>
+<p>在证据矩阵的四个方法中，机器人预测安全框架 0543 提供了最完整的边界对比数据。该框架以「碰撞预测假阴性率」为主安全统计量而非聚合成功率，其消融数据结构清晰：从冻结特征基线到 embodiment-conditioned 预测，FNR 显著下降（0.21→0.14）而 AUROC 相对变化较小（0.83→0.88），这正是阈值敏感指标与排序指标同时报告时应有的形状<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。该框架还明确声明其保证是有条件的：Proposition 1 仅在 Assumption 1 下确保执行动作满足 Cemb，未建模的危害不被覆盖；世界模型只能对给定候选项排序，若无安全且推进任务的候选项，系统回退[limitation_guarantees_are_conditional_and_narrow, limitation_recall_bounded_by_the_proposer]。</p><p>这提示一个对 CRISPR 校准至关重要的诚实性要求：任何阈值校准方案必须显式声明其依赖的假设边界。加权 Brier 分数强调校准在模型评估中长期被 AUC 主导而受忽视（Van Calster et al., 2019）<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，SIFAD 则指出黑盒式「driving to safety」导致 Approval Trap——需巨量车队与多年测试才能证明安全<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。同时，可靠性评估框架提出「DL reliability = generality × robustness」公式，并指出可容忍风险准则（ALARP/GALE/SE）尚无法直接应用于学习使能系统<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>，这为 CRISPR 监管沟通的准则缺省提供了警戒。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "本分析所引用结论的领域分布（说明跨域迁移的证据结构）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "本分析所引用结论的领域分布（说明跨域迁移的证据结构）", "type": "pie", "radius": "55%", "data": [{"name": "机器人/自动驾驶安全工程[1][2][10]", "value": 3}, {"name": "临床/医学风险预测[3][5]", "value": 2}, {"name": "金融风险度量[4]", "value": 1}, {"name": "CRISPR 脱靶预测与检测[7][8][9]", "value": 3}, {"name": "临床物理 AI 安全规范[6]", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_适用性建议矩阵">适用性建议矩阵</h2>
+<p>基于上述有效区间分析，针对「LLM-assisted CRISPR 风险预测」的交叉框架，给出场景化建议：在低认知不确定性、seed 区完美匹配且位于开放染色质的位点，可直接采用 in silico 评分（如 CRISPR-M<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、CRISOT）并以 AUPRC 设阈值；当预测器输出落在分诊阈值附近（类比 z&lt;2<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>）或涉及异染色质/细胞类型特异区制时，应升级到 CIRCLE-seq/GUIDE-seq 实验确证，并以 FNR 而非 AUROC 报告性能<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。在监管沟通层面，应报告 ECE 与加权 Brier 分解（MCB/DSC/UNC）<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 而非单一 AUC，并显式声明校准所依赖的假设边界<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。当约束被违反时——即检测工具自身假阴性未量化<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、或目标位点处于训练分布外的染色质状态——任何校准声明都应标记为 unverified。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析的证据覆盖存在结构性不足。第一，所有不确定性区分、传播与校准机制均来自非 CRISPR 领域（机器人、自动驾驶、金融、临床风险预测），CRISPR 侧仅提供约束识别与失效定义，KG 中不存在跨域一体化流程的直接证据，因此「可迁移性」结论为推断而非验证。第二，CRISPR 侧的敏感性数据缺失（sensitivity_data: absent）——现有脱靶预测论文（0201、0098、0101、0203）均报告 AUROC/AUPRC 但没有 Ablation/Sensitivity 章节给出有效区间边界，故无法确定拐点阈值。第三，本分析中两个关键链条（SIFAD 的贝叶斯传播、CRISPR-LLM 的安全护栏）的原文片段存在部分 OCR 混杂或结构不完整，个别数字（如 p=1.1×10⁻⁵）来自论文示例而非 CRISPR 应用。第四，整体置信度为中等偏高：机制映射的证据充分，但端到端交叉框架的结论属于高价值盲区推断，尚待 CRISPR 领域的实证消融研究证实。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ5.3 的回答是：区分与传播 aleatoric/epistemic 不确定性在机制上完全可迁移，SIFAD 的贝叶斯传播<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、机器人框架的 ECE/conformal 阈值<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、两阶段模型的 z-score 分诊<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、expectile 的区制校准<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、加权 Brier 的误差分解<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 与临床路径的规范式置信度<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 共同构成了一套可复用组件。然而，阈值校准方案要真正支撑 CRISPR 监管沟通，还缺三类证据：（1）在 CRISPR 相关数据上对脱靶预测器做分层校准（按 seed 区、染色质状态、细胞类型）并报告 ECE/FNR；（2）把「检测工具假阴性」这一 epistemic 来源显式建模进不确定性分解<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>；（3）建立类似 ALARP/GALE/SE 的可容忍风险准则，把「how safe is safe enough」的缺省标准映射到脱靶频率阈值上<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。在这些完成之前，任何「LLM-assisted CRISPR 风险预测」的校准声明都应视为 unverified。答案状态为 partial。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Safety Integrity Framework for Automated Driving&nbsp;<code style="font-size:0.82em;color:#888">0409_safety_integrity_framework_for_automated_driving</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Calibrated Predictive Safety for Heterogeneous Robots: An Action-Conditioned JEPA Framework with Model-Based Safety Shields&nbsp;<code style="font-size:0.82em;color:#888">0543_calibrated_predictive_safety_for_heterogeneous_robots_an_act</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;An Advanced Two-Stage Model with High Sensitivity and Generalizability for Prediction of Hip Fracture Risk Using Multiple Datasets&nbsp;<code style="font-size:0.82em;color:#888">0455_an_advanced_twostage_model_with_high_sensitivity_and_general</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Quantitative Risk Management in Volatile Markets with an Expectile-Based Framework for the FTSE Index&nbsp;<code style="font-size:0.82em;color:#888">0432_quantitative_risk_management_in_volatile_markets_with_an_exp</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Weighted Brier Score - an Overall Summary Measure for Risk Prediction Models with Clinical Utility Consideration&nbsp;<code style="font-size:0.82em;color:#888">0381_weighted_brier_score_an_overall_summary_measure_for_risk_pre</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Clinical Pathways as Safety Specifications for Physical AI in Hospital Wards&nbsp;<code style="font-size:0.82em;color:#888">0533_clinical_pathways_as_safety_specifications_for_physical_ai_i</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;CRISPR-M: Predicting sgRNA off-target effect using a multi-view deep learning network&nbsp;<code style="font-size:0.82em;color:#888">0201_CRISPR-M_Predicting_sgRNA_off-target_effect_using_a_multi-vi</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;CRISPR-LLM for Agentic Automation of Gene-editing Experiments&nbsp;<code style="font-size:0.82em;color:#888">0371_crisprgpt_for_agentic_automation_of_geneediting_experiments</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Off-target effects in CRISPR/Cas9 gene editing&nbsp;<code style="font-size:0.82em;color:#888">0238_Off-target_effects_in_CRISPRCas9_gene_editing</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Reliability Assessment and Safety Arguments for Machine Learning Components&nbsp;<code style="font-size:0.82em;color:#888">0173_reliability_assessment_and_safety_arguments_for_machine_lear</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.3 · 2026-10-13 20:43</footer>
+</div>
+</body>
+</html>

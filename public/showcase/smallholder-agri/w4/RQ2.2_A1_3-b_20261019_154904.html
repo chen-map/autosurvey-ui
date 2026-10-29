@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.3-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.3-b 分析报告</h1>
+<div class="meta">RQ [RQ2.2]：[父问题 RQ2] 从技术可行性到小农田间采纳之间存在怎样的转化机制，现有研究在多大程度上识别并检验了这一机制中的因果路径？
+[本子问题 RQ2.2] 采纳成本与农户决策假设如何被表征，是否存在系统性简化？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I, 2934_biologyinformed_neural_networks_learn_nonlinear_representati, 2923_selfconsistency_in_visionlanguage_models_for_precision_agric, 0641_weatherdriven_agricultural_decisionmaking_using_digital_twin, 0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i, 2959_unlocking_ais_potential_in_agriculture_the_critical_role_of）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心发现一_技术类研究将成本与决策外包给_采纳自会发生的_隐含假设">核心发现一：技术类研究将成本与决策外包给&quot;采纳自会发生的&quot;隐含假设</a></li>
+<li><a href="#sec_核心发现二_采纳类研究证明成本约束多维且被结构性强化的">核心发现二：采纳类研究证明成本约束多维且被结构性强化的</a></li>
+<li><a href="#sec_核心发现三_决策主体行为被普遍简化为风险中性_短视_无信贷_产权约束的理性人">核心发现三：决策主体行为被普遍简化为风险中性、短视、无信贷/产权约束的理性人</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告基于知识图谱与六篇冻结证据论文（0678、2934、2923、0641、0680、2959）及若干扩展论文的系统检索，回答子问题 RQ2.2：采纳成本与农户决策假设如何被表征，是否存在系统性简化。分析发现存在明显的&quot;双轨简化&quot;：以技术能力为导向的论文（0678<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、2923<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、0641<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、2934<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）几乎不建模采纳成本，并将农户隐含设定为&quot;只要推荐在农艺/技术上更优便会采纳&quot;的理性接受者；而少数触及采纳问题的论文（0680<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、2959<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，以及矩阵外 3002<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>）表明，成本与决策约束一旦显式纳入模型，会实质性改变采纳结论——利润最大化机制不仅继承小农排除，还会将其放大。</p><p>跨节点类型证据一致支持这一判断：技术类论文把&quot;技术可行→田间采纳&quot;之间最关键的成本与行为链条，用&quot;采纳会自然发生&quot;的隐含假设压缩掉；采纳类研究则证明成本约束是多维、被结构性强化的，且决策主体行为被简化为风险中性、短视、无信贷/产权约束的理性人。因此，该转化机制的因果路径在现有研究中尚未被充分识别与检验。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析从知识图谱中系统性检索了六类节点：problem（挑战/问题）、method（方法）、assumption（假设/约束）、limitation（局限性）、metric（指标）、dataset（数据/基准），并对每条关键结论执行了原文语义检索（search_paper_sections）以定位证据片段。</p><p>重点检索的问题节点包括：作物咨询系统的经济盲视（economic blindness）、小农数字技术低采纳、数字农业工具因缺乏量化证据的低采纳、机械化采纳的财务约束、联合道德风险与逆向选择下的合约设计、小农从碳农业/数据驱动工具中被排除、田间实验高成本与不灵活、气候智慧农业低采纳等 11 个 problem 节点；并核查了&quot;私有采纳成本与不可观测努力&quot;、&quot;基础设施与成本约束&quot;、&quot;资本与维护成本&quot;等 5 个 assumption 节点，以及&quot;观察性研究&quot;、&quot;单一作物与区域&quot;等 limitation 节点。所有实体均来自工具返回的真实 KG 记录，未使用先验知识填充。</p>
+<h3>痛点—表征方式—对齐类型映射（六篇冻结证据 + 关键扩展）</h3>
+<table><thead><tr><th>论文</th><th>所涉问题/痛点</th><th>成本与决策假设的表征方式</th><th>对齐类型</th><th>关键证据</th></tr></thead><tbody><tr><td>0678[1]</td><td>数字工具缺量化益处、田间实验高成本</td><td>采纳设为二值处理，假设技术有利即播种；农艺知识/管理视为常量</td><td>direct（对产量）/ absent（对采纳成本）</td><td>增产 12%–17%（372–546 kg/ha）</td></tr>
+<tr><td>2923[2]</td><td>VLM 农业域退化、治疗推荐可靠性</td><td>成本仅作附带收益（减少 15–30% 化学品）；评价为诊断准确率</td><td>claimed_only（成本效益）</td><td>诊断 82.2%→87.8%，治疗 27.8%→43.3%</td></tr>
+<tr><td>0641[3]</td><td>天气数据不一致、数字孪生未充分探索</td><td>决策者设定为依据更可靠数据做知情决策的理性主体</td><td>partial</td><td>含噪下模型性能显著下降</td></tr>
+<tr><td>2934[4]</td><td>G2P 预测精度、田间试验成本</td><td>成本仅作背景叙事；部署仅需基因型，不涉农户端成本</td><td>absent</td><td>秩相关最高 +56%、误差 -75%</td></tr>
+<tr><td>0680[5]</td><td>小农数字技术低采纳</td><td>成本 prohibitive、多维约束（用户/服务商/技术）</td><td>direct（约束识别）</td><td>ICT 成本 prohibitive、语言/基础设施障碍</td></tr>
+<tr><td>2959[6]</td><td>印度 AI 规模化、小农从数据工具排除</td><td>瓶颈为数据基础设施而非算法；86% 小农缺乏补偿能力</td><td>direct（诊断）</td><td>86% 小农面临系统性排除风险</td></tr>
+<tr><td>3002[7]（扩展）</td><td>联合道德风险+逆向选择的合约设计、小农被排除</td><td>显式建模固定 MRV+面积成本；农户风险中性、短视、无信贷约束</td><td>direct（仿真）</td><td>小农 RAS 8.2% vs 大农场 87.7%</td></tr>
+<tr><td>2969[8]（扩展）</td><td>作物咨询系统经济盲视</td><td>传统系统只优化产量、忽略市价；纳入价格后 RF 达 99.3%</td><td>direct（方法层面）</td><td>99.3% 精度（基准数据集）</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现一_技术类研究将成本与决策外包给_采纳自会发生的_隐含假设">核心发现一：技术类研究将成本与决策外包给&quot;采纳自会发生的&quot;隐含假设</h2>
+<p>因果评估研究 0678<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的核心贡献是证明播种推荐能带来 12%–17%（372–546 kg/ha）的显著增产，但其因果图把&quot;采纳&quot;当作处理的二值化变量，明确假设农民&quot;若技术上有利即播种&quot;，并将农艺知识、管理实践视为常量以控制混淆——这在方法上严谨，却也把&quot;农户为何采纳/不采纳&quot;的经济决策机制整体排除在模型之外。</p><p>视觉语言模型的病害诊断研究 2923<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 虽提到精准施药可减少 15–30% 的化学品投入，但成本仅作为附带收益出现，其评价体系是诊断准确率，而非农户采纳率或净收益。生物学信息神经网络 2934<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的动机是减少&quot;昂贵的大规模田间试验&quot;，但优化目标是预测秩相关提升最高 56%，成本仅作为背景叙事，部署阶段完全以基因型为输入。天气数字孪生 0641<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 同样把&quot;数据不一致会误导决策&quot;作为问题，却把决策者设定为会依据更可靠数据做出&quot;知情决策&quot;的理性主体。这四篇共同构成&quot;技术导向&quot;简化谱系。</p>
+
+<h2 id="sec_核心发现二_采纳类研究证明成本约束多维且被结构性强化的">核心发现二：采纳类研究证明成本约束多维且被结构性强化的</h2>
+<p>0680<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的系统综述把小农使用数字技术的约束归为终端用户、服务提供者、技术特征三类，其中 ICT 成本&quot;高到 prohibitive&quot;、移动数据昂贵、基础设施与电力缺失、语言障碍被反复列为一级障碍，且农户主要停留在&quot;低技术复杂度&quot;一端。2959<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 进一步指出，印度农业 AI 规模化的瓶颈是数据基础设施而非算法能力，86% 为小农、缺乏补偿弱数据基础设施的能力，因而面临系统性排除风险。</p><p>最具决定性的是矩阵外论文 3002<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>：当把采纳成本显式建模为&quot;固定 MRV 成本 + 面积相关可变成本&quot;、并让农户在私有成本（逆向选择）与不可观测努力（道德风险）下做决策时，利润最大化的池化合约使大农场实现 87.7% 的应达采纳率，而小农仅 8.2%——排除超出单纯成本结构所能解释的部分，被归因于利润最大化与池化约束的交互。这直接说明：成本与决策假设不是技术细节，而是决定采纳分布的核心因果变量。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "3002 仿真实证：按农场规模的实现采纳率（RAS）与应达采纳率对比", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["小农 [1-4 Ha]", "中型 [4-7 Ha]", "大农场 [7-10 Ha]"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "采纳实现比例 (%)", "type": "bar", "data": [8.2, 23.8, 87.7], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心发现三_决策主体行为被普遍简化为风险中性_短视_无信贷_产权约束的理性人">核心发现三：决策主体行为被普遍简化为风险中性、短视、无信贷/产权约束的理性人</h2>
+<p>3002<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 明确列出其简化：农户风险中性、不面临信贷、产权或参与成本（仅 MRV），按标准 Stackelberg 设定做&quot;短视最优反应&quot;，作者自认这些被省略的摩擦对小农束缚更紧，故其排除估计是&quot;下界&quot;。2969<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 从另一侧面印证系统性简化：传统作物推荐系统存在&quot;经济盲视&quot;，只优化生物学产量而忽略市场价格，可能把农户引向&quot;农艺上合理、财务上不可行&quot;的决策。2850<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 的小农产量预测决策支持系统也指出，多数预测模型服务于政府与商业农场，且隐含假设天气与土壤变量相互独立，未纳入农民可及资源约束。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "六篇冻结证据论文对\"采纳成本\"的表征程度分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "六篇冻结证据论文对\"采纳成本\"的表征程度分布", "type": "pie", "radius": "55%", "data": [{"name": "完全不建模（0678/2923/0641/2934）[1][2][3][4]", "value": 4}, {"name": "定性/综述识别（0680）[5]", "value": 1}, {"name": "诊断性（2959）[6]", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">关键洞察：在六篇冻结证据中，没有任何一篇对&quot;采纳成本&quot;执行定量因果建模；真正显式建模成本与决策的 3002<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 位于证据矩阵之外，且为仿真证据。这意味着冻结矩阵本身对 RQ2.2 的核心机制存在结构性覆盖缺口，需引入扩展证据才能补齐。</div>
+<h3>关键结论的证据强度与置信度</h3>
+<table><thead><tr><th>结论要点</th><th>支撑论文</th><th>证据类型</th><th>置信度</th></tr></thead><tbody><tr><td>技术类论文以&quot;采纳自会发生&quot;假设压缩成本链条</td><td>0678[1]、2923[2]、0641[3]、2934[4]</td><td>原文否定结构+方法设定</td><td>高</td></tr>
+<tr><td>成本是多维、被结构性强化的约束</td><td>0680[5]、2959[6]、3002[7]</td><td>综述+仿真实证</td><td>高</td></tr>
+<tr><td>显式建模成本会放大而非继承小农排除</td><td>3002[7]</td><td>仿真（RAS 8.2% vs 87.7%）</td><td>高（但非田间）</td></tr>
+<tr><td>经济盲视=只优化产量忽略市价</td><td>2969[8]</td><td>方法对比</td><td>中</td></tr>
+<tr><td>决策主体被简化为风险中性/短视/无信贷约束</td><td>3002[7]、2850[9]</td><td>作者自陈局限</td><td>高</td></tr>
+<tr><td>冻结矩阵内仅 0678 做因果识别且针对产量非采纳成本</td><td>0678[1]、2811[10]</td><td>方法设定</td><td>高</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，证据覆盖不足：六篇冻结证据中仅 0678<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 一篇做了真正的因果识别，且其处理变量是&quot;技术有利&quot;而非&quot;采纳成本&quot;，无法分离成本对采纳的因果作用；2811<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 扩展该框架得到 372–546 kg/ha 的 ATE，但同为产量效应而非采纳机制。其二，真正显式建模采纳成本与决策的 3002<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 属于仿真而非田间证据，其量级仅为某一区域校准的示意，作者定位为&quot;投前决策支持测试平台&quot;。其三，0680<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、2959<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 多为综述/诊断性研究，缺少对&quot;成本—决策—采纳&quot;路径的定量因果检验，且地理集中于南非、印度、希腊，外推受限。其四，&quot;经济盲视&quot;（2969<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>）与&quot;天气土壤独立假设&quot;（2850<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>）等结论来自证据矩阵外的扩展论文，虽能补强判断，但需在综述中标注其矩阵外地位。综合判断，answer_completeness 为 partial。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ2.2，现有研究在&quot;技术可行&quot;到&quot;农户采纳&quot;之间普遍以强假设压缩了成本与行为链条，呈现系统性简化：技术导向论文（0678<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、2923<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、0641<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、2934<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）几乎不建模采纳成本，并将农户隐含设为偏好驱动的理性接受者；采纳导向研究（0680<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、2959<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）证明成本约束多维且结构化，而 3002<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 更以仿真证明，一旦显式建模成本与决策摩擦，利润最大化机制会放大而非继承小农排除（RAS 8.2% vs 87.7%）。2969<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、2850<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 从方法层面印证&quot;经济盲视&quot;与可及资源约束的缺失。结论：采纳成本与农户决策假设在主流技术类研究中被系统性简化，&quot;成本—决策—采纳&quot;的因果路径尚未被充分识别与检验，构成该转化机制研究的关键缺口。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Evaluating Digital Agriculture Recommendations with Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Self-Consistency in Vision-Language Models for Precision Agriculture&nbsp;<code style="font-size:0.82em;color:#888">2923_selfconsistency_in_visionlanguage_models_for_precision_agric</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Weather-Driven Agricultural Decision-Making Using Digital Twins Under Imperfect Conditions&nbsp;<code style="font-size:0.82em;color:#888">0641_weatherdriven_agricultural_decisionmaking_using_digital_twin</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Biology-informed neural networks learn nonlinear representations from omics data to improve genomic prediction and interpretability&nbsp;<code style="font-size:0.82em;color:#888">2934_biologyinformed_neural_networks_learn_nonlinear_representati</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Utilisation of Digital Technologies by Smallholder Farmers in South Africa: A Systematic Literature Review&nbsp;<code style="font-size:0.82em;color:#888">0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Unlocking AI's Potential in Agriculture: The Critical Role of Data&nbsp;<code style="font-size:0.82em;color:#888">2959_unlocking_ais_potential_in_agriculture_the_critical_role_of</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Learning Principal-Agent Contracts for Equitable Smallholder Carbon Farming under Moral Hazard and Adverse Selection&nbsp;<code style="font-size:0.82em;color:#888">3002_learning_principalagent_contracts_for_equitable_smallholder</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Smart Profit-Aware Crop Advisory System: Kisan AI&nbsp;<code style="font-size:0.82em;color:#888">2969_smart_profitaware_crop_advisory_system_kisan_ai</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Corn Yield Prediction Model with Deep Neural Networks for a Smallholder Farmer Decision Support System&nbsp;<code style="font-size:0.82em;color:#888">2850_corn_yield_prediction_model_with_deep_neural_networks_for_sm</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Evaluating Digital Tools for Sustainable Agriculture using Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">2811_evaluating_digital_tools_for_sustainable_agriculture_using_c</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.2 · 2026-10-19 15:49</footer>
+</div>
+</body>
+</html>

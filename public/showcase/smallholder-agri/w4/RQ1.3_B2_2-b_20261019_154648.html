@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.2-b 分析报告</h1>
+<div class="meta">RQ [RQ1.3]：[父问题 RQ1] 面向小农的农业 AI 技术供给在多大程度上具备&quot;田间就绪性&quot;，其可及性约束与边缘部署评价缺口如何界定技术可行性的真实边界？
+[本子问题 RQ1.3] 多智能体/神经符号系统如何衔接感知与决策建议，是否触及采纳环节？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2882_tractor_service_utilization_profitability_and_adoption_deter, 2901_chronoroot_20_an_open_aipowered_platform_for_2d_temporal_pla, 0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I, 0714_Contribution_of_smallholder_farmers_to_food_security_and_opp, 0655_Agricultural_insurance_access_and_acceptability_examining_th, 0034_matchplant_an_opensource_pipeline_for_uavbased_singleplant_d）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_感知_建议的衔接_三条架构路线已成熟_但终点不在采纳">感知→建议的衔接：三条架构路线已成熟，但终点不在采纳</a></li>
+<li><a href="#sec_采纳环节_系统论文普遍未触及_社会科学揭示了断点所在">采纳环节：系统论文普遍未触及，社会科学揭示了断点所在</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ1.3「多智能体/神经符号系统如何衔接感知与决策建议，是否触及采纳环节？」展开分析。核心结论是：多智能体与神经符号系统在「感知→决策建议」链路上已相当成熟，部分系统甚至实现了闭环执行，但几乎没有任何一个技术系统真正触及采纳环节，即从「给出建议」到「农户实际执行并产生行为改变」的最后一公里。采纳环节的实证证据全部来自社会科学与因果推断研究，而非系统论文本身，且一致表明决定采纳的关键因素是投入品可得性与资金约束；建议质量并非决定性因素<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>感知→建议的衔接在技术上已完成，并分化为三条架构路线：对话式多智能体编排（PhenoAssistant 工具选择成功率 70%、视觉模型选择 98%<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；PhenoIntel 以九代理架构将计数误差降低 54%、检测 mAP@50 达 0.96<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）、神经符号双引擎（PhenoNest 将 LLM 感知与 LLM 逻辑引擎解耦，产出对齐 PO/RO/WTO 本体的知识图谱<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>），以及闭环控制型（Closed-loop LLM Co-Pilots 通过 49 通道传感器触发执行器，生产周期缩短 35%、能耗降低 18%<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>）。三条路线的输出终点均落在测量值、分析结论或执行指令，而非农户决策采纳。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于 KG 的六类节点与七类边进行系统性提取：论文（paper）、方法（method）、问题（problem）、局限（limitation）、假设（assumption）、数据集（dataset/benchmark）、指标（metric）。共调用工具约 48 次，覆盖节点查询、关系遍历（proposes / has_limitation / addresses / measured_by / evaluated_on / extends / requires）、集合运算与条件过滤。</p><p>在原文精读方面，通过语义检索对 15 篇关键论文的相关段落进行了定向阅读，包括冻结证据矩阵的 6 篇（2882 农机采纳、2901 ChronoRoot、0678 因果推断、0714 CSA 综述、0655 保险可得性、0034 MatchPlant），以及 RQ 所需的多智能体/神经符号相邻文献 9 篇（0082 PhenoAssistant、2996 PhenoIntel、2990 闭环 Co-Pilot、2976 智能体 HPC 框架、2978 PhenoNest、2950 AIEP、2954 对话式微调、2811 因果推断扩展、0680 数字技术利用综述）。</p><p>需特别说明：冻结证据矩阵的六篇论文中没有一篇属于「多智能体/神经符号」系统论文，本 RQ 的系统层证据主要来自 KG 中通过 extends 边与问题边关联的相邻文献。这一点直接决定了本报告的证据强度与完整性判定。</p>
+<h3>表 1：感知→建议→采纳链路中各系统的 IPO 拆解与边界损耗</h3>
+<table><thead><tr><th>系统 / 论文</th><th>输入表示</th><th>核心处理范式</th><th>输出格式</th><th>I→P 边界损耗</th><th>P→O 边界损耗 / 是否触及采纳</th></tr></thead><tbody><tr><td>PhenoAssistant [4]</td><td>自然语言任务 + 图像数据</td><td>LLM manager 规划→工具选择→执行</td><td>可执行流水线 + 汇总结果</td><td>NL→工具映射损耗；工具选择仅 70% 成功率</td><td>输出面向植物科学家；未触及农户采纳</td></tr>
+<tr><td>PhenoIntel [5]</td><td>自然语言 + 图像/时序</td><td>九代理生命周期 + V0–V7 检查点 + 不确定性量化</td><td>带置信区间的测量 + 可审计记录</td><td>双信号路由冲突需显式消解</td><td>测量值输出；未触及采纳</td></tr>
+<tr><td>PhenoNest [6]</td><td>RGB 图像 + 田块笔记文本</td><td>LLM 感知 + LLM 逻辑引擎 + 本体对齐 KG</td><td>可查询多模态知识图谱</td><td>视觉标签与文本符号需一致性门控校验</td><td>输出为研究者检索用 KG；单一小麦作物</td></tr>
+<tr><td>Closed-loop Co-Pilot [7]</td><td>49 通道植物传感器时序</td><td>LLM 解析→触发硬件执行器（闭环）</td><td>执行指令 + 自然语言理由</td><td>多模态非线性信号人工难以对齐</td><td>机器闭环绕过农户主体；作者承认存在幻觉</td></tr>
+<tr><td>AIEP 咨询系统 [8]</td><td>农户语音/文本查询</td><td>ASR→MT→TTS + LLM + RAG</td><td>自然语言咨询答复</td><td>低资源语言 ASR/MT 端到端质量不足</td><td>唯一触及采纳：50% 未执行因投入品/资金约束</td></tr>
+<tr><td>因果推断框架 [1]</td><td>观察性田间数据 + 天气</td><td>因果图 + 后门准则 + 四种估计器</td><td>平均处理效应 ATE</td><td>未观测混杂难以完全控制</td><td>评估采纳效果而非促成采纳；单一作物地区</td></tr>
+<tr><td>ChronoRoot 2.0 [9]</td><td>红外时序图像</td><td>nnUNet 多类分割 + SORT 跟踪 + FPCA</td><td>根系构型性状 + GUI 报告</td><td>分割精度 Dice≈0.81 的误差传导</td><td>性状输出面向生物学家；未触及农户决策</td></tr>
+<tr><td>MatchPlant [10]</td><td>UAV 影像</td><td>Faster R-CNN + ResNet-50 FPN + GIS 投影</td><td>AP 85.9% + shapefile/CSV 性状</td><td>小目标检测精度仅 31.9%</td><td>性状输出面向育种者；未触及采纳</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1：各方法核心处理范式分布（按架构类别计数）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["LLM 多智能体编排", "CV 检测/分割", "调查计量经济", "因果推断", "神经符号 KG", "闭环控制"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "方法数", "type": "bar", "data": [3, 3, 3, 2, 1, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_感知_建议的衔接_三条架构路线已成熟_但终点不在采纳">感知→建议的衔接：三条架构路线已成熟，但终点不在采纳</h2>
+<p>第一条路线是**对话式多智能体编排**。PhenoAssistant 以 LLM 为核心 manager，调度视觉模型库与数据分析工具箱，将自由文本任务转为可执行流水线，实测工具选择成功率 70%、视觉模型选择 98%、数据分析任务全部完成——但 70% 的工具选择率意味着近三成请求会被错误编排<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。其继任者 PhenoIntel 用九代理生命周期架构（共享类型化 session state、V0–V7 验证检查点、按模型族匹配的不确定性量化）将失败前置拦截，报称计数误差降低 54%、检测 mAP@50 达 0.96，并明确指出同类单体编排器存在约 30% 的工具选择错误率<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>第二条路线是**神经符号双引擎**。PhenoNest 将 LLM 视觉感知与 LLM 逻辑引擎显式解耦，产出对齐 PO/RO/WTO 本体的多模态知识图谱，并用二元一致性门控（视觉检测标签与田块笔记文本符号对齐才允许写库）保证每个符号关系都有视觉证据背书——这是本证据集中唯一严格意义上的神经符号系统<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。其局限是评估仅 500 样本、单一小麦作物。</p><p>第三条路线是**闭环控制型**。Closed-loop LLM Co-Pilots 让 LLM 直接解析植物传感器数据并触发硬件执行器，以 2 小时再评估周期形成「AI–生物」直接接口，实现生产周期缩短 35%、能耗降低 18%、自主策略额外节能 67.9%<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。但作者明确承认人类专家验证仍不可或缺，且观察到模型会产生算法幻觉、无法验证其执行的是否为所声称的优化算法。</p><p>三条路线的共同点是：输出终点都落在测量值、分析结论或执行指令，服务对象是科学家或机器而非农户决策采纳<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p>
+<h3>表 2：采纳环节的断点——来自社会科学与因果推断的实证证据</h3>
+<table><thead><tr><th>研究 / 论文</th><th>采纳相关核心数字</th><th>采纳断点归因</th><th>研究性质</th></tr></thead><tbody><tr><td>AIEP 咨询系统 [8]</td><td>满意度 NPS≈60（高于肯尼亚 26、比哈尔 40）</td><td>未采纳者 50% 因投入品不可得/资金约束；33% 因信息不易理解</td><td>800 农户用户研究（唯一触及采纳端的 AI 系统）</td></tr>
+<tr><td>拖拉机服务采纳 [2]</td><td>采纳率 79.7%</td><td>剩余 20.3% 首要障碍为资金约束；采纳缺口溢价 ATT GH₵471 vs ATU GH₵312/英亩</td><td>横截面盈利性与采纳决定因素分析</td></tr>
+<tr><td>农业保险可得性 [3]</td><td>90% 认为有用，仅 14% 获得</td><td>64% 因不了解产品、23% 因地区产品不可得、仅 5% 因昂贵</td><td>混合方法调查（200 农户）</td></tr>
+<tr><td>CSA 采纳综述 [11]</td><td>—</td><td>资金可得性、信息获取、农场规模三项主要障碍</td><td>PRISMA 系统综述（58 篇）</td></tr>
+<tr><td>数字技术利用综述 [12]</td><td>小农户集中于低技术复杂度技术</td><td>终端用户、服务提供者、数字技术本身三类约束</td><td>系统文献综述（南非）</td></tr>
+<tr><td>因果推断框架 [1]</td><td>按建议播种产量提升 12–17%（372–546 kg/ha，均值 3,145 kg/ha）</td><td>未观测混杂、单一作物地区限制外推</td><td>观察性因果推断评估</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2：输出格式分布（显示技术系统输出终点均非「农户采纳」）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 2：输出格式分布（显示技术系统输出终点均非「农户采纳」）", "type": "pie", "radius": "55%", "data": [{"name": "性状测量值", "value": 3}, {"name": "采纳统计数据", "value": 3}, {"name": "咨询文本", "value": 2}, {"name": "因果效应估计", "value": 2}, {"name": "知识图谱", "value": 1}, {"name": "执行指令", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_采纳环节_系统论文普遍未触及_社会科学揭示了断点所在">采纳环节：系统论文普遍未触及，社会科学揭示了断点所在</h2>
+<p>PhenoAssistant 与 PhenoIntel 的输出是「checked trait measurement + 置信区间 + 可审计记录」，服务对象是植物科学家而非农户<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；PhenoNest 的输出是供研究者做多模态检索的知识图谱<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；即使闭环系统也明确指出人类专家验证仍不可或缺<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。真正触及采纳端的唯一技术论文是 AIEP 系列：其 800 农户研究显示满意度 NPS≈60，但在未采纳建议的农户中，50% 归因于投入品不可得或资金约束、33% 表示信息不易理解，低教育水平者更甚；作者直言「AI 咨询除信息外还需与其他缓解约束的服务集成」<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。其后续工作通过 LoRA 在专家校验事实单元上微调，并加入「缝合层」解耦事实检索与对话交付，以提升事实召回与安全性<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。</p><p>这与拖拉机服务研究的发现完全同构：79.7% 采纳，但剩余 20.3% 未采纳者的首要障碍是资金约束，且采纳缺口溢价（ATT GH₵471/英亩 vs ATU GH₵312/英亩）表明非采纳是结构性约束而非意愿问题<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。农业保险研究进一步给出「接受—可得性悖论」：90% 农户认为有用，仅 14% 获得，64% 因不了解产品、23% 因产品在该地区根本不可得<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。气候智能农业综述与数字技术利用综述则分别将障碍归纳为资金/信息/农场规模三项，以及终端用户/服务提供者/数字技术特征三类<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。</p>
+<div class="note">关键洞察：把「建议」与「采纳」两个环节连接起来的仅有因果推断评估，而非系统设计。因果推断框架基于 2021 年棉花合作社数据、后门准则因果图与四种估计方法，估计按建议播种的地块产量提升 12–17%（372–546 kg/ha），并通过四项反驳检验<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；其扩展工作在 171 地块上复现出 372–546 kg/ha 的 ATE<sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。但这属于评估采纳效果的框架，而非促成采纳的系统，且自身承认观察性研究可能受未观测混杂影响、限于单一作物与地区。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，**术语缺口**：本 RQ 冻结的六篇论文中没有任何一篇是「多智能体/神经符号」系统论文，多智能体与神经符号证据全部来自 KG 相邻文献（0082/2996/2978/2990/2976/2950），证据矩阵本身对 RQ 的直接支撑是间接的。</p><p>其二，**「采纳」定义漂移**：技术论文的 adoption 多指工具使用或满意度（如 NPS、采用率），社会科学论文的 adoption 指行为改变与持续使用，二者不可通约，导致「是否触及采纳」的判断依赖定义。</p><p>其三，**闭环≠采纳**：闭环执行系统实现了机器层面的行动闭环，但绕过了农户主体，不能视为对「农户采纳」的解答<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>其四，**定量证据稀缺**：AIEP 明确表示下一步才是对产量与生计影响的严格评估，即目前尚无量化的「AI 咨询→农户增产」因果证据；唯一有量化采纳效果的是传统天气建议系统<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>，而非多智能体系统。</p><p>其五，**系统性局限**：PhenoNest 仅 500 样本、单一小麦作物<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；PhenoAssistant 受 LLM 能力约束需仔细拆解任务<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；PhenoIntel 全部结果在单台无 GPU 机器上产出、部分指标非统一划分<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>多智能体与神经符号系统已经把「感知→决策建议」做到可用：PhenoAssistant/PhenoIntel 证明对话式编排可自动化表型工作流但仍受 30% 级工具选择错误率制约<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；PhenoNest 证明神经符号本体对齐可为符号推理提供像素级视觉背书<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；闭环 Co-Pilot 证明 LLM 可驱动硬件执行闭环<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。然而这三类系统的输出终点一律停留在测量值、分析结论或执行指令，服务对象是科学家或机器，而非农户。</p><p>「建议→采纳」仍是一片需要跨学科（技术+投入品+金融+语言）才能填补的空白，且当前没有任何多智能体/神经符号系统被证明能独立跨越它。社会科学证据一致指向：采纳瓶颈在投入品可得性与资金约束而非信息质量——AIEP 中 50% 未执行者是因物资/资金；拖拉机采纳中资金约束普遍绑定；保险中 90% 有用 vs 14% 获得的悖论<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。唯一量化「建议→行为→产出」的是因果推断框架（12–17% 产量提升），但它是评估工具而非促成机制<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。对 RQ1.3 的回答因此是条件性的：**系统已衔接感知与建议，但未触及采纳；『田间就绪性』在采纳环节的真实边界由农户端的经济与可得性约束划定，而非由算法能力划定。**</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Evaluating Digital Agriculture Recommendations with Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Tractor Service Utilization, Profitability and Adoption Determinants&nbsp;<code style="font-size:0.82em;color:#888">2882_tractor_service_utilization_profitability_and_adoption_deter</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Agricultural insurance access and acceptability: examining the case of smallholder farmers in Ghana&nbsp;<code style="font-size:0.82em;color:#888">0655_Agricultural_insurance_access_and_acceptability_examining_th</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;PhenoAssistant: A Conversational Multi-Agent AI System for Automated Plant Phenotyping&nbsp;<code style="font-size:0.82em;color:#888">0082_phenoassistant_a_conversational_multiagent_ai_system_for_aut</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;PhenoIntel: A Lifecycle-Aligned Multi-Agent Web Application&nbsp;<code style="font-size:0.82em;color:#888">2996_phenointel_a_lifecyclealigned_multiagent_web_application_for</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;PhenoNest: A Neuro-Symbolic Framework for Ontology-Aware Multimodal Plant Phenotyping&nbsp;<code style="font-size:0.82em;color:#888">2978_phenonest_a_neurosymbolic_framework_for_ontologyaware_multim</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Closed-Loop LLM Co-Pilots for Digital Agriculture&nbsp;<code style="font-size:0.82em;color:#888">2990_closedloop_llm_copilots_for_digital_agriculture</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Building AI-based advisory services for smallholder farmers: Technical learnings from the AIEP Initiative&nbsp;<code style="font-size:0.82em;color:#888">2950_building_aibased_advisory_services_for_smallholder_farmers_t</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;ChronoRoot 2.0: An Open AI-Powered Platform for 2D Temporal Plant Phenotyping&nbsp;<code style="font-size:0.82em;color:#888">2901_chronoroot_20_an_open_aipowered_platform_for_2d_temporal_pla</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;MatchPlant: An Open-Source Pipeline for UAV-Based Single-Plant Detection and Data Extraction&nbsp;<code style="font-size:0.82em;color:#888">0034_matchplant_an_opensource_pipeline_for_uavbased_singleplant_d</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Contribution of smallholder farmers to food security and opportunities for resilient farming systems&nbsp;<code style="font-size:0.82em;color:#888">0714_Contribution_of_smallholder_farmers_to_food_security_and_opp</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Utilisation of Digital Technologies by Smallholder Farmers in South Africa: A Systematic Literature Review&nbsp;<code style="font-size:0.82em;color:#888">0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Fine-tuning and Evaluating Conversational AI for Agricultural Advisory&nbsp;<code style="font-size:0.82em;color:#888">2954_finetuning_and_evaluating_conversational_ai_for_agricultural</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Evaluating Digital Tools for Sustainable Agriculture using Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">2811_evaluating_digital_tools_for_sustainable_agriculture_using_c</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.3 · 2026-10-19 15:46</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ2.3]：[父问题 RQ2] 免疫原性为何在现有基因编辑研究中被系统性忽视，如何将其重建为「递送载体 → 免疫应答 → 编辑持久性 → 临床风险」的因果链并纳入风险模型？
+[本子问题 RQ2.3] 能否将免疫原性建模为编辑持久性（editing persistence）的衰减因子，并接入 RQ1 的统一目标函数？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0469_a_practical_framework_for_evaluating_medical_ai_security_rep）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心形式化定义的定位与性质判定">核心形式化定义的定位与性质判定</a></li>
+<li><a href="#sec_从定义约束到问题分类的蕴含分析">从定义约束到问题分类的蕴含分析</a></li>
+<li><a href="#sec_可复用的统一目标函数操作化模板">可复用的统一目标函数操作化模板</a></li>
+<li><a href="#sec_对抗性验证_推演链的完整性与反例">对抗性验证：推演链的完整性与反例</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ2.3——「能否将免疫原性建模为编辑持久性的衰减因子，并接入 RQ1 的统一目标函数」——进行了定义驱动的推演分析。结论是：**可以，且 KG 中存在两个可直接复用的操作化模板，但当前只能做半定量/操作性接入，而非严格数学证明。** 基于 KG 节点与原文证据，免疫应答并非与持久性并列的独立风险维度，而是通过「清除被转导细胞／中和转基因产物」乘性地削减持久性——这一因果链在 AAV 免疫学综述中被反复确证<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，并在肝靶向编辑的对比实验中获得数值支持（免疫激活组 PCSK9 编辑率约 25%，无免疫激活迹象组 &gt;60%）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>在形式化层面，KG 中不存在任何含全称/存在量词或 LaTeX 公式的免疫原性定义，因此本分析的全部推演效力上限为 operational（操作性）而非 axiomatic（公理化），所有结论应标注为「逻辑推断」而非「数学证明」。所幸 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的算法-结局一致性指标 AOC = (AUC × Corr)/(1 + I²/100) 提供了「乘性效能项 × 不确定性惩罚」的结构骨架，<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的加权 Brier 分数提供了将衰减折算为临床效用成本权重的决策论接口，二者可组合为 RQ1 统一目标函数中免疫衰减项的建模骨架。可参数化的衰减变量（预先免疫血清阳性率、剂量阈值、载体免疫原性类别）均可从 KG 中提取。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析通过 24 次工具调用，系统覆盖了知识图谱中的全部六类核心节点：</p><p>- **problem（问题）**：检索了 AAV 免疫原性、CRISPR 治疗免疫原性、Cas 蛋白免疫原性、治疗性核酸酶免疫原性、AAV 基因治疗临床转化受限、CRISPR 治疗持久性与可扩展性等问题节点，其中问题类型全库共 312 个（部分截断显示）。</p><p>- **method（方法）**：检索了递送方法（电穿孔、聚合物递送、AAV 等）与免疫原性缓解方法（表位掩蔽、AI 辅助理性设计等）节点。</p><p>- **paper（论文）**：加载并精读了 14 篇关键论文（0036、0237、0257、0034、0195、0212、0575、0037、0460、0381、0469、0025、0585、0598），覆盖免疫原性综述、临床试验 meta 分析、肝靶向编辑、DMD 基因编辑、目标函数模板等领域。</p><p>- **assumption（假设）**：分析了 AAV 载体容量限制、AAV 载体免疫原性、CRISPR-Cas9 RNP 避免 DNA 整合等假设节点。</p><p>- **limitation（局限）**：分析了病毒载体免疫原性、免疫检测缺乏标准方案、ADA 检测标准化缺失等局限节点。</p><p>- **metric（指标）**：检索了编辑效率、持久性相关指标、AOC、加权 Brier 分数等评估指标。</p><p>- **dataset（数据集/基准）**：检索了临床试验数据库（ClinicalTrials.gov，136 项 AAV 试验）、13 种全基因组脱靶检测技术等基准。</p><p>此外，通过语义检索工具 `search_paper_sections` 对 12 篇以上关键论文的相关段落进行了原文精读，以补齐结构化字段不足以支撑的因果链证据。</p>
+
+<h2 id="sec_核心形式化定义的定位与性质判定">核心形式化定义的定位与性质判定</h2>
+<p>按定义驱动的分析框架，第一步须精确定位核心形式化定义。在 KG 中搜索含数学标志（∀, ∃, →, ∈, ≤, Pr[·]）的定义后确认：**在免疫原性-持久性问题上，KG 不存在数学（含量词）形式化定义**。免疫原性相关的节点均为定性描述（qualitative）或操作性描述（operational），例如问题节点「Immunogenicity of CRISPR therapeutics」描述为「Potential immune responses against CRISPR components (e.g., Cas9) and delivery vectors that can impact safety and efficacy」，属于自然语言定性陈述。</p><p>因此，本分析将「编辑持久性 = 递送载体效能 × 免疫耐受保持率 × 时间衰减」作为**操作性公理**（operational axiom），而非数学公理。该操作性约束的效力为：可作为建模骨架与推演方向指引，但不构成数学证明。与之相对，KG 中存在两个真正的形式化/半形式化模板可被借用：其一为 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 提出的 AOC 指标（含明确乘法分解公式与异质性惩罚项），其二为 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 提出的加权 Brier 分数（含决策论净获益公式与成本权重函数）。</p>
+<h3>免疫原性建模为持久性衰减因子的关键证据链</h3>
+<table><thead><tr><th>证据类型</th><th>核心内容</th><th>来源论文</th><th>证据强度</th></tr></thead><tbody><tr><td>因果机制</td><td>宿主对 AAV 载体和转基因的免疫应答影响「有效且稳定的转基因表达」，capsid-specific CD8+ T 细胞经 MHC-I 交叉呈递消除转导细胞</td><td>[1]</td><td>强（直接机制陈述）</td></tr>
+<tr><td>剂量依赖</td><td>capsid-specific 免疫应答呈剂量依赖；高剂量 AAV8-hFIX 导致转氨酶升高与 hFIX 表达下降</td><td>[1]</td><td>强</td></tr>
+<tr><td>对比数值</td><td>免疫激活组 PCSK9 编辑率约 25%，无免疫激活迹象组 &gt;60%，作者归因于 T 细胞杀伤含 Cas9 肝细胞</td><td>[3]</td><td>中（作者推测性解释）</td></tr>
+<tr><td>预先免疫水平</td><td>anti-AAV2 NAbs 40–74%、anti-AAV8 约 40%；anti-SpCas9 抗体 2.5–58%、T 细胞 57–95%</td><td>[6][2]</td><td>中（检测方法异质）</td></tr>
+<tr><td>剂量阈值</td><td>某些宿主反应仅在高剂量静脉 AAV 下观察到，提示阈值效应；DMD 高剂量 5.5×10^14–1.8×10^15 vg/kg 关联毒性</td><td>[1][7]</td><td>中</td></tr>
+<tr><td>持久性基线</td><td>AAV 介导 Cas9 可持续表达数月；最长灵长类转基因表达达 15 年</td><td>[8][6]</td><td>中</td></tr>
+<tr><td>反馈回路</td><td>免疫上调给药次数，形成「免疫↑→持久性↓→需重复给药→免疫↑」正反馈</td><td>[1][2]</td><td>中</td></tr>
+</tbody></table>
+
+<h2 id="sec_从定义约束到问题分类的蕴含分析">从定义约束到问题分类的蕴含分析</h2>
+<p>基于操作性公理「持久性 = 递送效能 × 免疫耐受保持率 × 时间衰减」，可系统推演三类被违反时的必然问题类别：</p><p>**（1）递送效能维度被违反** → 产生「递送效率低 / 载体容量限制 / 组织特异性不足」类问题（KG 中存在 delivery of CRISPR components、low transfection efficiency、AAV vector size limit 等节点）。</p><p>**（2）免疫耐受保持率维度被违反** → 产生「免疫原性」类问题，且按被攻击对象可细分为子类别：载体（AAV capsid）免疫、编辑酶（Cas9/Cas12a）免疫、转基因产物免疫。KG 中对应存在 AAV immunogenicity、immunogenicity of CRISPR therapeutics、immunogenicity of Cas proteins、immunogenicity of therapeutic nucleases 等相互关联的问题节点。</p><p>**（3）时间衰减维度被违反** → 产生「持久性不足 / 重复给药失败 / 转基因丢失」类问题。</p><p>**关键的逻辑蕴含关系**：免疫耐受保持率与时间衰减并非独立——免疫清除正是时间衰减的主要驱动源。因此在数学上（若给定量化模型）应表现为**乘性耦合项**而非加性独立项，即 P(t) = E_delivery × ∫[免疫耐受(t)] · decay(t) dt。这一耦合关系在 KG 的自然语言证据中被反复确证（见上表因果机制行）。</p>
+
+<h2 id="sec_可复用的统一目标函数操作化模板">可复用的统一目标函数操作化模板</h2>
+<p>RQ2.3 的核心诉求是「接入 RQ1 的统一目标函数」。KG 中虽无基因编辑领域原生的统一目标函数，但存在两个结构上可直接借用、且已被形式化的模板：</p><p>**模板一：AOC 乘性惩罚结构（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）**。AOC = (AUC × Corr)/(1 + I²/100)，其分子是「效能项 × 一致性项」的乘性组合，分母是异质性/不确定性惩罚项。该结构与「持久性 = 递送效能 × 免疫耐受保持率 × 时间衰减」同构：可将 AUC 视为递送编码效能、Corr 视为免疫-持久一致性、I² 惩罚视为免疫异质性的不确定性惩罚。</p><p>**模板二：加权 Brier 分数决策论接口（<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）**。加权 Brier 分数通过成本权重函数 w(c) 将 risk prediction 的判别（discrimination）与校准（calibration）分解，并接入净获益：net benefit = TPR(c)·π − [c/(1−c)]·FPR(c)·(1−π)。这提供了将「免疫衰减造成的持久性损失」折算为临床效用成本、进而进入统一目标函数的决策论接口。</p><p>综合可得 RQ1 目标函数的操作性形式建议：**U = [疗效增益 × 递送效能 × 免疫耐受保持率] − [免疫衰减折算的临床成本] − [脱靶/安全成本]**，其中免疫项以 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的乘性惩罚形式出现，以 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的成本权重形式折算。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "关键免疫学参数区间（用于衰减因子的先验标定）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["anti-AAV2 NAbs (%)", "anti-AAV8 NAbs (%)", "anti-SpCas9 抗体 (%)", "anti-SpCas9 T 细胞 (%)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "阳性率下限–上限", "type": "bar", "data": [40, 40, 2.5, 57], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>被违反维度 → 必然问题类别 的映射</h3>
+<table><thead><tr><th>操作性公理维度</th><th>违反后果</th><th>KG 对应问题节点</th><th>与免疫衰减的耦合方式</th></tr></thead><tbody><tr><td>递送效能</td><td>递送效率低、容量受限</td><td>Delivery of CRISPR components; Low transfection efficiency</td><td>独立加性</td></tr>
+<tr><td>免疫耐受保持率</td><td>载体/酶/转基因被免疫清除</td><td>AAV immunogenicity; Immunogenicity of CRISPR therapeutics</td><td>乘性耦合（核心衰减源）</td></tr>
+<tr><td>时间衰减</td><td>转基因丢失、重复给药失败</td><td>Durability and scalability of CRISPR therapeutics</td><td>受免疫项驱动的乘性子项</td></tr>
+</tbody></table>
+
+<h2 id="sec_对抗性验证_推演链的完整性与反例">对抗性验证：推演链的完整性与反例</h2>
+<p>对「免疫应答 → 持久性衰减」这一核心推演链进行跳步检验与反例搜索后，发现两条重要的边界条件与一条被部分证伪的强命题：</p><p>**反例一（组织/载体特异性）**：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确指出，肌肉导向、眼部（脉络膜/视网膜下）与鞘内 AAV 递送中，观察到「T-cell immune responses that did not clear transgene expression」，且免疫豁免部位的转基因相关免疫应答受限。这意味着衰减项**不能全局无差别施加**，必须带载体与组织特异性系数。该反例将强普适命题降级为带条件的弱命题。</p><p>**反例二（Treg / T 细胞耗竭调节）**：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 记载 Treg 介导的免疫耐受可抑制转基因免疫应答，导致长期表达。因此衰减因子本身是受调节的、非线性的，简单一阶衰减模型可能低估免疫调节的作用。</p><p>**跨物种外推风险**：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确「AAV tropism and immune responses are not identical in humans and mice」，使得基于动物模型的参数标定在人类外推时存在系统性偏差，导致衰减因子参数的不确定性显著增加。</p><p>综上，核心推演链内部逻辑完整（免疫清除→细胞丢失→持久性下降），但适用范围须限定于「非免疫豁免部位 + 全身/静脉给药 + 免疫原性载体」这一条件子集，且需标注跨物种外推的外部假设。</p>
+<div class="note">认知基准面纪律提醒：本报告的推演方向严格为「从操作性定义演绎到问题关系」。凡只能通过归纳得到的关联（如具体的血清阳性率数字、具体的编辑率对比），均已降级为 medium 置信度，并标注其非受控/推测性质，未将它们表述为数学必然关系。KG 中不存在免疫原性的数学形式化定义，因此本报告全程避免使用「数学证明」措辞。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在以下数据覆盖与推断置信度方面的不足：</p><p>1. **无形式化定义**：KG 中免疫原性相关节点全为定性/操作性描述，缺乏含量词或 LaTeX 公式的数学定义。因此全部推演效力上限为操作性逻辑推断，无法提供严格数学证明。这是本分析最主要的效力约束。</p><p>2. **缺乏定量衰减曲线**：KG 完全缺乏 AAV 转基因/编辑持久性随时间衰减的定量数据（如半衰期数值、衰减曲线），持久性衰减项的时变形式（线性/指数/分段）目前只能定性假设，无法拟合。</p><p>3. **免疫-持久性映射函数缺失**：缺乏将免疫强度（抗体滴度、T 细胞频率）统一映射为持久性衰减率的定量函数，导致衰减因子与免疫参数之间只能建立方向性而非数值性关联。</p><p>4. **测量标准化缺失**：<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 与 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 反复指出免疫检测（尤其是 ADA 检测）缺乏标准化参照物质，检测灵敏度、样本处理、采样时间均影响结果，导致衰减因子参数无法跨研究稳定标定，先验参数的迁移性差。</p><p>5. **关键对比证据为推测性**：<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 中支撑「免疫导致持久编辑率下降」的 PCSK9 对比（25% vs &gt;60%）为作者推测性归因，非受控对照实验，置信度仅为中等。</p><p>6. **模板公式为启发式**：<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 AOC 公式作者自述为「heuristic and assumes approximate independence」，其乘法分解的合法性尚需经验验证；<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 均非基因编辑领域原生模板，跨域迁移的适用性需进一步论证。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ2.3，本分析的最终判断是：**可以将免疫原性建模为编辑持久性的衰减因子，并接入 RQ1 的统一目标函数，但当前只能实现半定量/操作性接入，而非严格数学建模。**</p><p>具体而言：（1）在本体论与机制层面，免疫应答通过清除被转导细胞、中和转基因产物，以**乘性方式**削减编辑持久性，这一因果链在 KG 证据中高度一致（强证据）；（2）在形式化层面，KG 无免疫原性的数学定义，故全部推演降级为操作性逻辑推断；（3）在建模实现层面，可借用 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 AOC 乘性惩罚结构作为免疫衰减项骨架、<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的加权 Brier 决策论接口作为成本折算机制；（4）在参数化层面，预先免疫血清阳性率、剂量阈值、载体免疫原性类别等可用于三参数衰减模型，但受测量标准化缺失与跨物种外推风险的严重约束。</p><p>一个重要的边界限定是：免疫→持久性衰减**并非普适**，在免疫豁免部位（眼、CNS）和肌肉导向递送中存在反例，衰减项必须带载体与组织特异性系数。此外，「免疫↑→持久性↓→需重复给药→免疫↑」的正反馈回路进一步放大了免疫原性对长期净疗效的乘性削弱效应，这正是将免疫原性重建为持久性衰减因子（而非独立风险维度）的核心合理性所在。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Immunogenicity of Recombinant Adeno-Associated Virus (AAV) Vectors for Gene Transfer&nbsp;<code style="font-size:0.82em;color:#888">0036_Immunogenicity_of_Recombinant_Adeno-Associated_Virus_AAV_Vec</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Immunogenicity of CRISPR therapeutics—Critical considerations for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0237_immunogenicity_of_crispr_therapeuticscritical_considerations</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Gene Editing for the Treatment of Hypercholesterolemia&nbsp;<code style="font-size:0.82em;color:#888">0034_Gene_Editing_for_the_Treatment_of_Hypercholesterolemia</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;A Proposed Framework for Quantifying AI-to-Clinical Translation: The Algorithm-to-Outcome Concordance (AOC) Metric&nbsp;<code style="font-size:0.82em;color:#888">0460_quantifying_aitoclinical_translation_the_algorithmtooutcome</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Weighted Brier Score - an Overall Summary Measure for Risk Prediction Models with Clinical Utility Consideration&nbsp;<code style="font-size:0.82em;color:#888">0381_weighted_brier_score_an_overall_summary_measure_for_risk_pre</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Gene Therapy Advances: A Meta-Analysis of AAV Usage in Clinical Settings&nbsp;<code style="font-size:0.82em;color:#888">0257_gene_therapy_advances_a_metaanalysis_of_aav_usage_in_clinica</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Gene Editing for Duchenne Muscular Dystrophy: From Experimental Models to Emerging Therapies&nbsp;<code style="font-size:0.82em;color:#888">0212_Gene_Editing_for_Duchenne_Muscular_Dystrophy_From_Experiment</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Overview of Delivery Methods for Gene Editing&nbsp;<code style="font-size:0.82em;color:#888">0025_Overview_of_Delivery_Methods_for_Gene_Editing</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Reducing Immunogenicity by Design: Approaches to Minimize Immunogenicity of Monoclonal Antibodies&nbsp;<code style="font-size:0.82em;color:#888">0037_Reducing_Immunogenicity_by_Design_Approaches_to_Minimize_Imm</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Research on Reducing the Immunogenicity of Nucleases in Gene Therapy&nbsp;<code style="font-size:0.82em;color:#888">0575_Research_on_Reducing_the_Immunogenicity_of_Nucleases_in_Gene</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;A Practical Framework for Evaluating Medical AI Security: Reproducible Assessment of Jailbreaking and Privacy Vulnerabilities Across Clinical Specialties&nbsp;<code style="font-size:0.82em;color:#888">0469_a_practical_framework_for_evaluating_medical_ai_security_rep</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.3 · 2026-10-13 20:27</footer>
+</div>
+</body>
+</html>

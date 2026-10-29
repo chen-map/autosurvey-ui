@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.1-c 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.1-c 分析报告</h1>
+<div class="meta">RQ [RQ2.2]：[父问题 RQ2] 记忆更新、策略优化、工具使用、工作流、多智能体协作五类进化机制，在进化载体、更新信号与收敛性质上有何异同？
+[本子问题 RQ2.2] 工具使用与工作流机制如何作为&quot;外化进化载体&quot;改变智能体的能力边界，其进化信号来自何处（工具反馈 / 工作流复用 / 检索增强）？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2423_universal_defenses_for_toolintegrated_llm_agents_against_adv, 0029_llm_agents_for_interactive_workflow_provenance_reference_arc, 2144_llm_agents_as_6g_orchestrator_a_paradigm_for_taskoriented_ph, 2336_foresightsafetysagea_fully_automated_scenario_generation_and, 0001_A_Self_Evolving_Agentic_Framework_for_Metasurface_Inverse_De, 0057_BIM_Design_Assistant_Driven_by_LLM_Agents）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_进化信号的三条来源_工具反馈_工作流复用_检索增强">进化信号的三条来源：工具反馈 / 工作流复用 / 检索增强</a></li>
+<li><a href="#sec_跨层传播与风险结构_外化载体同时是放大器">跨层传播与风险结构：外化载体同时是放大器</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告回答子问题 RQ2.2：工具使用与工作流机制如何作为&quot;外化进化载体&quot;改变智能体的能力边界，其进化信号来自何处。基于知识图谱（KG）中六篇冻结证据论文及 4 篇互为佐证的综述/方法论文，我们提出一个五层外化进化栈模型：L1 工具/环境反馈层、L2 工具接口契约层、L3 工作流编排层、L4 检索增强层、L5 外化工件层（技能文件）。</p><p>核心结论是：工具与工作流的本质是&quot;把原本要写进模型参数的适应压力，转移到一个可读写、可审计、跨轮次复用的外部结构上&quot;，从而在不改动底座权重的前提下扩展能力边界。其进化信号来自三条来源——(1) 工具反馈（确定性求解器/API 返回值），(2) 工作流复用（技能文件、动态数据流 schema、两层接口沉淀），(3) 检索增强（RAG 把大库压缩为可注入元数据）。三者都表现出&quot;有界收敛&quot;而非无限自进化，且同时构成系统性安全风险源。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>分析完全基于知识图谱的结构化数据与论文原文段落检索，不引入外部先验：</p><p>• 实体扫描：加载 problem（629 个）、method（558 个）、paper（274 个，含冻结论文）、limitation（317 个）、assumption（200 个）、dataset/benchmark（400 个）六类节点，用于层级关键词归纳与根因归层。</p><p>• 关系检索：对六篇冻结论文（0001、0029、0057、2423、2144、2336）执行 one-hop 双向关系查询，提取 proposes / addresses / evaluated_on / measured_by / has_limitation / targets 等边，重建各论文的&quot;问题-方法-数据集-指标-局限&quot;子图。</p><p>• 原文精读：使用 search_paper_sections 对 10 篇论文做语义段落检索（累计 &gt;12 段原文引用），覆盖 0001 技能文件结构附录、0029 RAG 管线与 Frontier 超算结果、0057 两层接口架构、2423 防御框架、2336 场景执行轨迹、2144 两阶段训练与 API 检索、0004 符号学习算法、0037 图重写分类、2289 外化综述、2202 工具元学习。</p><p>• 工具调用总数：22 次，覆盖全部六类节点查询与至少 10 篇论文原文精读。</p>
+<h3>五层外化进化栈模型（Step 1 固化的层级结构）</h3>
+<table><thead><tr><th>层ID</th><th>层名</th><th>核心机制</th><th>关键词信号</th><th>主要支撑论文</th></tr></thead><tbody><tr><td>L1</td><td>工具/环境反馈层</td><td>确定性工具返回值、求解器物理评分、API 调用反馈</td><td>tool feedback, solver-grounded, tool observation</td><td>[1][4][5]</td></tr>
+<tr><td>L2</td><td>工具接口契约层</td><td>两层接口、工具 schema、结构化执行反馈</td><td>interface, tool schema, Revit Functions/Interfaces</td><td>[3]</td></tr>
+<tr><td>L3</td><td>工作流编排层</td><td>多 Agent 角色工作流、任务分解、动态数据流 schema</td><td>workflow, orchestration, dataflow schema</td><td>[2][4]</td></tr>
+<tr><td>L4</td><td>检索增强层</td><td>RAG、语义 API 检索、schema 注入</td><td>RAG, retrieval, semantic similarity</td><td>[2][4]</td></tr>
+<tr><td>L5</td><td>外化工件层（技能文件）</td><td>人类可读技能文件、版本化快照、可迁移指导</td><td>skill file, SKILL.md, reusable guidance</td><td>[1][7]</td></tr>
+</tbody></table>
+
+<h2 id="sec_进化信号的三条来源_工具反馈_工作流复用_检索增强">进化信号的三条来源：工具反馈 / 工作流复用 / 检索增强</h2>
+<p>**信号源一：工具/环境确定性反馈。** <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的技能进化是 solver-grounded 的——meta-agent 依据每任务记录（执行错误、逐准则反馈、CPF、BM、SG、尝试次数）改写技能文件，信号来自确定性物理求解器。这带来可量化的有界增益：same-type 成功率 SG 从 38%→74%，CPF 0.51→0.87，平均尝试次数 4.10→2.30。但在 New-type-A（测试族完全未在训练/验证出现）上，进化只维持而非创造能力（SG 稳定约 90%），说明工具反馈信号只在覆盖的族类内有效。<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 6G 编排以约 200 个 API 的工具库 + 语义向量检索 + 两阶段训练，在工具反馈闭环中校准&quot;规划步骤→API 调用&quot;，参数从任务描述、前序输出、默认值三处自动绑定。<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的 GLM4-plus 在 100 个 BIM 任务上达 90% 完成率、99% 准确率，但准确率随难度 Level-1→Level-3 骤降——工具反馈驱动的能力边界随交互链长收缩。</p><p>**信号源二：工作流复用。** <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 采用运行时渐进推断的动态数据流 schema 作为外化载体：无需预定义，从现场溯源流增量推断&quot;任务间数据如何流动、捕获哪些参数与输出、工作流如何演化&quot;，并在 RAG 管线中复用。关键设计是 operates on metadata rather than task provenance data，使 LLM 性能与工作流规模解耦——在 Frontier 超算化学工作流上正确或部分正确回答超过 80% 查询，并从简单合成工作流零额外领域工程迁移成功。被复用的是抽象出的结构（schema）而非具体任务数据。<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的符号学习把 pipeline 本身当作可优化符号组件，用语言损失/梯度/优化器联合优化 prompts、tools、pipeline，证明工作流结构可被反馈驱动、可迁移。</p><p>**信号源三：检索增强。** <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 因&quot;上千 API 无法全部塞进 prompt&quot;而提出 API 指令语义向量化 + GCS 相似度检索，把工具选择转化为检索问题；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的 RAG 采用元数据/部分数据/全数据三档策略注入上下文，并明确 RAG 策略与领域值驱动大部分增益。检索增强把外部大状态压缩成可注入上下文，从而扩展边界而不触发上下文溢出——一种&quot;外化但受控&quot;的信号。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "技能进化（工具反馈驱动）在 Same-type 任务上的量化增益 [1]", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["成功率 SG (%)", "准则通过率 CPF (×100)", "平均尝试次数 (×10)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "进化前 vs 进化后", "type": "bar", "data": [74, 87, 23], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>有界收敛的证据：技能进化在三种泛化设置下的表现 [1]</h3>
+<table><thead><tr><th>设置</th><th>测试族是否在验证中可见</th><th>进化前 SG</th><th>进化后 SG</th><th>结论</th></tr></thead><tbody><tr><td>Same-type</td><td>同族</td><td>38%</td><td>74%</td><td>族内显著增益</td></tr>
+<tr><td>New-type-A</td><td>完全不可见（跨类）</td><td>92%</td><td>90%</td><td>仅维持既有能力，不创造新能力</td></tr>
+<tr><td>New-type-B</td><td>同设备类、新子型</td><td>20%</td><td>90%</td><td>从验证反馈习得缺失约定并泛化（+70pp）</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "工具/工作流作为风险放大层：安全评测结果", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["ForesightSafety-SAGE 平均 ASR [5]", "长视野不稳定 (4轮) [5]", "长视野不稳定 (10轮) [5]"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "攻击成功率/不安全率 (%)", "type": "bar", "data": [47.1, 62.9, 80.0], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>各冻结论文的能力边界与进化信号对照</h3>
+<table><thead><tr><th>论文</th><th>载体形态</th><th>进化信号来源</th><th>能力边界证据</th><th>关键局限</th></tr></thead><tbody><tr><td>[1] 元表面逆向设计</td><td>人类可读 SKILL.md 技能文件</td><td>求解器确定性反馈</td><td>SG 38→74%；跨类不创造能力</td><td>受限于单一求解器栈与单一基准</td></tr>
+<tr><td>[2] 工作流溯源Agent</td><td>动态数据流 schema + RAG</td><td>工作流复用 + 检索增强</td><td>Frontier 超算 &gt;80% 正确/部分正确</td><td>OLAP 类查询最难；依赖代码语义质量</td></tr>
+<tr><td>[3] BIM 设计助手</td><td>两层 Revit 接口（9函数→8接口）</td><td>工具接口 + 结构化反馈</td><td>100 任务 90% 完成率、99% 准确率</td><td>准确率随难度骤降；仅限结构设计任务</td></tr>
+<tr><td>[4] 6G 编排器</td><td>200 API 工具库 + 语义检索 + LoRA</td><td>工具反馈 + 检索增强</td><td>L1 模型域知识优于 LLaMA2/LLM</td><td>两阶段训练依赖人工语料</td></tr>
+<tr><td>[5] ForesightSafety-SAGE</td><td>仿真工具环境 + 多轮执行轨迹</td><td>工具反馈（观测/危险动作）</td><td>平均 ASR 47.1%，长视野升至 80%</td><td>仿真环境无法复现真实工具不可靠性</td></tr>
+<tr><td>[6] 工具集成防御</td><td>工具过滤 + 提示防御三层框架</td><td>工具语义异常检测</td><td>ATF/NTR 显著降低 ASR 保持 OTSR</td><td>未在动态工具生态环境评估</td></tr>
+</tbody></table>
+
+<h2 id="sec_跨层传播与风险结构_外化载体同时是放大器">跨层传播与风险结构：外化载体同时是放大器</h2>
+<p>工具与工作流机制在扩展能力边界的同时，构成了结构性的风险放大层。<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 显示工具集成 Agent 面临 DPI、IPI、MP、backdoor 四类注入攻击，一条恶意工具即可劫持整个工作流，其 ATF（异常检测过滤工具）/NTR（恢复良性工具集）依赖工具描述的语义异常检测来防御，但作者明确承认未在动态环境中评估——工具生态越外化、越动态，防御越难闭环。<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 在 1072 个可执行多轮场景、2144 个 episode 上测得 12 个 LLM Agent 平均 ASR 达 47.1%，多个模型超 70%；其中 Long-Horizon Instability 风险随交互预算从 4 轮增至 10 轮由 62.9% 升至 80.0%，说明工具反馈/工作流层的不安全行为随链路累积而放大。</p><p><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的综述为这种跨层传播提供形式化语言：工具/工作流状态变化被建模为动态图边重写（LINK/UNLINK/REWIRE），并指出&quot;工具演化可触发依赖技能与工作流的重验证&quot;，即局部工具契约变更会沿依赖边级联影响上层工作流——这正是&quot;外化载体的风险向上层传播&quot;机制。但该综述亦承认，现有方法&quot;rarely expose the actual cascade trace&quot;，级联追踪缺乏实证，因此这一传播链在 KG 中多为&quot;inferred_no_direct_support&quot;性质。</p>
+<h3>跨层传播链与证据状态</h3>
+<table><thead><tr><th>传播方向</th><th>问题链</th><th>证据论文</th><th>证据状态</th></tr></thead><tbody><tr><td>L1→L3</td><td>工具注入/后门 → 工作流被劫持</td><td>[6]</td><td>search_verified（防御论文描述攻击路径）</td></tr>
+<tr><td>L1→L3</td><td>工具反馈误导 → 多轮执行不安全累积</td><td>[5]</td><td>search_verified（执行轨迹实证）</td></tr>
+<tr><td>L2→L3</td><td>工具契约漂移 → 依赖技能/工作流需重验证</td><td>[8]</td><td>kg_edge/理论框架（原文承认缺级联实证）</td></tr>
+<tr><td>L3→L5</td><td>工作流复用失败 → 技能文件沉淀错误配方</td><td>[1][2]</td><td>inferred_no_direct_support（推断，未见直接文献）</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>1. 收敛性质缺乏形式化证据：冻结论文中无统一的收敛性证明，最高只有 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的进化曲线经验描述与&quot;elitist 保留 best-on-validation&quot;机制。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 自身承认证据 bounded by one solver stack, one benchmark design, and one base model。</p><p>2. 缺跨层统一消融：六篇论文各自报告工具反馈/工作流复用/检索增强的增益，但没有在同一基准上对三者做严格对照消融；<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的检索增益未与&quot;全量注入&quot;做受控对比（置信度标注为 medium）。</p><p>3. 安全外部性仅在仿真环境测得：<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 自述仿真工具环境无法复现真实部署的工具不可靠性与环境模糊性；<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 未在动态生态环境评估防御。</p><p>4. 层级划界模糊：&quot;工具接口&quot;（<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的 Revit 接口层）与&quot;工作流编排&quot;（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 多 Agent 工作流、<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 溯源工作流）在文献中常相互嵌套，L2 与 L3 边界不稳定，相关 Problem 的层归属标注为低置信（layer_confidence: low）。</p><p>5. 跨层传播链部分为推断：<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的级联传播虽有理论框架，但缺乏实际级联轨迹实证，标注为 kg_edge/理论或 inferred_no_direct_support，不作为确定性结论。</p>
+<div class="note">证据强度提示：标记为 high confidence 的结论（C1、C2、C3、C4、C8、C9）均有冻结论文原文段落直接支撑；标记为 medium 的结论（C5、C6、C7、C10、C11）为设计性主张或缺少受控消融。New-type-A 的&quot;进化不创造跨类能力&quot;是界定&quot;外化载体能力边界&quot;的关键反证，不宜忽略。</div>
+
+<h2 id="sec_结论">结论</h2>
+<p>工具使用与工作流机制作为&quot;外化进化载体&quot;，通过把适应对象从模型权重转移为可读写、可审计、可迁移的外部结构，实质性地扩展了智能体的能力边界。其进化信号来自三条互补来源：工具/环境的确定性反馈（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，产生可量化的族内有界增益）、工作流复用（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，把抽象结构沉淀为可迁移载体）、检索增强（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，把大状态压缩为可注入上下文）。</p><p>然而能力扩张是&quot;有界的&quot;：工具反馈信号只在覆盖的族类内起效（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> New-type-A 仅维持不创造），能力边界随交互链长收缩（<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>），且外化载体同时是系统性风险放大器（<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 工具注入劫持工作流、<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 平均 ASR 47.1% 且长视野升至 80%）。<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的图重写框架提示工具契约漂移会级联影响上层技能与工作流，但目前缺级联实证。总体而言，工具与工作流是一种强大但需外部判定器/稳定检索基线兜底、并伴随安全外部性的外化进化范式；其跨层统一的形式化收敛保证与非仿真环境下的安全鲁棒性，是当前文献的明确缺口（answer_completeness: partial）。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;A Self-Evolving Agentic Framework for Metasurface Inverse Design&nbsp;<code style="font-size:0.82em;color:#888">0001_A_Self_Evolving_Agentic_Framework_for_Metasurface_Inverse_De</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;LLM Agents for Interactive Workflow Provenance: Reference Architecture and Evaluation Methodology&nbsp;<code style="font-size:0.82em;color:#888">0029_llm_agents_for_interactive_workflow_provenance_reference_arc</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;BIM Design Assistant Driven by LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">0057_BIM_Design_Assistant_Driven_by_LLM_Agents</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;6G LLM Agents: A Novel Paradigm for Task-Oriented Physical-Layer Automation&nbsp;<code style="font-size:0.82em;color:#888">2144_llm_agents_as_6g_orchestrator_a_paradigm_for_taskoriented_ph</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;ForesightSafety-SAGE: A Fully Automated Scenario Generation and Safety Evaluation Framework for LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">2336_foresightsafetysagea_fully_automated_scenario_generation_and</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Universal Defenses for Tool-Integrated LLM Agents against Adversarial Attacks&nbsp;<code style="font-size:0.82em;color:#888">2423_universal_defenses_for_toolintegrated_llm_agents_against_adv</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Symbolic Learning Enables Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">0004_Symbolic_learning_enables_self-evolving_agents</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Self-Evolving Agents as Dynamic Graph Transformation: A Survey and New Perspective&nbsp;<code style="font-size:0.82em;color:#888">0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Externalization in LLM Agents: A Unified Review of Memory, Skills, Protocols and Harness&nbsp;<code style="font-size:0.82em;color:#888">2289_externalization_in_llm_agents_a_unified_review_of_memory_ski</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;MetaAgent: Toward Self-Evolving Agent via Tool Meta-Learning&nbsp;<code style="font-size:0.82em;color:#888">2202_metaagent_toward_selfevolving_agent_via_tool_metalearning</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.2 · 2026-10-18 21:42</footer>
+</div>
+</body>
+</html>

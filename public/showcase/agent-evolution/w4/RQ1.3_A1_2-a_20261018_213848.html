@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-a 分析报告</h1>
+<div class="meta">RQ [RQ1.3]：[父问题 RQ1] 如何用一个统一的&quot;进化轨迹&quot;概念框架刻画 LLM 智能体在交互、反馈与经验积累中的持续变化？
+[本子问题 RQ1.3] &quot;经验存储层（memory update）&quot;与&quot;策略更新层（policy optimization）&quot;应如何区分，二者边界模糊导致哪些可复现性问题（如 Agent amnesia、skill forgetting）？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2274_trajectoryinformed_memory_generation_for_selfimproving_agent, 2402_ssebio_a_structured_selfevolving_agent_with_agentic_retrieva, 2283_autonomous_overtaking_trajectory_optimization_using_reinforc, 2230_evotest_evolutionary_testtime_learning_for_selfimproving_age, 2272_hindsight_credit_assignment_for_longhorizon_llm_agents, 2467_Self-Improving_Agentic_Systems）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_现有分类体系的缺陷诊断">现有分类体系的缺陷诊断</a></li>
+<li><a href="#sec_边界模糊导致的可复现性失效">边界模糊导致的可复现性失效</a></li>
+<li><a href="#sec_正交重构_新的二维分类体系">正交重构：新的二维分类体系</a></li>
+<li><a href="#sec_可行的分层操作范式">可行的分层操作范式</a></li>
+<li><a href="#sec_旧缺陷的对位解决方案">旧缺陷的对位解决方案</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ1.3 回答：经验存储层（memory update）与策略更新层（policy optimization）应如何区分，以及二者边界模糊导致哪些可复现性问题（如 Agent amnesia、skill forgetting）。核心结论是：边界不应按&quot;更新发生在何处&quot;划分，而应按两个正交属性联合划分——(A) 被更新对象是&quot;内容/陈述性经验&quot;还是&quot;控制/程序性行为&quot;；(B) 更新载体是&quot;外部化非参数写回&quot;还是&quot;内化参数化改写&quot;。这一重构在文献中有明确术语锚点（2274 区分 what is known vs. what to do）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，也能无歧义安置四类问题。</p><p>边界模糊不是语义细节，而是可复现性问题的直接生产源。文献已承认记忆与策略是两层（EvoTest 将 baseline 切为 memory-based / reflection / prompt-optimization / weight-update 四类）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，但同一系统又把 memory updates 与 guiding prompt 放入同一次整体改写，造成&quot;名义分层、操作耦合&quot;。这种耦合使失效无法归因、无法隔离、无法快照复现，具体表现为 Agent amnesia<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、capability erosion / skill forgetting<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、library drift 与 blind curator 隐蔽失效<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、以及 instruction drift / 记忆污染<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）六类节点与关系边，结合 132 篇论文原文段落的语义检索完成。查询覆盖的实体类型包括：problem（629 条）、method（558 条）、limitation（317 条）、assumption（200 条）、metric（391 条）、dataset（400 条）。通过 get_candidate_entity、get_relation、search_paper_sections 对证据矩阵中全部 6 篇冻结论文（2274、2402、2283、2230、2272、2467）及 6 篇直接关联文献（2291、2244、2429、2361、2306、2289）进行了精读，共调用工具 42 次。核心量化证据（AUC、retention gap、模板编辑质量、false-pass 阈值）均来自论文原文段落，可在 references 中逐条溯源。</p>
+
+<h2 id="sec_现有分类体系的缺陷诊断">现有分类体系的缺陷诊断</h2>
+<p>对现有分层体系的 MECE 检验揭示三类缺陷。</p><p>第一类是重叠（overlap）：EvoTest 与 2467 在概念上把 memory-based 定义为&quot;不修改核心策略提示或决策逻辑&quot;，但在其 Evolver 主提示中，&quot;memory updates（成功/失败数据库）&quot;与&quot;guiding prompt（高层策略）&quot;作为并列四项被同一次整体改写生成<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。同一段轨迹、同一次写回同时改动两类对象，使二者在操作层面无法区分。</p><p>第二类是遗漏（omission）：现有框架&quot;只测新任务前向进展，从不问旧能力是否保留&quot;<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，因此 memory 与 policy 的相互侵吞在评测中被系统性遗漏。</p><p>第三类是模糊边界（ambiguity）：library drift 的治理失效&quot;在聚合指标上不可见&quot;<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，说明层间边界处存在无任何指标覆盖的盲区。诊断来源为 literature_acknowledged 与 empirical_observation 的混合。</p>
+<h3>现有分层体系的缺陷矩阵</h3>
+<table><thead><tr><th>缺陷类型</th><th>具体表现</th><th>涉及层级</th><th>文献证据</th><th>可复现性后果</th></tr></thead><tbody><tr><td>重叠 overlap</td><td>memory updates 与 guiding prompt 同一次整体改写</td><td>记忆层 × 策略层</td><td>EvoTest/2467[3]</td><td>失效无法归因到具体层</td></tr>
+<tr><td>遗漏 omission</td><td>只测新任务前向进展，不测旧能力保留</td><td>策略层×记忆层</td><td>2306[4]</td><td>能力侵蚀在评测中隐形</td></tr>
+<tr><td>模糊 ambiguity</td><td>library drift 治理失效在聚合指标上不可见</td><td>外部程序性层</td><td>2361[5]</td><td>失效不被任何指标暴露</td></tr>
+<tr><td>重叠 overlap</td><td>procedural memory 归属不明（技能算记忆还是策略）</td><td>记忆层 × 策略层</td><td>2274 vs 2289[1][7]</td><td>skill forgetting 无法归因</td></tr>
+</tbody></table>
+
+<h2 id="sec_边界模糊导致的可复现性失效">边界模糊导致的可复现性失效</h2>
+<p>四类失效均有量化证据。</p><p>Agent amnesia：2274 定义为 LLM 无状态、缺乏从执行经验系统学习的机制<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。若系统没有独立可检查的记忆写回，每次会话从零开始，评测只反映 backbone 波动，无法复现&quot;学会了什么&quot;。</p><p>Capability erosion / skill forgetting：2306 发现 self-evolution 非单调，在 workflow、skill、model、memory 四通道同时侵蚀旧能力<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。无约束记忆更新使旧域平均性能从 83.9% 降至 81.6%，CPE 正则化后回升至 83.3%，retention gap 从 2.3% 降至 0.7%。当记忆层与策略层边界不清时，掉点来源（记忆被驱逐 vs 策略漂移）无法判定。</p><p>Library drift / blind curator：2361 证明 skill library 漂移可使性能跌破 no-skill 基线，而退役保障依赖&quot;判定信号诚实&quot;的隐含假设；LLM judge 的 false-pass 偏差超过阈值 (1−τ)/2（如 0.45）后，退役机制失效且&quot;再多数据也救不回来&quot;<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。该失效在聚合指标上不可见，是最危险的可复现性问题。</p><p>Instruction drift / 记忆污染：SSE-Bio 用细粒度模板编辑对比粗粒度重写，显著降低更新越界<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。2429/2289 进一步指出未管理记忆会变成 context bloat 反而损害准确率<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p>
+<h3>边界模糊导致的四类可复现性失效及量化证据</h3>
+<table><thead><tr><th>失效类型</th><th>所属层</th><th>关键量化证据</th><th>文献</th><th>可复现性病灶</th></tr></thead><tbody><tr><td>Agent amnesia</td><td>记忆层缺位</td><td>定性：LLM 无状态导致无系统学习机制</td><td>2274[1]</td><td>无独立记忆快照，无法复现学习内容</td></tr>
+<tr><td>Capability erosion</td><td>策略层×记忆层</td><td>旧域 83.9%→81.6%，CPE 后 83.3%，gap 2.3%→0.7%</td><td>2306[4]</td><td>掉点来源无法区分记忆驱逐 vs 策略漂移</td></tr>
+<tr><td>Library drift / blind curator</td><td>外部程序性层</td><td>false-pass&gt;0.45 阈值后退役失效，聚合指标不可见</td><td>2361[5]</td><td>失效不暴露于任何聚合指标</td></tr>
+<tr><td>Instruction drift / 记忆污染</td><td>记忆层更新越界</td><td>改动字段 3.28→1.46，矛盾指令 7%→2%，Bothcor 11.72→16.52</td><td>SSE-Bio[6]</td><td>更新串联成策略改写，难隔离</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "J-TTL 基准上不同学习策略的平均 AUC（backbone=Gemini-2.5-flash）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["Static", "Memory", "RAG", "Summary", "Reflexion", "TextGrad", "Promptbreeder", "EvoPrompt", "EvoTest(whole-system)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "平均 AUC", "type": "bar", "data": [0.11, 0.13, 0.18, 0.25, 0.32, 0.31, 0.34, 0.34, 0.47], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">上表数据来自 EvoTest / J-TTL<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。memory-only 方法（Memory≈0.13、RAG≈0.18）显著弱于 prompt optimization（≈0.31–0.36），而 whole-system evolution（≈0.47）最强。这既证明记忆层与策略层各自贡献增益，也证明二者需&quot;分层协调&quot;而非&quot;混同整体改写&quot;或&quot;只做单层&quot;。</div>
+
+<h2 id="sec_正交重构_新的二维分类体系">正交重构：新的二维分类体系</h2>
+<p>提出两个正交维度以覆盖全部相关 problem 且互斥。</p><p>维度 A（作用对象）：content（陈述性经验内容，what is known）vs. control（程序性控制行为，what to do）。该术语锚点来自 2274 对陈述性知识与程序性/经验性知识的明确区分<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>维度 B（载体机制）：externalized_nonparametric（外部化非参数写回）vs. internalized_parametric（内化参数化改写）。该维度来自 MEMRL 冻结 LLM 权重、仅在 episodic memory 上做非参数 RL 的显式解耦<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，以及 SSE-Bio 只训练 Proxy、固定 Manager/Dev/Critic 的分工<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p><p>二维交叉形成四象限，可将记忆污染/遗忘、library drift、参数化灾难性遗忘、策略漂移/安全回归四类问题无歧义安置，且对相关 problem 节点实现高覆盖率与互斥归置。唯一不稳定格是 procedural memory（技能/工作流）——2289 将其作为与 memory 并列的外部化维度<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，而 2274/MemRL 视其为记忆的一种<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。</p>
+<h3>正交重构的二维分类矩阵（作用对象 × 载体机制）</h3>
+<table><thead><tr><th></th><th>externalized_nonparametric（外部化非参数）</th><th>internalized_parametric（内化参数）</th></tr></thead><tbody><tr><td>content（陈述性经验内容）</td><td>记忆污染 / 记忆遗忘（memory pollution, amnesia）[1][8]</td><td>参数化灾难性遗忘（微调灾难性遗忘）[9]</td></tr>
+<tr><td>control（程序性控制行为）</td><td>skill library drift / blind curator / 幻觉技能[5]</td><td>策略漂移 / 安全回归（policy optimization）[4]</td></tr>
+</tbody></table>
+
+<h2 id="sec_可行的分层操作范式">可行的分层操作范式</h2>
+<p>MEMRL 给出最干净的分层范式：冻结 LLM 权重、只在 episodic memory 上做非参数 RL，用 Q 值区分&quot;功能效用&quot;与&quot;语义相似&quot;滤除噪声，从而在不动参数的前提下实现&quot;稳定推理 + 可塑记忆&quot;<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。SSE-Bio 只训练检索 Proxy（策略）、固定其余组件，并以细粒度模板编辑约束记忆演化<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。2429 进一步把记忆建模为 middleware，要求 episodic/semantic/procedural 分 namespace 存放，并配套 admission / forgetting / eviction 治理<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。这些实践共同说明：分层不仅可行，而且分层协调（而非整体重写）是降低可复现性风险的方向。</p>
+
+<h2 id="sec_旧缺陷的对位解决方案">旧缺陷的对位解决方案</h2>
+<p>针对诊断出的每类旧缺陷，新体系均给出可操作的解位手段，形成对照。</p>
+<h3>旧体系缺陷与新体系解位对照</h3>
+<table><thead><tr><th>旧局限</th><th>新体系解位</th><th>支撑文献</th></tr></thead><tbody><tr><td>memory 与 policy 整体同改，无法归因</td><td>按&quot;作用对象×载体&quot;分四象限，分别快照与消融</td><td>2244 冻结+非参 RL[9]；2402 只训 Proxy[6]</td></tr>
+<tr><td>只测前向进展，不测旧能力保留</td><td>增加旧能力保留（retention gap）作为独立通道</td><td>2306 CPE[4]</td></tr>
+<tr><td>治理失效在聚合指标不可见</td><td>增加 judge false-pass 审计与层内局部指标</td><td>2361 缺陷注入审计[5]</td></tr>
+<tr><td>粗粒度重写导致 instruction drift</td><td>细粒度局部字段编辑，限制改动面</td><td>SSE-Bio[6]</td></tr>
+<tr><td>procedural memory 归属不明</td><td>将技能明确划入&quot;control&quot;维，消除重叠</td><td>2274 术语锚点[1]；2289 张力[7]</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在三点证据缺口与不确定性。其一，尚无统一的可复现性基准能分别快照 memory 与 policy 状态并做交叉消融——2306 最接近但只覆盖四通道、未做层间交叉隔离。其二，blind curator 的阈值结论来自单一报告写作域加一个代码交叉验证，跨域泛化未验证<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。其三，2272 的 hindsight credit assignment 只优化步级优势（策略层细粒度），未讨论其写回是否进入记忆，属未覆盖接口。此外，procedural memory 的层归属在文献中存在实质分歧（2289 视为与 memory 并列维度<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，2274/MemRL 视为记忆子类<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>），因此正交重构 C10 标注为受文献内部分歧约束的开放点。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>经验存储层与策略更新层的最本质区分是一组正交维度：作用对象（content vs. control）× 载体机制（外部化非参数 vs. 内化参数）。这一划分有文献术语锚点<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，能覆盖并互斥归置记忆污染/遗忘、library drift、参数化灾难性遗忘、策略漂移/安全回归四类问题。边界模糊之所以生产可复现性问题，根源在于主流系统&quot;名义分层、操作耦合&quot;——同一轨迹、同一 judge、同一次写回同时改动两类对象，使失效无法归因、无法隔离、无法快照。四类失效（Agent amnesia<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、capability erosion/skill forgetting<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、library drift/blind curator<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、instruction drift/记忆污染<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）均有量化证据：旧域性能 83.9%→81.6%、retention gap 2.3%→0.7%、false-pass 阈值 0.45、模板改动 3.28→1.46。可行的方向是显式分层协调（冻结+非参数化记忆 RL<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、只训策略 Proxy<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、memory-as-middleware 治理<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>），而非整体重写。对 RQ1.3 定性为 answered，但 procedural memory 的层归属与统一层间快照基准仍为开放问题。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Trajectory-Informed Memory Generation for Self-Improving Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">2274_trajectoryinformed_memory_generation_for_selfimproving_agent</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;EvoTest: Evolutionary Test-Time Learning for Self-Improving Agents (J-TTL)&nbsp;<code style="font-size:0.82em;color:#888">2230_evotest_evolutionary_testtime_learning_for_selfimproving_age</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Self-Improving Agentic Systems (EvoTest / J-TTL, ICLR 2026)&nbsp;<code style="font-size:0.82em;color:#888">2467_Self-Improving_Agentic_Systems</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Do Self-Evolving Agents Forget? Capability Degradation and Preservation&nbsp;<code style="font-size:0.82em;color:#888">2306_do_selfevolving_agents_forget_capability_degradation_and_pre</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;The Blind Curator: How a Biased Judge Silently Disables Skill Retirement in Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2361_the_blind_curator_how_a_biased_judge_silently_disables_skill</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;SSE-Bio: A Structured Self-Evolving Agent with Agentic Retrieval Policy for Multi-Hop Biomedical Reasoning&nbsp;<code style="font-size:0.82em;color:#888">2402_ssebio_a_structured_selfevolving_agent_with_agentic_retrieva</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Externalization in LLM Agents: A Unified Review of Memory, Skills, and Protocols&nbsp;<code style="font-size:0.82em;color:#888">2289_externalization_in_llm_agents_a_unified_review_of_memory_ski</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Memory as Middleware for Self-Improving AI Agents&nbsp;<code style="font-size:0.82em;color:#888">2429_memory_as_middleware_for_selfimproving_ai_agents</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;MemRL: Self-Evolving Agents via Runtime Reinforcement Learning on Episodic Memory&nbsp;<code style="font-size:0.82em;color:#888">2244_memrl_selfevolving_agents_via_runtime_reinforcement_learning</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.3 · 2026-10-18 21:38</footer>
+</div>
+</body>
+</html>

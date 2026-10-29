@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.3-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.3-a 分析报告</h1>
+<div class="meta">RQ [RQ4.2]：[父问题 RQ4] 多智能体协作与安全 / 联邦学习交叉地带存在哪些对抗鲁棒性与隐私风险，现有防护机制覆盖了哪些威胁面？
+[本子问题 RQ4.2] 联邦学习相关约束（如 bounded gradients、client-aided model、delay-free communication）如何映射到多智能体协作的隐私与去中心化训练场景？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion, 1717_multiagentesc_a_llmbased_multiagent_collaboration_framework, 0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati, 1663_ColaCare_Enhancing_Electronic_Health_Record_Modeling_through, 1706_longagent_achieving_question_answering_for_128ktokenlong_doc, 1059_DesignGPT_Multi-Agent_Collaboration_in_Design）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析一_bounded_gradients_与梯度泄露链">核心分析一：bounded gradients 与梯度泄露链</a></li>
+<li><a href="#sec_核心分析二_client_aided_model_的合谋信任风险">核心分析二：client-aided model 的合谋信任风险</a></li>
+<li><a href="#sec_核心分析三_delay_free_communication_与协作崩塌">核心分析三：delay-free communication 与协作崩塌</a></li>
+<li><a href="#sec_核心分析四_通信行为层隐私与对抗攻击面">核心分析四：通信行为层隐私与对抗攻击面</a></li>
+<li><a href="#sec_能力_风险因果链的不可规避性评估">能力-风险因果链的不可规避性评估</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ4.2「联邦学习相关约束（如 bounded gradients、client-aided model、delay-free communication）如何映射到多智能体协作的隐私与去中心化训练场景」进行了系统的能力-风险因果链分析。核心结论是：这三条 FL 约束在多智能体场景中并非中立的技术细节，而是同时承担「使能」与「引入攻击面」双重角色——它们既是被设计用来降低通信/计算开销或保障隐私的机制，又各自对应一条难以通过纯工程补丁消除的内生风险链。</p><p>第一条链（bounded gradients → 梯度泄露）：FL 默认「只共享梯度不共享数据即安全」，但 iDLG 通过交叉熵损失梯度符号分析证明共享梯度「确定性地」泄露 ground-truth 标签，可 100% 精度提取真实标签并在 MNIST/CIFAR-100/LFW 上实现高保真数据重建 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。第二条链（client-aided model → 合谋假设风险）：client-aided 2PC 模型的安全性唯一依赖「计算方不得与分发 Beaver triples 的客户端合谋」这一强假设，一旦被打破则隐私保证整体崩塌 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；在 MAS 中它映射为对聚合节点的 semi-honest 信任假设 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。第三条链（delay-free communication → 协作语义崩塌）：跨决策区间的信道延迟导致异步消息、认知偏差甚至协作崩溃，性能可劣于完全不通信 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；在联邦去中心化训练语境中对应同步聚合前提，而统计异构会使 FedAvg 发散 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）的结构化数据与论文原文检索（RAG）双层证据。从 KG 中加载了 problem（454 节点，样例展示 30）、method（380 节点，样例 30）、assumption（119 节点，样例 30）、limitation（170 节点，样例 30）四类大批量实体，并按条件过滤、一跳关系遍历提取因果边。</p><p>针对性检索覆盖全部六类节点：problem、method、paper、dataset、metric、limitation、assumption。核心命中的 KG 假设节点包括 bounded_gradients、client_aided_model、delay_free_communication；核心问题节点包括 data_leakage_from_gradients、label_leakage_from_gradients、communication_privacy_in_IoA、privacy_preserving_training_on_distributed_data、statistical_heterogeneity_in_federated_learning、constraint_drift、vulnerability_of_LLM_MAS_to_communication_attacks。使用 search_paper_sections 对 14 篇关键论文精读相关段落（含 iDLG、client-aided 2PC、CoDe、FedDANE、Whispering Agents、AiTM、TAMAS、LAFA、AgentNet、Constraint Drift、TRiSM、LLM-QFL、Adversarial Attacks on MA Communication、LLM Agent Communication Protocols Survey）。全流程工具调用总计 44 次。</p>
+<h3>FL 约束 → 多智能体隐私/去中心化训练风险的因果映射表</h3>
+<table><thead><tr><th>FL 约束（KG 假设节点）</th><th>映射到的 MAS 场景</th><th>诱发的风险</th><th>因果强度</th><th>置信度</th><th>证据论文</th></tr></thead><tbody><tr><td>bounded gradients</td><td>agent 间共享中间特征/嵌入（等价于共享梯度）</td><td>梯度逆向泄露 ground-truth 标签与私有训练数据</td><td>strong</td><td>0.95</td><td>iDLG [1]</td></tr>
+<tr><td>client-aided model</td><td>聚合服务器/编排节点 semi-honest 信任假设</td><td>合谋打破假设→隐私保证整体崩塌</td><td>moderate</td><td>0.9</td><td>client-aided 2PC [2]；LAFA [3]</td></tr>
+<tr><td>delay-free communication</td><td>去中心化训练的同步聚合/无漂移前提</td><td>异步延迟→认知偏差、协作崩溃；non-IID 使 FedAvg 发散</td><td>strong</td><td>0.9</td><td>CoDe [4]；FedDANE [5]</td></tr>
+<tr><td>client-aided / 中心聚合信任</td><td>跨组织去中心化协作</td><td>中心编排器成单点失效；私有数据孤岛</td><td>strong</td><td>0.9</td><td>AgentNet [6]</td></tr>
+<tr><td>FFL 通信约束（内容保护）</td><td>A2A 协议通信</td><td>仅保护消息内容，不保护通信行为（监视/流量分析）</td><td>strong</td><td>0.95</td><td>Whispering Agents [7]</td></tr>
+<tr><td>去中心化训练（真实网络）</td><td>LLM-MAS 通信链路</td><td>中间人拦截/操纵 agent 通信实现 DoS 与行为诱导</td><td>strong</td><td>0.95</td><td>AiTM [8]</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析一_bounded_gradients_与梯度泄露链">核心分析一：bounded gradients 与梯度泄露链</h2>
+<p>FL 的 bounded gradients 约束建立在「梯度交换不泄露数据」的隐含信念之上。iDLG 直接证伪了该信念：通过推导分类交叉熵损失对正确标签激活的梯度落在 (−1,0) 区间、对错误标签落在 (0,1) 区间，二者符号相反，攻击者可据此「确定性地」识别 ground-truth 标签并以 100% 精度提取，进而大幅简化 DLG 的优化目标、获得更高保真度的数据重建 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。实验覆盖 MNIST（10 类）、CIFAR-100（100 类）与 LFW（5749 类，resize 32×32）三个数据集 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>该因果链对 MAS 的关键映射是：agent 间传递的编码中间特征/隐状态在可微通信协议下等价于「共享梯度」，同样面临被逆向的风险。这意味着「去中心化训练」若仍以交换可微表示为通信核心，其隐私保证是脆弱的，需要显式密码学增强（secure aggregation / DP / SMPC）。梯度有界本身即是攻击可行性的前提——梯度越受约束、搜索空间越小，匹配越容易。</p>
+
+<h2 id="sec_核心分析二_client_aided_model_的合谋信任风险">核心分析二：client-aided model 的合谋信任风险</h2>
+<p>client-aided（server-aided）2PC 模型为规避同态加密与不经意传输的重开销，让一个「非计算方」客户端生成并分发秘密份额与 Beaver triples，从而显著提升离线计算效率 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。但其安全性唯一依赖一条强假设：任何计算方都不得与生成 BTs 的客户端合谋 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这是一条「单点信任」约束，一旦合谋假设被打破，隐私保证整体崩塌。</p><p>在 MAS/去中心化训练中，这映射为「协调者/聚合服务器 semi-honest 假设」。LAFA 的威胁模型明确假定：clients 为 honest-but-curious、server 为 semi-honest 且只看到加密或加噪聚合、最终结果受 DP 保护 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。LAFA 坦承其隐私与安全保证「继承自底层 FA 后端」而非编排层本身——其贡献仅在编排层（自然语言→FA 工作流编译与 DAG 优化）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。也就是说，client-aided 式隐私在多智能体编排中被重新表述为对聚合节点的信任假设，而 LLM 编排层（planner/optimizer agent）引入了假设之外的新攻击面。</p>
+
+<h2 id="sec_核心分析三_delay_free_communication_与协作崩塌">核心分析三：delay-free communication 与协作崩塌</h2>
+<p>delay-free 是 MARL 通信研究的「强假设」。CoDe 明确指出真实 agent 会遭遇跨决策区间的信道延迟，即 Asynchronous Communication，导致「认知偏差与协作崩溃」，甚至性能劣于完全不通信 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。CoDe 定义了两种延迟设定——fixed-delay（延迟超出决策区间，消息过时但同时发出）与 time-varying-delay（延迟随时间波动，消息在不同时刻发出），并在 SMAC、GRF、Hallway 三个基准上验证其延迟鲁棒性 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>在联邦去中心化训练语境中，delay-free 对应「同步聚合/无漂移」前提。FedDANE 的研究表明：统计异构（non-IID）会使 FedAvg 发散，低设备参与度与统计异构是联邦优化性能不佳的两大根因；FedDANE 即便提供收敛保证，仍因全梯度的非精确估计持续劣于 FedAvg/FedProx <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。映射到 MAS 意味着：去中心化训练在真实网络下必然面对异步消息与策略非平稳，而隐私协议（如 SS-based MPC 需要大量通信轮次）在 WAN 高延迟下性能瓶颈突出 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "关键因果链的置信度分布（KG 边 confidence）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["iDLG 梯度泄露", "client-aided 合谋", "CoDe 延迟", "FedDANE 异构", "AoA 通信隐私", "AiTM 攻击", "TAMAS 攻击", "LAFA 隐私继承", "AgentNet 隐私"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "置信度", "type": "bar", "data": [0.95, 0.95, 0.9, 0.9, 0.95, 0.95, 0.9, 0.9, 0.9], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析四_通信行为层隐私与对抗攻击面">核心分析四：通信行为层隐私与对抗攻击面</h2>
+<p>FL 约束迁移的一个关键盲区是「通信行为层」隐私。Whispering Agents 指出：标准 A2A 协议用强加密保护消息内容，但无法阻止强大对手监控通信行为本身——在金融、国家安全等高风险场景中，「某些 agent 正在交互」这一事实即可泄露关键战略信息 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。该工作形式化了首个统一的 Covert Event Channel 模型，涵盖 Storage、Timing、Behavioral 三个维度，并提出 Pi-CCAP 协议，实现在 LLM-based warden 面前不可察觉的高容量隐蔽通信 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>在对抗鲁棒性方面，Tu 等人研究了多智能体通信上的对抗攻击：受损信道可被用于执行对抗攻击，且鲁棒性随良性/恶意 agent 比例升高而增加；迁移攻击更实用但需对齐中间表示分布 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。AiTM 攻击进一步将此扩展到 LLM-MAS：攻击者拦截并操纵 victim agent 的通信即可实现 DoS 与定向行为诱导，在 MMLU、HumanEval、MBPP 上验证 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。TAMAS 基准则系统化评测：含 300 个对抗攻击场景与 100 个良性场景，覆盖 5 个领域与 6 类攻击（直接/间接 prompt 注入、Impersonation、Byzantine agent、Colluding agents、Contradicting agents），实验表明多智能体框架高度易受攻击 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p>
+<h3>现有防护机制对威胁面的覆盖情况</h3>
+<table><thead><tr><th>防护机制</th><th>覆盖威胁面</th><th>未覆盖威胁面</th><th>代表工作</th></tr></thead><tbody><tr><td>差分隐私（DP 加噪）</td><td>最终发布结果的再识别风险</td><td>聚合前本地数据的梯度泄露</td><td>LAFA [3]；TRiSM [11]</td></tr>
+<tr><td>Secure Aggregation / MPC</td><td>semi-honest 下的消息内容保密</td><td>合谋攻击、通信行为元数据</td><td>client-aided 2PC [2]；LAFA [3]</td></tr>
+<tr><td>同态加密 / TEE</td><td>加密推理与硬件隔离</td><td>高昂计算成本；元数据仍可见</td><td>TRiSM [11]</td></tr>
+<tr><td>密码学身份/签名</td><td>agent 身份认证</td><td>通信行为隐私（流量分析）</td><td>Whispering Agents [7]；区块链协作 [12]</td></tr>
+<tr><td>静态 guardrail / I-O 过滤</td><td>输入输出内容层安全</td><td>轨迹中的 constraint drift</td><td>Constraint Drift [13]</td></tr>
+<tr><td>RAG 记忆隔离</td><td>跨组织数据最小交换</td><td>记忆池的语义邻近泄露</td><td>AgentNet [6]；memory extraction [14]</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "风险性质分类（inherent vs mitigable）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "风险性质分类（inherent vs mitigable）", "type": "pie", "radius": "55%", "data": [{"name": "不可规避（能力内生属性）", "value": 4}, {"name": "可缓解（实现层选择）", "value": 3}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_能力_风险因果链的不可规避性评估">能力-风险因果链的不可规避性评估</h2>
+<p>依据因果强度分类标准（Strong：confidence ≥ 0.8 且 ≥2 个独立来源；Moderate：confidence ≥ 0.6 或单源明确论证），本分析对每条链执行「删除该能力是否导致系统核心功能丧失」的对抗性验证：</p><p>不可规避（inherent）风险：(1) 梯度/表示交换是去中心化可微训练的核心机制，删除则丧失联邦学习协同训练能力，故梯度泄露是内生风险 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；(2) 跨组织协作本质上需要隔离私有数据，AgentNet 表明去中心化架构是规避中心单点与数据孤岛的必选路径，但其 RAG 记忆池的新攻击面随之而来 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；(3) 通信行为本身是实现多 agent 协作的必要条件，只要 agent 交互就存在流量分析面 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>；(4) 去中心化训练在真实网络下无法假设零延迟，异步性与非平稳性是分布式学习的内在属性 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>可缓解（mitigable）风险：client-aided 模型的合谋假设、DP 预算分配、以及具体聚合算法（FedAvg/FedProx/FedDANE）的选择属于工程层决策，可通过算法设计与协议增强部分规避 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。Constraint Drift 亦可通过 Constraint State Governance 等机制缓解 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。</p>
+<div class="note">因果强度纪律说明：Strong 级链（iDLG 梯度泄露 0.95、Whispering Agents 通信隐私 0.95、AiTM 0.95）均有 KG 边 confidence ≥0.95 且具备跨论文或多证据支撑；Moderate 级链（client-aided 合谋 0.9、CoDe 延迟 0.9、FedDANE 异构 0.9）多为单源明确论证。Weak 级链（无直接文献支撑、仅逻辑推断）在本报告中被排除或明确标注，不应作为最终结论。bounded gradients、client-aided model、delay-free communication 三个 KG 假设节点本身无出边，其约束→风险的连接由关联论文（iDLG、client-aided 2PC、CoDe、FedDANE）间接建立，属于 Moderate 强度推断。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在三方面证据覆盖不足：</p><p>(1) 证据矩阵与实践脱节：本子问题冻结的六篇论文（MCCD、DesignGPT、longagent、ColaCare、MultiAgentESC、NADER）均为「应用型」多智能体协作系统，其 KG 关系主要集中在任务性能、幻觉缓解与协作框架层面，未直接讨论 FL 的 bounded gradients/client-aided/delay-free 约束的迁移问题。因此三条核心因果链需依赖证据矩阵之外的关联论文间接建立。</p><p>(2) KG 假设节点孤立：bounded_gradients、client_aided_model、delay_free_communication 三个假设节点在 KG 中无任何出边（get_relation 返回空），约束→问题节点的直接因果边缺失，本报告的映射基于同主题论文的语义关联，而非 KG 原生因果边，属 Moderate 置信度推断。</p><p>(3) 缺少端到端实证：现有证据中不存在「在真实 LLM-MAS 上执行梯度逆向攻击并量化隐私泄露」的直接实验，iDLG 的攻击在经典 ML 模型（MNIST/CIFAR/LFW）上验证 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，CoDe 的延迟在 MARL 基准上验证 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，二者的 MAS/去中心化训练迁移性尚未被联合验证。此外，AgentNet 的隐私主张更接近设计理念而非量化结论 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，LAFA 的隐私保证完全继承自后端 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，二者对编排层自身隐私风险的评测均不充分。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>联邦学习的三条约束向多智能体协作场景的映射揭示了一个「约束即风险」的耦合结构：bounded gradients 的可微表示交换机制是梯度逆转隐私泄露的前提；client-aided model 的高效性建立在对聚合节点的合谋信任假设之上；delay-free communication 的同步前提掩盖了异步通信与去中心化训练的非平稳性。这三条链分别对应隐私泄露、信任单点失效与协作语义崩塌三类威胁面，且均可溯源至 KG 中的假设节点与问题节点。</p><p>对防护覆盖的评估表明：现有机制（DP、secure aggregation、SMPC、HE、TEE）主要保护「消息内容」，而对「通信行为本身」（流量分析/监视）<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、agent 间通信的中间人操纵 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 与多智能体对抗攻击（含 Byzantine/Colluding agents）<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 覆盖薄弱。分歧点在于：AgentNet 等主张去中心化天然有利于隐私 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，LAFA 则强调隐私保证来自后端而非编排层 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；安全约束在 LLM-MAS 轨迹中的 constraint drift 又进一步侵蚀了静态防护的有效性 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。因此，将 FL 约束迁移到多智能体协作时，必须把隐私视为系统级属性，并同时覆盖内容层与行为层、并针对异步与非平稳环境重新设计鲁棒聚合协议。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;iDLG: Improved Deep Leakage from Gradients&nbsp;<code style="font-size:0.82em;color:#888">3413_idlg_improved_deep_leakage_from_gradients</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Communication-Efficient (Client-Aided) Secure Two-Party Protocols and Its Application&nbsp;<code style="font-size:0.82em;color:#888">2324_communicationefficient_clientaided_secure_twoparty_protocols</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;LAFA: Agentic LLM-Driven Federated Analytics over Decentralized Data Sources&nbsp;<code style="font-size:0.82em;color:#888">0337_LAFA_Agentic_LLM-Driven_Federated_Analytics_Over_Decentraliz</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;CoDe: Communication Delay-Tolerant Multi-Agent Collaboration via Dual Alignment of Intent and Timeliness&nbsp;<code style="font-size:0.82em;color:#888">1690</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;FedDANE: A Federated Newton-Type Method&nbsp;<code style="font-size:0.82em;color:#888">3296_feddane_a_federated_newtontype_method</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;AgentNet: Decentralized Evolutionary Coordination for LLM-based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3840_agentnet_decentralized_evolutionary_coordination_for_llmbase</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Whispering Agents: An Event-Driven Covert Communication Protocol for the Internet of Agents&nbsp;<code style="font-size:0.82em;color:#888">1692</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Red-Teaming LLM Multi-Agent Systems via Communication Attacks&nbsp;<code style="font-size:0.82em;color:#888">1719_redteaming_llm_multiagent_systems_via_communication_attacks</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Adversarial Attacks On Multi-Agent Communication&nbsp;<code style="font-size:0.82em;color:#888">0689</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;TAMAS: Benchmarking Adversarial Risks in Multi-Agent LLM Systems&nbsp;<code style="font-size:0.82em;color:#888">1728_tamas_benchmarking_adversarial_risks_in_multiagent_llm_syste</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;TRiSM for Agentic AI: A Review of Trust, Risk, and Security Management in LLM-based Agentic Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3831_trism_for_agentic_ai_a_review_of_trust_risk_and_security_man</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Toward Transparent and Incentive-Compatible Collaboration in Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">1525_Toward_Transparent_and_Incentive-Compatible_Collaboration_in</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Safe Multi-Agent Behavior Must Be Maintained, Not Merely Asserted: Constraint Drift in LLM-Based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3836_safe_multiagent_behavior_must_be_maintained_not_merely_asser</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;A Survey of LLM-driven AI Agent Communication Protocols: Security and Privacy&nbsp;<code style="font-size:0.82em;color:#888">3832_a_survey_of_llmdriven_ai_agent_communication_protocols_secur</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.2 · 2026-09-30 18:46</footer>
+</div>
+</body>
+</html>

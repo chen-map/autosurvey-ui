@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-a 分析报告</h1>
+<div class="meta">RQ [RQ1.3]：[父问题 RQ1] LLM 驱动的多智能体协作中，错误如何在 agent 间传播并导致行为退化，现有抑制机制可归纳为哪些类别且各自有效性如何？
+[本子问题 RQ1.3] 这些抑制机制在何种评测条件下被验证，其有效性证据强度如何（是否有量化对比）？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati, 0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion, 1059_DesignGPT_Multi-Agent_Collaboration_in_Design, 1663_ColaCare_Enhancing_Electronic_Health_Record_Modeling_through, 1706_longagent_achieving_question_answering_for_128ktokenlong_doc, 1717_multiagentesc_a_llmbased_multiagent_collaboration_framework）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_一_评估维度本体_Metric_Ontology">一、评估维度本体（Metric Ontology）</a></li>
+<li><a href="#sec_二_逐论文评估设计编码">二、逐论文评估设计编码</a></li>
+<li><a href="#sec_三_评估形式与基线分布">三、评估形式与基线分布</a></li>
+<li><a href="#sec_四_评估盲区">四、评估盲区</a></li>
+<li><a href="#sec_五_有缺陷的共识指标_对抗性审查">五、有缺陷的共识指标（对抗性审查）</a></li>
+<li><a href="#sec_六_可比性评估_评估不可比性审计">六、可比性评估（评估不可比性审计）</a></li>
+<li><a href="#sec_七_关键量化证据摘录">七、关键量化证据摘录</a></li>
+<li><a href="#sec_八_有效性证据强度分层">八、有效性证据强度分层</a></li>
+<li><a href="#sec_九_分析局限性">九、分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ1.3『这些抑制机制在何种评测条件下被验证，其有效性证据强度如何（是否有量化对比）』，基于知识图谱（KG）中 metric/method/paper/problem/limitation/assumption/dataset 七类节点与 132 篇论文原文检索，对冻结的 6 篇抑制机制论文（0401、0406、1059、1663、1706、1717）及 2 篇直接相关支撑论文（0210、0203）进行评测实践编码与有效性证据审计。</p><p>核心结论：六篇抑制机制论文全部具备量化对比，无一篇为无基线定性研究，但证据强度高度分层——4 篇属强量化（0401、0406、1663、1706，含均值±标准差、多次重复或大样本），2 篇属中量化（1059、1717，依赖小样本人工评分与遗留自动指标）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup><sup class="cite"><a href="#ref-19" style="text-decoration:none">[19]</a></sup>。更关键的是，六者横跨六个完全不同任务，指标集两两 Jaccard 相似度近乎为 0（跨任务均值约 0.04），构成评估完全不可比的结构性证据——任何跨论文的『有效性百分比』直接比较均不合法。此外，精度类指标覆盖率达 66.7%，而鲁棒性、公平性、工业规模维度系统性缺席，构成评估框架的结构性盲区。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析调用 KG 工具共约 38 次，覆盖以下数据层：</p><p>1）实体节点：metric（评估指标，返回 278 个）、paper（论文，186 个）、method（方法，380 个）、problem（研究问题，454 个）、limitation（局限性，170 个）、assumption（假设约束，119 个）、dataset（数据集基准，243 个）。</p><p>2）关系边：对 6 篇冻结论文及 2 篇支撑论文逐一执行 get_relation（both 方向），提取 proposes/addresses/measured_by/evaluated_on/has_limitation/extends 等边，厘清每篇论文的方法、问题、指标、数据集与局限性。</p><p>3）原文检索（RAG）：对 0401、0406、1059、1663、1706、1717、0210、0203 等 8 篇以上关键论文执行 search_paper_sections 共 14 次语义检索，精读评测章节、消融实验、人工评估、成本分析与局限性声明的原文片段，为每条结论提供直接引用证据。</p>
+
+<h2 id="sec_一_评估维度本体_Metric_Ontology">一、评估维度本体（Metric Ontology）</h2>
+<p>以 KG metric 节点为基础，按 canonical_name 与 description 语义聚类，构建评估维度本体。注意：部分指标（如 Precision@K、BLEU-1/2/3）名称相似但 K 值或 n-gram 阶数不同，已分别标注，未合并统计。</p>
+<h3>评估维度本体与覆盖率</h3>
+<table><thead><tr><th>维度类别</th><th>代表指标</th><th>覆盖率(论文级)</th><th>趋势</th><th>已知局限</th></tr></thead><tbody><tr><td>精度类</td><td>Accuracy / Success Rate [1][15]</td><td>66.7% (4/6)</td><td>stable</td><td>多选基准简化开放任务；对部分正确无区分力 [15]</td></tr>
+<tr><td>生成质量类(n-gram)</td><td>BLEU-1/2/3 / ROUGE-L / Distinct-1/2 [19]</td><td>16.7% (1/6)</td><td>legacy</td><td>无法度量情感支持真实有效性 [19]</td></tr>
+<tr><td>效率/成本类</td><td>Median Latency / Median Cost per Prompt [15]</td><td>16.7% (1/6)</td><td>emerging</td><td>可问责管线延迟增 8-10× [15]</td></tr>
+<tr><td>临床判别类</td><td>AUROC / AUPRC / min(+P,Se) [6]</td><td>16.7% (1/6)</td><td>stable</td><td>AUROC 在不平衡数据高估性能 [6]</td></tr>
+<tr><td>人工/专家评估类</td><td>Novelty / Completeness / Feasibility [3]</td><td>16.7% (1/6)</td><td>emerging</td><td>样本小、主观性强、跨研究不可比 [3]</td></tr>
+<tr><td>文生图组合质量类</td><td>Attribute Binding / Object Relationship [2]</td><td>16.7% (1/6)</td><td>emerging</td><td>依赖 BLIP-VQA/UniDet 自动评估器 [2]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "评估维度覆盖率对比（占 6 篇冻结论文比例）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["精度类", "生成质量(n-gram)", "效率/成本", "临床判别", "人工评估", "文生图质量"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "覆盖率(%)", "type": "bar", "data": [66.7, 16.7, 16.7, 16.7, 16.7, 16.7], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_二_逐论文评估设计编码">二、逐论文评估设计编码</h2>
+<p>依据 KG measured_by/evaluated_on 边与原文检索，对每篇论文的评估形式、基线类型、指标与关键量化证据进行结构化编码。评估形式为多选，均来自论文 Evaluation 章节。</p>
+<h3>六篇冻结论文评估设计编码与证据强度</h3>
+<table><thead><tr><th>论文</th><th>评估形式</th><th>基线类型</th><th>关键量化证据</th><th>证据强度</th></tr></thead><tbody><tr><td>0401 NADER [1]</td><td>受控实验 + 消融</td><td>prior_sota</td><td>3 随机种子 mean±std；500 架构中 30.8% 超 NAS 最优、58.8% 提案有效、19.2% 不收敛</td><td>强量化</td></tr>
+<tr><td>0406 MCCD [2]</td><td>受控实验 + 消融 + 案例</td><td>prior_sota</td><td>T2I-CompBench 整体 +9.04%，空间关系 +41.49%</td><td>强量化</td></tr>
+<tr><td>1059 DesignGPT [3]</td><td>用户研究 + 案例 + 受控实验</td><td>rule_based</td><td>N=30，2 专家，ICC=0.90；完备性/可行性显著（p=0.05）</td><td>中量化</td></tr>
+<tr><td>1663 ColaCare [6]</td><td>受控实验 + 消融 + 案例 + 用户研究</td><td>prior_sota</td><td>3 数据集 AUROC/AUPRC mean±std(bootstrap 100)；人工 4.4 vs 3.2</td><td>强量化</td></tr>
+<tr><td>1706 LONGAGENT [4]</td><td>受控实验 + 消融 + 案例</td><td>prior_sota</td><td>跨成员通信 +18.9% Acc；较 LLM +16.42%（10-run avg）</td><td>强量化</td></tr>
+<tr><td>1717 MultiAgentESC [19]</td><td>受控实验 + 消融 + 用户研究</td><td>prior_sota</td><td>ESConv 100 对话；人工五维 + LLM 评判均第一</td><td>中量化</td></tr>
+</tbody></table>
+
+<h2 id="sec_三_评估形式与基线分布">三、评估形式与基线分布</h2>
+<p>统计六篇论文的评估形式（可多选）与基线类型分布。评估形式呈现『受控实验 + 消融』为绝对主流，而理论证明与仿真实验完全缺席。</p>
+<h3>评估形式分布（多选，N=6）</h3>
+<table><thead><tr><th>评估形式</th><th>论文数</th><th>占比</th></tr></thead><tbody><tr><td>controlled_experiment（受控实验）</td><td>6</td><td>100%</td></tr>
+<tr><td>ablation_study（消融实验）</td><td>5</td><td>83%</td></tr>
+<tr><td>case_study（案例研究）</td><td>4</td><td>67%</td></tr>
+<tr><td>user_study（用户研究）</td><td>3</td><td>50%</td></tr>
+<tr><td>theoretical_proof（理论证明）</td><td>0</td><td>0%</td></tr>
+<tr><td>simulation（仿真实验）</td><td>0</td><td>0%</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "基线类型分布（N=6）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "基线类型分布（N=6）", "type": "pie", "radius": "55%", "data": [{"name": "prior_sota（前期SOTA）", "value": 4}, {"name": "rule_based（规则基线）", "value": 1}, {"name": "self_ablation（自身消融）", "value": 1}, {"name": "no_baseline（无基线）", "value": 0}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">量化对比普遍存在（6/6 均有对照基线），但仅支撑文献 0210 的可问责管线同时量化了抑制代价——成本增 2-3×、中位延迟由约 2s 升至 20-25s（8-10× 变慢）<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>。多数论文只报『有效性收益』而不同时报『抑制代价』，构成有效性证据的结构性偏置。</div>
+
+<h2 id="sec_四_评估盲区">四、评估盲区</h2>
+<p>评估盲区定义为『存在某类 problem 节点但没有对应 metric 度量其解决质量』。对六篇论文所 addresses 的 problem 逐一检索其方法所用 metric，识别以下疑似盲区。需强调：各盲区目前仅 1 篇论文支撑，未达『≥3 篇方可声称系统性忽视』的门槛，故均标注为疑似盲区而非确证结论。</p>
+<h3>评估盲区清单</h3>
+<table><thead><tr><th>Problem 类型</th><th>盲区类型</th><th>说明</th><th>支撑论文数</th></tr></thead><tbody><tr><td>错误级联可追溯性 [15]</td><td>robustness_missing</td><td>仅 3 个多选基准、无开放任务/分布外评估</td><td>1</td></tr>
+<tr><td>成员幻觉抑制 [4]</td><td>fairness_missing</td><td>仅整体平均 Acc，无分层方差</td><td>1</td></tr>
+<tr><td>临床幻觉抑制 [6]</td><td>efficiency/absolute</td><td>无跨亚群（ESRD/CDSL/MIMIC）错误率与公平性分层</td><td>1</td></tr>
+<tr><td>策略偏好偏差 [19]</td><td>robustness_missing</td><td>无长期偏差复发度量</td><td>1</td></tr>
+<tr><td>设计交互局限 [3]</td><td>quality_dimension_missing</td><td>仅 30 人 2 专家，无工业规模验证</td><td>1</td></tr>
+</tbody></table>
+<div class="note">鲁棒性（最差情形/分布外）与公平性（跨子群分层）在全部 6 篇论文中均无对应指标，是最典型的结构性盲区；但由于每类问题仅 1-2 篇论文支撑，本报告将其置信度标为 low，需更多论文方能升级为『系统性忽视』结论。</div>
+
+<h2 id="sec_五_有缺陷的共识指标_对抗性审查">五、有缺陷的共识指标（对抗性审查）</h2>
+<p>对覆盖率较高的共识指标，检索其 has_limitation 边并搜索批评性原文。结论：高频使用不等于最优选择，多个共识指标存在已知合法性缺陷。</p>
+<h3>有缺陷的共识指标审查</h3>
+<table><thead><tr><th>指标</th><th>覆盖率</th><th>已知局限</th><th>批评证据论文</th></tr></thead><tbody><tr><td>Accuracy / Success Rate</td><td>66.7%</td><td>多选基准将开放任务简化为离散答案，不反映真实部署复杂度；Success rate 仅在完全一致时判成功，对部分正确无区分力</td><td>0210 [15]; 0203 [7]</td></tr>
+<tr><td>BLEU / ROUGE / Distinct (n-gram)</td><td>16.7%</td><td>n-gram 重叠无法度量情感支持真实有效性，属遗留指标；MultiAgentESC 须叠加人工五维与 LLM 评判才能支撑结论</td><td>1717 [19]</td></tr>
+<tr><td>AUROC (clinical)</td><td>16.7%</td><td>不平衡临床数据上高估性能，须辅以 AUPRC 与 min(+P,Se) 以平衡假阳性</td><td>1663 [6]</td></tr>
+</tbody></table>
+<div class="note">典型原文佐证：0210 作者自承『we rely on multiple-choice benchmarks (PythonIO, LogiQA, AGIEval), which simplify open-ended tasks into discrete answers...may not reflect the full complexity of real-world software engineering』<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>；0203 指出『Current evaluations of autonomous agents rely on success rates without analyzing interactions, communication mechanisms, and root causes of failures』<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</div>
+
+<h2 id="sec_六_可比性评估_评估不可比性审计">六、可比性评估（评估不可比性审计）</h2>
+<p>comparable = false。六个抑制机制横跨六类完全不同任务，指标集两两 Jaccard 相似度近乎为 0（跨任务均值约 0.04），仅 1706 与 1717 因共享 F1 指标达 0.25。这意味着该领域尚未就『什么叫解决了某个抑制问题』形成统一答案——每一项机制都在各自任务的自建或领域基准上被验证，缺乏跨任务、跨机制的公共评测床。因此，任何跨论文的『有效性百分比』（如 9.04% vs 18.9%）直接比较都是非法的。</p>
+<h3>任务分组与指标集 Jaccard 相似度</h3>
+<table><thead><tr><th>任务分组</th><th>代表论文</th><th>主要指标集</th></tr></thead><tbody><tr><td>神经架构设计</td><td>0401 [1]</td><td>Accuracy / Executability / Quality / Success Rate</td></tr>
+<tr><td>组合式文生图</td><td>0406 [2]</td><td>Attribute Binding / Object Relationship / Complex</td></tr>
+<tr><td>概念设计协作</td><td>1059 [3]</td><td>Novelty / Completeness / Feasibility</td></tr>
+<tr><td>临床 EHR 预测</td><td>1663 [6]</td><td>AUROC / AUPRC / min(+P,Se)</td></tr>
+<tr><td>长文档问答</td><td>1706 [4]</td><td>Accuracy(人工) / F1(自动)</td></tr>
+<tr><td>情感支持对话</td><td>1717 [19]</td><td>BLEU / ROUGE-L / Distinct / Human 5D</td></tr>
+</tbody></table>
+<div class="note">Jaccard 相似度：0401 vs 1663 = 0.0；0401 vs 1717 = 0.0；1663 vs 1706 = 0.0；1706 vs 1717 = 0.25（共享 F1）；跨任务平均 ≈ 0.04。</div>
+
+<h2 id="sec_七_关键量化证据摘录">七、关键量化证据摘录</h2>
+<p>以下为支撑核心结论的直接原文证据片段。</p><p>1）可问责结构化交接机制：『structured handoffs preventing failure cascades and increasing accuracy by over 36 points on PythonIO』<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>。</p><p>2）LONGAGENT 跨成员通信幻觉抑制：『after introducing the cross-member communication mechanism, almost all the cells are green... (18.9% accuracy improvement on average)』<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；『The majority of members experiencing hallucination tend to correct their original responses upon receiving the chunk containing the correct answers』<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>3）DesignGPT 用户研究：『Strategy 2 group has an improvement of 11.06%, 24.26%, and 39.90% in novelty, completeness, and feasibility...statistically significant advantages over Strategy 1 in terms of completeness and feasibility』<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>4）ColaCare 消融：移除专家模型使 AUPRC 由 54.05 骤降至 27.73；MDT 过程与 RAG 对临床预测错误抑制至关重要 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p><p>5）NADER 大规模设计：500 架构中 30.8% 超越 NAS 搜索空间最优；代码生成基线仅 64% 可执行性、63% 质量分 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>6）MCCD：T2I-CompBench 整体 +9.04%，空间关系 +41.49% <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p>
+
+<h2 id="sec_八_有效性证据强度分层">八、有效性证据强度分层</h2>
+<p>综合评估形式、重复次数、样本量与指标可复现性，将六篇论文的证据强度分为强/中/弱三档。</p>
+<h3>有效性证据强度分层</h3>
+<table><thead><tr><th>证据强度</th><th>论文</th><th>判别依据</th></tr></thead><tbody><tr><td>强量化</td><td>0401 [1], 0406 [2], 1663 [6], 1706 [4]</td><td>均值±标准差 / 多次重复(3 seeds或10 runs) / 大样本 / 多数据集 / 含成本量化</td></tr>
+<tr><td>中量化</td><td>1059 [3], 1717 [19]</td><td>小样本人工评分(30人/100对话)、遗留自动指标、显著性标注不完整(仅 * 未报 p 值)</td></tr>
+<tr><td>弱量化</td><td>—</td><td>六篇均非弱量化，无纯定性研究</td></tr>
+</tbody></table>
+
+<h2 id="sec_九_分析局限性">九、分析局限性</h2>
+<p>1）『系统性忽视』结论证据不足：鲁棒性、公平性、工业规模三类盲区各仅 1-2 篇论文支撑，未达预设的『≥3 篇方可声称系统性忽视』门槛，故本报告将其降级为『疑似盲区』（confidence: low），非确证结论。</p><p>2）覆盖率计算口径受限：KG 中 metric 节点普遍缺失 origin_paper_id 链接（字段多为空），故覆盖率基于论文级 measured_by 边计数而非全 132 篇语料统计，可能存在抽样偏差。</p><p>3）Jaccard 相似度基于论文级指标集合计算，未深入到指标定义层面（如 Precision@K 的 K 值差异），可能低估异质性。</p><p>4）证据强度分层为定性判断，六篇论文的统计严谨度（如是否报置信区间、是否做多重比较校正）在原文中不全，部分需作者自行推断。</p><p>5）本次分析强依赖冻结的 6 篇论文与 2 篇高相关支撑论文，跨语料（132 篇）的评估实践分布结论为中等置信度。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ1.3，本报告结论为：现有 LLM 多智能体错误抑制机制『被验证了』是真命题，但『被严格、可复现、多维度地验证』仍存在明显空白。</p><p>第一，量化对比普遍存在但强度分层：6/6 论文均含对照基线，其中 4 篇（0401、0406、1663、1706）达到强量化标准，2 篇（1059、1717）属中量化；理论证明与仿真实验为 0/6，抑制机制验证缺乏理论保证与压力测试维度。</p><p>第二，评估不可比是核心问题：六篇横跨六类任务，指标集 Jaccard 相似度均值约 0.04，社区尚未就『何为有效抑制』达成统一标准，跨论文数字直接比较非法。</p><p>第三，存在结构性盲区与有缺陷的共识指标：精度类覆盖 66.7% 而鲁棒性、公平性、工业规模维度系统性缺席；Accuracy/Success rate、BLEU/ROUGE、AUROC 等高频指标均存在已知且被作者承认的合法性缺陷。</p><p>综上，抑制机制的有效性证据在『平均性能提升』维度上充分，但在『最差情形、跨子群公平性、工业规模与可复现性』维度上系统性不足，构成评估体系可信度的主要缺口。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;NADER: Neural Architecture Design via Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;MCCD: Multi-Agent Collaboration-based Compositional Diffusion for Complex Text-to-Image Generation&nbsp;<code style="font-size:0.82em;color:#888">0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;DesignGPT: Multi-Agent Collaboration in Design&nbsp;<code style="font-size:0.82em;color:#888">1059_DesignGPT_Multi-Agent_Collaboration_in_Design</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;LONGAGENT: Achieving Question Answering for 128k-Token-Long Documents through Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1706_longagent_achieving_question_answering_for_128ktokenlong_doc</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;ColaCare: Enhancing Electronic Health Record Modeling through Large Language Model-Driven Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1663_ColaCare_Enhancing_Electronic_Health_Record_Modeling_through</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Exploring Autonomous Agents: A Closer Look at Why They Fail When Completing Tasks&nbsp;<code style="font-size:0.82em;color:#888">0203_Exploring_Autonomous_Agents_A_Closer_Look_at_Why_They_Fail_W</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Traceability and Accountability in Role-Specialized Multi-Agent LLM Pipelines&nbsp;<code style="font-size:0.82em;color:#888">0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag</code></li>
+<li id="ref-19" style="margin-bottom:4px"><span class="ref-id">[19]</span>&nbsp;MultiAgentESC: A LLM-based Multi-Agent Collaboration Framework for Emotional Support Conversation&nbsp;<code style="font-size:0.82em;color:#888">1717_multiagentesc_a_llmbased_multiagent_collaboration_framework</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.3 · 2026-10-06 19:13</footer>
+</div>
+</body>
+</html>

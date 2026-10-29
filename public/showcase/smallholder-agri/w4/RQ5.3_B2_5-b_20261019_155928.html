@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.5-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.5-b 分析报告</h1>
+<div class="meta">RQ [RQ5.3]：[父问题 RQ5] 本领域评价体系与证据结构存在哪些系统性缺口，如何构建面向&quot;采纳—能效—田间鲁棒性&quot;的统一评价与研究议程？
+[本子问题 RQ5.3] 应建立哪些跨层评价指标与研究议程条目？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2963_from_uav_imagery_to_agronomic_reasoning_a_multimodal_llm_ben）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_一_数据来源与规模">一、数据来源与规模</a></li>
+<li><a href="#sec_二_信任依赖图谱_从_assumption_节点到信任缺口">二、信任依赖图谱：从 assumption 节点到信任缺口</a></li>
+<li><a href="#sec_三_跨层评价轴与原生指标盘点">三、跨层评价轴与原生指标盘点</a></li>
+<li><a href="#sec_四_治理原语推导与研究议程条目">四、治理原语推导与研究议程条目</a></li>
+<li><a href="#sec_五_信任工程覆盖率解读">五、信任工程覆盖率解读</a></li>
+<li><a href="#sec_六_分析局限性">六、分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>针对 RQ5.3「应建立哪些跨层评价指标与研究议程条目」，本报告基于知识图谱结构化数据（61 条 assumption、226 条 problem、137 条 limitation、132 条 metric、231 条 method、104 条 dataset 节点）以及 15 篇关键论文的原文段落语义检索，对「采纳—能效—田间鲁棒性」三轴评价体系进行信任缺口识别与治理原语推导。</p><p>核心判断：当前领域已积累足够的评价构成要素，但信任工程覆盖率极低（约 2/9）。真正的研究议程空白不在于再提出更多精度指标，而在于把分散于伦理综述、因果评估、政策落地三处的信任原语系统化为可复用的跨层评价层。信任缺口沿 assumption→problem→limitation 链条识别，集中于安全性/鲁棒性、可解释性、可审计性、隐私保护、合规性、数据一致性六个维度。以 KG addresses 边反查，多数治理需求仅 1 篇论文实现（emerging），达成 mature（≥3 篇）的治理原语几乎为零。</p>
+
+<h2 id="sec_一_数据来源与规模">一、数据来源与规模</h2>
+<p>本分析使用 Layer-1 KG 工具加载六类节点并按信任关键词筛选，配合 search_paper_sections 对关键论文的 Security/Limitation/Future Work 章节做原文精读，总计工具调用 40 次，其中语义检索覆盖 15 篇论文。信任缺口一律来自 KG assumption/problem/limitation 节点的 description 字段与边的 evidence 字段，或论文原文片段，未使用大模型通用安全常识构造缺口。</p><p>分析锚定的核心论文包括：伦理治理综述 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、因果推断评估框架 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、政策落地 LLM 架构 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、数据基础设施诊断 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、天气网络数字孪生 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、LLM 事实性评测 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、数据融合综述 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>、田间校准与鲁棒性评估 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>，以及本子问题冻结的成对样本论文 PlantXpert <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p>
+<h3>表 1：KG 节点类型与规模（含信任相关子集）</h3>
+<table><thead><tr><th>节点类型</th><th>总数量</th><th>信任相关节点（估）</th><th>本分析用途</th></tr></thead><tbody><tr><td>Assumption（假设/约束）</td><td>61</td><td>约 12</td><td>识别信任依赖主索引（安全/隐私/因果识别/校准前提）</td></tr>
+<tr><td>Problem（问题/挑战）</td><td>226</td><td>约 9</td><td>映射治理需求，量化 addresses 覆盖</td></tr>
+<tr><td>Limitation（局限）</td><td>137</td><td>—</td><td>规模化失效的失效点证据</td></tr>
+<tr><td>Metric（指标）</td><td>132</td><td>能效专用 0</td><td>评价轴现存指标盘点</td></tr>
+<tr><td>Method（方法）</td><td>231</td><td>—</td><td>治理原语实现载体</td></tr>
+<tr><td>Dataset（数据集/基准）</td><td>104</td><td>—</td><td>跨层验证可及性</td></tr>
+<tr><td>Paper（论文）</td><td>84（已展示实体）+ 132 篇可检索</td><td>—</td><td>原文证据来源</td></tr>
+</tbody></table>
+
+<h2 id="sec_二_信任依赖图谱_从_assumption_节点到信任缺口">二、信任依赖图谱：从 assumption 节点到信任缺口</h2>
+<p>信任缺口不应凭安全常识构造，而应从「方法成立所依赖的前提在规模化后失效」之处读取。KG 中的信任相关 assumption 节点清晰呈现了六类前提依赖：其一，天气/传感网络的 cyber-physical 前提——Cerealia 明确指出既有农业决策模型「often assume a perfect setup in which sensor readings are free from faults or attacks—an assumption that does not hold in practice」，这是安全/鲁棒性缺口的直接根源 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。其二，因果识别前提——观测式因果推断依赖 no-unmeasured-confounding、SUTVA、positivity，而 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 自身承认「observational study may be subject to unmeasured confounding」，可审计性因而被打折。其三，数据所有权与知情同意前提——「farmer data ownership and consent frameworks also remain underdeveloped in operational terms」，缺 machine-readable consent 机制 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。其四，可解释性前提——伦理综述把 transparency/accountability 列为核心原则，并指出「lack of interpretability and understandability of the AI model outcome also invades the transparency principle」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。其五，田间校准可复现前提——autoexposure 造成「drastic variability in camera exposure settings, which can be detrimental to the spatiotemporal consistency」<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。其六，数据就绪前提——persistent identifiers、temporal alignment、semantic interoperability、transparent governance 五项标准中，印度尚无一个数据集全部满足 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p>
+<h3>表 2：信任相关 assumption 节点 → 信任维度 → 规模化失效证据</h3>
+<table><thead><tr><th>信任维度</th><th>对应 assumption 依赖</th><th>规模化失效证据（原文/结论）</th><th>来源</th></tr></thead><tbody><tr><td>安全性 / 鲁棒性</td><td>传感器读数无故障或攻击</td><td>既有模型假设「sensor readings are free from faults or attacks—an assumption that does not hold in practice」</td><td>[5]</td></tr>
+<tr><td>可审计性</td><td>No unmeasured confounding / SUTVA / Positivity</td><td>观测研究「may be subject to unmeasured confounding, although refutation tests were performed」</td><td>[2]</td></tr>
+<tr><td>隐私保护 / 合规性</td><td>数据所有权与知情同意框架</td><td>「data ownership and consent frameworks remain underdeveloped」，缺 machine-readable consent</td><td>[6]</td></tr>
+<tr><td>可解释性</td><td>模型输出可被人类理解</td><td>「lack of interpretability ... invades the transparency principle」；78% 农民担忧数据共享</td><td>[1]</td></tr>
+<tr><td>数据一致性 / 校准可复现</td><td>自然光照下的稳定辐射定标</td><td>autoexposure 导致「drastic variability ... detrimental to spatiotemporal consistency」</td><td>[11]</td></tr>
+<tr><td>数据就绪（上游）</td><td>标识符/时间对齐/语义互操作</td><td>「no Indian agricultural dataset satisfies all five criteria」</td><td>[6]</td></tr>
+</tbody></table>
+
+<h2 id="sec_三_跨层评价轴与原生指标盘点">三、跨层评价轴与原生指标盘点</h2>
+<p>「采纳—能效—田间鲁棒性」三轴并非空白，而是各自已有可挂靠的原生指标，问题在于缺乏统一报告协议。</p><p>采纳轴：Pezego-HITL 使用 AI Trust &amp; Officer Connection 量表（Cronbach α=0.944）实测农民信任，ESO 对 AI 建议的直接接受率 85.9%（116/135），仅 19 例（14.1%）需实质修正 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>；因果推断框架给出遵循播种建议增产 12–17%，点估计 372–546 kg/ha（平均产量 3145 kg/ha），并通过 4 项 refutation 检验 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。这两组成果构成了「采纳价值」可量化的双支柱——感知型信任 + 客观因果效应。</p><p>田间鲁棒性轴：MatchPlant 达 AP 85.9%@IoU0.5 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>，DeepStand 达 MAE 1.73 / RMSE 2.46 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>；成对样本基准 PlantXpert 显示任务微调将 LLM/30B 提升至 77.78%，但模型缩放收益递减，quantitative reasoning 为最顽固瓶颈 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p><p>能效轴：这是三轴中证据最薄弱者。KG 132 条 metric 节点中无任何能耗/碳足迹专用指标；仅有 Cerealia 报告一致性检查开销 &lt;1 s / &lt;0.5 MB <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，以及 edge-fog-cloud 三层架构被明确关联到「reduces energy consumption, network traffic, and communication delay」<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的定性结论。</p>
+<h3>表 3：三轴评价的现成指标与缺口</h3>
+<table><thead><tr><th>评价轴</th><th>已存在的原生指标</th><th>关键量化证据</th><th>缺口</th></tr></thead><tbody><tr><td>采纳（Adoption）</td><td>信任量表、ESO 接受率、因果 ATE/增产率</td><td>α=0.944；接受率 85.9%；增产 12–17% / 372–546 kg/ha</td><td>信任自评与客观收益未关联验证</td></tr>
+<tr><td>能效（Efficiency）</td><td>一致性检查开销、三层架构节能</td><td>&lt;1 s / &lt;0.5 MB；能耗/流量/延迟下降（定性）</td><td>无专用能耗/碳足迹 metric 节点，缺量化协议</td></tr>
+<tr><td>田间鲁棒性（Robustness）</td><td>AP、MAE、RMSE、benchmark accuracy</td><td>AP 85.9%@IoU0.5；MAE 1.73；LLM 77.78%</td><td>各用不同数据集与口径，跨季跨区泛化未测</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1：各信任维度治理需求的「实现论文数」（KG addresses 边反查）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["隐私/数据所有权", "AI 公平/偏见", "低采纳(缺定量证据)", "天气数据不一致", "可解释/可理解性", "田间影响评估"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "直接 addressing 论文数", "type": "bar", "data": [1, 1, 1, 1, 1, 2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">治理成熟度判据：mature = ≥3 篇论文已实现；emerging = 1–2 篇；absent = 0 篇。上图显示所有信任维度的直接实现论文数均 ≤2，全部落在 emerging（或 absent），无一达到 mature。这直接支撑「信任工程覆盖率约 2/9」的判断。</div>
+
+<h2 id="sec_四_治理原语推导与研究议程条目">四、治理原语推导与研究议程条目</h2>
+<p>治理原语不应是流行技术名词的堆砌，而须带「缺口本质 → 治理逻辑 → 具体原语」的逻辑链。据此推导五类原语并映射到研究议程条目。</p><p>（1）可审计性原语：缺口本质是决策后无法追溯依据；治理逻辑是不可篡改的行为留痕与合规核对；具体实现已被 Pezego-HITL 证实——其 critique agent 核对 Ghana EPA 登记、剂量阈值与地区禁用，policy compliance 达 0.94 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。议程条目：把「可审计性」从伦理建议升格为可测指标（决策留痕、provenance 完整性、refutation 测试通过率）。</p><p>（2）事实一致性原语：缺口本质是 LLM 代理产生无支撑建议；治理逻辑是原子事实核验对抗专家 ground truth；实现见 DG-EVAL 的 atomic fact verification（vegetable 类 F1 仅 47.1% 暴露缺口 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>）与 Farmer.Chat 的 RAGAS faithfulness（近 80% 查询高 faithfulness <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>）。议程条目：引入 hallucination / contradiction / temporal-decay 类可信度指标。</p><p>（3）隐私与合规原语：缺口本质是训练/推理依赖敏感原始数据；治理逻辑是不访问原始数据即完成计算并可证明合规；文献明确引用 DPDP Act 与 consent/pseudonymization / privacy-by-design <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。议程条目：构建 machine-readable consent 与 PbD 评测项，仅以文献已引法规为约束。</p><p>（4）数据一致性与校准原语：缺口本质是异构传感数据带噪冲突；治理逻辑是运行时一致性校验 + 可复现定标；实现见 Cerealia 数字孪生不一致检测 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 与 fixed exposure 降低 radiometric MAPE（&lt;5% 蓝绿红 NIR，&lt;7% 红边）<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。</p><p>（5）跨层统一报告原语：缺口本质是准确性、信任、能耗、田间泛化各自为政；治理逻辑是打包为单一评价卡。议程条目：建立「采纳×信任×能耗×鲁棒性」多维报告协议，把因果 ATE + 信任量表 + 能耗/延迟 + 跨作物跨季泛化合并为标准评价卡。</p>
+<h3>表 4：治理原语推导链与成熟度评估</h3>
+<table><thead><tr><th>治理原语</th><th>缺口本质</th><th>治理逻辑</th><th>具体实现/证据</th><th>成熟度</th></tr></thead><tbody><tr><td>可审计性（合规核对）</td><td>决策后无法追溯依据</td><td>不可篡改留痕 + 合规核对</td><td>critique agent，policy compliance 0.94 [7]</td><td>emerging（1 篇）</td></tr>
+<tr><td>事实一致性核验</td><td>LLM 产生无支撑建议</td><td>原子事实核验</td><td>DG-EVAL F1 47.1% [8]；RAGAS faithfulness [9]</td><td>emerging（2 篇）</td></tr>
+<tr><td>隐私/合规（同意机制）</td><td>依赖敏感原始数据</td><td>machine-readable consent + PbD</td><td>DPDP Act、pseudonymization、PbD [1][6]</td><td>emerging（2 篇，多为建议）</td></tr>
+<tr><td>数据一致性与校准</td><td>异构传感带噪冲突</td><td>运行时校验 + 可复现定标</td><td>Cerealia [5]；fixed exposure MAPE&lt;5% [11]</td><td>emerging（2 篇）</td></tr>
+<tr><td>田间影响评估</td><td>采纳价值无定量证据</td><td>观测式因果推断 ATE</td><td>12–17% 增产 [2][3]</td><td>emerging（2 篇）</td></tr>
+<tr><td>能效/碳足迹核算</td><td>无能耗专用指标</td><td>量化能耗测量协议</td><td>仅定性 [4]</td><td>absent（0 篇）</td></tr>
+<tr><td>跨层统一报告协议</td><td>各轴各自为政</td><td>单一评价卡</td><td>尚无</td><td>absent（0 篇）</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2：治理原语成熟度分布（9 类必要原语）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 2：治理原语成熟度分布（9 类必要原语）", "type": "pie", "radius": "55%", "data": [{"name": "mature（≥3 篇）", "value": 0}, {"name": "emerging（1–2 篇）", "value": 7}, {"name": "absent（0 篇）", "value": 2}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_五_信任工程覆盖率解读">五、信任工程覆盖率解读</h2>
+<p>将「当前方案是否具备信任工程基础」转化为可查询的 KG 度量：把每个治理需求映射到 problem 节点，再用 addresses 边反查实现论文数。结果显示隐私/数据所有权、AI 公平/偏见、低采纳（缺定量证据）、天气数据不一致、可解释/可理解性问题各仅 1 篇直接 addressing（分别为 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>），田间影响评估约 2 篇 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>据此信任工程覆盖率约为 2/9（约 0.22）——仅把「田间因果影响评估」与「数据一致性校验」视为被多方法触及的少数原语，其余均停留在单篇实现或纯伦理建议层面。这一数字应作为「当前方案具备多少必要治理原语」的核心量化结论，而非以信任缺口数量取代。需要强调，该比率是基于当前 KG 文献快照的下界估计：部分定性讨论（如 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 对数据共享信任的讨论）未被结构化为 addresses 边，可能低估真实实现度。</p>
+<h3>表 5：核心结论与置信度</h3>
+<table><thead><tr><th>结论</th><th>关键量化证据</th><th>置信度</th></tr></thead><tbody><tr><td>信任工程覆盖率约 2/9</td><td>多数维度 addresses 论文数=1，mature=0</td><td>0.70（下界估计）</td></tr>
+<tr><td>采纳轴已可量化</td><td>信任 α=0.944；接受率 85.9%；增产 12–17%</td><td>0.80</td></tr>
+<tr><td>可审计性可工程化</td><td>policy compliance 0.94</td><td>0.80</td></tr>
+<tr><td>LLM 需专门事实性指标</td><td>DG-EVAL vegetable F1 47.1%</td><td>0.79</td></tr>
+<tr><td>能效轴证据最薄弱</td><td>KG 无能耗专用 metric 节点</td><td>0.72</td></tr>
+<tr><td>数据就绪为上游前置</td><td>无数据集满足全部五项标准</td><td>0.77</td></tr>
+</tbody></table>
+
+<h2 id="sec_六_分析局限性">六、分析局限性</h2>
+<p>其一，能效（能耗/碳足迹）维度在 KG 中几乎无专用 metric 节点，相关讨论多以定性形式出现（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 为唯一相对明确者），量化证据稀缺，导致「能效轴」的治理原语推导只能给出 absent 判定，稳健度较低。其二，合规分析严格限定于文献明确引用的法规（DPDP Act、GDPR 语境下的 consent/pseudonymization <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>），未引入文献未讨论的监管框架，故合规覆盖只反映已见法规，不能外推。其三，因果评估作为「采纳价值」证据依赖无未测混杂等强假设，且限于单一作物（棉花）单区域，可迁移性存疑 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。其四，信任量表多为感知型自评（Pezego 农民 N=36），与客观田间收益的关联未经实证验证 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。其五，覆盖率 0.22 为文献快照下界，部分定性治理讨论未被结构化为 KG 边，可能低估实现度。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ5.3 的答案是：应沿「采纳—能效—田间鲁棒性」三轴叠加六维信任框架构建跨层评价体系，并把信任原语从分散的伦理建议、因果评估与政策落地三处系统化为可复用的评价层。三轴中采纳轴（信任量表 α=0.944、ESO 接受率 85.9%、因果增产 12–17%）与田间鲁棒性轴（AP 85.9%、MAE 1.73、LLM 77.78%）已有原生指标且证据较实，能效轴则近乎空白（KG 无专用能耗 metric，仅定性结论）。治理成熟度评估显示绝大多数必要原语仅 1 篇论文实现（emerging），mature 原语为零，信任工程覆盖率约 2/9（0.22）。</p><p>据此提出五项可写入综述的研究议程条目：(1) 建立「采纳×信任×能耗×鲁棒性」多维统一报告协议；(2) 将可审计性升格为可测指标（决策留痕、provenance、refutation 通过率）；(3) 以文献已引法规为约束构建 machine-readable consent 与隐私设计评测项；(4) 将 data readiness 作为上游评价前置条件；(5) 针对 LLM 代理引入 hallucination/contradiction/temporal-decay 类可信度指标。最大的跨层空白不是精度指标数量，而是这些原语的系统集成。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Recommendations for ethical and responsible use of artificial intelligence in digital agriculture&nbsp;<code style="font-size:0.82em;color:#888">0710_Recommendations_for_ethical_and_responsible_use_of_artificia</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Evaluating Digital Agriculture Recommendations with Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Evaluating Digital Tools for Sustainable Agriculture using Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">2811_evaluating_digital_tools_for_sustainable_agriculture_using_c</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Smart Connected Farms and Networked Farmers to Tackle Climate Challenges&nbsp;<code style="font-size:0.82em;color:#888">2846_smart_connected_farms_and_networked_farmers_to_tackle_climat</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Weather-Driven Agricultural Decision-Making Using Digital Twins Under Imperfect Conditions&nbsp;<code style="font-size:0.82em;color:#888">0641_weatherdriven_agricultural_decisionmaking_using_digital_twin</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Unlocking AI's Potential in Agriculture: The Critical Role of Data&nbsp;<code style="font-size:0.82em;color:#888">2959_unlocking_ais_potential_in_agriculture_the_critical_role_of</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Pezego-HITL: A policy-grounded large language model architecture for agricultural extension in Ghana&nbsp;<code style="font-size:0.82em;color:#888">2980_pezegohitl_a_policygrounded_large_language_model_architectur</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Fine-tuning and Evaluating Conversational AI for Agricultural Advisory (DG-EVAL)&nbsp;<code style="font-size:0.82em;color:#888">2954_finetuning_and_evaluating_conversational_ai_for_agricultural</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Farmer.Chat: Scaling AI-Powered Agricultural Services for Smallholder Farmers&nbsp;<code style="font-size:0.82em;color:#888">2874_farmerchat_scaling_aipowered_agricultural_services_for_small</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;From UAV Imagery to Agronomic Reasoning: A Multimodal LLM Benchmark for Plant Phenotyping&nbsp;<code style="font-size:0.82em;color:#888">2963_from_uav_imagery_to_agronomic_reasoning_a_multimodal_llm_ben</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Selection of appropriate multispectral camera exposure settings and radiometric calibration methods&nbsp;<code style="font-size:0.82em;color:#888">0018_selection_of_appropriate_multispectral_camera_exposure_setti</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;MatchPlant: An Open-Source Pipeline for UAV-Based Single-Plant Detection and Data Extraction&nbsp;<code style="font-size:0.82em;color:#888">0034_matchplant_an_opensource_pipeline_for_uavbased_singleplant_d</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;High-Throughput Image-Based Plant Stand Count Estimation Using Convolutional Neural Networks (DeepStand)&nbsp;<code style="font-size:0.82em;color:#888">2779_highthroughput_imagebased_plant_stand_count_estimation_using</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Digital Agricultural Extension for Development&nbsp;<code style="font-size:0.82em;color:#888">0023_Digital_Agricultural_Extension_for_Development</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;A Data-Driven Review of Remote Sensing-Based Data Fusion in Precision Agriculture&nbsp;<code style="font-size:0.82em;color:#888">0139_a_datadriven_review_of_remote_sensingbased_data_fusion_in_pr</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.3 · 2026-10-19 15:59</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.4-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.4-a 分析报告</h1>
+<div class="meta">RQ [RQ3.3]：[父问题 RQ3] 面对多源脱靶检测基准（CHANGE-seq、GUIDE-seq、Yeast CAN1 assay 等）与异构指标（Accuracy、Recall、Precision、Editing efficiency），如何建立跨基准的归一化风险标度？
+[本子问题 RQ3.3] 能否定义一组归一化风险标度（如 normalized off-target risk score、clinically acceptable off-target threshold），使跨实验室结果可比？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e, 0221_Machine_Learning-Driven_Prediction_of_CRISPR-Cas9_Off-Target, 0233_Feature_representation_for_explainable_CRISPR_off-target_pre, 0093_Cytosine_base_editing_systems_with_minimized_off-target_effe, 0451_predictive_modeling_and_explainable_ai_for_veterinary_safety）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_跨基准不可通约性的三重证据">跨基准不可通约性的三重证据</a></li>
+<li><a href="#sec_帕累托前沿与核心权衡">帕累托前沿与核心权衡</a></li>
+<li><a href="#sec_可操作的归一化风险标度构造方案">可操作的归一化风险标度构造方案</a></li>
+<li><a href="#sec_对抗验证与反例检查">对抗验证与反例检查</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ3.3「能否定义一组归一化风险标度（如 normalized off-target risk score、clinically acceptable off-target threshold），使跨实验室结果可比」展开分析。核心结论是：**可以定义归一化风险标度，但只能定义「有条件的、协议绑定的」标度，无法在当前证据下定义跨实验室绝对可比的通用标度**。</p><p>证据矩阵五篇论文一致表明，脱靶预测/安全性指标缺乏可溯源的校准锚点。同一建模策略（XGBoost）在同一数据集（GUIDE-seq）上，仅因特征表示不同，AUPR 即从 0.473 波动到 0.661 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；Extra Trees 在 472 个靶点、16 个 sgRNA 上报出 accuracy 0.969、F1 0.967 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，而 DNABERT-Epi 在 GUIDE-seq 的 14 折交叉验证上 PR-AUC 仅 0.550 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。这些数字无法直接换算为「每基因组的临床脱靶风险」，因为其分母（阴性位点定义、切割计数阈值）、正类定义与评价协议彼此不通约。</p><p>一个可操作的方案是把风险锚定到「共享参考面板 + 经验阳性率曲线 + 双轴代价报告」的三层结构，并将「临床可接受阈值」定义为协议相对量（在给定检测灵敏度下每基因组可接受活性脱靶位点数的上限），而非某个模型分数。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）结构化数据与 132 篇论文原文的语义检索完成，覆盖六类节点：problem（312）、method（312）、paper（138）、dataset（114）、metric（175）、limitation（190）、assumption（108）。</p><p>维度选取严格由 KG 的 measured_by 边覆盖计数驱动，而非主观选择：对每个 metric 节点反向查询测量它的方法数（get_head_entity, edge_type='measured_by'），筛出 usage_count ≥ 3 的社区认可维度。深度精读（search_paper_sections）覆盖 9 篇关键论文，重点为证据矩阵五篇 + CRISOT（0098）+ 脱靶检测方法综述（0238）+ 脱靶缓解综述（0239/0577）+ AI 安全基准测量理论（0477）。总工具调用 18 次，命中全部六类节点。</p>
+<h3>社区认可的核心效能维度（由 KG measured_by 边覆盖计数驱动）</h3>
+<table><thead><tr><th>维度</th><th>方向</th><th>测量方法数（usage_count）</th><th>代表论文</th><th>是否纳入帕累托计算</th></tr></thead><tbody><tr><td>F1 score</td><td>越高越好</td><td>10</td><td>0221, 0451, 0203</td><td>是</td></tr>
+<tr><td>Recall</td><td>越高越好</td><td>9</td><td>0221, 0451, 0233</td><td>是</td></tr>
+<tr><td>Accuracy</td><td>越高越好</td><td>8</td><td>0221, 0167</td><td>是</td></tr>
+<tr><td>Precision</td><td>越高越好</td><td>8</td><td>0221, 0451, 0233</td><td>是</td></tr>
+<tr><td>PR-AUC / AUPR</td><td>越高越好</td><td>4</td><td>0203, 0233, 0098</td><td>是</td></tr>
+<tr><td>Base editing efficiency</td><td>越高越好</td><td>3</td><td>0093</td><td>是</td></tr>
+<tr><td>Off-target mutation rate</td><td>越低越好</td><td>3</td><td>0093</td><td>是</td></tr>
+</tbody></table>
+<div class="note">关键观察：社区认可的维度全部是「方法判别力」指标，而非「临床风险」指标。usage_count ≥ 3 者无一是可直接换算为患者危害概率的风险量。这与 AI 安全基准的普遍缺陷同构——仅 38%(N=79) 的安全基准把定义锚定在外部法规或社会标准上，多数评分方案「从不说明其近似哪种真实量」<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</div>
+
+<h2 id="sec_跨基准不可通约性的三重证据">跨基准不可通约性的三重证据</h2>
+<p>第一，正类定义分裂。CHANGE-seq 把切割计数 &gt;100 定义为 active（67,476 active / 2,806,152 inactive），GUIDE-seq 把所有实验鉴定位点定义为 active 并用 Cas-OFFinder 生成阴性（1,702 active / 1,476,301 inactive）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。同一「活性」标签在两库中的先验阳性率相差约两个数量级，使任何未校准的概率输出不可比。</p><p>第二，特征表示导致的分数漂移。同一 XGBoost 在 GUIDE-seq 上 One-Hot 达 AUPR 0.661、Pearson 0.756，而在 CHANGE-seq 上须用 Bulges 编码才最优（AUPR 0.612）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；DNABERT 在各数据集间的 PR-AUC 表现不一，作者明确写出「没有任何单一模型架构在所有条件下最优」<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>第三，预处理引入的隐性尺度。0221 为跨库比较，用线性回归把 Tsai 与 Kleinstiver 数据集的切割效率「标准化到 Tsai 数据集为参照」，并显式承认两者「报告的切割效率不可比」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>三重证据共同说明：跨实验室可比性的缺失首先源于**度量定义与预处理层，而非模型能力层**。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "核心论文在关键指标上的跨基准波动（展示同一/同类模型随数据集与协议的分化）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["XGBoost-GUIDE-seq (AUPR)", "XGBoost-CHANGE-seq (AUPR)", "XGBoost-BE Hanna (AUPR)", "DNABERT-Epi (PR-AUC)", "DNABERT (PR-AUC)", "CRISOT-Score (PR-AUC)", "ET ClassWeight (F1)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "指标值", "type": "bar", "data": [0.661, 0.612, 0.723, 0.55, 0.539, 0.76, 0.967], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>方法性能向量（按维度，附来源与可靠性标注）</h3>
+<table><thead><tr><th>方法（paper_id）</th><th>AUPR/PR-AUC</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>数据来源与可靠性</th></tr></thead><tbody><tr><td>Extra Trees ClassWeight [2]</td><td>—</td><td>0.9692</td><td>0.9683</td><td>0.9634</td><td>0.9668</td><td>0221 Table 2；reliable（但仅 472 靶点/16 sgRNA，规模小）</td></tr>
+<tr><td>DNABERT-Epi [3]</td><td>0.550 (PR-AUC)</td><td>—</td><td>—</td><td>—</td><td>0.477</td><td>0203 GUIDE-seq 14 折 CV；reliable</td></tr>
+<tr><td>DNABERT [3]</td><td>0.539 (PR-AUC)</td><td>—</td><td>—</td><td>—</td><td>0.459</td><td>0203 GUIDE-seq；reliable</td></tr>
+<tr><td>XGBoost One-Hot (BE) [1]</td><td>0.723 (AUPR)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0233 Hanna 数据集；reliable</td></tr>
+<tr><td>XGBoost K-mer (BE) [1]</td><td>0.517 (AUPR)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0233 Hanna；reliable</td></tr>
+<tr><td>XGBoost One-Hot (KO) [1]</td><td>0.661 (AUPR)</td><td>0.991</td><td>0.135</td><td>0.848</td><td>0.175</td><td>0233 GUIDE-seq；reliable</td></tr>
+<tr><td>XGBoost Bulges (KO) [1]</td><td>0.612 (AUPR)</td><td>0.990</td><td>0.365</td><td>0.709</td><td>0.388</td><td>0233 CHANGE-seq；reliable</td></tr>
+<tr><td>CRISOT-Score [5]</td><td>0.760 (PR-AUC)</td><td>—</td><td>—</td><td>ROC-AUC 0.992</td><td>—</td><td>0098 Group II benchmark；reliable</td></tr>
+<tr><td>CatBoost [6]</td><td>—</td><td>—</td><td>0.95</td><td>0.95</td><td>0.95</td><td>0451 Table I；reliable（兽医药域，量纲不同）</td></tr>
+</tbody></table>
+
+<h2 id="sec_帕累托前沿与核心权衡">帕累托前沿与核心权衡</h2>
+<p>在分类判别力维度上，帕累托前沿包含：DNABERT-Epi（0203，单模型 PR-AUC 最优）、Extra Trees ClassWeight（0221，F1 最优但数据集小）、XGBoost One-Hot（0233，BE 任务最优）、CRISOT-Score（0098，ROC-AUC/PR-AUC 最优）、CatBoost 集成（0451，F1 最优）。前沿上没有任何一个方法在所有维度全面领先——DNABERT 系列在 PR-AUC 主导但精确率低，XGBoost 在小数据集上 F1 高但泛化存疑 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>真正的不可逃避权衡集中在四组维度对（见下表）。其中「特异性↔在靶效力」与「召回↔精确率」构成归一化风险标度必须显式编码的代价轴。任何只收单一维（如 accuracy/F1）的标度，会在极端不平衡的脱靶场景（CRISPR 模型 recall 0.709–0.934 而 precision 仅 0.009–0.494 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>）中掩盖真实风险。</p>
+<h3>核心权衡模式（不可能维度对）</h3>
+<table><thead><tr><th>维度 A</th><th>维度 B</th><th>相关性</th><th>证据论文</th><th>权衡描述</th></tr></thead><tbody><tr><td>特异性（低脱靶）</td><td>在靶编辑效力</td><td>负相关</td><td>0093, 0098, 0239, 0577</td><td>高保真 Cas9 变体（SuperFi-Cas9、HeFSpCas9）与 sgRNA 截短提升特异性同时以降低在靶活性为代价 [7][8]</td></tr>
+<tr><td>召回（敏感性）</td><td>精确率</td><td>负相关</td><td>0451, 0233</td><td>ExcelFormer 经 SMOTE+ENN 使 Death Recall 从 0.64 升至 0.86，但以降低 Death Precision 为代价 [6]</td></tr>
+<tr><td>检测灵敏度</td><td>假阳性率/成本</td><td>负相关</td><td>0238, 0577</td><td>Digenome-seq 可测 ≤0.1% 频率但成本高；CIRCLE-seq 灵敏度高但假阳性大 [9]</td></tr>
+<tr><td>编辑效率</td><td>免疫原性/安全性</td><td>负相关</td><td>0575</td><td>工程化核酸酶在复杂生物环境中编辑效率与稳定性较野生型下降 [10]</td></tr>
+</tbody></table>
+<h3>不可能组合（Impossible Combinations）——当前技术条件下不可逃避的约束</h3>
+<table><thead><tr><th>维度组合</th><th>为何不可能</th><th>证据</th></tr></thead><tbody><tr><td>跨实验室绝对可比 + 单一未校准模型分数</td><td>正类定义与阴性生成规则各库不同（先验阳性率相差两个数量级），同一分数在不同协议下语义不同</td><td>0233：CHANGE-seq (67,476/2,806,152) vs GUIDE-seq (1,702/1,476,301) [1]；0221 被迫线性回归标准化切割效率 [2]</td></tr>
+<tr><td>最大特异性 + 最大在靶效力</td><td>高保真变体与 sgRNA 截短提升特异性时以降低在靶活性为代价</td><td>0239：SuperFi-Cas9 低在靶活性 [7]；0098：A11&gt;C 优化使在靶保持约 38% [5]</td></tr>
+<tr><td>最大化少数类召回 + 最大化精确率</td><td>极端不平衡安全数据中提升少数类召回必然引入假阳性</td><td>0451：ExcelFormer Death Recall 0.64→0.86 伴随 Death Precision 下降 [6]</td></tr>
+<tr><td>高风险尾部可靠评分 + 梯度提升回归</td><td>高效益 guides 为稀有事件，训练样本不足使模型在 z&lt;-4.0 尾部回归均值</td><td>0233 §4.5：worst 10% (true z&lt;-4.0) 被系统性低估 [1]</td></tr>
+</tbody></table>
+
+<h2 id="sec_可操作的归一化风险标度构造方案">可操作的归一化风险标度构造方案</h2>
+<p>综合五篇证据，一个可行的三层构造方案如下：</p><p>(i) **共享参考面板校准**：用统一参考 sgRNA 面板（如 110 sgRNA CHANGE-seq 子集 + 78 sgRNA GUIDE-seq 子集）在固定检测协议与固定阴性生成规则下拟合经验阳性率曲线，把任意连续分数（如 CRISOT-Score、DNABERT 概率）校准为「该分数下为活性脱靶的经验频率」。CRISOT 已给出锚点雏形——CRISOT-Score &gt;0.8「几乎必然为活性脱靶」，&lt;0.5「几乎必然为非活性」<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>(ii) **临床可接受阈值定义为协议相对量**：在给定检测灵敏度下，定义为「每基因组可接受的活性脱靶位点数的上限」，而非某个模型分数。阈值锚定的是实验可观测的位点计数，从而使不同实验室结果可比。</p><p>(iii) **双轴代价报告**：任何推荐必须写成「在维持 X% 在靶效力下，脱靶降至 Y」。0093 与 0098 分别提供了此类范式：AID-3S 相对 Target-AID 实现约 13.7 倍 R-loop 脱靶降低同时在靶保持可观效率 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>；A11&gt;C 优化使脱靶读段从 51,967 降至 1,072（约 50 倍）同时在靶频率保持约 38% <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p>
+<h3>各应用场景的条件性推荐（含被牺牲维度）</h3>
+<table><thead><tr><th>应用场景</th><th>优先维度</th><th>推荐方法</th><th>接受代价</th></tr></thead><tbody><tr><td>跨实验室可比性优先（临床/监管）</td><td>协议锚定归一化分数、固定精确率下的召回</td><td>共享参考面板 + 经验阳性率曲线校准的 CRISOT 式标度 [5]</td><td>放弃模型内部绝对概率，需重建共享校准数据集并绑定检测协议</td></tr>
+<tr><td>大规模基因组筛选（召回优先）</td><td>Recall、AUPR</td><td>DNABERT-Epi / 集成模型 [3]</td><td>PR-AUC 仅 0.550，精确率低；高假阳性需下游验证</td></tr>
+<tr><td>精确单点编辑（精确率优先，如 AAV 治疗）</td><td>Precision、Off-target rate</td><td>AID-3S / SaAID-3S 单 AAV 架构 [11]</td><td>编辑窗口偏移、AID-2S 窗口变窄，需按靶点验证</td></tr>
+<tr><td>高不平衡安全分类（风险阈值设定）</td><td>少数类召回、类权重</td><td>CatBoost + 采样/半监督伪标注 [6]</td><td>少数类召回提升以精确率下降为代价</td></tr>
+</tbody></table>
+
+<h2 id="sec_对抗验证与反例检查">对抗验证与反例检查</h2>
+<p>对每个声称位于帕累托前沿的方法执行了 has_limitation 检查与反例搜索：</p><p>- 对 0093 的 AID-3S 执行 get_tail_entity(has_limitation)，返回空集——KG 未记录其局限性，说明其「最小脱靶」声明缺乏结构化反证，需谨慎；同时原文自身承认代价是编辑窗口偏移（AID-3S 向 PAM 近端移动、AID-2S 窗口变窄）<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。</p><p>- 对 CRISOT（0098）检索 limitation 与 compares_with，发现其锚点仍绑定于特定检测协议，未证明跨实验室可迁移 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>- 对 0233 检索 §4.5 误差分析，确认回归模型在高风险尾部系统性回归均值，构成「归一化分数在风险尾部 inherent 不可靠」的反例 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>- 0221 的 accuracy 0.969/F1 0.967 看似「万能」，但其数据集仅 472 靶点/16 sgRNA，且作者承认原始切割效率不可比，属于「小数据集虚假全面领先」，须警示 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>上述检查未推翻主结论，均支持「前沿上每点都是一种价值权重选择，不存在客观最优」。</p>
+<h3>原文溯源证据片段（关键结论均有原文支撑）</h3>
+<table><thead><tr><th>结论</th><th>论文</th><th>章节</th><th>原文片段</th><th>相似度</th></tr></thead><tbody><tr><td>跨库正类定义分裂</td><td>0233</td><td>3.1.1 Change-seq and GUIDE-seq</td><td>CHANGE-seq: Active OTS were defined as those with cleavage counts over 100... 67,476 active and 2,806,152 inactive. GUIDE-seq: ... 1,702 active and 1,476,301 inactive.</td><td>0.47</td></tr>
+<tr><td>无单一模型架构普遍最优</td><td>0203</td><td>3.1 Benchmarking</td><td>This highlights that no single model architecture is universally optimal for all conditions.</td><td>0.41</td></tr>
+<tr><td>Extra Trees 高性能</td><td>0221</td><td>Discussion</td><td>The best performance of 96.92% accuracy was obtained with the ETC_ClassWeight setup... precision, 96.83%, and recall, 96.34%, with a resulting F1 score of 96.68%.</td><td>0.50</td></tr>
+<tr><td>AID-3S 脱靶降低倍数</td><td>0093</td><td>Assessment of DNA and RNA off-target effects</td><td>AID-2S and -3S respectively exhibited approximately 4.5-folds and 13.7-folds reduction of R-loop off-target editing compared to the original Target-AID while maintaining appreciable on-target editing efficiency.</td><td>0.44</td></tr>
+<tr><td>XGBoost 编码策略随任务变化</td><td>0233</td><td>5 Conclusion</td><td>position-aware encodings such as Bulges and NPM achieve better performance for knockout (KO) off-target prediction, while One-Hot encoding performs better than K-mer encoding for base editing (BE) efficiency prediction.</td><td>0.57</td></tr>
+<tr><td>召回-精确率权衡</td><td>0451</td><td>V. RESULTS &amp; DISCUSSION</td><td>ExcelFormer... boost in Death Recall under SMOTE+ENN... (DR = 0.86) compared to no sampling (DR = 0.64), though at the cost of reduced Death Precision.</td><td>0.61</td></tr>
+<tr><td>CRISOT-Score 风险锚点</td><td>0098</td><td>CRISOT-Score evaluation</td><td>a CRISOT-Score value that is higher than 0.8 almost indicates an active off-target, and... less than 0.5 almost indicates an inactive off-target... off-target reads... reduced from 51967 to 1072 by approximately 50 folds.</td><td>0.48</td></tr>
+<tr><td>检测方法差异</td><td>0238</td><td>3.1 Cell-free methods</td><td>Digenome-seq is a highly sensitive method that can identify indels with 0.1% frequency or lower... the false positive rate of CIRCLE-seq is still high.</td><td>0.47</td></tr>
+<tr><td>标准化缺失限制可比性</td><td>0477</td><td>7 Aligning Safety with Measurement Theory</td><td>The absence of standardization limits comparability across studies and complicates deployment decisions, as practitioners lack clear guidance on what benchmark scores imply about real-world safety.</td><td>0.61</td></tr>
+<tr><td>高保真变体的在靶代价</td><td>0239</td><td>3.1 Improvement of nucleases</td><td>SuperFi-Cas9... offering high fidelity. However, it exhibits relatively low on-target activity, limiting its general use in gene editing applications.</td><td>0.64</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>第一，**证据缺口**：证据矩阵中并无任一篇论文真正实现过跨实验室的归一化风险标度——0203/0221/0233 仅是「在多个数据集上评测」，从未构造统一分数轴。因此本报告中「可定义」的判断是推断而非被直接验证的结论，答案定级为 partial。</p><p>第二，**检测工具本身的系统性缺口**：检测方法的灵敏度与假阳性特性差异（Digenome-seq 可测 ≤0.1% 频率但成本高、CIRCLE-seq 假阳性大、GUIDE-seq 依赖转染）意味着即便分数被校准，其「风险」也会随检测工具而变 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。这是一个尚未被任何单一标度解决的系统性问题。</p><p>第三，**跨域迁移的谨慎性**：0451 来自兽医药安全域，其量纲（Death/Recovered）与 CRISPR 脱靶并非同一构念，纳入本分析仅借用其「召回-精确率权衡」的方法论证据，数值不可直接迁移 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；0477 的度量理论证据来自 LLM 安全基准综述，属跨域类比 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>第四，**复现性未验证**：0093 的 4.5/13.7 倍脱靶降低来自单一实验室 R-loop assay，跨实验室复现未经第三方验证，且 KG 未记录其 has_limitation <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。</p><p>第五，**维度覆盖不足**：部分维度的 usage_count 偏低（Base editing efficiency、Off-target mutation rate 各仅 3），代表性有限；而临床风险维度（如每基因组活性位点数）在 KG 中几乎没有独立测量，无法构建真正的临床风险轴。</p>
+<div class="note">数据可用性声明：本分析中所有数值均直接引用原文（附来源论文与章节），未进行估算或跨论文合并。0451 的 F1/召回值因域不同仅用于方法学论证；0093 的倍数降低与 0098 的读段降低为单实验室结果。</div>
+
+<h2 id="sec_结论">结论</h2>
+<p>对本子问题的最终回答是**有条件的肯定**：可以定义一组归一化风险标度，但只能定义为「协议绑定的相对标度」，无法定义为跨实验室绝对可比的通用标度。</p><p>其结构可归纳为三层：(1) 用共享参考 sgRNA 面板在固定检测协议下拟合经验阳性率曲线，将任意连续分数校准为「该分数为活性脱靶的经验频率」<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；(2) 将 clinically acceptable off-target threshold 定义为「给定检测灵敏度下每基因组可接受活性脱靶位点数的上限」，锚定实验可观测的位点计数而非模型概率；(3) 所有推荐必须以双轴形式报告「在维持 X% 在靶效力下脱靶降至 Y」<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。</p><p>支撑该结论的不可逃避约束有两组：特异性↔在靶效力（高保真变体以降低在靶活性为代价 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>），以及召回↔精确率（少数类召回提升伴随精确率下降 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）。这两组权衡意味着任何单维标度（accuracy/F1）都会误导临床决策。</p><p>因此，跨实验室可比性的缺失根源在**度量定义层（正类定义、阴性生成、预处理）**而非模型能力层 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。真正的标准化路径不是发明更复杂的模型，而是建立社区共享的参考面板、固定的阴性生成规则，以及把临床阈值锚定到可观测位点计数的协议。这一路径在现有证据中仅为雏形（CRISOT 的分数-风险映射 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>），其跨实验室可迁移性尚未被任何一篇证据矩阵论文验证。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Feature representation for explainable CRISPR off-target prediction and base editing efficiency&nbsp;<code style="font-size:0.82em;color:#888">0233_Feature_representation_for_explainable_CRISPR_off-target_pre</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Machine Learning-Driven Prediction of CRISPR-Cas9 Off-Target Effects and Mechanistic Insights&nbsp;<code style="font-size:0.82em;color:#888">0221_Machine_Learning-Driven_Prediction_of_CRISPR-Cas9_Off-Target</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Improved CRISPR/Cas9 off-target prediction with DNABERT and epigenetic features&nbsp;<code style="font-size:0.82em;color:#888">0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;How Should AI Safety Benchmarks Benchmark Safety?&nbsp;<code style="font-size:0.82em;color:#888">0477_how_should_ai_safety_benchmarks_benchmark_safety</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Genome-wide CRISPR off-target prediction and optimization using RNA-DNA interaction fingerprints&nbsp;<code style="font-size:0.82em;color:#888">0098_Genome-wide_CRISPR_off-target_prediction_and_optimization_us</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Predictive Modeling and Explainable AI for Veterinary Safety Profiles, Residue Assessment, and Health Outcomes Using Real-World Data and Physicochemical Properties&nbsp;<code style="font-size:0.82em;color:#888">0451_predictive_modeling_and_explainable_ai_for_veterinary_safety</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Beyond the promise: evaluating and mitigating off-target effects&nbsp;<code style="font-size:0.82em;color:#888">0239_Beyond_the_promise_evaluating_and_mitigating_off-target_effe</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;How to Mitigate CRISPR-Cas9 Off-Target Effects: Evaluation of Detection Methods and Mitigation Approaches&nbsp;<code style="font-size:0.82em;color:#888">0577_How_to_Mitigate_CRISPR-Cas9_Off-Target_Effects_Evaluation_of</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Off-target effects in CRISPR/Cas9 gene editing&nbsp;<code style="font-size:0.82em;color:#888">0238_Off-target_effects_in_CRISPRCas9_gene_editing</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Research on Reducing the Immunogenicity of Nucleases in Gene Therapy&nbsp;<code style="font-size:0.82em;color:#888">0575_Research_on_Reducing_the_Immunogenicity_of_Nucleases_in_Gene</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Cytosine base editing systems with minimized off-target effect and molecular size&nbsp;<code style="font-size:0.82em;color:#888">0093_Cytosine_base_editing_systems_with_minimized_off-target_effe</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;How to Mitigate CRISPR-Cas9 Off-Target Effects (detection method comparison: GUIDE-seq vs CIRCLE-seq)&nbsp;<code style="font-size:0.82em;color:#888">0577_How_to_Mitigate_CRISPR-Cas9_Off-Target_Effects_Evaluation_of</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.3 · 2026-10-13 20:32</footer>
+</div>
+</body>
+</html>

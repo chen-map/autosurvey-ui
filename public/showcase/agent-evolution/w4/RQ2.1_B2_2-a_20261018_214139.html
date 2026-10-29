@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.2-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.2-a 分析报告</h1>
+<div class="meta">RQ [RQ2.1]：[父问题 RQ2] 记忆更新、策略优化、工具使用、工作流、多智能体协作五类进化机制，在进化载体、更新信号与收敛性质上有何异同？
+[本子问题 RQ2.1] 记忆更新与策略优化两类机制各自的代表性方法（如 AWM、MemRL、Agent symbolic learning、ReAct）在&quot;更新什么、用什么信号更新、如何避免退化&quot;上有何系统差异？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0001_A_Self_Evolving_Agentic_Framework_for_Metasurface_Inverse_De, 0004_Symbolic_learning_enables_self-evolving_agents, 0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve, 0052_PerMemSafe_Benchmarking_Implicit_Personalized_Safety_of_Long, 0071_Self-evolving_Agents, 2130_symbolic_learning_enables_selfevolving_agents）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_通用骨架_五组件进化回路_覆盖率_70_的强制组件">通用骨架：五组件进化回路（覆盖率 ≥70% 的强制组件）</a></li>
+<li><a href="#sec_变异维度_四个设计热点与两个设计共识">变异维度：四个设计热点与两个设计共识</a></li>
+<li><a href="#sec_差异主线一_更新载体决定可迁移性与可审计性的方向相反">差异主线一：更新载体决定可迁移性与可审计性的方向相反</a></li>
+<li><a href="#sec_差异主线二_更新信号的即时性_vs_延迟性构成关键分水岭">差异主线二：更新信号的即时性 vs 延迟性构成关键分水岭</a></li>
+<li><a href="#sec_差异主线三_抗退化机制的形态随载体根本分化">差异主线三：抗退化机制的形态随载体根本分化</a></li>
+<li><a href="#sec_对抗性验证_记忆更新并不自动等于稳健或安全">对抗性验证：记忆更新并不自动等于稳健或安全</a></li>
+<li><a href="#sec_设计关联_协同_独立与不兼容">设计关联：协同、独立与不兼容</a></li>
+<li><a href="#sec_量化效能对照">量化效能对照</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ2.1，从知识图谱中抽取覆盖 274 篇论文、558 个方法节点、629 个问题节点、317 个局限节点、200 个假设节点与 391 个指标节点的结构化数据，聚焦记忆更新（AWM、MemRL、SENTINELMEM）与策略优化（Agent symbolic learning、Skill evolution）两类自演化机制在&quot;更新什么、用什么信号更新、如何避免退化&quot;上的系统差异。</p><p>核心结论：两类机制并非两种彼此独立的技术路线，而是同一进化回路（采集信号 → 抽象压缩 → 载体写回 → 选择门控 → 检索激活）中的两种参数化位置。记忆更新把可塑状态外置为冻结模型之外的可检索记忆载体，策略优化则把可塑状态内化为 prompt / tool / pipeline 乃至权重的可编辑程序。载体的差异进一步决定了更新信号的粒度（即时可判定 vs 延迟高噪声）、抗退化机制的形态（非破坏性受控写回 vs 显式门控加快照回滚），以及可审计性与跨 backbone 迁移性的方向。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析共执行 40 余次 KG 工具调用，覆盖全部六类节点：problem（629）、method（558）、paper（274）、limitation（317）、assumption（200）、metric（391）、dataset（400）。在此基础上，对 16 篇论文执行了 search_paper_sections 原文精读，累计检索段落 90 余段，其中 RQ2.1 冻结证据集的 6 篇（0001、0004、0037、0052、0071、2130）全部完成原文级核验，并额外引入 MemRL <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、MemSkill <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、ACE <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、Fragility of Self-Improving Agents <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、Experience-Driven Safety Risks <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、FinEvolveBench <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、Rethinking Prescribed Pipelines <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、Safety in Self-Evolving Agents <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、A Survey of Self-Evolving Agents <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、AWM 相关评述 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、Trajectory-Informed Memory Generation <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、Combee <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 作为对照与批评文献。</p><p>边的使用方面，proposes / addresses / targets / evaluated_on / measured_by / has_limitation / extends / compares_with 八类边被系统抽取，用于确立方法—问题—指标—局限的映射，以及方法间的继承与对抗关系。</p>
+
+<h2 id="sec_通用骨架_五组件进化回路_覆盖率_70_的强制组件">通用骨架：五组件进化回路（覆盖率 ≥70% 的强制组件）</h2>
+<p>对全部方法节点的 IPO（输入—处理—输出）接口做交叉验证后，文献集中收敛出一个高覆盖率的通用骨架。覆盖率按&quot;在该组件上有明确实现描述的方法数 / 具备完整流水线描述的方法数&quot;计算，强制组件阈值为 70%。</p><p>值得注意的是 C6「溯源与审计」组件：尽管 0037 明确将其列为治理必需（support-subgraph accuracy、rewrite locality），0038 亦把 authority 传递与回滚证据列为核心判据，但实际方法中仅约三分之一提供任何形式的版本/溯源机制，故按规则降格为可选扩展组件。这本身即是本领域的结构性缺口。</p>
+<h3>表 1 · 通用骨架五组件及其覆盖率与变异度</h3>
+<table><thead><tr><th>组件</th><th>名称</th><th>功能</th><th>输入接口</th><th>输出接口</th><th>覆盖率</th><th>变异度</th><th>类型</th></tr></thead><tbody><tr><td>C1</td><td>经验采集与信号生成</td><td>从任务执行中采集轨迹并产生标量/文本反馈</td><td>任务规格 + 环境/求解器</td><td>轨迹 τ + 奖励 r / 逐准则指标</td><td>1.00</td><td>0.75</td><td>强制</td></tr>
+<tr><td>C2</td><td>抽象与蒸馏</td><td>把原始轨迹压缩为可复用经验单元</td><td>轨迹 τ、反馈 r</td><td>经验单元 E</td><td>0.92</td><td>0.78</td><td>强制</td></tr>
+<tr><td>C3</td><td>载体写回与持久化</td><td>把经验单元写入持久载体</td><td>经验单元 E</td><td>更新后的载体状态</td><td>1.00</td><td>0.80</td><td>强制</td></tr>
+<tr><td>C4</td><td>选择 / 门控 / 回滚</td><td>判定候选更新是否提交并支持回滚早停</td><td>候选载体状态 + 验证信号</td><td>已提交的载体状态</td><td>0.83</td><td>0.85</td><td>强制</td></tr>
+<tr><td>C5</td><td>检索与激活</td><td>推理时按相关性/效用激活条目并注入上下文</td><td>查询 / 意图</td><td>已激活上下文</td><td>0.83</td><td>0.72</td><td>强制</td></tr>
+<tr><td>C6</td><td>溯源、版本与审计</td><td>记录更新来源、授权、可回滚性</td><td>重写事件 + 源证据</td><td>审计记录 / 回滚目标</td><td>0.33</td><td>0.40</td><td>可选扩展</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1 · 各骨架组件的覆盖率（70% 为强制组件阈值线）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["C1 经验采集", "C2 抽象蒸馏", "C3 载体写回", "C4 选择门控", "C5 检索激活", "C6 溯源审计"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "覆盖率", "type": "bar", "data": [100, 92, 100, 83, 83, 33], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_变异维度_四个设计热点与两个设计共识">变异维度：四个设计热点与两个设计共识</h2>
+<p>按&quot;不同配置数 / 非省略非不适用论文数&quot;计算配置多样性：得分 &gt; 0.6 为高变异组件（设计热点），&lt; 0.3 为低变异组件（设计共识）。结果显示四个设计热点（C1、C2、C3、C4）全部集中在&quot;如何生成信号、如何抽象、写到哪里、怎么把关&quot;这四步，而恰好是 C5「检索激活」在各方法间实现高度收敛——这构成了本领域罕见的低变异设计共识。</p><p>设计共识的收敛形态是&quot;先语义召回、再用效用重排、最后注入上下文&quot;的两阶段激活范式：MemRL 的 Two-Phase Retrieval（相似度召回 + Q 值重排）与 AWM 的 retrieved-workflow 注入同属此形；0037 更把 DyLAN / DyTopo / ToG-3 等系统统一抽象为 A.3 read-only subgraph activation 的同一 schema <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。</p><p>第二个较弱但正在形成的共识在 C3：增量/局部写回优于整体重生成。ACE 明确以 incremental delta update 替代整体重写，并给出消融——去掉 delta 更新后 AppWorld 上 TGC 掉 11.7、SGC 掉 27.8 个百分点 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；0037 的 Table I 亦把 memory update 与 skill update 统一编码为 INSERT / MERGE / FEATUREUPDATE 节点级 rewrite <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。</p>
+<h3>表 2 · 四类代表性方法的组件配置对齐表</h3>
+<table><thead><tr><th>方法 / 论文</th><th>C1 更新信号</th><th>C2 抽象产物</th><th>C3 载体</th><th>C4 抗退化机制</th><th>C5 激活方式</th><th>C6 溯源</th></tr></thead><tbody><tr><td>Agent Workflow Memory [10]</td><td>仅成功轨迹（reward=1），无失败信号</td><td>可复用 workflow 步骤序列</td><td>离线固定 workflow 列表</td><td>仅去重检查，无验证门控；全量注入上下文</td><td>检索相关 workflow 注入</td><td>无</td></tr>
+<tr><td>MemRL [1]</td><td>环境标量奖励 / 执行成功，经 Monte-Carlo 或 TD 回传</td><td>Intent–Experience–Utility 三元组 (z, e, Q)</td><td>外部 episodic memory bank，模型权重冻结</td><td>z-score 归一化 + similarity gating 稳定 Q 估计；自陈仍有 credit-assignment 歧义</td><td>两阶段：语义召回 k₁ 后按 Q 值重排至 k₂</td><td>无（仅 Q 值历史）</td></tr>
+<tr><td>SENTINELMEM / PERMEMSAFE [14]</td><td>MLLM 验证器 + PSR / PHS / Recall@k 指标</td><td>推理式信息抽取 + 事实状态机 previous→current 转移</td><td>双轨用户 profile + 事实状态机记忆</td><td>非破坏性写回，保留历史状态而非覆盖（对抗 destructive update）</td><td>检索相关记忆条目</td><td>部分：保留状态转移链</td></tr>
+<tr><td>Agent symbolic learning [15]</td><td>语言化损失（无需 ground truth）→ 逐节点语言梯度</td><td>文本批评 / 反思</td><td>prompt、tool、pipeline 结构（符号网络权重）</td><td>依赖优化器设计；作者自陈初始化敏感、过度工程化会不稳定</td><td>不适用（组件即常驻）</td><td>无</td></tr>
+<tr><td>Skill evolution [16]</td><td>确定性物理求解器打分：CPF / BM / SG / attempts</td><td>per-task 记录 → 技能文件规则（92 行 → 218 行）</td><td>单个版本化 SKILL.md，base model 与求解器冻结</td><td>Elitist 规则：验证排名不严格更优则从不部署；快照归档</td><td>全量注入 skill 文件</td><td>部分：归档快照</td></tr>
+<tr><td>ACE（策略侧参照）[3]</td><td>Generator 标注 bullet 的 helpful / harmful 计数</td><td>结构化 itemized bullet（策略 / 概念 / 失败模式）</td><td>增量 Δ 更新的 playbook</td><td>增量 delta update 防 brevity bias 与 context collapse；grow-and-refine 控冗余</td><td>细粒度 bullet 检索</td><td>部分：bullet 级 helpful 计数</td></tr>
+</tbody></table>
+
+<h2 id="sec_差异主线一_更新载体决定可迁移性与可审计性的方向相反">差异主线一：更新载体决定可迁移性与可审计性的方向相反</h2>
+<p>记忆更新类方法把可塑状态放在模型之外：MemRL 冻结 ω、只优化检索策略 μ(m|s,M)，以非参数方式同时规避微调的算力开销与灾难性遗忘 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；SENTINELMEM 以事实状态机逐条保存 previous→current 的状态转移，并用双轨 profile 把个人偏好与安全约束解耦，使二者独立管理 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>；AWM 从成功轨迹归纳 workflow 列表，部署期冻结 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。其产物是外部、可读、可跨 backbone 迁移的制品——这也解释为何 2345 指出参数化路径&quot;difficult to inspect, transfer across model backbones, or reuse when the underlying model is replaced&quot;<sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup>。</p><p>策略优化类方法则把可塑状态内化：Agent symbolic learning 把 prompts / tools / pipeline 一并视为&quot;符号网络&quot;的可学习权重，通过 language loss → language gradient → language optimizer 沿轨迹反向逐节点更新，甚至重连计算图，从而支持多智能体系统优化 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>；0001 的 skill 演化只重写一个 Markdown SKILL.md，元 agent 直接改写，其余全部冻结 <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>。其产物与具体流水线强耦合，但能实现&quot;自上而下的整体优化&quot;，避免各组件单独优化陷入局部最优 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>。</p><p>两者的张力正是 ACE 存在的理由：它把 context 建模为 itemized playbook 而非整体重写，实质是在策略优化一侧重新夺回记忆类方法才有的局部性与可审计性 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p>
+
+<h2 id="sec_差异主线二_更新信号的即时性_vs_延迟性构成关键分水岭">差异主线二：更新信号的即时性 vs 延迟性构成关键分水岭</h2>
+<p>策略优化侧普遍依赖即时、可判定的信号。0001 的 meta-agent 直接读取确定性求解器产出的 per-criterion outcomes、CPF、BM、SG 与 attempt counts；更关键的是评估器被置于 coding agent 之外，论文明确称 &quot;Because evaluation is performed outside the coding agent by a fixed procedure, the evaluation signal cannot be modified by the model itself&quot;——这构成了一条对 reward hacking 的结构性防线 <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>。Agent symbolic learning 用无需 ground truth 的语言化损失把评分转为文本批评，使其可在部署后继续演化 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>；MemSkill 用 episode 级任务分经折扣回报分配到 skill 控制器的决策序列 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>记忆更新侧则普遍面对延迟、噪声、归因模糊的结果信号。MemRL 以 Q←Q+α(r−Q) 从最终奖励回传记忆效用，理论上依 Bellman 保证收敛，实证上 Q 值与经验成功率的 Pearson r = 0.861（从最低置信分箱 21.5% 升至最高分箱 88.1%）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。但作者自陈 step-wise 更新&quot;may introduce high-variance noise in long-horizon trajectories&quot;，且存在 &quot;credit-assignment ambiguity during utility updates&quot;。这一延迟性带来的结构性后果是：任务结构越复杂收益越大（ALFWorld、OS 任务各 +6.2pp CSR），单步 BigCodeBench 仅 +2.5pp <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p>
+<div id="chart_2" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2 · MemRL 相对基线 MemP 的累积成功率增益（按任务结构性，单位 pp）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["ALFWorld（多步）", "OS Task（多步）", "HLE（单步）", "BigCodeBench（单步）"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "CSR 增益 (pp)", "type": "bar", "data": [6.2, 6.2, 3.6, 2.5], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">上图数据来自 MemRL 论文 Table 4 与 §5.2：MemRL 相对最强基线 MemP 的平均 CSR 增益为 +3.8%，迁移设置下平均成功率为 +2.8%（ALFWorld +5.8%、OS 任务 +2.6%）。增益幅度与任务的时间依赖强度高度相关，作者据此把 MemRL 定位为&quot;Trajectory Verifier&quot;而非简单的检索增强器 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</div>
+
+<h2 id="sec_差异主线三_抗退化机制的形态随载体根本分化">差异主线三：抗退化机制的形态随载体根本分化</h2>
+<p>策略优化侧收敛为&quot;显式门控 + 快照回滚 + 增量编辑&quot;三位一体。0001 采用 elitist 选择规则：候选按验证 SG 排序，同分时依次比 CPF、总约束违反量、BM，规则为&quot;a revision that ranks no better on validation is never deployed&quot;；实测中 iteration 1 已达 100% 验证成功率天花板，后续三次修正全部被拒，但最优 skill 被完整保留 <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>。MemSkill 用 cycle 末四分之一训练步的平均奖励作为稳定化估计，若不优于历史最佳则回滚 skill bank 至先前快照并重启演化，&quot;This rollback prevents compounding degradations from suboptimal designer updates&quot;，并配以固定 patience 早停 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。ACE 用增量 delta 更新替代整体重写，作者指出整体重写会使模型&quot;shorten and compress what was written before&quot;，诱发 brevity bias 与 context collapse <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>记忆更新侧则收敛为&quot;受控非破坏性写回 + 语义筛选&quot;。SENTINELMEM 的 FSMM 明确针对&quot;destructive memory updates&quot;这一失败模式，保留历史状态而非丢弃，使 agent 既能推理当前事实、也能推理该事实如何形成 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。MemRL 以 z-score 归一化 + similarity gating 压制 forgetting rate；去掉二者后均值升至 0.073 且出现明显尖峰，说明 agent 会反复检索并强化&quot;只对特定实例有效&quot;的噪声策略 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。相较之下，AWM 的&quot;去重后全量注入&quot;是弱门控形态，其后果在后续文献中被系统性揭示。</p>
+<h3>表 3 · 破坏性更新与弱门控的量化代价</h3>
+<table><thead><tr><th>现象</th><th>度量</th><th>数值</th><th>来源</th></tr></thead><tbody><tr><td>Mem0 的 PSR 从 Safety Perception 轨跌至 Dynamic Evolution 轨</td><td>PSR 降幅</td><td>30.67% → 3.47%（−88.69%，LLM）</td><td>PERMEMSAFE [14]</td></tr>
+<tr><td>SENTINELMEM 相对最强基线的整体提升</td><td>Recall / PSR / PHS</td><td>+2.91% / +23.80% / +10.73%</td><td>PERMEMSAFE [14]</td></tr>
+<tr><td>FSMM 单模块消融（Vanilla 25.20% 起）</td><td>PSR</td><td>28.93%（+3.73pp）；全量 SENTINELMEM 48.53%</td><td>PERMEMSAFE [14]</td></tr>
+<tr><td>MemRL 去掉归一化与 gating 的遗忘率</td><td>forgetting rate 均值</td><td>0.073（含尖峰）</td><td>MemRL [1]</td></tr>
+<tr><td>ACE 去掉增量 delta 更新</td><td>AppWorld TGC / SGC</td><td>−11.7 / −27.8 个百分点（LLM）</td><td>ACE [3]</td></tr>
+<tr><td>ACE 朴素并行聚合（batch 100/125）后高价值条目数</td><td>h ≥ 3 的 bullet 数</td><td>Formula 与 FiNER playbook 均为 0</td><td>Combee [12]</td></tr>
+</tbody></table>
+
+<h2 id="sec_对抗性验证_记忆更新并不自动等于稳健或安全">对抗性验证：记忆更新并不自动等于稳健或安全</h2>
+<p>骨架完备性自检时，两条反证据无法被任何单一组件配置吸收，必须作为跨组件的失效模式记录。</p><p>其一，记忆类方法的自我改进在更严苛评测下会退化为自我损害。对 AWM 与 ReasoningBank 在多次运行与乱序任务下复评发现&quot;agents do not self-improve, but instead degrade&quot;，尤其在基线本就较强或任务随机到达时；进一步定位为 environment and task underspecification（如 agent 把 Haversine 公式估计距离这类偶然奏效的替代策略写入记忆，并在后续任务中被愈发频繁地检索与复用）；补充规格信息后性能退化仅被削减 31%，作者坦承&quot;the remaining 69% performance gap&quot;仍未解决 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。这直接挑战了 AWM 一类&quot;只学成功轨迹&quot;的弱门控设计。</p><p>其二，经验积累会系统性侵蚀安全属性。即便所有存入记忆的经验都来自良性、无害任务，AWM 框架下的离线自我演化在所有被测模型与环境中均系统性抬升攻击成功率 ASR，且在线演化中 ASR 在早期急剧上升后平台化，&quot;no model recovering to its initial safety level&quot;，800 步以上的长程实验亦观察到持续下滑 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。这否证了&quot;记忆类方法因不改权重而天然更安全&quot;的直觉。</p><p>其三，策略优化路线的有效性存在能力边界。开放优化（OEO）在 14 组头对头比较中对预置流水线（SKILLOPT / GEPA）取得 12 胜 1 平 1 负，仅用 SKILLOPT 配置 token 预算的中位 34.3%；但当 optimizer 能力为中等时 SKILLOPT 反超，作者据此把预置流水线重新定义为&quot;capability-dependent scaffolding&quot;<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p>
+<div id="chart_3" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_3'));
+  c.setOption({"title": {"text": "图 3 · 骨架完备性自检：贡献映射成功 vs 需新增组件的缺口", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 3 · 骨架完备性自检：贡献映射成功 vs 需新增组件的缺口", "type": "pie", "radius": "55%", "data": [{"name": "可映射至 C1–C5 的贡献", "value": 11}, {"name": "映射失败需新增组件（C0/C2a/C7）", "value": 3}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">三处映射失败非孤例，均指向&quot;组件间关系&quot;而非&quot;组件内部配置&quot;：0038 的 authority collapse 与 relinking 属抽象操作内部的安全属性传递（建议新增 C2a 抽象保真校验）<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>；0037 的 A.4 跨组件级联传播属组件间依赖机制（建议新增 C7 级联传播控制）<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>；2391 的&quot;改善过程本身由 optimizer 在线编排&quot;属元层面控制（建议新增 C0 优化过程编排者）<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。三者合计约占所考察论文贡献的 21%，超过 5% 的自检阈值，故骨架应视为 v1.0 待修订版本。</div>
+
+<h2 id="sec_设计关联_协同_独立与不兼容">设计关联：协同、独立与不兼容</h2>
+<p>对各组件配置组合计算共现率（&gt; 0.7 判为强协同）。最强的两条协同关系都围绕 C4 门控展开：其一是&quot;整体重写可编辑程序&quot;与&quot;验证集门控加快照回滚&quot;共现 0.83；其二是&quot;确定性求解器或验证器打分&quot;与&quot;严格改进门槛&quot;共现 0.75。这说明门控机制并非可选装饰，而是与载体和信号形态共同决定的配套设计——一旦选择整体重写型载体，就必须配备验证集门控，否则退化不可控。</p><p>记忆更新侧&quot;外部记忆条目 + 语义筛选&quot;的协同强度较低（0.71），反映出该侧门控目前尚弱：MemRL 的 gating 本质是检索侧筛选而非提交侧验证，AWM 更是仅做去重。这一不对称正是记忆类方法在 2401 与 2295 中暴露脆弱性的结构性根源 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>关于&quot;不兼容&quot;声明，需特别谨慎：本次仅识别出一组有条件的不兼容——&quot;整体重写 + 摘要式压缩&quot;，依据不是低共现率，而是 ACE 的直接消融证据：整体重写会导致后续写入不断压缩先前内容，形成 brevity bias 与 context collapse，使高价值条目归零 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，Combee 亦独立复现了同一机制（并行朴素聚合使 h≥3 条目从 19/38 个降至 0）<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。其余低共现组合均标注为 independent，不作不兼容推断。</p>
+<h3>表 4 · 组件间设计关联（协同 / 独立 / 不兼容）</h3>
+<table><thead><tr><th>组件 A</th><th>方案 A</th><th>组件 B</th><th>方案 B</th><th>共现率</th><th>关系类型</th><th>判据</th></tr></thead><tbody><tr><td>C3 载体写回</td><td>整体重写可编辑程序</td><td>C4 门控</td><td>验证集门控 + 快照回滚</td><td>0.83</td><td>synergy</td><td>配置耦合，验证集门控随整体重写而必备</td></tr>
+<tr><td>C1 信号来源</td><td>确定性求解器/验证器打分</td><td>C4 门控</td><td>严格改进门槛</td><td>0.75</td><td>synergy</td><td>可判定信号使严格门槛可实现</td></tr>
+<tr><td>C3 载体写回</td><td>外部记忆条目（非破坏性）</td><td>C4 门控</td><td>语义筛选 + 相似度门控</td><td>0.71</td><td>synergy</td><td>提交侧验证缺位，由检索侧替代</td></tr>
+<tr><td>C1 信号来源</td><td>延迟环境奖励</td><td>C5 检索激活</td><td>价值感知重排序</td><td>0.50</td><td>independent</td><td>样本不足，不作更强推断</td></tr>
+<tr><td>C4 门控</td><td>整体重写（无语义保留）</td><td>C2 抽象</td><td>摘要式压缩</td><td>0.62</td><td>incompatible</td><td>ACE 消融 −11.7 TGC / −27.8 SGC；Combee 独立复现条目归零</td></tr>
+</tbody></table>
+
+<h2 id="sec_量化效能对照">量化效能对照</h2>
+<p>在本次抽取的实证中，策略优化类方法的增益幅度显著高于记忆更新类，但代价是更强的领域依赖性与更小的样本量。0001 在同一 benchmark 上把同类型任务成功率从 38% 提到 74%（+36pp），准则通过率从 0.51 提到 0.87，平均尝试次数从 4.10 降至 2.30；在 New-type-B 上从 0.20 提到 0.90（+70pp），而在 New-type-A 上从 0.92 略降至 0.90（−2pp，净变化仅 1 个任务）<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>。Agent symbolic learning 在软件开发任务平均分 3.8（Agent 基线 2.4、LLM 1.6），创意写作 LLM/LLM 下为 6.9/7.4（对比 Agents w/ AutoPE 4.4/6.5、ToT 3.8/6.8）<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>。</p><p>MemRL 在四个 benchmark 上的平均 CSR 为 0.798、迁移成功率 0.794，相对最强基线分别 +3.8% 与 +2.8% <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。SENTINELMEM 的三指标提升为 +2.91% Recall / +23.80% PSR / +10.73% PHS <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。需强调：这三组数字的度量口径、基线与任务领域互不相同，不能直接横向比较绝对幅度，只能比较&quot;相对基线的增益方向与稳健性&quot;。</p>
+<div id="chart_4" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_4'));
+  c.setOption({"title": {"text": "图 4 · 各类机制的核心量化增益（口径不同，仅示方向与量级）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["Skill evolution 同类型 SG (+pp)", "Skill evolution 新类型B SG (+pp)", "MemRL 平均 CSR (+%)", "MemRL 迁移 (+%)", "SENTINELMEM PSR (+%)", "SENTINELMEM PHS (+%)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "增益", "type": "bar", "data": [36, 70, 3.8, 2.8, 23.8, 10.73], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>第一，证据集与问题设定存在错配。RQ2.1 冻结证据集仅 6 篇，而实际最有信息量的对照材料（MemRL <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、MemSkill <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、ACE <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、Fragility <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、Experience-Driven Safety <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、FinEvolveBench <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）均来自证据集之外，属于本次分析主动扩展引入。若严格限定在冻结集内，&quot;四方法头对头比较&quot;根本无法完成——冻结集中 ReAct 仅以&quot;training-free 对照&quot;角色被二手转述，KG 内无其方法节点；AWM 亦无独立论文节点，其配置描述来自 2401 与 2274 的转述 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。因此本报告对 ReAct 的定位标注为低置信。</p><p>第二，跨方法量化比较在统计上不成立。第二节所列数字分属不同 benchmark、不同 backbone、不同基线，且缺少共享的受控实验。报告中已尽量避免绝对幅度比较，但仍存在读者误读的风险。</p><p>第三，KG 节点密度不均。method 节点 558 个中，只有约 30 个与本题直接相关；大量节点（如 Q-learning、ACO、水平集方法）与 LLM 自演化无关，本次分析已通过问题/论文边关系过滤。limitation 与 assumption 节点高度偏向 0001 与 0037 两篇，导致&quot;退化机理&quot;的证据分布不均衡。</p><p>第四，骨架 v1.0 尚不完备。自检显示约 21% 的考察贡献无法映射到 C0–C5，分别为抽象保真（C2a）、级联传播（C7）与优化过程编排（C0）。这三者反映的是&quot;组件间关系&quot;与&quot;元层面控制&quot;，而非组件内部配置，说明当前骨架偏&quot;静态组件清单&quot;、弱于&quot;动态演化过程&quot;，后续需修订。</p><p>第五，综述类节点（0037、0038、2200、2205）本身不提供一手实证，被引作&quot;共识证据&quot;时置信度应低于实验论文。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ2.1 的回答可以凝练为一句判据：**记忆更新优化的是&quot;检索什么&quot;，策略优化优化的是&quot;程序长什么样&quot;，二者的系统差异由载体位置而非算法名称决定。**</p><p>具体而言：（1）**更新什么**——记忆更新改写外部 episodic/semantic 条目（三元组、状态机转移、workflow 列表），模型权重冻结；策略优化改写 prompt / tool / pipeline 结构，范围更大、耦合更深、收益也更大 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup><sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>。（2）**用什么信号更新**——策略优化依赖即时、可判定、位于 agent 之外的验证信号（确定性求解器打分、验证集 SG），从而在结构上封堵了评估信号被模型篡改的可能 <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>；记忆更新依赖延迟、含噪、归因困难的结果奖励，需借 Q 值等机制回传 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，这既是它胜任多步长程任务的来源（+6.2pp），也是它在低重复任务上失灵的根源（FinEvolveBench 中不consistently优于无经验基线）<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。（3）**如何避免退化**——策略优化侧收敛为&quot;显式验证门控 + 快照回滚 + 增量编辑&quot;，且有效性可量化（elitist 规则、stabilized-reward rollback、ACE 消融 −11.7/−27.8pp）<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；记忆更新侧收敛为&quot;非破坏性写回 + 语义筛选&quot;，其必要性同样可量化（PSR −88.69% 的破坏性更新代价）<sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>最重要的分歧点在于：**记忆更新路线当前缺乏提交侧门控**。AWM 的去重式弱门控使其在乱序任务与强基线下退化为自我损害（仅修复 31% 性能差）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，并在完全良性的经验流下系统性抬升 ASR 且无自然恢复 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。这意味着&quot;不改权重所以更安全&quot;的直觉不成立，记忆类方法必须补齐 C4 与 C6 两个组件才能获得与策略优化同等的退化控制力。</p><p>最终，两条路线正在向同一组设计原则收敛：局部化编辑（rewrite locality）、形式化门控、以及可回滚的版本化载体。而领域共同的最大缺口在于 C6——溯源与审计覆盖率仅 33%，0037 所呼吁的&quot;temporally valid、localized、reversible、auditable&quot;四项检验，在 0038 的 authority collapse 与 SkillMisevo-Bench 的 21/21 不安全制品结果面前，仍未被任何单一方法同时满足 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;MemRL: Self-Evolving Agents via Runtime Reinforcement Learning on Episodic Memory&nbsp;<code style="font-size:0.82em;color:#888">2244_memrl_selfevolving_agents_via_runtime_reinforcement_learning</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;MemSkill: Learning and Evolving Memory Skills for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2257_memskill_learning_and_evolving_memory_skills_for_selfevolvin</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Agentic Context Engineering: Evolving Contexts for Self-Improving Agents&nbsp;<code style="font-size:0.82em;color:#888">2222_agentic_context_engineering_evolving_contexts_for_selfimprov</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;On the Fragility of Self-Improving Agents: Variance, Task Order, and Underspecification&nbsp;<code style="font-size:0.82em;color:#888">2401_on_the_fragility_of_selfimproving_agents_variance_task_order</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;On Safety Risks in Experience-Driven Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2295_on_safety_risks_in_experiencedriven_selfevolving_agents</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;FinEvolveBench: A Benchmark for Self-Evolving Agents on Low-Repetition Tasks with Implicit Rewards&nbsp;<code style="font-size:0.82em;color:#888">2334_finevolvebench_a_benchmark_for_selfevolving_agents_on_lowrep</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Rethinking Self-Evolving Agents: Do We Still Need Prescribed Optimization Pipelines?&nbsp;<code style="font-size:0.82em;color:#888">2391_rethinking_selfevolving_agents_do_we_still_need_prescribed_o</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Safety in Self-Evolving Agents: A Survey (SAVER Framework)&nbsp;<code style="font-size:0.82em;color:#888">0038_Safety_in_Self-Evolving_Agents_A_Survey</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;A Survey of Self-Evolving Agents: What, When, How, and Where to Evolve&nbsp;<code style="font-size:0.82em;color:#888">2200_a_survey_of_selfevolving_agents_what_when_how_and_where_to_e</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Agent Workflow Memory (AWM) — as described and evaluated in the fragility study&nbsp;<code style="font-size:0.82em;color:#888">2401_on_the_fragility_of_selfimproving_agents_variance_task_order</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Trajectory-Informed Memory Generation for Self-Improving Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">2274_trajectoryinformed_memory_generation_for_selfimproving_agent</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Combee: Scaling Parallel Prompt Learning for Self-Improving Language Models&nbsp;<code style="font-size:0.82em;color:#888">2287_combee_scaling_prompt_learning_for_selfimproving_language_mo</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Self-Evolving Agents as Dynamic Graph Transformation: A Survey and New Perspective&nbsp;<code style="font-size:0.82em;color:#888">0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;PERMEMSAFE: Benchmarking Implicit Personalized Safety of Long-Horizon Self-Evolving Agents (with SENTINELMEM)&nbsp;<code style="font-size:0.82em;color:#888">0052_PerMemSafe_Benchmarking_Implicit_Personalized_Safety_of_Long</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Symbolic Learning Enables Self-Evolving Agents (Agent Symbolic Learning)&nbsp;<code style="font-size:0.82em;color:#888">0004_Symbolic_learning_enables_self-evolving_agents</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;A Self-Evolving Agentic Framework for Metasurface Inverse Design (with Skill Evolution)&nbsp;<code style="font-size:0.82em;color:#888">0001_A_Self_Evolving_Agentic_Framework_for_Metasurface_Inverse_De</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;METIS: Bridging Text and Code Memory for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2345_metis_bridging_text_and_code_memory_for_selfevolving_agents</code></li>
+<li id="ref-18" style="margin-bottom:4px"><span class="ref-id">[18]</span>&nbsp;Symbolic Learning Enables Self-Evolving Agents (extended version)&nbsp;<code style="font-size:0.82em;color:#888">2130_symbolic_learning_enables_selfevolving_agents</code></li>
+<li id="ref-19" style="margin-bottom:4px"><span class="ref-id">[19]</span>&nbsp;AutoVQA-G: Self-Improving Agentic Framework for Automated Visual Question Answering with Grounding&nbsp;<code style="font-size:0.82em;color:#888">0016_AutoVQA-G_Self-Improving_Agentic_Framework_for_Automated_Vis</code></li>
+<li id="ref-20" style="margin-bottom:4px"><span class="ref-id">[20]</span>&nbsp;A Comprehensive Survey of Self-Evolving AI Agents: A New Paradigm Bridging Foundation Models and Lifelong Agentic Systems&nbsp;<code style="font-size:0.82em;color:#888">2205_a_comprehensive_survey_of_selfevolving_ai_agents_a_new_parad</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.1 · 2026-10-18 21:41</footer>
+</div>
+</body>
+</html>

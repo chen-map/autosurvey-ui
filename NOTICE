@@ -1,0 +1,31 @@
+AutoSurvey Console
+Copyright 2026 AutoSurvey contributors
+
+This product includes software developed by third parties. The authoritative
+list, including versions, licenses, usage and obligations, is maintained in
+docs/THIRD_PARTY_RESOURCES.md.
+
+Original code and documentation in this repository are licensed under the
+Apache License, Version 2.0 (see LICENSE), except where a file or directory
+states otherwise.
+
+The structured annotations and generated survey documents under
+public/showcase/ are licensed under CC BY 4.0 (see public/showcase/LICENSE).
+Bibliographic metadata, DOIs and short quotations remain subject to the
+rights of the original authors and publishers; they are included only to the
+extent needed to verify citations.
+
+Third-party components include, but are not limited to:
+
+- FastAPI, Pydantic, Uvicorn (MIT / BSD-3-Clause)
+- React, React DOM, Vite, Tailwind CSS, Zustand, React Router, d3-force,
+  React Flow, react-markdown, lucide (MIT / ISC)
+- PyMuPDF (AGPL-3.0 or commercial license; used only in the private
+  deployment, not distributed in this repository)
+- pdfminer.six (MIT)
+- sentence-transformers (Apache-2.0)
+- tectonic (MIT) and LaTeX packages (LPPL, including IEEEtran and acmart)
+- DeepSeek and Anthropic model APIs (commercial service terms)
+
+No third-party model weights or paper full texts are redistributed in this
+repository.

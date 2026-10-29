@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.4-c 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.4-c 分析报告</h1>
+<div class="meta">RQ [RQ1.1]：[父问题 RQ1] 面向小农的农业 AI 技术供给在多大程度上具备&quot;田间就绪性&quot;，其可及性约束与边缘部署评价缺口如何界定技术可行性的真实边界？
+[本子问题 RQ1.1] 对话式/LLM 农业顾问在低资源语言与离线低算力下的可及性约束被报告到什么程度？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0655_Agricultural_insurance_access_and_acceptability_examining_th, 0714_Contribution_of_smallholder_farmers_to_food_security_and_opp, 2950_building_aibased_advisory_services_for_smallholder_farmers_t, 0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i, 2850_corn_yield_prediction_model_with_deep_neural_networks_for_sm, 2874_farmerchat_scaling_aipowered_agricultural_services_for_small）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_分析框架与认知坐标">分析框架与认知坐标</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_论证主线一_低资源语言约束已被系统性报告且量化">论证主线一：低资源语言约束已被系统性报告且量化</a></li>
+<li><a href="#sec_论证主线二_离线低算力约束被点名却缺乏实测">论证主线二：离线低算力约束被点名却缺乏实测</a></li>
+<li><a href="#sec_论证主线三_基础设施与可负担性约束被外部化_几乎无方法实验">论证主线三：基础设施与可负担性约束被外部化，几乎无方法实验</a></li>
+<li><a href="#sec_优先关注盲区清单">优先关注盲区清单</a></li>
+<li><a href="#sec_分歧点与不确定性">分歧点与不确定性</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本子问题（RQ1.1）考察对话式/LLM 农业顾问在低资源语言与离线低算力两类可及性约束上「被报告到什么程度」。基于父问题证据矩阵冻结的 6 篇论文，并扩展至 KG 中直接关联的语音管线、端侧部署、系统综述等文献，本分析构建了 6 个高危可及性场景 × 研究覆盖状态的矩阵。核心结论是「不对称」：低资源语言可及性已被系统性报告且部分量化（多篇论文给出 WER 降幅、语种覆盖清单、ASR 不均衡实测），而离线低算力部署仍停留在「被点名的开放问题」，缺乏在 LLM 顾问场景下的端侧推理实测。</p><p>在 6 个场景中，2 个判定为已覆盖（低资源语言支持、低识字率界面障碍），3 个为部分覆盖（离线低算力、数据/设备可负担性、性别公平性），1 个为未覆盖（基础连通性/电力基础设施约束）。整体覆盖率约 33.3%，高危场景覆盖率同为 33.3%。最尖锐的盲区是「离线低算力端侧 LLM 顾问」——文献明确承认端侧托管的性能-时延权衡仍不清楚 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，而落地系统在无本地回退模型时直接失效 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p>
+
+<h2 id="sec_分析框架与认知坐标">分析框架与认知坐标</h2>
+<p>本分析采用「场景-覆盖布尔矩阵」为认知坐标：覆盖=有论文在该场景下做过实验（而非仅仅讨论了该场景），风险等级以文献对其危害的明确描述为准。场景集来自 KG 中 problem 节点按应用域关键词聚类（低资源语言、离线/端侧算力、连通性/电力、识字率、成本、性别），并对每个场景用 get_head_entity(addresses) 检索是否存在 targeting 的方法。对 KG 显示为空覆盖或缺覆盖的场景（尤其离线低算力、基础设施），使用 RAG 原文检索进行对抗性验证，以排除 KG 收录不完整导致的假性盲区。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析共调用工具 33 次：实体类型查询 6 次（problem/method/limitation/assumption 等）、实体关系双向查询 8 次（覆盖证据矩阵全部 6 篇论文及关键扩展论文）、反向 addresses 查询 3 次、模糊实体候选查询 4 次、RAG 原文段落语义检索 12 次。KG 层面加载 problem 节点 226 个、method 节点 231 个、limitation 节点 137 个、assumption 节点 61 个。经语义检索精读的论文段落覆盖 Farmer.Chat、AIEP、语音管线、端侧 YOLO、远程岛屿、南非系统综述、智能互联农场综述等 8 篇以上关键论文。所有风险等级与覆盖判定均绑定 origin_paper_id 与原文段落片段。</p>
+<h3>高危可及性场景 × 覆盖状态矩阵</h3>
+<table><thead><tr><th>场景</th><th>危害等级</th><th>覆盖状态</th><th>覆盖方法数</th><th>覆盖论文</th></tr></thead><tbody><tr><td>S1 低资源语言支持（ASR/翻译/LLM 语种不均衡）</td><td>High</td><td>已覆盖</td><td>3</td><td>[3][1][4]</td></tr>
+<tr><td>S2 离线低算力/端侧 LLM 顾问推理</td><td>High</td><td>部分覆盖</td><td>1（仅相邻视觉任务）</td><td>[5]</td></tr>
+<tr><td>S3 基础连通性/电力基础设施约束</td><td>High</td><td>未覆盖</td><td>0</td><td>—</td></tr>
+<tr><td>S4 低识字率/数字素养界面障碍</td><td>Medium</td><td>已覆盖</td><td>2</td><td>[3][4]</td></tr>
+<tr><td>S5 数据/设备可负担性成本</td><td>Medium</td><td>部分覆盖</td><td>0（仅报告）</td><td>—</td></tr>
+<tr><td>S6 性别与公平性纳入</td><td>Medium</td><td>部分覆盖</td><td>1</td><td>[3]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各场景覆盖方法数量对比", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["S1 低资源语言", "S2 离线低算力", "S3 基础设施", "S4 低识字率", "S5 可负担性", "S6 性别公平"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "覆盖方法数", "type": "bar", "data": [3, 1, 0, 2, 0, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "场景覆盖状态分布（共 6 个场景）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "场景覆盖状态分布（共 6 个场景）", "type": "pie", "radius": "55%", "data": [{"name": "已覆盖", "value": 2}, {"name": "部分覆盖", "value": 3}, {"name": "未覆盖", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_论证主线一_低资源语言约束已被系统性报告且量化">论证主线一：低资源语言约束已被系统性报告且量化</h2>
+<p>这是证据最厚的方向。AIEP initiative 明确指出「我们对这项技术在低资源语言和社会影响用例中的表现只有有限认知」，并强调低资源语言不仅缺训练数据、还缺高质量评估数据 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。在 Gikuyu 案例中，微调 MMS 的 ASR 本身表现优异，但与机器翻译串接后性能显著变差，且 Gikuyu 缺标准书写系统使评估困难 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。语音管线论文进一步量化了语种不均衡：十个 ASR 提供方在印地语、泰卢固语、奥迪亚语上的覆盖不均衡，没有单一模型能同时擅长三语 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；其五阶段管线在人类质检的田间录音上把 WER 在三款云 ASR 上降低 16%–23%、端侧模型降 5%、多说话人音频降 16%–42% <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。Farmer.Chat 作为最成熟落地系统仅支持六种语言（斯瓦希里、阿姆哈拉、豪萨、印地、奥迪亚、泰卢固、英语），自认「实现语言包容性仍是挑战」<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。这说明语言维度的可及性缺口不仅被提及，更被 WER/覆盖度指标所刻画。</p>
+<h3>语言维度关键量化证据</h3>
+<table><thead><tr><th>证据</th><th>数值/结论</th><th>来源</th></tr></thead><tbody><tr><td>Farmer.Chat 支持语种数</td><td>6 种（含英语）</td><td>[3]</td></tr>
+<tr><td>ASR 提供方在印地/泰卢固/奥迪亚覆盖</td><td>不均衡，无单模型通吃三语</td><td>[4]</td></tr>
+<tr><td>语音管线 WER 降幅（云 ASR）</td><td>16%–23%</td><td>[4]</td></tr>
+<tr><td>语音管线 WER 降幅（端侧模型）</td><td>5%</td><td>[4]</td></tr>
+<tr><td>语音管线 WER 降幅（多说话人音频）</td><td>16%–42%</td><td>[4]</td></tr>
+<tr><td>AIEP 语言延迟目标（现状）</td><td>持续难低于 5 秒</td><td>[1]</td></tr>
+</tbody></table>
+
+<h2 id="sec_论证主线二_离线低算力约束被点名却缺乏实测">论证主线二：离线低算力约束被点名却缺乏实测</h2>
+<p>这是最尖锐的缺口。AIEP 明确指出，把模型托管在用户设备上（小型语音模型乃至整个推理模型）「是解决网络延迟最彻底的方案，但这些小模型在性能与推理时间上的权衡仍不清楚」——即端侧 LLM 顾问的可行性仍是未解问题 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。远程岛屿 LLM 顾问系统的显式局限是「对话大脑在上游，若不可用……助手无法作答，且没有任何本地回退模型」，直接印证离线场景能力真空 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。KG 中唯一有端侧实测的是视觉检测模型：YOLOv8n 经结构化剪枝+整数量化部署于 STM32，51.8 mJ/次推理、0.66 fps、模型由 9.95 MB 压至 850.97 KB <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。但这是图像任务，与「对话式 LLM 顾问」的端侧推理并非同一问题。因此离线低算力在 LLM 顾问语境下属于部分覆盖：有相邻任务的边端经验，无本任务的直接实验。</p>
+<div class="note">对抗性验证说明：对 S2（离线低算力）与 S3（基础设施）的「未覆盖/部分覆盖」判定，已用 RAG 原文检索跨越 KG 收录局限直接检索文献。结果显示：离线端侧证据仅存在于视觉模型部署 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，无小型 LLM 农业顾问的端侧精度-时延-能耗实测；基础设施约束仅在综述/系统综述中作为外部限制被陈述 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，无对照实验。故此判定非 KG 收录不完整导致的假性盲区。</div>
+
+<h2 id="sec_论证主线三_基础设施与可负担性约束被外部化_几乎无方法实验">论证主线三：基础设施与可负担性约束被外部化，几乎无方法实验</h2>
+<p>南非系统综述把「缺乏电力、电力成本、移动数据成本高昂、连通性差、语言障碍」列为端用户与服务提供方约束，但均作为外部条件呈现 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。Farmer.Chat 用户研究证实「数据可负担性对偏远地区的引路人/农户是主要问题」，且女性与年长者智能手机拥有率更低，性别与接入差距被明确报告 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。智能互联农场综述详述了农村宽带覆盖不到农田、LoRaWAN 数据率不足以传大文件等网络现实 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。这些约束在 KG 中都表现为 assumption/limitation（外部条件），而非被某个方法 target 的研究问题——没有论文在「断网/限电」条件下做顾问系统的对照实验。</p>
+
+<h2 id="sec_优先关注盲区清单">优先关注盲区清单</h2>
+<p>综合覆盖矩阵与危害等级，识别出两个优先关注盲区：(1) S2 离线低算力端侧 LLM 顾问——成因属技术壁垒，AIEP 明言端侧权衡仍不清楚 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，落地系统无本地回退 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；(2) S3 基础连通性/电力基础设施——成因属认知盲区，缺电/断网被列为外部约束但无方法实验在断网限电下做对照 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。此外 S5 可负担性与 S6 性别公平性虽被识别程度较高，但仍缺针对性方法实验，属次级盲区。</p>
+<h3>优先关注盲区与成因</h3>
+<table><thead><tr><th>场景</th><th>盲区成因</th><th>成因证据</th><th>文献来源章节</th></tr></thead><tbody><tr><td>S2 离线低算力端侧 LLM</td><td>技术壁垒</td><td>端侧托管模型性能与推理时间权衡仍不清楚；无 LLM 顾问端侧实测</td><td>[1] §5.4.2 Latency</td></tr>
+<tr><td>S3 基础连通性/电力</td><td>认知盲区</td><td>缺电/连通性被列为外部约束但无方法实验在断网限电下做对照</td><td>[6] §3.8 Constraints</td></tr>
+</tbody></table>
+
+<h2 id="sec_分歧点与不确定性">分歧点与不确定性</h2>
+<p>证据内部存在一个值得注意的分歧信号：Farmer.Chat 报告「直接用源语言生成不如先译成英语再由 LLM 处理后回译」<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，而 AIEP 指出 LLM 正逐步可直接合并翻译与推理（如斯瓦希里、印地）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，两条多语处理路径孰优尚无对照实验定论。此外，语言可及性虽被充分量化，但均集中在印地/斯瓦希里/吉库尤/泰卢固/奥迪亚等少数语种，撒南非洲与东南亚大量低资源语仍无实测。离线低算力的核心不确定性在于：现有端侧证据全是视觉/ASR 小模型，缺乏「小型 LLM 在农户设备上做农业推理」的精度-时延-能耗三角权衡数据，AIEP 亦将其列为未解问题 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，场景清单共枚举 6 个（语言、离线算力、基础设施、识字率、成本、性别），聚焦于冻结证据矩阵与 KG 直接关联的对话式顾问可及性约束，可能未穷尽其他高危维度（如幻觉安全、数据隐私）。其二，覆盖判定以「有论文在该场景下有实验」为准，语言维度覆盖充分但集中少数语种，泛化性受限。其三，离线低算力维度缺乏直接实验数据，其「部分覆盖」判定依赖相邻视觉任务的端侧证据外推，置信度受限。其四，部分风险等级为文献明确定级而非独立的系统性危害量化，且未见 A1.4-a 影响评级的交叉引用结果，跨 skill 一致性有待补全。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>本子问题的答案是「不对称」的：对话式/LLM 农业顾问在低资源语言可及性上被报告得相当充分且部分量化（WER 降幅、语种清单、ASR 不均衡），研究社区不仅承认该缺口，更用指标刻画出其边界 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；而在离线低算力可及性上，约束被明确点名为「开放问题」却缺乏实测——AIEP 直言端侧权衡不清楚 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，落地系统无本地回退 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，端侧证据仅存在于视觉任务 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。因此「田间就绪性」的真实边界在语言维度可较有把握地界定，在离线低算力维度则仍是研究空白而非已定边界。对关注「高危害低覆盖」的研究议程而言，端侧 LLM 顾问的精度-时延-能耗权衡实验、以及断网/限电条件下的系统鲁棒性对照，是两个最应优先填补的盲区。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Building AI-based advisory services for smallholder farmers: Technical learnings from the AIEP Initiative&nbsp;<code style="font-size:0.82em;color:#888">2950_building_aibased_advisory_services_for_smallholder_farmers_t</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Smallholder Farmers on Remote Islands Receiving Retrieval-Grounded LLM Advisory&nbsp;<code style="font-size:0.82em;color:#888">2974_smallholder_farmers_on_remote_islands_receiving_retrievalgro</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Farmer.Chat: Scaling AI-Powered Agricultural Services for Smallholder Farmers&nbsp;<code style="font-size:0.82em;color:#888">2874_farmerchat_scaling_aipowered_agricultural_services_for_small</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Model-Agnostic and Language-Agnostic Voice Pipeline Improvement for the Agriculture Domain&nbsp;<code style="font-size:0.82em;color:#888">3003_modelagnostic_and_languageagnostic_voice_pipeline_improvemen</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Hardware-Aware YOLO Compression for Low-Power Edge AI on STM32 for Weeds Detection in Digital Agriculture&nbsp;<code style="font-size:0.82em;color:#888">2939_hardwareaware_yolo_compression_for_lowpower_edge_ai_on_stm32</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Utilisation of Digital Technologies by Smallholder Farmers in South Africa: A Systematic Literature Review&nbsp;<code style="font-size:0.82em;color:#888">0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Smart Connected Farms and Networked Farmers to Tackle Climate Challenges Impacting Agricultural Production&nbsp;<code style="font-size:0.82em;color:#888">2846_smart_connected_farms_and_networked_farmers_to_tackle_climat</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.1 · 2026-10-19 15:44</footer>
+</div>
+</body>
+</html>

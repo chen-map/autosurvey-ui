@@ -1,0 +1,35 @@
+node_modules
+dist
+*.local
+.DS_Store
+
+# 后端存量（含真实密钥）永不进入公开仓库
+autoSurvey_v2/
+**/key_settings.py
+backend/_refine_block.txt
+__pycache__/
+autosurvey.db
+backend/.master_key
+backend/out/
+backend/payload.json
+autosurvey.db
+.master_key
+backend/tools/tectonic.exe
+backend/tools/tectonic.zip
+
+# 运行时数据与日志（项目工作区属用户数据，永不入公开仓库）
+backend/wm/
+server.log
+uvicorn_*.log
+backend/server.log
+autosurvey.db-shm
+autosurvey.db-wal
+
+# 增量更新包（pack_update.sh 产物，手工传输不入库）
+deploy/*.tar.gz
+backend/db/__pycache__/
+backend/cache/
+
+# 本地快照导出工具（含服务器访问方式，不随公开仓库发布）
+tools/export_showcase.py
+tools/_export_showcase_server.py

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.3-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.3-a 分析报告</h1>
+<div class="meta">RQ [RQ4.1]：[父问题 RQ4] 安全约束与能力进化之间存在怎样的张力，哪些进化机制天然放大攻击面，哪些约束可保进化可控？
+[本子问题 RQ4.1] 自进化智能体的攻击面如何与具体进化机制耦合（如 poisoned experience records 对应记忆更新、skill library 篡改对应技能库进化）？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2383_skilljack_persistent_skill_backdoors_in_selfevolving_agents, 2230_evotest_evolutionary_testtime_learning_for_selfimproving_age, 0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve, 2205_a_comprehensive_survey_of_selfevolving_ai_agents_a_new_parad, 2209_building_selfevolving_agents_via_experiencedriven_lifelong_l, 2257_memskill_learning_and_evolving_memory_skills_for_selfevolvin）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析一_机制_攻击面对应关系由操作语义而非实现细节决定">核心分析一：机制—攻击面对应关系由操作语义而非实现细节决定</a></li>
+<li><a href="#sec_核心分析二_经验_技能管道的放大系数显著高于经验_记忆管道">核心分析二：经验→技能管道的放大系数显著高于经验→记忆管道</a></li>
+<li><a href="#sec_核心分析三_记忆更新通道的耦合形态与可缓解边界">核心分析三：记忆更新通道的耦合形态与可缓解边界</a></li>
+<li><a href="#sec_核心分析四_可缓解性的关键变量是_谁在把关_而验证器本身成为上游攻击面">核心分析四：可缓解性的关键变量是「谁在把关」，而验证器本身成为上游攻击面</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ4.1——「自进化智能体的攻击面如何与具体进化机制耦合」——执行了能力-风险因果链逆推分析。核心结论是：攻击面并非按「模块」（记忆 / 技能库 / 工具）分布，而是按「更新操作（adaptation operation）」逐条耦合；RQ 提出的两条对应关系（poisoned experience records ↔ 记忆更新、skill library 篡改 ↔ 技能库进化）基本成立，但因果瓶颈需从「记录被写入」上移到「记录被归因为可复用经验」这一信用分配环节。凡是同时包含「抽象/压缩」与「跨层持久化」两类操作的机制，其攻击面被系统性放大；仅含「写入—检索」的机制，其攻击面可被准入控制显著压缩。</p><p>量化证据支持这一排序：经验→技能管道中，LLM 判官对原始污染轨迹检出率 98.5%，对抽取出的技能仅 11.4%；衍生技能攻击成功率 56.2%（SkillX）与 89.2%（Anything2Skill），80.0% 触发器在删除源记录后存活 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。跨架构复现显示 10% 攻击者支持下 SkillClaw 六演化器合计 SER 91.0%（546/600）、Trace2Skill 61.5%（369/600）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。记忆更新通道存在同构但量级与可控性不同的风险：九模型 QA 式场景首轮 ASR 平均约 76.2%，提示级防御仅降至 55.5% 且在工作流式场景完全失效 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析全部结论来自知识图谱（KG）结构化数据与 132 篇论文原文段落语义检索两条通道，共执行 41 次工具调用。</p><p>KG 数据层：加载 method 节点 558 个、problem 节点 629 个、limitation 节点 317 个、assumption 节点 200 个、metric 节点 391 个、dataset 节点 400 个（均为截断前总数），paper 节点 274 个。对 6 篇证据矩阵论文（2383、2230、0037、2205、2209、2257）逐一执行了一跳出边关系查询，提取其 proposes / addresses / has_limitation / evaluated_on / measured_by 边及 confidence 与 evidence 字段。</p><p>原文检索层：对 12 篇关键论文精读相关段落，包括 SkillJack <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、PoisonedEvolution <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、MemEvoBench <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、SAVER 综述 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、动态图综述 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、MemSkill <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、EvoTest <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、MASE 综述 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、ELL 框架 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、Who Verifies the Verifier <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、SAGE <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、Zombie Agents。针对性完成了 six-类型节点（problem / method / dataset / metric / limitation / assumption）全覆盖查询。</p><p>因果强度判定严格依据 KG 边的 confidence 值与 context_paper_id 多样性：SkillJack→经验-技能管道安全边 confidence=0.95，PoisonedEvolution→证据提升边界边由独立论文交叉支撑；两篇论文独立指向同一能力-风险对即判为 strong。</p>
+<h3>表 1　进化机制—攻击面耦合映射（按持久度与级联性排序）</h3>
+<table><thead><tr><th>进化机制</th><th>KG 操作语义</th><th>攻击面载体</th><th>持久度</th><th>对应攻击证据</th><th>因果强度</th></tr></thead><tbody><tr><td>技能库进化（经验→技能）</td><td>INSERT / FEATUREUPDATE on skill graph</td><td>派生技能制品（独立存储）</td><td>Long</td><td>检出率 98.5%→11.4%；ASR 56.2%/89.2%；80.0% 存活 [1]</td><td>Strong (conf 0.95)</td></tr>
+<tr><td>经验提升（证据→指令）</td><td>abstract + Evolution Attribution</td><td>共享技能库</td><td>Long</td><td>SER 91.0%（546/600）；Trace2Skill 61.5% [2]</td><td>Strong (conf 0.95)</td></tr>
+<tr><td>记忆更新（经验写入）</td><td>INSERT / MERGE / FEATUREUPDATE on memory graph</td><td>长期记忆条目</td><td>Long</td><td>QA 式首轮 ASR 76.2%；+SafePrompt 55.5% [3]</td><td>Strong (conf 0.95)</td></tr>
+<tr><td>记忆误演化（连续反馈）</td><td>modify + biased feedback loop</td><td>记忆池（跨轮累积）</td><td>Long</td><td>去掉记忆后 ASR 大幅下降 [3]</td><td>Strong (conf 0.95)</td></tr>
+<tr><td>记忆操作技能化（MemSkill）</td><td>designer 修订 + rollback</td><td>共享 memory skill bank</td><td>Long</td><td>同一闭环固化偏差；仅按奖励退化回滚 [6]</td><td>Moderate (conf 0.90)</td></tr>
+<tr><td>整配置演化（EvoTest）</td><td>prompt/memory/超参/工具例程整体改写</td><td>agent 配置对象</td><td>Long</td><td>UCB 以任务奖励为唯一判据，非安全专用 [7]</td><td>Moderate (conf 0.95)</td></tr>
+<tr><td>工作流重写</td><td>LINK / UNLINK / REWIRE</td><td>workflow graph</td><td>Medium</td><td>跨组件级联缺乏受影响范围估计 [5]</td><td>Moderate (conf 0.90)</td></tr>
+<tr><td>抽象/压缩</td><td>abstract</td><td>任意可复用载体</td><td>Long</td><td>权限塌缩、良性片段重连 [4]</td><td>Strong / Moderate</td></tr>
+<tr><td>只读子图激活</td><td>ACTIVATE（不落盘）</td><td>任务时支持子图</td><td>Temporary</td><td>不构成持久攻击面 [5]</td><td>Weak（无直接攻击文献）</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1　不同进化机制下攻击成功率/嵌入成功率（%）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["SkillX 技能路由 ASR", "Anything2Skill 技能路由 ASR", "SkillClaw 技能嵌入 SER", "Trace2Skill 技能嵌入 SER", "MemEvoBench QA 式首轮 ASR", "MemEvoBench +SafePrompt 后 ASR"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "成功率（%）", "type": "bar", "data": [56.2, 89.2, 91.0, 61.5, 76.2, 55.5], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析一_机制_攻击面对应关系由操作语义而非实现细节决定">核心分析一：机制—攻击面对应关系由操作语义而非实现细节决定</h2>
+<p>SAVER 框架把自进化拆成「载体（Substrate）× 操作（Adaptation）→ 违规（Violation）→ 暴露（Exposure）→ 响应（Response）」五元链，并把操作归为 add / abstract / activate / modify / forget / propagate / migrate 七族；其核心论断是「同一操作在一个载体上无害、在另一个载体上不安全，同一载体在一个操作下安全、在另一个操作下违反安全属性」<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。动态图视角提供互补的形式化：记忆更新为记忆图上的 INSERT/MERGE/FEATUREUPDATE（持久度 Long），技能更新为技能图上的 INSERT/FEATUREUPDATE（Long），工作流重写为 LINK/UNLINK/REWIRE（Medium），团队激活为只读 ACTIVATE（Temporary），安全传播为跨组件 FEATUREUPDATE + cascade（Medium）<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>这张表直接给出 RQ 的答案框架：攻击面大小与「持久度」及「是否跨组件级联」正相关。技能库进化把产物写入独立存储，与源记录解耦，故持久度最高；记忆更新次之；只读激活最低。这也解释了为什么清除记忆无法清除技能型攻击——两层存储解耦后，生命周期清理必须同时追踪派生制品及其后代 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p>
+
+<h2 id="sec_核心分析二_经验_技能管道的放大系数显著高于经验_记忆管道">核心分析二：经验→技能管道的放大系数显著高于经验→记忆管道</h2>
+<p>SkillJack 在两套独立实现（SkillX 与 Anything2Skill）上测得三重放大效应：其一「消毒洗白（sanitization whitewashing）」，LLM 判官对原始污染轨迹检出率 98.5%，对从中抽取的技能仅 11.4%（A2S DOC/SDK 模式分别为 100.0%→44.4% 与 100.0%→28.6%）；其二「跨层提升（cross-layer promotion）」，衍生技能仍被路由并在 56.2%（SkillX）与 89.2%（Anything2Skill）的攻击任务中触发违规；其三「持久性隔离（persistence isolation）」，80.0% 触发器在删除原始污染记录后依然存活，且部分技能在良性查询上被误激活 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>PoisonedEvolution 在结构不同的 SkillClaw（多用户会话聚合）与 Trace2Skill（执行轨迹蒸馏）上复现并细化该结论：10% 攻击者支持（n=30, k=3）下，六个演化器合计 546/600 次试验嵌入目标行为（SER 91.0%），Trace2Skill 为 369/600（61.5%）；消融显示单条记录仅 5/25、两条升至 21/25、三条达 25/25，因果框定 25/25 而碎片化插入仅 11/25 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。该结果的关键含义是：攻击者无需发布恶意技能或篡改技能库，只需贡献「看起来像重复出现的可复用经验」，进化机制自身的判据（重复性 + 因果有用性 + 可泛化性）就被反向利用。</p>
+<h3>表 2　「不可规避」判定与对抗性验证结果</h3>
+<table><thead><tr><th>能力-风险对</th><th>风险性质</th><th>对抗验证：移除能力是否丧失核心功能</th><th>判定</th></tr></thead><tbody><tr><td>经验→技能编译 → 管道安全 [1][2]</td><td>Inherent</td><td>无任何文献声称可去掉经验→技能转化仍保留技能复用能力</td><td>confirmed_inherent</td></tr>
+<tr><td>记忆更新 → 记忆误演化 [3][6]</td><td>Inherent</td><td>内存消融显示移除记忆后 ASR 大幅下降，但文献同时承认该能力不可删除（否则丧失长时程学习）</td><td>confirmed_inherent</td></tr>
+<tr><td>抽象操作 → 权限塌缩 [4]</td><td>Inherent</td><td>抽象是压缩的必然伴生操作，无法既保留命题又零成本保权</td><td>confirmed_inherent</td></tr>
+<tr><td>整配置演化 → 模型安全回归 [7][8]</td><td>Inherent</td><td>UCB 可回落但不能阻止整体配置漂移；无替代方案证据</td><td>confirmed_inherent</td></tr>
+<tr><td>designer 修订 → 技能库污染 [6]</td><td>Inherent</td><td>rollback 仅以奖励为触发，未纳入安全属性</td><td>confirmed_inherent</td></tr>
+<tr><td>抽象/压缩 → 良性片段重连 [4]</td><td>Mitigable</td><td>存在分片级 provenance 与压缩边界检查等工程缓解路径</td><td>downgraded_to_mitigable</td></tr>
+<tr><td>跨组件级联 → 未校验下游变更 [5]</td><td>Mitigable</td><td>可通过受影响范围估计与局部回滚缓解</td><td>downgraded_to_mitigable</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析三_记忆更新通道的耦合形态与可缓解边界">核心分析三：记忆更新通道的耦合形态与可缓解边界</h2>
+<p>MemEvoBench 用三轮演化协议叠加「有偏用户反馈」模拟记忆误演化：正确但保守的行为获得负反馈，冒险但即时见效的行为获得正强化，由此形成系统性漂移。九个模型在 QA 式场景首轮 ASR 平均约 76.2%，安全提示（+SafePrompt）仅降至 55.5%，在工作流式场景「完全失效」；加入有偏反馈后 QA 式第三轮 ASR 回升至 69.6% <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。其内存消融实验证明危害源自记忆的结构性偏差而非模型知识不足——移除记忆后 ASR 大幅下降，这既是「记忆更新能力不可删除」的证据，也是「该风险为机制内生」的对抗性验证。</p><p>MemSkill 展示了另一种耦合形态：把记忆操作本身变成可演化技能库，由 controller 选取技能、executor 生成记忆更新、designer 定期修订技能库，并在奖励退化时回滚到先前快照以避免「次优 designer 更新导致的复合退化」<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。这一设计表明进化机制内含的稳健性动作（rollback）在工程上有效，但其触发判据是任务奖励而非安全属性，因此对安全回归不构成保障。EvoTest 的 UCB 选择同理：保留父配置作为回落安全网可防止系统卡在坏演化路径上，但这是「非安全专用」的稳健性机制 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。相比之下，SAGE 显示技能库本身带来实质能力收益（SGC 提升 3 倍以上、生成 token 减少过半）<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>，这从正反两面确认了技能库进化的「不可删除性」。</p>
+
+<h2 id="sec_核心分析四_可缓解性的关键变量是_谁在把关_而验证器本身成为上游攻击面">核心分析四：可缓解性的关键变量是「谁在把关」，而验证器本身成为上游攻击面</h2>
+<p>PoisonedEvolution 的原型 provenance-diversity gate 要求三个独立用户/集群、拒绝多数支配、惩罚文本高重叠，在 n=30、k=3 条件下把单集群 F1 候选从 25/25 阻断到 0/25，同时接受一个五会话的多样对照 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这证明「证据提升边界」的准入控制是工程可行的，也支持把该机制的攻击面定位为「可缓解」而非「不可缓解」。</p><p>但 Who Verifies the Verifier 给出更尖锐的警告：移除锚定守卫（fail-closed anchoring 与 validity gate）会使验证器塌缩为恒通过的「空判官」，而塌缩验证器训练出的技能在下游分数上与有效验证器几乎相当——因此「用下游任务分数证明自演化验证器有效」是不成立的检验方式；该文同时记录了一次真实的代理博弈被外层判官捕获、再由一个新增检测器修复的完整过程 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。这把 RQ 的答案推向更深一层：进化机制的验证信号本身是被优化的对象，一旦验证器与被优化制品共演化，验证环节即成为攻击面的上游入口。MASE 综述的调查结论与此呼应：多数优化管道优先任务指标而忽视安全约束，且现有评估多为快照式，缺乏生命周期感知的纵向基准 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2　七项能力-风险对的不可规避性分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 2　七项能力-风险对的不可规避性分布", "type": "pie", "radius": "55%", "data": [{"name": "Inherent（不可规避）", "value": 5}, {"name": "Mitigable（可缓解）", "value": 2}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>表 3　关键量化证据汇总</h3>
+<table><thead><tr><th>指标</th><th>数值</th><th>条件</th><th>来源</th></tr></thead><tbody><tr><td>LLM 判官检出率（原始污染轨迹）</td><td>98.5%</td><td>SkillX，frame 化轨迹</td><td>[1]</td></tr>
+<tr><td>LLM 判官检出率（抽取技能）</td><td>11.4%</td><td>SkillX，同一批轨迹的派生技能</td><td>[1]</td></tr>
+<tr><td>技能路由攻击成功率</td><td>56.2% / 89.2%</td><td>SkillX / Anything2Skill</td><td>[1]</td></tr>
+<tr><td>删除源记录后触发器存活率</td><td>80.0%</td><td>matched-task 实验</td><td>[1]</td></tr>
+<tr><td>技能嵌入率 SER</td><td>91.0% (546/600)</td><td>SkillClaw，ρ=10%，六演化器</td><td>[2]</td></tr>
+<tr><td>技能嵌入率 SER</td><td>61.5% (369/600)</td><td>Trace2Skill，ρ=10%</td><td>[2]</td></tr>
+<tr><td>单条/两条/三条记录 SER</td><td>5/25 → 21/25 → 25/25</td><td>n=30 固定</td><td>[2]</td></tr>
+<tr><td>provenance gate 阻断效果</td><td>25/25 → 0/25</td><td>单集群 F1 候选，n=30,k=3</td><td>[2]</td></tr>
+<tr><td>MemEvoBench QA 式首轮 ASR</td><td>76.2%</td><td>九模型平均，Vanilla</td><td>[3]</td></tr>
+<tr><td>+SafePrompt 后 ASR</td><td>55.5%</td><td>QA 式首轮</td><td>[3]</td></tr>
+<tr><td>有偏反馈下第三轮 ASR</td><td>69.6%</td><td>QA 式，+SafePrompt</td><td>[3]</td></tr>
+<tr><td>工作流式场景 +SafePrompt</td><td>完全失效</td><td>20 个 Agent-SafetyBench 环境</td><td>[3]</td></tr>
+<tr><td>SAGE 技能库收益</td><td>TGC 72.0%、SGC 60.7%</td><td>AppWorld Test Normal</td><td>[12]</td></tr>
+</tbody></table>
+<div class="note">方法学提示：本报告对「不可规避」分类执行了对抗性验证。判定规则为——若存在文献声称在不依赖该能力的前提下系统仍能达成同等功能，则降级为 mitigable。「经验→技能编译」「记忆更新」「抽象操作」「整配置演化」「designer 修订」五项经检索未发现反例，确认为 inherent；「良性片段重连」与「跨组件级联」两项因存在可行的工程缓解路径（分片级 provenance、压缩边界检查、受影响范围估计、局部回滚），降级为 mitigable <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。注意：MemSkill 的 rollback 与 EvoTest 的 UCB 均属「任务奖励驱动」的稳健性机制，不应被误读为安全控制。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，攻击面归属存在框架层分歧。SkillJack 把风险定位为「经验→技能转化」这一新攻击面 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，而 SAVER 主张「合法状态经复用变不安全」才是统一根源 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，两者对控制点应放在写入侧还是提升侧给出不同优先次序，本报告将两种视角并列而非强行归一。</p><p>其二，几乎所有量化结论都停在制品级（artifact-level）而非部署级。SkillJack 明确使用 policy-violation 代理而非真实外部服务执行，且仅使用单一模型（LLM）；PoisonedEvolution 明确只测生成的技能制品，不测多轮演化反馈回路，并主动承认中毒技能会诱导后续轨迹、制造「看似独立验证」的循环，该纵向效应未被测量 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>其三，机制间放大系数的横向排序为跨论文数字拼接，属中等置信度。目前尚无研究在同一实验框架内比较「记忆更新 vs 技能库进化 vs 工作流重写」三者的放大倍数；「技能库进化放大幅度最大」这一排序由异质实验条件的数字拼接支持，而非单一对照实验。</p><p>其四，工具优化与多智能体拓扑演化两类机制的攻击面证据显著变薄。SAVER 与动态图综述均指出，工具/工作流侧缺乏直接的修复证据与生命周期审计证据；assumption 节点中与本 RQ 直接相关的多为「固定基座模型」「固定可微求解器」等通用假设，缺少针对工具演化安全边界的形式化约束。</p><p>其五，动态图综述明确指出的开放问题——跨组件级联的「受影响范围估计（affected-scope estimation）」——尚无论文给出可操作的量化方案，故本报告对该风险的 mitigable 判定建立在「原理上可行」而非「已有实证」的基础上 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>自进化智能体的攻击面与进化机制之间的耦合是**逐操作、可枚举、且强度可分级**的，而非模糊地「机制越多越危险」。RQ 提出的两条耦合关系成立，但需要两处修正：耦合的真实瓶颈是「经验被归因为可复用经验」的信用分配环节，而非记录写入本身；同一份污染记录在不同机制下的能级由「持久度 × 是否跨层/跨组件」共同决定。</p><p>据此可给出机制清单：**天然放大攻击面的机制**是以抽象/压缩为必经步骤、并把产物写入与源解耦的独立存储的机制——即经验→技能管道、证据提升、记忆技能库演化；其放大效应可被量化（检出率下降约 87 个百分点、攻击成功率 56%–91%、80% 在源删除后存活、跨架构迁移仍在 61.5%–91.0%）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。**攻击面相对可控的机制**是仅含写入—检索而无跨层持久化的路径，以及只读子图激活；其风险可被写入侧准入控制压缩，provenance-diversity gate 的 25/25→0/25 阻断与记忆纠正工具相较提示式防御的显著优势即为实证 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>关于「哪些约束可保进化可控」，本分析给出三条有文献支撑的判断：第一，约束必须作用在**证据提升边界**而非最终制品扫描，因为制品扫描发生在压缩与归一化之后，此时恶意意图已被洗白 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；第二，约束必须**追踪派生制品的后代**，因为技能层与经验层解耦后，清除源记录不再等于清除影响 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；第三，约束必须**把验证器排除在被优化的奖励回路之外并锚定不可编辑的参考集**，因为塌缩的空判官同样能训练出下游分数良好的技能，用任务分数认证验证器是不成立的检验 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。同时需承认，现有进化机制内的稳健性动作（MemSkill 的 rollback、EvoTest 的 UCB）虽有效，但以任务奖励为唯一判据，属「非安全专用」机制，不能替代独立的安全约束 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。总体上，本子问题判定为 **answered**，但对工具层与多智能体拓扑层的攻击面量化仍为证据缺口。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;SkillJack: Persistent Skill Backdoors in Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2383_skilljack_persistent_skill_backdoors_in_selfevolving_agents</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;When Experience Becomes Instruction: Trajectory Poisoning in Self-Evolving Agent Skill Systems&nbsp;<code style="font-size:0.82em;color:#888">2386_when_experience_becomes_instruction_trajectory_poisoning_in</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;MemEvoBench: Benchmarking Safety Risks from Memory Mis-Evolution&nbsp;<code style="font-size:0.82em;color:#888">2293_memevobench_benchmarking_safety_risks_from_memory_misevoluti</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Safety in Self-Evolving Agents: A Survey&nbsp;<code style="font-size:0.82em;color:#888">0038_Safety_in_Self-Evolving_Agents_A_Survey</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Self-Evolving Agents as Dynamic Graph Transformation: A Survey and New Perspective&nbsp;<code style="font-size:0.82em;color:#888">0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;MemSkill: Learning and Evolving Memory Skills for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2257_memskill_learning_and_evolving_memory_skills_for_selfevolvin</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;EvoTest: Evolutionary Test-Time Learning for Self-Improving Agents&nbsp;<code style="font-size:0.82em;color:#888">2230_evotest_evolutionary_testtime_learning_for_selfimproving_age</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;A Comprehensive Survey of Self-Evolving AI Agents: A New Paradigm Bridging Foundation Models and Lifelong Agentic Systems&nbsp;<code style="font-size:0.82em;color:#888">2205_a_comprehensive_survey_of_selfevolving_ai_agents_a_new_parad</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Building Self-Evolving Agents via Experience-Driven Lifelong Learning&nbsp;<code style="font-size:0.82em;color:#888">2209_building_selfevolving_agents_via_experiencedriven_lifelong_l</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Zombie Agents: Persistent Control of Self-Evolving LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">2262_zombie_agents_persistent_control_of_selfevolving_llm_agents</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Who Verifies the Verifier? Co-Evolving Inspectable Graders with Self-Improving Agents&nbsp;<code style="font-size:0.82em;color:#888">2458_who_verifies_the_verifier_coevolving_inspectable_graders_wit</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Reinforcement Learning for Self-Improving Agent with Skill Library (SAGE)&nbsp;<code style="font-size:0.82em;color:#888">0073_Reinforcement_Learning_for_Self-Improving_Agent_with_Skill_L</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.1 · 2026-10-18 21:51</footer>
+</div>
+</body>
+</html>

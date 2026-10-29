@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.5-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.5-a 分析报告</h1>
+<div class="meta">RQ [RQ5.2]：[父问题 RQ5] 该领域的演化脉络如何（从 ReAct 式推理到符号学习、技能库 RL、协议化自进化），当前开放挑战与未来路径是什么？
+[本子问题 RQ5.2] 面向未来，五类机制中哪些方向证据最薄弱（多智能体协作、开放任务 verifier、纵向评估），应作为优先研究议程？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0004_Symbolic_learning_enables_self-evolving_agents, 0071_Self-evolving_Agents, 2130_symbolic_learning_enables_selfevolving_agents, 2321_ptcgbench_can_llm_agents_master_pokmon_trading_card_game, 2205_a_comprehensive_survey_of_selfevolving_ai_agents_a_new_parad, 2387_finevobench_a_longitudinal_benchmark_for_selfevolving_agents）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心发现一_开放任务_verifier_是最接近真空白的盲区">核心发现一：开放任务 verifier 是最接近真空白的盲区</a></li>
+<li><a href="#sec_核心发现二_多智能体自进化协作证据稀薄但在快速填充">核心发现二：多智能体自进化协作证据稀薄但在快速填充</a></li>
+<li><a href="#sec_核心发现三_纵向评估证据最不薄弱_但质量缺口最尖锐">核心发现三：纵向评估证据最不薄弱，但质量缺口最尖锐</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ5.2（在五类自进化机制中，多智能体协作、开放任务 verifier、纵向评估三个方向哪个证据最薄弱、应作为优先研究议程），基于知识图谱中冻结的 7 篇证据矩阵论文及其一跳关系（覆盖 problem/method/paper/dataset/metric/limitation/assumption 六类节点），并对 8 篇以上关键论文进行原文段落精读后，给出系统性盲区外推结论。</p><p>核心结论：三个候选薄弱方向按证据密度从稀薄到相对充分排序为「开放任务 verifier」＜「多智能体自进化协作」＜「纵向评估」。三者恰好分别对应自进化闭环中最难攻克的三个环节——判分、群体、时间。因此建议的优先研究议程是：先把 verifier 作为一等公民进行进化，再让多智能体协作真实涌现，最后用纵向基准把『伪进化』与真进化严格分离。其中开放任务 verifier 是最接近『真空白』的盲区，仅有约 2 篇正面研究，且其证据本身揭示出 verifier 在语义错误场景下无法自证有效的硬性边界。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>分析完全基于 KG 结构化数据与原文 RAG 检索：</p><p>• 论文节点：从 paper 类型加载（库内共 274 篇），其中 RQ5.2 冻结证据矩阵 7 篇为核心（0004/0071/2130 为同源符号学习三部曲，2321 PTCG-Bench，2205 自进化综述，2387 FinEvo-Bench）。</p><p>• 问题节点：KG 共 629 个 problem；针对性查询了多智能体协调、多智能体系统优化、开放任务 verifier 缺失、自进化评估挑战、伪进化、episodic 评估、纵向评估等 8+ 个问题节点及其一跳关系。</p><p>• 方法节点：KG 共 558 个 method；补充发现 2366（Who Grades the Grader）、2458（Who Verifies the Verifier）、2290（SEA-Eval）、2463（SiriUS）、2161（Robotouille）等直接相关的补充论文。</p><p>• 数据集/基准节点、metric 节点（391 个）、limitation 节点（317 个）、assumption 节点均执行了针对性查询。</p><p>• 原文精读：通过 search_paper_sections 对 10+ 篇论文检索了 32 段相关原文（涵盖 Future Work、Limitation、Evaluation、Conclusion 等章节），关键数字与论断均附原文片段。</p><p>图中六个维度（危害潜力、可行性、证据密度、盲区成因等）的关系边均已取证，关键边置信度标注于 evidence 字段，多数在 0.85–0.95。</p>
+<h3>三个薄弱方向的多维对比（证据密度 × 盲区成因 × 可行性）</h3>
+<table><thead><tr><th>方向</th><th>KG 直接相关论文数</th><th>证据密度评级</th><th>盲区成因类型</th><th>危害潜力</th><th>可行性</th><th>优先级</th></tr></thead><tbody><tr><td>开放任务 verifier</td><td>约 2 篇（2458、2366）</td><td>极低（接近真空白）</td><td>技术难度高 + 认知盲区</td><td>高（判分失效即自进化崩溃）</td><td>中（可机械检测场景可行，语义错误场景困难）</td><td>high_value</td></tr>
+<tr><td>多智能体自进化协作</td><td>约 2 篇（2161、2463）+ 综述指认</td><td>低（快速填充中）</td><td>技术难度高 + 资源壁垒</td><td>高（传播级联、安全协调未解）</td><td>中低（算力/延迟/不稳定）</td><td>high_value</td></tr>
+<tr><td>纵向评估</td><td>约 3 篇（2387、2290、2321）</td><td>中（相对最不薄弱）</td><td>认知盲区 + 技术难度</td><td>中高（伪进化误判）</td><td>高（已有基准可迭代）</td><td>medium_value</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "三方向 KG 直接相关证据论文数对比", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["纵向评估", "多智能体自进化", "开放任务 verifier"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "直接相关论文数", "type": "bar", "data": [3, 2, 2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心发现一_开放任务_verifier_是最接近真空白的盲区">核心发现一：开放任务 verifier 是最接近真空白的盲区</h2>
+<p>在 RQ5.2 冻结矩阵中，directly 处理「open-ended 任务无可靠 verifier」的问题，仅 **一篇论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>** 正面解决（KG 中 problem_absence_of_verifier_in_open_ended_tasks 的 addresses 边仅指向该文），加上处理相邻「无可靠评价指标」问题的 **<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>**，合计约 2 篇，是五类机制中密度最低者，最接近『真空白』。</p><p>其证据恰恰是「问题被承认、但解决方案极少」：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确指出 open-ended 任务下「不存在准确的 verifier」，被迫依赖手写 rubric 或裸 LLM judge 打分，招致 reward hacking 与共享盲点（shared blind spots）。更关键的是它揭示了一个硬性能力边界——verifier 演化「在失败可机械检测的地方收效最大」：在 MBPP+ 上 held-out agreement 提升 +0.21；但当任务变为『执行干净但语义错误』时，agreement 骤降至 0.500±0.026，即便优化目标仍在上升，说明 verifier 无法自证有效。</p><p>另一个反直觉警示来自 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>：移除锚点守卫会让指标塌缩为『永远通过』的空壳，但该塌缩指标训练技能的效果与真实指标相当（Double Ratchet 保留 88–110% 的 lift），由此得出『下游任务分数无法证明自进化评价器有效——分数只回答充分性而非有效性』。这一结论直接颠覆了技能演化文献的经验，从根本上说明开放任务 verifier 缺乏可验证的地基。</p>
+
+<h2 id="sec_核心发现二_多智能体自进化协作证据稀薄但在快速填充">核心发现二：多智能体自进化协作证据稀薄但在快速填充</h2>
+<p>矩阵中直面「multi-agent coordination」问题的研究仅 **<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>**（且它是异步规划基准，并非自进化机制）；直接做多智能体系统优化的仅 **<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>** SiriUS，而其方法基于成功轨迹做 SFT 微调，并非跨轮持续自进化。</p><p>综述 **<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>** 将「大规模多智能体优化的效率—效果权衡（Balancing Efficiency and Effectiveness in MAS Optimisation）」明确列为未解挑战，并指出大规模多智能体优化带来显著算力、延迟与不稳定性；其结论亦将「safe coordination in heterogeneous agent environments」列为未来必须突破的方向。KG 中另两篇综述 **<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>** 进一步显示，多智能体安全失败往往『不是源于单个 agent』，而是沿通信边传播，最终失败可能与源头远离，当前缺乏对传播路径的定位、回滚与审计能力——这说明多智能体自进化在『协作如何真正自进化并保持安全』上仍显不足。</p><p>相较 verifier 方向，这里已有多个研究线与基准（<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 引述 MultiAgentBench、SwarmBench 等），故列为第二优先。需注意其『证据薄弱』可能部分源于 KG 收录不完整，应标注为待核实的空白。</p>
+
+<h2 id="sec_核心发现三_纵向评估证据最不薄弱_但质量缺口最尖锐">核心发现三：纵向评估证据最不薄弱，但质量缺口最尖锐</h2>
+<p>矩阵中已有两篇专门的纵向基准——**<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>** FinEvo-Bench 与 **<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>** SEA-Eval，另有 **<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>** PTCG-Bench 的纵向评测协议。三者共同给出了一致而重要的负面结论：</p><p>• **<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>** 在 8 轮、5 种自进化机制下发现『没有一种机制呈单调提升，评级波动、到评测末仍无法可靠超过非进化同骨干 ReAct 基线』，即积累的经验『尚不能可靠转化为稳定性能增益』。</p><p>• **<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>** 直接命名『伪进化（pseudo-evolution）』——agent 看似进化，实则依赖零样本推理、执行开销随任务频率线性增长。</p><p>• **<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>** 虽给出正向证据（进化组较状态重置对照提升 9.33–19.37 分、合规问题下降 0.12–0.44/任务、后续轮次增益比早期高 6.10–8.70 分），但其自身也暴露 harness 敏感性与跨场景迁移—合规的权衡（场景隔离提升分数 1.09–4.17 分但增加合规问题 0.02–0.12）。</p><p>因此纵向评估方向的问题已从『缺基准』转为『基准的保真度与可复现性不足』，证据相对最充分但仍需深化，故评为 medium_value。</p>
+<h3>关键量化证据汇总（附来源论文）</h3>
+<table><thead><tr><th>证据点</th><th>数值</th><th>含义</th><th>来源</th></tr></thead><tbody><tr><td>MBPP+ verifier 提升</td><td>held-out agreement +0.21</td><td>可机械检测场景下 verifier 演化有效</td><td>[1]</td></tr>
+<tr><td>语义错误场景 agreement</td><td>0.500±0.026</td><td>失败不可检测时 verifier 失效，即便目标仍在升</td><td>[1]</td></tr>
+<tr><td>Double Ratchet lift 保留率</td><td>88–110%</td><td>塌缩指标训练技能效果与真实指标相当</td><td>[2]</td></tr>
+<tr><td>PTCG 自进化机制</td><td>5 种机制、8 轮，无一呈单调提升</td><td>经验未能转化为稳定性能增益</td><td>[10]</td></tr>
+<tr><td>FinEvo-Bench 进化增益</td><td>+9.33~19.37 分；合规 −0.12~0.44/任务</td><td>纵向评估给出正向进化证据</td><td>[8]</td></tr>
+<tr><td>FinEvo 场景隔离权衡</td><td>分数 +1.09~4.17，合规问题 +0.02~0.12</td><td>迁移—合规权衡，暴露保真度缺口</td><td>[8]</td></tr>
+<tr><td>FinEvo 早晚期增益差</td><td>晚轮比早轮高 6.10~8.70 分</td><td>跨轮经验累积越用越有效</td><td>[8]</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "盲区成因类型分布（按三方向主因归类）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "盲区成因类型分布（按三方向主因归类）", "type": "pie", "radius": "55%", "data": [{"name": "技术难度高", "value": 2}, {"name": "认知盲区", "value": 2}, {"name": "资源壁垒", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">优先级判定逻辑：优先级 = 危害潜力 × 技术可行性。开放任务 verifier 与多智能体自进化均为 high_value，但前者因『证据最薄＋问题地基缺失』应排第一；纵向评估因已有可用基准、可行性高但危害相对可控，列为 medium_value。三者并非孤立问题，而是共同构成『判分—群体—时间』的元评估缺口，建议作为一个统一优先议程推进。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>1. **单点证据风险**：开放任务 verifier 方向的正面证据仅来自 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>/<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 两篇，且经 KG 关系边核查二者同属一个研究团队的分支工作（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> extends <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 所在框架），外部独立复现证据近乎为零，结论外推需谨慎。</p><p>2. **证据张力未澄清**：纵向评估方向存在明确分歧——<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 报告显著正向进化增益，而 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>/<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 报告进化不稳定甚至伪进化。差异可能源于任务结构（专业重复工作流 vs. 长程隐信息博弈）、反馈稠密度与 harness 设计，目前 KG 中缺乏跨基准对照研究，无法判定真实效应方向。</p><p>3. **KG 收录不完整**：多智能体自进化的『证据薄弱』部分可能源于 KG 收录不全而非领域真空（<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 已引述 MultiAgentBench、SwarmBench 等矩阵外基准），此类空白应标注为待核实。</p><p>4. **上游依赖缺失**：本环境中 A1.1-a 矩阵报告文件不可直接读取，分析以 RQ5.2 冻结的 7 篇证据矩阵为基础重建矩阵结构，可能与上游原始分类存在细微偏差；危害潜力字段亦未经 A1.4-c 交叉引用，均标注为独立估计（independent_estimate）。整体结论置信度为 medium-high。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>面向 RQ5.2 提出的『五类机制中哪些方向证据最薄弱、应作为优先研究议程』，答案是：**开放任务 verifier 证据最薄弱（约 2 篇、接近真空白、成因属技术难度高 + 认知盲区），其次是多智能体自进化协作（约 2 篇、领域公认待攻克），纵向评估虽已有专门基准（约 3 篇）但质量缺口—特别是伪进化与保真度问题—最为尖锐。**</p><p>据此建议的优先研究议程是一条递进主线：（1）首先攻克开放任务 verifier——将 verifier 本身作为可进化的符号对象，并建立能抵抗 reward hacking 与共享盲点的外部审计机制 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；（2）在此基础上推动多智能体协作的真实自进化，解决效率—效果权衡与传播路径的可治理性 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>；（3）最后以纵向基准（<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>）为标尺，把『伪进化』与真进化严格分离，形成可跨机制比较的统一元评估协议。三者构成自进化闭环中『判分—群体—时间』三大最难环节，缺一不可，应作为一个整体议程而非孤立课题推进。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Who Verifies the Verifier? Co-Evolving Inspectable Graders with Self-Improving Agents&nbsp;<code style="font-size:0.82em;color:#888">2458_who_verifies_the_verifier_coevolving_inspectable_graders_wit</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Who Grades the Grader? Co-Evolving Evaluation Metrics and Skills for Self-Improving LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">2366_who_grades_the_grader_coevolving_evaluation_metrics_and_skil</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;ROBOTOUILLE: An Asynchronous Planning Benchmark for LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">2161_robotouille_an_asynchronous_planning_benchmark_for_llm_agent</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;SiriuS: Self-improving Multi-agent Systems via Bootstrapped Reasoning&nbsp;<code style="font-size:0.82em;color:#888">2463_SiriuS_Self-improving_Multi-agent_Systems_via_Bootstrapped_R</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;A Comprehensive Survey of Self-Evolving AI Agents: A New Paradigm Bridging Foundation Models and Lifelong Agentic Systems&nbsp;<code style="font-size:0.82em;color:#888">2205_a_comprehensive_survey_of_selfevolving_ai_agents_a_new_parad</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Safety in Self-Evolving Agents: A Survey&nbsp;<code style="font-size:0.82em;color:#888">0038_Safety_in_Self-Evolving_Agents_A_Survey</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Self-Evolving Agents as Dynamic Graph Transformation: A Survey and New Perspective&nbsp;<code style="font-size:0.82em;color:#888">0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;FinEvo-Bench: A Longitudinal Benchmark for Self-Evolving Agents in Professional Financial Workflows&nbsp;<code style="font-size:0.82em;color:#888">2387_finevobench_a_longitudinal_benchmark_for_selfevolving_agents</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;SEA-Eval: A Benchmark for Evaluating Self-Evolving Agents Beyond Episodic Evaluation&nbsp;<code style="font-size:0.82em;color:#888">2290_seaeval_a_benchmark_for_evaluating_selfevolving_agents_beyon</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;PTCG-Bench: Can LLM Agents Master Pokémon Trading Card Game?&nbsp;<code style="font-size:0.82em;color:#888">2321_ptcgbench_can_llm_agents_master_pokmon_trading_card_game</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Symbolic Learning Enables Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">0004_Symbolic_learning_enables_self-evolving_agents</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Symbolic Learning Enables Self-Evolving Agents (extended version)&nbsp;<code style="font-size:0.82em;color:#888">0071_Self-evolving_Agents</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.2 · 2026-10-18 21:55</footer>
+</div>
+</body>
+</html>

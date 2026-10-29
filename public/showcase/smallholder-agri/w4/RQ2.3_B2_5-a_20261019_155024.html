@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.5-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.5-a 分析报告</h1>
+<div class="meta">RQ [RQ2.3]：[父问题 RQ2] 从技术可行性到小农田间采纳之间存在怎样的转化机制，现有研究在多大程度上识别并检验了这一机制中的因果路径？
+[本子问题 RQ2.3] 供给侧可行性结论与采纳侧因果结论之间是否存在互证，桥接断点在哪？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I, 2811_evaluating_digital_tools_for_sustainable_agriculture_using_c, 2882_tractor_service_utilization_profitability_and_adoption_deter, 2929_towards_scalable_organ_level_3d_plant_segmentation_bridging, 2934_biologyinformed_neural_networks_learn_nonlinear_representati, 3008_can_we_create_a_race_to_the_top_for_weather_forecasts_to_inf）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析一_因果评估链内部存在_收益_采纳_的未检验跳跃">核心分析一：因果评估链内部存在『收益→采纳』的未检验跳跃</a></li>
+<li><a href="#sec_核心分析二_采纳侧与供给侧在_约束落点_上互相打架而非互证">核心分析二：采纳侧与供给侧在『约束落点』上互相打架而非互证</a></li>
+<li><a href="#sec_核心分析三_供给侧两篇论文处在技术可行性层_未触及采纳">核心分析三：供给侧两篇论文处在技术可行性层，未触及采纳</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ2.3（供给侧可行性结论与采纳侧因果结论之间是否存在互证、桥接断点在哪）执行证据链完整性审计。核心结论是：二者在『同一技术、同一决策环节』上基本不存在互证——供给侧研究证明的是『工具在技术指标上能不能work』，采纳侧研究证明的是『采纳者与不采纳者之间是否存在可量化收益差』，两者几乎从不在同一系统、同一人群、同一时间窗上闭合。桥接的真正断点不是缺少任一侧的证据，而是『证据链对象错位』：中间『技术可行→农户信任/采纳』这一环被假设而非被检验。</p><p>在冻结的 6 篇证据矩阵中，仅 0678 与 2811 两篇姊妹论文实现了『因果识别 + 真实合作社部署』的初步闭环（棉花播种建议使产量提升 12–17%，372–546 kg/ha）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；而供给侧两篇（BINN 基因组预测 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、PSS 3D 分割基准 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）与采纳侧两篇（拖拉机服务采纳 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）在技术对象上分属不同链路，天气预报警示性论文 3008 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 仅诊断缺口而非提供因果估计。据此，关于『互证缺失』的否定性结论有强证据支撑；但『断点精确落在供给侧质量还是采纳侧互补投入』的归因仍属部分证据，需同系统联合实证。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析通过知识图谱（KG）工具共调用 22 次结构化查询与 15 次原文语义检索，覆盖了全部七类节点。查询端包括：论文节点（paper）、问题节点（problem，库内 226 个）、方法节点（method，231 个）、数据集/基准节点（dataset，104 个）、指标节点（metric，132 个）、局限节点（limitation，137 个）、假设/约束节点（assumption，61 个）。逐条拉取了证据矩阵中 6 篇核心论文（0678 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、2811 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、2882 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、2929 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、2934 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、3008 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）的一跳关系边，并对其中的关键论文进行了深度原文精读（含因果推断两篇的因果图、反驳检验与部署描述，2882 的 PSM/MVP 与局限章节，2929 的 PSS 基准与 sim2real 实验，2934 的 BINN 实验设置与部署边界，3008 的预报质量协议）。此外拓展检索了采纳侧综述与采纳经济学文献（3044 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、3033 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>）以补充行为中介证据。</p>
+<h3>证据矩阵六篇论文的分级判定与证据链归属</h3>
+<table><thead><tr><th>论文</th><th>类型/角色</th><th>所属证据链环节</th><th>分级判定</th><th>关键量化结论</th></tr></thead><tbody><tr><td>0678 棉花播种建议因果评估 [1]</td><td>因果推断/部署</td><td>因果评估链（技术→收益）</td><td>L1+L2+L3候选</td><td>跟随建议产量+12–17%（372–546 kg/ha），四项反驳检验通过</td></tr>
+<tr><td>2811 数字工具因果评估 [2]</td><td>因果推断/复现扩展</td><td>因果评估链（技术→收益）</td><td>L1+L2+L3候选</td><td>171块地 ATE 372–546 kg/ha，与[1]同量级</td></tr>
+<tr><td>2882 拖拉机服务采纳 [5]</td><td>采纳侧截面调查</td><td>采纳经济链（收益→采纳）</td><td>L1+L3（无工具实现）</td><td>净利+GH₵471/acre，采纳率79.7%，缺口溢价GH₵159</td></tr>
+<tr><td>2929 3D分割基准PSS [4]</td><td>供给侧工具/基准</td><td>工具基准链（技术可行性）</td><td>L1+L2</td><td>SPVConv语义mIoU 86.66%，SPVFormer实例AP 64.48%</td></tr>
+<tr><td>2934 BINN基因组预测 [3]</td><td>供给侧方法</td><td>建模可行性链（技术可行性）</td><td>L1（无公开代码未证L2）</td><td>rank correlation最高+56%，预测误差-75%</td></tr>
+<tr><td>3008 天气预报质量协议 [6]</td><td>诊断/协议</td><td>供给侧质量诊断（缺口旁证）</td><td>L1（不含采纳因果）</td><td>无量化ATE，提出race to bottom诊断</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各证据链环节的 L1/L2/L3 分布（基于证据矩阵与相关扩展文献）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["因果评估链", "工具基准链", "天气预报质量链", "采纳经济链"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "论文数量", "type": "bar", "data": [2, 2, 1, 2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>各证据链环节的工业就绪度与断裂点定位</h3>
+<table><thead><tr><th>证据链环节</th><th>L1 理论</th><th>L2 工具</th><th>L3 工业/真实</th><th>就绪度(0–5)</th><th>断裂点</th><th>工程/机制障碍描述</th></tr></thead><tbody><tr><td>因果评估链（技术→收益）[1][2]</td><td>2</td><td>2</td><td>1</td><td>4</td><td>L2→L3</td><td>有真实合作社部署但仅观察性识别；外部效度受限于单作物单区域；未测信任/采纳意愿</td></tr>
+<tr><td>工具基准链（技术可行性）[4]</td><td>2</td><td>2</td><td>0</td><td>2</td><td>L2→L3</td><td>评估限于5个学术点云数据集，无产业规模；作者自称数据-算法-算力闭环未建立</td></tr>
+<tr><td>建模可行性链（技术可行性）[3]</td><td>1</td><td>0</td><td>0</td><td>1</td><td>L1→L2</td><td>全部为建模层验证；田间组学噪声与通路知识不完整；增益随群体分化下降</td></tr>
+<tr><td>天气预报质量链 [6]</td><td>1</td><td>1</td><td>0</td><td>1</td><td>L2→L3</td><td>仅协议/原则，无采纳因果估计；供给质量不确定性侵蚀采纳信任</td></tr>
+<tr><td>采纳经济链（收益→采纳）[5]</td><td>2</td><td>0</td><td>1</td><td>3</td><td>L1→L2</td><td>横截面PSM无法控不可观测时不变特征；对象为拖拉机而非数字工具；缺工具实现</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "证据矩阵中『因果+部署』证据的对象集中度（按技术系统）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "证据矩阵中『因果+部署』证据的对象集中度（按技术系统）", "type": "pie", "radius": "55%", "data": [{"name": "棉花播种建议（0678/2811）", "value": 2}, {"name": "拖拉机服务（2882）", "value": 1}, {"name": "3D分割点云（2929）", "value": 1}, {"name": "基因组预测（2934）", "value": 1}, {"name": "天气预报协议（3008）", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析一_因果评估链内部存在_收益_采纳_的未检验跳跃">核心分析一：因果评估链内部存在『收益→采纳』的未检验跳跃</h2>
+<p>0678 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 与 2811 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 构成矩阵内唯一真正『因果识别+真实合作者操作化部署』的对象。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 用 171 块地（51 处理/120 对照）估计因果效应，报告遵循建议的田块产量提升 12–17%（点估计 372–546 kg/ha，相对平均 3145 kg/ha），并通过 Placebo、RCC、RSR、UCC 四项反驳检验；系统于 2021 生长季通过合作社网站每日推送建议，合作者为真实大田农户合作社。<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 在同一棉花数据上复现同一量级（372–546 kg/ha）并主张推广到『其他数字农业工具』。</p><p>然而，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的摘要原话把动机定位为通过提升透明度『increase farmers' trust ... and in turn accelerate the adoption』——这是一个『证据→信任→采纳』的机制假设，但全文只估计『遵循建议→产量』的 ATE，从未测量信任、采纳意愿或扩散。作者还将『农业实践恒定』『农业知识仅通过实践起作用』列为限制外部效度的来源。换言之，因果结论证的是『若采纳则收益』，而非『为何采纳、采纳如何发生』——供给侧可行性（系统确实能产出增益）与采纳侧行为机制之间存在一个被假设而非被识别的间隙。</p>
+
+<h2 id="sec_核心分析二_采纳侧与供给侧在_约束落点_上互相打架而非互证">核心分析二：采纳侧与供给侧在『约束落点』上互相打架而非互证</h2>
+<p>采纳侧最强的量化证据 2882 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 针对小农玉米拖拉机服务，报告采纳使净利每英亩增加约 GH₵471（采纳率 79.7%），并发现关键的『采纳缺口溢价』：当前采纳者收益 ATT=GH₵471，而若不采纳者采纳也能得到 ATU=GH₵312，二者相差 GH₵159/acre。这一差距说明不采纳更多反映『结构性约束』而非单纯意愿，并直指供给侧瓶颈——大农场反而更受机器不可得约束（farm size 呈反直觉负效应，作者归因于车队容量限制）。作者据此呼吁在信贷之外配套投入品、培训与延伸服务。但其对象是拖拉机服务而非数字工具，且为横截面 PSM（Rosenbaum Γ=1.65），作者自认『无法控制不可观测的时间不变特征』，需面板或准实验设计。</p><p>供给侧质量诊断则由 3008 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 提供：由于劣质天气预报泛滥且难以核验，会形成『race to the bottom』，劣质预报不仅当下伤害农户，还会『depress future demand even for subsequently improved products』——即供给侧质量不确定性直接侵蚀采纳侧信任。这两条线索共同指向：真正卡住转化的是『供给侧可靠性/可及性』与『采纳侧信任/互补投入』之间的耦合失败，而现有研究是分头测量两端，没有任何一篇在同一系统上把『预报技能→工具可用性→信任→采纳→收益』串成可识别的因果链。</p>
+
+<h2 id="sec_核心分析三_供给侧两篇论文处在技术可行性层_未触及采纳">核心分析三：供给侧两篇论文处在技术可行性层，未触及采纳</h2>
+<p>2929 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 提出 Plant Segmentation Studio（PSS）——借鉴 MMDetection3D 的首个面向器官级植物点云分割的可复现基准平台，系统基准了 6 个语义网络与 6 个实例网络，SPVConv 达到平均语义 mIoU 86.66%，SPVFormer 达到实例 AP 64.48%，并通过 L-TreeGen/形变合成数据验证 sim2real 可减少 83.33% 标注量。但其评估限于 5 个学术点云数据集，作者明言 PSS 尚未建立完整的数据-算法-算力闭环，无任何产业规模或采纳证据。</p><p>2934 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 提出生物信息学启发网络 BINN，在玉米 TWAS 与合成代谢基准上取得最高 56% 的 test-set rank correlation 提升、75% 预测误差下降，且『requires only genotypes at inference』以兼容标准基因组选择流程。但全部验证在建模层，作者自认田间组学噪声与通路知识不完整是固有限制、增益随目标群体遗传背景分化而自然下降。二者均属『工具能不能在技术指标上work』的供给层，与农户是否采纳、能否获益之间存在显著距离。</p>
+<div class="note">关键判定：证据矩阵内部结构上就是『断裂的样本』。供给侧两篇（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>）与采纳侧两篇（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）在技术对象上根本不属于同一链的环节；唯一可能的『桥』——天气预报——由 3008 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 承担，而它恰恰是一篇诊断缺口、不提供任何采纳因果估计的协议论文。因此『供给与采纳是否互证』的答案是否定的，但这一否定不是证据不足，而是研究对象错位。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，矩阵证据高度不平衡：真正的『因果+部署』只集中于单一作物（棉花）、单一区域、单一合作者的两篇姊妹论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，作者自称外部效度受限，无法支撑跨作物、跨地区的桥接结论。其二，采纳侧最强的量化证据 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 对象是拖拉机服务而非数字工具，其 PSM 仅为观察性识别，无法与 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的数字工具因果结论直接叠加成同一系统的因果链。其三，3008 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 是原则/协议论文，本身不提供采纳侧因果估计，只能作为『桥接缺口存在』的诊断旁证，不能作为『已识别因果路径』的证据。其四，采纳侧行为中介证据（如推广访问每增加一单位使采纳概率提升约 2.1%、信贷可及促进采纳 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>；数字素养/风险规避/集体信任的多维 socio-technical 决定 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>）来自改良品种与印尼情境综述，跨技术与跨情境外推需谨慎。综上，关于『互证是否存在』的否定性结论置信度高，但『断点精确归因（供给侧质量 vs 采纳侧互补投入）』置信度中等，仍需同一系统的联合实证。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>供给侧可行性结论与采纳侧因果结论在『同一技术、同一决策环节』上基本不存在互证，二者分头成立、彼此错位。桥接断点定位在『技术可行性→农户信任/采纳』这一未被识别的环节：因果评估链证明了『若采纳则收益』（+12–17% 产量 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>），采纳经济链揭示了『不采纳多源于结构性/供给侧约束』（缺口溢价 GH₵159/acre <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>），质量诊断链警示『劣质供给侵蚀信任』（race to the bottom <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>），但没有任何一篇研究在同一系统上把『预报技能→工具可用性→信任→采纳→收益』串成可识别的因果链。因此现有研究对 RQ2 所问的『技术可行→小农采纳』转化机制中的因果路径，识别程度是碎片化的：孤立环节成立，串联路径缺失。后续研究的最紧迫落地障碍，是开展跨供给侧与采纳侧、覆盖单纯工具系统、含信任/采纳中介测量的纵向或准实验联合评估。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Evaluating Digital Agriculture Recommendations with Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Evaluating Digital Tools for Sustainable Agriculture using Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">2811_evaluating_digital_tools_for_sustainable_agriculture_using_c</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Biology-informed neural networks learn nonlinear representations from omics data to improve genomic prediction and interpretability&nbsp;<code style="font-size:0.82em;color:#888">2934_biologyinformed_neural_networks_learn_nonlinear_representati</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Towards scalable organ-level 3D plant segmentation: Bridging the data–algorithm–computing gap&nbsp;<code style="font-size:0.82em;color:#888">2929_towards_scalable_organ_level_3d_plant_segmentation_bridging</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Tractor Service Utilisation, Profitability, and Adoption Determinants Among Smallholder Maize Farmers in Ejura-Sekyedumase Municipality, Ghana&nbsp;<code style="font-size:0.82em;color:#888">2882_tractor_service_utilization_profitability_and_adoption_deter</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Can we create a 'race to the top' for weather forecasts to inform smallholder farmer decisions?&nbsp;<code style="font-size:0.82em;color:#888">3008_can_we_create_a_race_to_the_top_for_weather_forecasts_to_inf</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Digital Technology Adoption by Smallholder Farmers in Indonesia&nbsp;<code style="font-size:0.82em;color:#888">3044_Digital_Technology_Adoption_by_Smallholder_Farmers_in_Indone</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Agricultural technology adoption and its impact on smallholder farmer's welfare in Ethiopia&nbsp;<code style="font-size:0.82em;color:#888">3033_Agricultural_technology_adoption_and_its_impact_on_smallhold</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.3 · 2026-10-19 15:50</footer>
+</div>
+</body>
+</html>

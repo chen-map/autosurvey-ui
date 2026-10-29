@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.3-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.3-b 分析报告</h1>
+<div class="meta">RQ [RQ3.1]：[父问题 RQ3] 如何度量智能体的&quot;能力变化（capability change）&quot;，现有评估方法在轨迹级、纵向、开放任务场景下存在哪些局限？
+[本子问题 RQ3.1] 现有指标（accuracy、Success Rate、F1、pass@1 等）为何本质上是&quot;静态能力快照&quot;，缺少哪些轨迹级/增量级度量维度（如 improvement rate、retention、transfer、forgetting）？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2313_dynamic_mixture_of_latent_memories_for_selfevolving_agents, 2350_selective_memory_retention_for_longhorizon_llm_agents, 2146_agentharm_a_benchmark_for_measuring_harmfulness_of_llm_agent, 2321_ptcgbench_can_llm_agents_master_pokmon_trading_card_game, 2280_elite_experiential_learning_and_intentaware_transfer_for_sel, 2366_who_grades_the_grader_coevolving_evaluation_metrics_and_skil）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析_为何是_静态快照_三条论证主线">核心分析：为何是「静态快照」——三条论证主线</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告基于知识图谱（KG）对研究问题 RQ3.1 进行系统性分析，核心结论是：accuracy、Success Rate、F1、pass@1 之所以在本质上都是「静态能力快照」，根本原因不在于数值精度，而在于其作用域被默认固定在一个时间点上——它们把智能体能力编码为「在冻结任务集合上、单次或无状态继承采样的一次性得分」，其隐含假设（被测对象在评估期间不变、各次评估相互独立）恰是自我演化研究所要推翻的前提。当智能体通过记忆、技能库、工作流或参数更新而自我演化时，同一 accuracy 数字可对应能力增长、原地停滞、能力侵蚀三种相反过程，指标本身毫无分辨力。</p><p>分析识别出静态快照失明的两条具体机制：（1）横截面聚合抹平时间维度——PTCG-Bench 的五种自演化机制在八轮中无一呈现一致单调改善，且无配置在结束时可靠超越非演化参考 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；MoLEM 的 SFT 在 Math 上从 57.20% 崩至 12.80%，单阶段评估会系统性高估收益并隐藏遗忘代价 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。（2）单一标量混同「有能力」与「愿表达」——AgentHarm 中 LLM Harm Score 仅 48.4%、拒绝率 48.9%，但非拒绝 Harm Score 达 90.1% <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。RQ 点名的四个增量维度（improvement rate、retention、transfer、forgetting）在 KG 中已有分散落地：Forgetting/BWT/FWT（MoLEM <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>）、retention（TraceRetain <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）、learning dynamics 与 transfer（ELITE <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>），而 EvoPathBench 的 CEG/SUE 与 SEA-Eval 的 token 收敛检测构成了更直接的补救 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。但跨任务族的统一标准化公式仍缺位，且现有纵向指标在饱和基准上区分度存疑 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析通过 KG 的七类节点接口进行系统性检索，累计执行 44 次工具调用，覆盖 problem、method、paper、dataset、metric、limitation、assumption 全部六类目标节点。核心统计如下：KG 中 problem 节点 629 个、metric 节点 391 个、method 节点 558 个、limitation 节点 317 个、paper 节点 274 个、assumption 节点 200 个；本次实际精读并引用的论文 12 篇，其中 6 篇为 RQ 冻结的证据矩阵论文（2313、2350、2146、2321、2280、2366），另 6 篇为 KG 关联检索发现的关键补充论文（2200 综述、2185 终身学习基准、2306 能力侵蚀、2426 过程级评估、2290 SEA-Eval、0037 图变换综述）。</p><p>数据获取采用双轨策略：轨道 A 通过 get_entity_by_type / get_relation / get_head_entity 沿 KG 结构化边（addresses、proposes、measured_by、has_limitation、targets、extends）检索；轨道 B 通过 search_paper_sections 对 10 篇关键论文执行语义检索，获取含具体数值的原文片段。痛点-解药映射严格遵循 addresses 边的客观判定，开放痛点的确认以 get_head_entity(addresses) 返回空或单一覆盖为判定标准。</p>
+<h3>静态指标失明的两条机制与实证证据</h3>
+<table><thead><tr><th>机制</th><th>核心表现</th><th>关键量化证据</th><th>来源论文</th></tr></thead><tbody><tr><td>横截面聚合抹平时间维度</td><td>终点单一 accuracy 无法区分改善/保持/退化</td><td>5 种自演化机制在 8 轮中无一呈现一致单调改善，无一在结束时可靠超越非演化参考</td><td>[1] PTCG-Bench</td></tr>
+<tr><td>横截面聚合抹平时间维度</td><td>单阶段评估系统性高估收益、隐藏遗忘</td><td>SFT Math 从 57.20%→12.80%，Science 从 84.20%→27.20%；MemGen Math 从 58.20%→32.00%</td><td>[2] MoLEM</td></tr>
+<tr><td>单标量混同意愿与能力</td><td>低分可能源于「不愿做」而非「不能做」</td><td>LLM Harm Score 48.4%、拒绝率 48.9%，但非拒绝 Harm Score 达 90.1%</td><td>[3] AgentHarm</td></tr>
+<tr><td>指标有效性循环论证</td><td>任务分数只回答充分性，不回答有效性</td><td>坍缩成「总是通过」的指标仍保留参考环路 88–110% 的提升</td><td>[12] Who Grades the Grader</td></tr>
+<tr><td>评估范式整体错位</td><td>既有基准把智能体当作静态系统</td><td>需从「单次评分」转向 longitudinal、cost-aware 轨迹视角；五维框架仍缺标准化指标</td><td>[8] Survey of Self-Evolving Agents; [9] LifelongAgentBench</td></tr>
+</tbody></table>
+<h3>痛点-解药映射：RQ 点名的四个增量维度在 KG 中的落地情况</h3>
+<table><thead><tr><th>缺失维度</th><th>KG 中的解药方法/指标</th><th>对齐类型</th><th>关键证据</th><th>证据强度</th></tr></thead><tbody><tr><td>forgetting（遗忘/能力侵蚀）</td><td>MoLEM 挂载 Forgetting/BWT/FWT 三指标；2306 提出 Capability-Preserving Evolution (CPE)</td><td>direct</td><td>MoLEM 三指标在各阶段均为 0.00；2306 识别四条演化通道的能力侵蚀并给出统一干扰视角</td><td>强</td></tr>
+<tr><td>retention（保持）</td><td>TraceRetain 有界保留（Linear / CEM 变体）</td><td>partial</td><td>干净 ALFWorld 上多数有界策略落在无界记忆 Wilson 95% CI 内，污染不自然出现；仅噪声流中产生区分 (P@5 20.2%→12.4% vs 16.9%→16.6%)</td><td>中（饱和场景不可测）</td></tr>
+<tr><td>improvement rate（改进速率）</td><td>EvoPathBench 的 CEG(能力演化增益)；SEA-Eval 的 token consumption convergence；ELITE 学习动力学曲线</td><td>partial</td><td>ELITE 成功率随任务数持续上升（52%→61%）；EvoPathBench 定义 CEG/SUE 在 artifact 更新前后测同一焦点能力</td><td>中强</td></tr>
+<tr><td>transfer（迁移）</td><td>MoLEM 的 FWT；ELITE intent-aware retrieval；EvoPathBench 的 CEGT</td><td>partial</td><td>ELITE 未见类别 Common 68%、Spatial 62%；EvoPathBench 用 HT 迁移回合引入受控分布偏移</td><td>中强</td></tr>
+<tr><td>静态快照本身</td><td>PTCG 纵向协议；AgentHarm non-refusal score；2366 validity-vs-sufficiency 拆分</td><td>direct</td><td>PTCG 三分类 improves/preserves/degrades；2366 证明 validity 与 sufficiency 可解离</td><td>强</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各增量维度在 KG 中的解药覆盖程度（覆盖方法数量）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["forgetting", "retention", "improvement rate", "transfer", "静态快照诊断"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "覆盖方法与指标数", "type": "bar", "data": [3, 4, 3, 3, 3], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析_为何是_静态快照_三条论证主线">核心分析：为何是「静态快照」——三条论证主线</h2>
+<p>**主线一：横截面聚合抹平时间维度。** PTCG-Bench 专门设计了纵向评估协议，把对局组织成多轮，每轮后智能体可更新持久状态（reflections、strategic summaries、memory entries、revised prompts、skill documents），并「跟踪逐轮表现以分析累积经验是改善、保持还是退化后续对局」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。这一三分类用传统单一 accuracy 根本无法表达。其实验结论更具冲击力：跨十个 LLM backbone 与五种自演化机制，「五个演化机制中没有一个在八轮中呈现一致的单调改善，评分反而波动」，且「没有任何演化配置在评估结束时能可靠超越同 backbone 的非演化参考」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。若只报终点 accuracy，这些系统的「演化」会被误读为有效。</p><p>同一机制在 MoLEM 中被量化为「跨任务干扰」。论文明确指出「该优势无法从单领域训练-评估设置中观察到；只有当模型被带入多阶段连续学习序列后才会浮现」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。数据触目：SFT 的 Math 准确率从 Stage 1 的 57.20% 崩到 Stage 3 的 12.80%，Science 从 84.20% 降到 27.20%；MemGen 的 Math 从 58.20% 降到 32.00%。若只测 Stage 1，就会得到「SFT 有效」的假象——静态快照系统性地高估演化收益、同时完全隐藏了遗忘代价。</p><p>**主线二：单一标量把「有能力」与「愿表达」混同。** AgentHarm 的 Harm Score 是基准上的平均分，Refusal Rate 是独立指标。论文发现 LLM 得到 48.4% 的 Harm Score、同时拒绝率高达 48.9%；其非拒绝 Harm Score 却达 90.1%——意味着一旦绕过拒答，真实有害能力极强 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。这说明单一标量混淆了两种能力状态：低分可能因为「不愿做」而非「不能做」。作者因此强调 AgentHarm「评分的是智能体追求有害任务的成功度，而非仅输出是否被拒绝」，并额外计算 non-refusal harm score 以检测能力退化 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。能力变化的度量必须把「能力的获得/丧失」与「策略/意愿的漂移」解耦。</p><p>**主线三：增量维度簇的解药已存在但各自只覆盖一部分。** KG 的 addresses 边清晰显示新方法正是针对这些痛点而生。retention 方面，TraceRetain 把「保持」重新定义为容量受限的保留问题，并给出关键的负结果：在干净饱和基准上 retention 差异不可测 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。improvement rate 方面，ELITE 的 Figure 4 显式绘制「随在线学习任务数增加，平均成功率与任务进度均持续改善」的学习动力学曲线 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。transfer 方面，ELITE 的 intent-aware retrieval 使未见任务类别（Common 68%、Spatial 62%）也获提升，核心机制正是「跨任务迁移而非同任务重复尝试」<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。而最根本的是「Who Grades the Grader」的发现：所有自演化循环都假设存在可靠评估指标，但「任务分数只回答充分性，不回答有效性」，一个坍缩成「总是通过」的指标「训练技能的效果与正常指标一样好」（保留参考环路 88–110% 的提升），因此「下游任务表现无法验证自演化评估器」<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。用 accuracy 校验能力变化，本质是循环论证。</p>
+<h3>新增评估范式对比：从静态快照走向过程级/纵向度量</h3>
+<table><thead><tr><th>范式</th><th>代表工作</th><th>核心机制</th><th>新度量维度</th><th>遗留局限</th></tr></thead><tbody><tr><td>纵向演化协议</td><td>PTCG-Bench [1]</td><td>多轮对局 + 固定锚点锦标赛 + Glicko-2 评分</td><td>逐轮 rating 轨迹、improves/preserves/degrades 三分类、invalid action rate</td><td>固定牌池、主要镜像对局限制泛化</td></tr>
+<tr><td>多阶段连续学习</td><td>MoLEM [2]</td><td>Math→Science→Code 序列，每阶段测所有已见/未见域</td><td>Forgetting、BWT、FWT、Average accuracy</td><td>引入额外 expert/router 参数；继承参数级持续学习前提</td></tr>
+<tr><td>过程级评估</td><td>EvoPathBench [6]</td><td>ordered task streams + read-only checkpoint 前后测同一焦点能力</td><td>CEG（能力演化增益）、SUE（artifact 状态使用效应）、retention loss</td><td>增益在分布偏移下减弱；接受规则难以区分迁移改进与过拟合</td></tr>
+<tr><td>跨任务轨迹基准</td><td>SEA-Eval [7]</td><td>持久记忆配置 + ordered task streams，替换孤立 episode</td><td>token consumption convergence（检测伪演化）、cross-task 行为轨迹</td><td>仅 32 个原子任务；15 分钟超时可能影响结果</td></tr>
+<tr><td>终身学习基准</td><td>LifelongAgentBench [9]</td><td>严格顺序任务执行 + 经验回放</td><td>知识积累/保持/迁移</td><td>经验回放带来显著内存与上下文开销；小模型受益更少</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "对齐类型分布（RQ 点名的四个增量维度 + 静态快照诊断）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "对齐类型分布（RQ 点名的四个增量维度 + 静态快照诊断）", "type": "pie", "radius": "55%", "data": [{"name": "direct（直接覆盖并有实验）", "value": 2}, {"name": "partial（部分覆盖或仅定性）", "value": 3}, {"name": "claimed_only（仅声称无实验）", "value": 0}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">对齐类型判定规则：direct = 解药完全覆盖痛点维度且有实验验证；partial = 仅部分覆盖或仅有定性论证；claimed_only = 论文声称解决但无实验验证。本次分析中 four 个增量维度均无 claimed_only 情况。但需注意范式断层：MoLEM 的 Forgetting/BWT/FWT 继承自参数级持续学习，其前提是「权重是唯一可变组件」；而自演化智能体同时修改工作流、技能库、记忆与参数 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>，因此参数级 forgetting 不可直接套用到系统级演化上。</div>
+<h3>开放痛点（Gap）清单与未解决原因</h3>
+<table><thead><tr><th>开放痛点</th><th>为何尚未被解决</th><th>来源依据</th><th>推送至</th></tr></thead><tbody><tr><td>缺乏量化自我演化自主性/改进速率的标准化指标</td><td>领域仍缺乏统一可计算框架，公平比较困难</td><td>Survey 2200 limitation_lack_of_standardized_metrics_for_self_directedness [8]</td><td>A1.5 Gap 分析层</td></tr>
+<tr><td>能力级过程评估仅由单一基准 EvoPathBench 支撑</td><td>需要 ordered streams + checkpoint 前后对比，工程成本高</td><td>2426 addresses 边 [6]</td><td>A1.5 Gap 分析层</td></tr>
+<tr><td>伪演化无法被静态分数识别</td><td>仅有 SEA-Eval token 收敛启发式一种检测手段</td><td>2290 addresses 边 [7]</td><td>A1.5 Gap 分析层</td></tr>
+<tr><td>饱和/干净基准上 retention 维度不可测</td><td>污染不自然出现，Wilson CI 重叠导致策略间无区分</td><td>TraceRetain 负结果 [4]</td><td>A1.5 Gap 分析层</td></tr>
+<tr><td>能力侵蚀未纳入任何既有评估框架</td><td>既有框架仅以新任务前向进展衡量演化，从不过问保持</td><td>2306 Related Work 原文 [10]</td><td>A1.5 Gap 分析层</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>**证据缺口。** 尽管六类节点与六篇冻结论文均已覆盖并有原文片段支撑，但「improvement rate / transfer / retention」尚无跨任务族统一、可复现的标准化计算公式。Survey 2200 提出的 Adaptivity/Retention/Generalization/Efficiency/Safety 五维框架仍属分类学而非可计算指标 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>，这是本 RQ 最主要的不确定性来源。</p><p>**范式断层风险。** MoLEM 引入的 Forgetting/BWT/FWT 继承自参数级持续学习，其前提是「权重是唯一可变组件」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；论文 2306 明确指出需将遗忘问题扩展到「工作流、技能库、记忆、参数同时可变」的多组件设定，且「所有既有框架仅以新任务上的前向进展衡量自我演化，从不追问适配是否保留了已掌握的 competency」<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。因此不可将参数级 forgetting 直接套用到系统级演化上，本报告的维度映射需在此前提下解读。</p><p>**纵向指标本身的区分度存疑。** TraceRetain 揭示了一个反向不确定性：在饱和、无噪声基准上 retention 维度本身可能不可测——污染不自然出现，多数有界策略落在无界记忆的 Wilson 95% CI 内 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。这意味着 RQ3.1 所吁求的新维度需要在「有噪声、开放、长时程」场景中才显出价值，而非普适。此外其噪声条件使用合成干扰项，是诊断性压力而非自然噪声模型。</p><p>**单一来源与统计效力不足。** SEA-Eval 仅含 32 个原子任务、15 分钟超时机制可能影响结果 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>；EvoPathBench 的增益在分布偏移下减弱、接受规则难以区分迁移改进与过拟合 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；「Who Grades the Grader」自承为机制研究非规模化结果，仅三个任务族、单一模型家族、held-out 仅数十条 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。上述均限制了结论的普适性。</p><p>**指标语义依赖任务结构。** AgentHarm 的 Harm Score 依赖 110 条人工撰写基础行为与合成工具 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，其「非拒绝分数」的解耦手段能否推广到非安全类开放任务，尚未验证。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>accuracy、Success Rate、F1、pass@1 之所以是「静态能力快照」，本质在于它们把能力测量绑定在「冻结任务集 + 无状态继承的瞬时采样」这一坐标系上，其隐含的「被测对象不变、评估相互独立」假设与自我演化的定义直接冲突。本次分析通过 KG 的 addresses 边与原文检索，确认了这一失效的两条具体机制：横截面聚合抹平时间维度（PTCG-Bench 五种机制无一单调改善 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；MoLEM 中 SFT Math 从 57.20% 崩至 12.80% <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>），以及单一标量混同意愿与能力（AgentHarm 中 LLM Harm Score 48.4% vs 非拒绝 90.1% <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>）。第三层更根本的论证来自「Who Grades the Grader」：一个坍缩成「总是通过」的指标仍保留参考环路 88–110% 的提升，说明「下游任务表现无法验证自演化评估器」<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>——用 accuracy 校验能力变化是循环论证。</p><p>RQ 点名的四个增量维度在 KG 中已有分散落地：forgetting 维度覆盖最强（MoLEM 三指标 + 2306 能力侵蚀框架 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>），retention（TraceRetain <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）、improvement rate（EvoPathBench CEG、SEA-Eval token 收敛、ELITE 学习动力学 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）、transfer（MoLEM FWT、ELITE intent-aware、EvoPathBench CEGT <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）均为部分覆盖。对齐类型分布为 direct 2 项、partial 3 项、claimed_only 0 项。</p><p>结论是：领域需要的不是更高精度的 accuracy，而是一套轨迹级/增量级度量体系——它必须（a）在多个检查点重复测同一焦点能力以测出改进速率；（b）显式测量 artifact 可用性以区分「真实能力获得」与「上下文红利」（如 EvoPathBench 的 SUE <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）；（c）把保持与遗忘作为一等公民纳入评估；（d）在噪声/开放/长时程场景中运行，否则 retention 维度本身不可测 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。目前尚无跨任务族统一的标准化实现，这是本 RQ 留下的最大研究空白，建议作为 A1.5 层 Gap 分析的核心输入。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;PTCG-Bench: Can LLM Agents Master Pokémon Trading Card Game?&nbsp;<code style="font-size:0.82em;color:#888">2321_ptcgbench_can_llm_agents_master_pokmon_trading_card_game</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Dynamic Mixture of Latent Memories for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2313_dynamic_mixture_of_latent_memories_for_selfevolving_agents</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;AgentHarm: A Benchmark for Measuring Harmfulness of LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">2146_agentharm_a_benchmark_for_measuring_harmfulness_of_llm_agent</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Selective Memory Retention for Long-Horizon LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">2350_selective_memory_retention_for_longhorizon_llm_agents</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;ELITE: Experiential Learning and Intent-Aware Transfer for Self-improving Embodied Agents&nbsp;<code style="font-size:0.82em;color:#888">2280_elite_experiential_learning_and_intentaware_transfer_for_sel</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Beyond Endpoint Performance: Process-Level Evaluation of Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2426_beyond_endpoint_performance_processlevel_evaluation_of_selfe</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;SEA-Eval: A Benchmark for Evaluating Self-Evolving Agents Beyond Episodic Tasks&nbsp;<code style="font-size:0.82em;color:#888">2290_seaeval_a_benchmark_for_evaluating_selfevolving_agents_beyon</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;A Survey of Self-Evolving Agents: What, When, How, and Where to Evolve&nbsp;<code style="font-size:0.82em;color:#888">2200_a_survey_of_selfevolving_agents_what_when_how_and_where_to_e</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;LifelongAgentBench: Evaluating LLM Agents as Lifelong Learners&nbsp;<code style="font-size:0.82em;color:#888">2185_lifelongagentbench_evaluating_llm_agents_as_lifelong_learner</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Do Self-Evolving Agents Forget? Capability Degradation and Preservation in Lifelong LLM Agent Adaptation&nbsp;<code style="font-size:0.82em;color:#888">2306_do_selfevolving_agents_forget_capability_degradation_and_pre</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Self-Evolving Agents as Dynamic Graph Transformation: A Survey and New Perspective&nbsp;<code style="font-size:0.82em;color:#888">0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Who Grades the Grader? Co-Evolving Evaluation Metrics and Skills for Self-Improving LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">2366_who_grades_the_grader_coevolving_evaluation_metrics_and_skil</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.1 · 2026-10-18 21:45</footer>
+</div>
+</body>
+</html>

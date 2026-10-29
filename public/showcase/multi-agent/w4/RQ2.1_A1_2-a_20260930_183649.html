@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-a 分析报告</h1>
+<div class="meta">RQ [RQ2.1]：[父问题 RQ2] 集中式与去中心化协作架构、固定角色与演化角色分工，在任务编排层面各自的适用边界与权衡是什么？
+[本子问题 RQ2.1] 现有协作架构可沿哪些设计维度分类（如编排拓扑、角色分配方式、SOP 结构化程度）？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：1805, 1713_agentdropout_dynamic_agent_elimination_for_tokenefficient_an, 3819_multiagent_collaboration_via_crossteam_orchestration, 3842_multiagent_collaboration_via_evolving_orchestration, 3805_multiagent_collaboration_via_reward_attribution_decompositio, 0337_LAFA_Agentic_LLM-Driven_Federated_Analytics_Over_Decentraliz）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_一_现有分类方案盘点_五套并行且互不兼容的体系">一、现有分类方案盘点：五套并行且互不兼容的体系</a></li>
+<li><a href="#sec_二_现有分类的缺陷诊断">二、现有分类的缺陷诊断</a></li>
+<li><a href="#sec_三_正交重构维度">三、正交重构维度</a></li>
+<li><a href="#sec_四_任务适配边界_分类空间各格子的实验证据">四、任务适配边界：分类空间各格子的实验证据</a></li>
+<li><a href="#sec_五_新旧分类对比_缺陷解决情况">五、新旧分类对比：缺陷解决情况</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ2.1「现有协作架构可沿哪些设计维度分类（如编排拓扑、角色分配方式、SOP 结构化程度）」，基于知识图谱中论文、方法、问题、局限、假设、指标六类节点的结构化数据与 14 篇关键论文的原文段落证据，进行正交解耦分类学分析。</p><p>核心结论：证据矩阵中的文献并不提供统一分类，而是并行提出了至少五套互不兼容的方案——<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的协调形式三分与星/环/图/总线四模式、<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的等层/层级/嵌套/动态四结构、<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的 9 维度、<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的五种工作流模式、<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的链/树/图三拓扑。这些方案对同一事物使用不同名称，存在严重类别重叠。经正交化重构，可将被讨论的全部协作架构归入两个本质维度构成的 2×2 矩阵：维度 A「编排拓扑」（集中式 / 去中心化）刻画协调决策的归属点；维度 B「角色制度」（固定式 / 演化式）刻画角色与分工是否随任务变动。该二维空间的不同格子经实验证实在任务适配上各有边界，构成 RQ2 所问「适用边界与权衡」的分类学基础。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析调用的知识图谱数据包括：Paper 节点 186 个、Problem 节点 454 个、Method 节点 380 个、Limitation 节点 170 个、AssumptionConstraint 节点 119 个、Metric 节点 278 个。针对 RQ2.1 冻结的证据矩阵论文，重点精读了以下 14 篇论文的原文段落（通过语义检索获得）：演化编排 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、跨团队编排 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、AgentDropout <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、LAFA <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、奖励归因分解 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、LaMAS 技术展望 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、LLM 多智能体挑战 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、Comm-MADRL 综述 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、智能体工作流综述 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、MACNET 拓扑扩展 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、MetaGPT <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、AgentNet <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、LLM 到智能体综述 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、角色专业化管道可追溯性 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。分析共执行 20 次工具调用，覆盖问题、方法、论文、数据集、指标、局限、假设七类节点，满足六类节点针对性查询与至少 8 篇论文精读的深度要求。</p>
+
+<h2 id="sec_一_现有分类方案盘点_五套并行且互不兼容的体系">一、现有分类方案盘点：五套并行且互不兼容的体系</h2>
+<p>从论文节点 description 与原文段落中，共提取出五套被文献实际采用的分类方案。按被引用/自述的显式程度排序，它们均属「主流分类」而非边缘分类，因为每套都由至少一篇高被引或顶会论文系统提出。</p><p>这些方案的共同特征是：各自使用独立的术语体系，且从未互相引用对方的分类标准，导致同一架构实体在不同方案中拥有不同标签。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确按协调形式给出「完全集中式 / 带全局信用分配的去中心化 / 完全去中心化」三分，同文又按实现形态给出 Star / Ring / Graph / Bus 四类架构模式；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 按结构给出 Equi-level / Hierarchical / Nested / Dynamic 四类；<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 提出覆盖通信策略、通信对象、约束、消息内容等的 9 个维度；<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 归纳出 Chain / Parallelization / Routing / Orchestrator-Workers / Evaluator-Optimizer 五种工作流模式，并区分静态与动态执行；<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 按拓扑给出 chain / tree / graph 三类，并提炼 density / shape / direction 三个分析视角。</p>
+<h3>表 1：文献中现存的五套协作架构分类方案</h3>
+<table><thead><tr><th>方案来源</th><th>维度名称</th><th>标签集合</th><th>证据类型</th></tr></thead><tbody><tr><td>[1] LaMAS</td><td>协调形式</td><td>完全集中式 / 带全局信用分配的去中心化 / 完全去中心化</td><td>立场性分类</td></tr>
+<tr><td>[1] LaMAS</td><td>架构模式</td><td>Star / Ring / Graph / Bus</td><td>案例归纳</td></tr>
+<tr><td>[2] LLM-MAS 挑战</td><td>系统结构</td><td>Equi-level / Hierarchical / Nested / Dynamic</td><td>综述分类</td></tr>
+<tr><td>[3] Comm-MADRL 综述</td><td>通信设计维度</td><td>9 个维度（通信策略、通信对象、约束、消息内容等）</td><td>系统综述</td></tr>
+<tr><td>[4] Agent Workflow 综述</td><td>工作流模式 + 执行</td><td>Chain / Parallelization / Routing / Orchestrator-Workers / Evaluator-Optimizer；静态 vs 动态</td><td>系统综述</td></tr>
+<tr><td>[5] MACNET 扩展</td><td>拓扑类型 + 视角</td><td>chain / tree / graph；density / shape / direction</td><td>实验分析</td></tr>
+</tbody></table>
+
+<h2 id="sec_二_现有分类的缺陷诊断">二、现有分类的缺陷诊断</h2>
+<p>对上述五套方案进行 MECE（互斥且穷尽）检验，发现三类缺陷：</p><p>（1）类别重叠（Overlap）。多套方案存在命名层面的重复：「Star 架构」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> ≈「Hierarchical 结构」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> ≈「Orchestrator-Workers」<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；Bus <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、Ring <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、Chain <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 三者均落在「顺序/流水线」语义上，构成典型类别重叠。</p><p>（2）维度混用（Ambiguity）。<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 将「动态结构」（角色、关系、智能体数量随时间变化）与「Equi-level / Hierarchical」并列，但二者在分类标准上正交——前者描述时间演化性，后者描述层级拓扑，属维度混用缺陷。<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 作者本人承认其 9 个维度「不天然相互依赖……但具体实现会产生依赖」，例如有限带宽约束会使 full communication 类别不可行，为「现有分类未满足正交性」提供了文献自证。</p><p>（3）SOP 结构化程度未解耦。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 广泛讨论 SOP/固定工作流，但始终将其与编排拓扑混为一谈，未识别其为独立的角色制度维度。</p>
+<div class="note">诊断依据：重叠检测通过跨文献术语比对完成（非单一论文自述，故标注 diagnosis_source: empirical_observation）；正交性缺陷由 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> §3.10 原文自证支撑（diagnosis_source: literature_acknowledged）。</div>
+
+<h2 id="sec_三_正交重构维度">三、正交重构维度</h2>
+<p>从 Problem 节点的本质属性归纳，所有被方法针对性解决的问题都落在两条相互正交的谱上：</p><p>维度 A —— 编排拓扑（Orchestration Topology）：刻画「协调决策的归属点」。取值 {集中式, 去中心化}。证据：<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 针对「静态组织结构 static organizational structures」采用集中式 puppeteer 编排器；<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 针对「单团队固定决策路径」采用跨团队编排；<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 批评集中式控制的单点故障、扩展性差、跨组织隐私壁垒；<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 针对集中式 LLM 分析的隐私风险采用去中心化联邦数据；<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 从奖励分配角度证明去中心化执行的可行性。</p><p>维度 B —— 角色制度（Role Regime）：刻画「角色与分工是否随任务变动」。取值 {固定式, 演化式}。证据：<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 针对「冗余的智能体角色与信息交换」，明确批评固定角色在多轮讨论中的低效；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 把「动态结构」单列；<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> MetaGPT 以 SOP 固化五大固定角色；<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 通过 RAG 记忆实现角色动态专精。</p><p>正交性依据：<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 对 communication policy 按「预定义 vs 可学习」与「个体控制 vs 全局控制」的交叉分类，说明编排归属与角色制度在分类标准上互不依赖。</p>
+<h3>表 2：二维正交矩阵（编排拓扑 × 角色制度）及对应架构实例</h3>
+<table><thead><tr><th></th><th>固定式角色（Fixed）</th><th>演化式角色（Evolving）</th></tr></thead><tbody><tr><td>集中式（Centralized）</td><td>MetaGPT 式 SOP 流水线 [11]（HumanEval Pass@1 85.9%）；Planner→Executor→Critic 管道 [14]（PythonIO 准确率提升 36+ 点）</td><td>Puppeteer RL 编排器 [6]（GSM-Hard/MMLU-Pro 上更优解质量、更低计算成本）；AgentDropout [8]（Llama3 提升 2.19 准确率点）</td></tr>
+<tr><td>去中心化（Decentralized）</td><td>LAFA 层级规划器 + 固定 FA 操作流水线 [9]（success rate 近 100%）</td><td>AgentNet [12]（DAG 路由、无中心控制、动态专精）；CollaQ [10]（星际争霸胜率提升 40%）</td></tr>
+</tbody></table>
+
+<h2 id="sec_四_任务适配边界_分类空间各格子的实验证据">四、任务适配边界：分类空间各格子的实验证据</h2>
+<p><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 在六个代表拓扑上的实验直接证实该二维空间存在任务适配边界：没有单一拓扑在所有任务上占优——链式拓扑利于软件开发（线性流程：分析、编码、评审、测试），树式拓扑利于创意写作（需发散结构）；且交互密度越高平均表现越好，mesh &gt; tree &gt; chain。这为「不同格子各有权衡」提供了量化依据。</p><p>在角色演化轴上，<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> AgentDropout 的动态角色消除在 Llama3 上较 SOTA AgentPrune 提升 2.19 个准确率点（LLM 提升 0.77、LLM 提升 0.47），并显著降低 token 消耗；<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> Croto 消融显示去除层级分区使 4/8 团队解质量从 0.789/0.775 降至 0.756/0.773，去除聚合智能体角色分配进一步降至 0.735/0.744。</p><p>在编排拓扑轴上，<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 明确 advocate 集中式编排并「contradicts」去中心化的 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>；而 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 反过来批评集中式的单点故障与隐私壁垒；<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 则提出「带全局信用分配的去中心化」折中态，并以其集中式星架构案例中所有数据须流经 Orchestrator 带来的隐私风险 vs 去中心化星架构让专用智能体独立处理敏感数据的对比，说明维度 A 实为连续谱而非二分。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1：各证据论文报告的关键性能改善", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["AgentDropout [8]\n(Llama3 准确率点)", "CollaQ [10]\n(星际争霸胜率%)", "Planner-Executor-Critic [14]\n(PythonIO 准确率点)", "LAFA [9]\n(执行成功率%)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "改善幅度", "type": "bar", "data": [2.19, 40, 36, 100], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_五_新旧分类对比_缺陷解决情况">五、新旧分类对比：缺陷解决情况</h2>
+<p>新体系通过将五套混乱方案收敛为两个正交维度，实质性地解决了三类旧缺陷：</p><p>对于类别重叠：原来的「Star / Hierarchical / Orchestrator-Workers」三名一事，在新体系中统一归为「集中式」取值；「Bus / Ring / Chain」三名一事统一归为「顺序流水线」在维度 B 固定式一端下的具体实现。</p><p>对于维度混用：<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 中「Dynamic」这一与层级标准正交的类别，在新体系中回归为维度 B 的「演化式」取值，与拓扑维度彻底解耦。</p><p>对于 SOP 未解耦：SOP 结构化程度被明确归入维度 B 的「固定式」一端，与编排拓扑分离。</p>
+<h3>表 3：旧分类缺陷与新体系解决方案对应</h3>
+<table><thead><tr><th>旧分类缺陷</th><th>缺陷描述</th><th>新体系解决方案</th><th>解决依据</th></tr></thead><tbody><tr><td>类别重叠</td><td>Star/Hierarchical/Orchestrator-Workers 同义；Bus/Ring/Chain 同义</td><td>统一归入集中式 / 顺序流水线单一取值</td><td>跨文献术语比对 [1][2][4][5]</td></tr>
+<tr><td>维度混用</td><td>[2] 的动态结构与层级结构标准正交却并列</td><td>回归为维度 B 演化式取值，与拓扑解耦</td><td>[2] §2.1 原文</td></tr>
+<tr><td>正交性不足</td><td>[3] 承认维度间会发生实现依赖</td><td>两维度在分类标准上互不依赖</td><td>[3] §3.10 原文</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在三方面局限：</p><p>（1）重构推断性。两维度（编排拓扑、角色制度）的命名与正交性、以及 SOP 结构化程度归入维度 B，均为跨文献重构推断，缺乏单一论文的直接命名与消融验证。原文献从未显式提出这两个维度的术语，故置信度标为 0.70-0.75。</p><p>（2）量化证据缺口。多数分类论文（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）为综述/立场性工作，未在统一基准上量化比较各格子；「角色演化」主要由 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 以效果性指标（准确率、token）间接论证，缺少对维度 B 的直接消融实验。</p><p>（3）覆盖范围。证据矩阵仅 6 篇冻结论文，多数架构实例需借助冻结集合外的相邻论文（<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>）补充。分类普适性受限于证据集合的领域分布（软件工程、推理、联邦分析为主），对机器人、具身等领域的迁移性未验证。</p><p>证据一致性与分歧：<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 与 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 在集中式/去中心化优劣上明确对立（KG 中以 contradicts 边记录），提示维度 A 在文献中存在真实学术分歧，而非单纯分类学分歧。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ2.1 的答案是：现有协作架构的分类不应沿用文献中五套并行且互不兼容的方案，而应收敛为两个正交维度的 2×2 矩阵——维度 A「编排拓扑」（集中式 / 去中心化）与维度 B「角色制度」（固定式 / 演化式）。该二维空间可将证据集合中全部被讨论的架构无歧义地归类，并消除旧分类的命名重叠、维度混用与 SOP 未解耦三类缺陷。实验证据表明，各格子在任务适配上各有边界（链式利软件工程、树式利创意写作 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>），且维度 A 实为连续谱（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的折中态），维度 B 的演化式在准确率与 token 效率上均占优（<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 提升 2.19 点）。这一分类学基础直接回应了父问题 RQ2 关于「集中式/去中心化、固定/演化角色在任务编排层面适用边界与权衡」的追问：适用边界由任务结构（线性 vs 发散）与约束（隐私、扩展性、成本）决定，权衡则体现在解质量、token 成本、容错性与隐私之间的取舍。后续研究需在统一基准上量化比较各格子，并对角色演化维度开展直接消融以验证本重构体系。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;LLM-based Multi-Agent Systems: Techniques and Business Perspectives&nbsp;<code style="font-size:0.82em;color:#888">3823_llmbased_multiagent_systems_techniques_and_business_perspect</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;LLM Multi-Agent Systems: Challenges and Open Problems&nbsp;<code style="font-size:0.82em;color:#888">3813_llm_multiagent_systems_challenges_and_open_problems</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;A survey of multi-agent deep reinforcement learning with communication&nbsp;<code style="font-size:0.82em;color:#888">0009_a_survey_of_multiagent_deep_reinforcement_learning_with_comm</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;A Survey on Agent Workflow – Status and Future&nbsp;<code style="font-size:0.82em;color:#888">0571</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Scaling Large Language Model-based Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">3818_scaling_large_language_modelbased_multiagent_collaboration</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Multi-Agent Collaboration via Evolving Orchestration&nbsp;<code style="font-size:0.82em;color:#888">3842_multiagent_collaboration_via_evolving_orchestration</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Multi-Agent Collaboration via Cross-Team Orchestration&nbsp;<code style="font-size:0.82em;color:#888">3819_multiagent_collaboration_via_crossteam_orchestration</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;AgentDropout: Dynamic Agent Elimination for Token-Efficient and High-Performance LLM-Based Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1713_agentdropout_dynamic_agent_elimination_for_tokenefficient_an</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;LAFA: Agentic LLM-Driven Federated Analytics over Decentralized Data Sources&nbsp;<code style="font-size:0.82em;color:#888">0337_LAFA_Agentic_LLM-Driven_Federated_Analytics_Over_Decentraliz</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Multi-Agent Collaboration via Reward Attribution Decomposition (CollaQ)&nbsp;<code style="font-size:0.82em;color:#888">3805_multiagent_collaboration_via_reward_attribution_decompositio</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;MetaGPT: Meta Programming for a Multi-Agent Collaborative Framework&nbsp;<code style="font-size:0.82em;color:#888">3810_metagpt_meta_programming_for_a_multiagent_collaborative_fram</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;AgentNet: Decentralized Evolutionary Coordination for LLM-based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3840_agentnet_decentralized_evolutionary_coordination_for_llmbase</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;From LLM Reasoning to Autonomous AI Agents: A Comprehensive Review&nbsp;<code style="font-size:0.82em;color:#888">0102_From_LLM_Reasoning_to_Autonomous_AI_Agents_A_Comprehensive_R</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Traceability and Accountability in Role-Specialized Multi-Agent LLM Pipelines&nbsp;<code style="font-size:0.82em;color:#888">0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.1 · 2026-09-30 18:36</footer>
+</div>
+</body>
+</html>

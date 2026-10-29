@@ -1,0 +1,208 @@
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { ChevronRight, Lock } from 'lucide-react';
+import type { AnswerabilityLevel, RQBundle } from '@/types/data';
+import { getRQBundle, USE_MOCK } from '@/services/api';
+import { HumanLoopSidebar } from '@/components/HumanLoopSidebar';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+
+export type { AnswerabilityLevel };
+
+export const levelVariant: Record<AnswerabilityLevel, 'ok' | 'warn' | 'danger'> = {
+  strong: 'ok',
+  weak: 'warn',
+  blocked: 'danger',
+};
+export const levelLabel: Record<AnswerabilityLevel, string> = {
+  strong: 'strong',
+  weak: 'weak',
+  blocked: 'blocked',
+};
+
+// Answerability 大分卡（SVG 圆环，挂载时 250ms 填充动画）
+export function Gauge({ score, level, size = 72 }: { score: number; level: AnswerabilityLevel; size?: number }) {
+  const stroke = 6;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const color = level === 'strong' ? 'var(--ok)' : level === 'weak' ? 'var(--warn-fg)' : 'var(--danger)';
+  return (
+    <svg width={size} height={size} className="shrink-0">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border-light)" strokeWidth={stroke} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - score)}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        className="[animation:gauge_250ms_ease-out]"
+      />
+      <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" className="fill-t1 text-[16px] font-semibold">
+        {score.toFixed(2)}
+      </text>
+    </svg>
+  );
+}
+
+export function RqPage() {
+  const { projectId = '' } = useParams();
+  const [bundle, setBundle] = useState<RQBundle | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getRQBundle(projectId)
+      .then((b) => {
+        if (!alive) return;
+        setBundle(b);
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (alive) {
+          setFailed(true);
+          setLoaded(true);
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, [projectId]);
+
+  // Human Loop 应用修改后即时刷新（RQ 文本真正落盘 → 界面所见即所得）
+  useEffect(() => {
+    const h = () => getRQBundle(projectId).then((b) => setBundle(b)).catch(() => {});
+    window.addEventListener('as:rq-updated', h);
+    return () => window.removeEventListener('as:rq-updated', h);
+  }, [projectId]);
+
+  if (!loaded) return <div className="py-16 text-center text-[13px] text-t3">加载中…</div>;
+  if (failed)
+    return (
+      <div className="mx-auto max-w-lg px-8 py-20 text-center">
+        <Card className="p-8">
+          <p className="text-[15px] font-medium">RQ 体系尚未生成</p>
+          <p className="mt-2 text-[13px] leading-5 text-t3">
+            该项目还没有可用的证据矩阵——请先完成 W3（综述框架与研究问题设计），再回到本页。
+          </p>
+        </Card>
+      </div>
+    );
+
+  // 运行中：W3 未完成，矩阵未冻结
+  if (!bundle || bundle.macros.length === 0) {
+    return (
+      <Card className="flex flex-col items-center gap-3 px-8 py-16 text-center">
+        <Badge variant="info" withDot>W3 进行中</Badge>
+        <p className="text-[14px] text-t2">RQ 体系设计与证据矩阵冻结尚未完成</p>
+        <p className="max-w-md text-[13px] leading-5 text-t3">
+          流水线 W3-P2「RQ 设计」完成后，此处将展示 Macro/Sub 研究问题树、Answerability 评分与已冻结的证据矩阵。
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="flex items-stretch gap-5">
+      <div className="min-w-0 flex-1 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-[17px] font-semibold">研究问题体系</h2>
+          <Badge variant="neutral">{bundle.macros.length} Macro · {bundle.macros.reduce((n, m) => n + m.subs.length, 0)} Sub</Badge>
+        </div>
+        {bundle.matrix && (
+          <Badge variant="ok">
+            <Lock size={12} />
+            证据矩阵已冻结 · {bundle.matrix.frozenAt}
+          </Badge>
+        )}
+      </div>
+
+      {/* Macro → Sub 树：两级都可点击进入专页 */}
+      <div className="stagger space-y-4">
+        {bundle.macros.map((m) => (
+          <Card key={m.id} className="p-0">
+            <Link
+              to={m.id}
+              className="flex items-center justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-black/[0.03]"
+              title={`进入 ${m.id} 专页`}
+            >
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="rounded bg-ink px-1.5 py-0.5 text-[12px] font-semibold text-white">{m.id}</span>
+                <span className="truncate text-[15px] font-medium leading-6">{m.text}</span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 text-[12px] text-t3">
+                <span>{m.subs.length} Sub · {m.subs.reduce((n, x) => n + x.paperIds.length, 0)} 篇</span>
+                <ChevronRight size={15} />
+              </div>
+            </Link>
+            <div className="border-t border-line/40 px-2 py-1.5">
+              {m.subs.map((s) => (
+                <Link
+                  key={s.id}
+                  to={s.id}
+                  className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-black/[0.03]"
+                  title={`进入 ${s.id} 专页`}
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="shrink-0 text-[12px] text-t3">{s.id}</span>
+                    <span className="truncate text-[14px] text-t1" title={s.text}>{s.text}</span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <Badge variant={levelVariant[s.level]}>{levelLabel[s.level]} {s.score.toFixed(2)}</Badge>
+                    <span className="shrink-0 text-[12px] text-t3">§{s.section} · {s.paperIds.length} 篇</span>
+                    <ChevronRight size={15} className="text-t3" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* 冻结证据矩阵 */}
+      {bundle.matrix && (
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-line/60 px-5 py-3">
+            <span className="text-[14px] font-medium">冻结证据矩阵（Canonical Registry）</span>
+            <span className="text-[12px] text-t3">下游 W4/W5 仅从此处恢复论文集合，防证据漂移</span>
+          </div>
+          <table className="w-full text-left text-[13px]">
+            <thead>
+              <tr className="border-b border-line/60 text-[12px] uppercase tracking-wide text-t3">
+                <th className="px-5 py-2.5 font-medium">Sub-RQ</th>
+                <th className="px-3 py-2.5 font-medium">章节</th>
+                <th className="px-3 py-2.5 font-medium">可答性</th>
+                <th className="px-3 py-2.5 font-medium">论文数</th>
+                <th className="px-5 py-2.5 font-medium">论文 ID（冻结集合）</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bundle.macros.flatMap((m) => m.subs).map((s) => (
+                <tr key={s.id} className="border-b border-line/40 last:border-0">
+                  <td className="px-5 py-2.5">
+                    <span className="text-t3">{s.id}</span>
+                    <span className="ml-2 text-t1">{s.text}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-t2">{s.section}</td>
+                  <td className="px-3 py-2.5"><Badge variant={levelVariant[s.level]}>{s.score.toFixed(2)}</Badge></td>
+                  <td className="px-3 py-2.5 tabular-nums text-t2">{s.paperIds.length}</td>
+                  <td className="max-w-[380px] truncate px-5 py-2.5 font-mono text-[12px] text-t2" title={s.paperIds.join(' · ')}>
+                    {s.paperIds.join(' · ')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+      </div>
+      {!USE_MOCK && <HumanLoopSidebar projectId={projectId} />}
+    </div>
+  );
+}

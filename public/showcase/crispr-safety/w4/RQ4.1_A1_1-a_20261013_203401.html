@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.1-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.1-a 分析报告</h1>
+<div class="meta">RQ [RQ4.1]：[父问题 RQ4] 如何把大量定性 limitation 与 assumption/constraint 结构化为可计算的风险模型（风险矩阵 / 概率图模型 / 贝叶斯网络），以支撑临床前到临床的可复现决策？
+[本子问题 RQ4.1] KG 中 `Limitation` 节点（213 个）与 `has_limitation` 边（375 条）主要分布在哪些维度，哪些可转化为风险模型的输入变量？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0109_beyond_probabilityimpact_matrices_in_project_risk_management, 0350_the_digital_divide_in_process_safety_quantitative_risk_analy）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心发现一_定性_定量的既有中间层">核心发现一：定性→定量的既有中间层</a></li>
+<li><a href="#sec_核心发现二_安全_免疫域_limitation_的机制性分流">核心发现二：安全/免疫域 limitation 的机制性分流</a></li>
+<li><a href="#sec_核心发现三_limitation_转化为模型后的下游失效模式">核心发现三：limitation 转化为模型后的下游失效模式</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ4.1——KG 中 Limitation 节点（190 个）与 has_limitation 边（375 条）主要分布在哪些维度、哪些可转化为风险模型的输入变量——进行了系统性的知识图谱抽取与二维矩阵映射。经对 limitation/problem/method/paper/dataset/metric/assumption 六类节点的全量扫描与正交性检验，确定最稳健的认知坐标系为「受限环节/生命周期阶段 × 危害性质（Efficacy 失效 / Safety 安全 / VoI 证据价值不确定）」（正交性得分约 0.27，联合分布无单格占比 &gt; 50%）。</p><p>核心结论：约 60% 的 limitation 集中在「验证/部署阶段 × 证据价值不确定」象限，这类 limitation（外部验证缺失、校准漂移、研究异质性、认知不确定）本质是参数可估计的概率/分布不确定，最容易被转化为风险模型输入变量；约 20–30% 属「测量协议缺失型」（如 ADA 免疫测定非定量），须先解决测量标准化；约 15–20% 属物理/生物硬约束（AAV 约 4.7 kb 包装上限、Cas9 约 160 kDa），应作为约束条件或贝叶斯先验而非可估计随机变量。已有成熟中间层可直接借用：Monte Carlo + PDF 赋值范式 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、ISO 13849 的 S/F/P 三元组 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、HAZOP→FTA→pmi 概率链 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析通过 KG 工具对以下节点类型进行全量加载与一跳/反向关系查询：</p><p>- Limitation 节点：190 个，has_limitation 边 375 条（RQ 声明为 213 节点 / 375 边，实际加载 190 节点，差异说明见「分析局限性」）</p><p>- Problem 节点：312 个</p><p>- Method 节点：312 个</p><p>- Paper 节点：138 个</p><p>- AssumptionConstraint 节点：108 个</p><p>- Metric 节点：175 个</p><p>- DatasetBenchmark 节点：114 个</p><p>对 13 篇关键论文执行了 search_paper_sections 原文段落精读检索（含 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>），覆盖基因编辑（off-target、递送、碱基编辑）、临床风险预测、工程安全评估、免疫原性、化工过程安全、汽车功能安全、驾驶员训练七个领域。工具调用总数 20 次，聚焦于六类节点的针对性查询与原文溯源验证。</p>
+<h3>二维矩阵：受限环节 × 危害性质（象限密度与论文映射）</h3>
+<table><thead><tr><th>受限环节\危害性质</th><th>Efficacy 失效</th><th>Safety 安全</th><th>VoI 证据价值不确定</th></tr></thead><tbody><tr><td>数据与训练</td><td>training_data_limitations [4]; scant_quantitative_data [5]</td><td>—</td><td>heterogeneity_of_included_studies [6]; incomplete_funding_acknowledgment_data [12]</td></tr>
+<tr><td>建模与构建</td><td>scalability_to_high_dimensional_data [3]; difficulty_in_estimating_r [3]; limited_generalization of off-target predictors [4]</td><td>cross_platform_generalisability [4]; structural_variation_detection [4]</td><td>narrative_synthesis_without_meta_analysis [6]</td></tr>
+<tr><td>验证与测试</td><td>dropped_transfection_efficiency_in_RDEB [7]; limited_editing_efficiency [8]</td><td>long_term_expression_increases_off_target [7]; safety_concerns [8]; insertional_mutagenesis [9]</td><td>lack_of_external_validation_in_primary_studies [6]; limited_prospective_outcome_evidence [6]; short_term_follow_up [5]</td></tr>
+<tr><td>部署与临床转化</td><td>invasiveness_of_physical_delivery_methods [9]; low_transfection_efficiency [10]</td><td>immunogenicity_of_viral_vectors [9]; risk_of_insertional_mutagenesis [9]; delivery_challenges [8]</td><td>small_patient_population_in_clinical_trials [4]; lack_of_standardization_in_ADA_assays [11]; lack_of_standard_protocols_for_immune_assays [13]; inability_to_collect_relevant_samples [13]</td></tr>
+<tr><td>物理/生物固有约束</td><td>AAV vector size limit / limited cargo capacity [10]; large molecular size of base editors [8]</td><td>high molecular weight of Cas9 protein；high anionic charge of sgRNA-RNP [9]</td><td>context_dependent_delivery [10]; reliance on studies of other hepatic diseases [8]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "Limitation 可转化性分流估计（基于矩阵象限分析）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "Limitation 可转化性分流估计（基于矩阵象限分析）", "type": "pie", "radius": "55%", "data": [{"name": "可直接转化为风险模型输入变量（证据价值不确定类）", "value": 60}, {"name": "测量协议缺失型（须先标准化测量）", "value": 25}, {"name": "物理/生物硬约束（应作约束条件/先验）", "value": 15}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div id="chart_2" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "各象限 limitation 节点密度分布（文献注意力分布近似）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["验证/部署 × VoI不确定", "部署 × Safety", "建模 × 证据不确定", "数据训练 × VoI不确定", "物理生物 × Efficacy", "验证 × Efficacy", "物理生物 × Safety"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "代表性 limitation 节点数", "type": "bar", "data": [9, 5, 3, 3, 3, 3, 3], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心发现一_定性_定量的既有中间层">核心发现一：定性→定量的既有中间层</h2>
+<p>论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 提供了把定性风险转为可计算模型的最直接范式：为每条识别的风险指定概率分布函数（PDF）——确定性概率用 Bernoulli 分布、随机性用三角/正态分布、认知不确定性用 uniform 分布；随后对 11 条风险逐一进行 20,000 次 Monte Carlo 模拟，最后以 P95 风险偏好百分位计算每条风险的绝对影响（如 R3 供应链中断对工期影响最大，R15 原材料价格对成本影响最大）。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确承认两条关键 limitation：结果依赖专家对分布的估计，且「假设风险相互独立」——后者正是把 limitation 图升级为贝叶斯网络时必须替换的假设。这直接说明 KG 中大量「证据价值不确定」类 limitation（外部验证缺失、校准漂移、研究异质性）可映射为该范式中的认知不确定性（epistemic uncertainty）→ uniform 分布，而「安全/毒性」类 limitation 应映射为条件概率节点 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>论文 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的 SQUADfps 用 ISO 13849 风险图把每个危害映射为三元组（严重度 S、暴露频率 F、可回避性 P），产出所需性能等级 PLr，并与实际安全功能性能等级 PL 比对；产品侧则用 RPN = 严重度 × 发生度 × 可检测度。论文 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 更进一步，用 HAZOP→故障树(FTA)→基本事件概率的链条，把系统级安全目标分解到 ML 组件级的「误分类概率 pmi」，并用 Reliability Assessment Model 将局部鲁棒性证据提升为组件级概率安全声明。这两个方法为 CRISPR/临床前风险建模提供了可直接借用的中间变量集：S/F/P、RPN 三因子、pmi <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p>
+
+<h2 id="sec_核心发现二_安全_免疫域_limitation_的机制性分流">核心发现二：安全/免疫域 limitation 的机制性分流</h2>
+<p>免疫原性类 limitation 属「测量协议缺失型」。论文 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 指出 ADA 免疫测定「不是定量的」，因为缺乏标准化人多克隆 ADA 参考品，且观测到的 ADA 发生率受测定灵敏度、样本处理、采样时间影响——因此跨研究比较 ADA 率「尚不可能」。论文 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 同样指出 AAV 免疫监测缺乏标准方案、无法采集相关样本，导致研究间变异大。这类 limitation 其转化为风险变量需要先固定测定协议，而非简单赋值 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。</p><p>论文 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> ARDitox 的处理方式提供了折中：把无法全实验枚举的 off-target 用多层计算筛选（肽加工 → pHLA 结合 → 呈递概率 &gt; 50%、亲和力 &lt; 2000 nM → TCR 面向残基相似度 → SNP 变异 → 表达水平）来生成可排序的风险列表，把「是否致命交叉反应」这一离散结局转化为连续安全评分。论文 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 对 67 项研究的量化综合（RNP off-target &lt; 1% vs 质粒 5–15%；mRNA 比质粒降低约 5 倍 off-target）证明「递送载体选择 → off-target 风险均值」是可以标定为数值分布的 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。</p>
+<h3>关键量化证据汇总（可转化为风险模型输入的变量）</h3>
+<table><thead><tr><th>变量/关系</th><th>量化值</th><th>来源</th><th>可转化性</th></tr></thead><tbody><tr><td>载体类型 → off-target 率</td><td>RNP &lt; 1%；质粒 5–15%；mRNA 较质粒降约 5 倍</td><td>[10]</td><td>可标定为分布</td></tr>
+<tr><td>AAV 包装容量硬约束</td><td>约 4.7 kb</td><td>[10]</td><td>约束条件/先验</td></tr>
+<tr><td>Cas9 蛋白分子量</td><td>约 160 kDa</td><td>[9]</td><td>约束条件</td></tr>
+<tr><td>脊柱手术风险模型判别力</td><td>AUC 0.64–0.78</td><td>[6]</td><td>已量化（含校准漂移）</td></tr>
+<tr><td>ML 相较传统模型提升</td><td>约 0.05–0.10 AUROC</td><td>[6]</td><td>增量有限</td></tr>
+<tr><td>VSRQ 车辆风险评估</td><td>准确率 94.36%、召回 73.43%</td><td>[14]</td><td>固定值，宜改区间</td></tr>
+<tr><td>ISO 13849 危害三元组</td><td>S（严重度）、F（频率）、P（可回避性）</td><td>[2]</td><td>直接可用</td></tr>
+<tr><td>RPN 产品风险因子</td><td>严重度 × 发生度 × 可检测度（1–5 级）</td><td>[2]</td><td>直接可用</td></tr>
+<tr><td>系统级→组件级概率分解</td><td>误分类概率 pmi</td><td>[3]</td><td>直接可用</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现三_limitation_转化为模型后的下游失效模式">核心发现三：limitation 转化为模型后的下游失效模式</h2>
+<p>论文 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 的 scoping review 显示传统脊柱手术风险模型 AUC 仅 0.64–0.78，AI/ML 平均只提升约 0.05–0.10 AUROC，且外部队列普遍出现校准漂移；其 limitation（external validation 缺失、calibration drift、limited prospective outcome evidence、study heterogeneity、narrative synthesis without meta-analysis）几乎全部属于「证据价值不确定」象限。PROBAST 评估显示 23 项主要研究中仅 4 项（17.4%）在四个域均低偏倚。这提示：把 KG 的 limitation 建成概率模型时，最大的问题不是建不起来，而是用了无法校准、无法外部验证的输入 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p><p>论文 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> VSRQ 用 I-FAHP + FCA 从 ECU 耦合/通信/代码复杂度/历史安全事件四个一级指标量化车辆风险，在 OpenPilot 上达 94.36% 准确率、73.43% 召回——但它自身也承认结果为固定值、应给出区间。论文 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> 用 LOPA + 贝叶斯网络对 human-AI 协作过程安全风险建模，强调「人的可靠性」在数字化时代的重要性。这两者印证：不确定性应以区间/分布表达，而非固定值 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup><sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>。</p>
+<div class="note">核心张力：KG 中 limitation 节点普遍缺 origin_paper_id，且「可否转化为风险模型输入」这一判断在 KG 中以隐式方式存在（方法 requires 某 assumption），缺少「limitation → 变量」的显式边。因此本次象限归属与可转化性分类部分依赖跨论文综合与 canonical_name 推断。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>1. 节点计数差异：RQ 声明 Limitation 节点为 213 个，本次工具加载返回 190 个（_total_count=190），差异可能源于版本更新或查询截断，象限密度统计基于 190 个节点。</p><p>2. 字段缺失：KG 中 limitation 节点 origin_paper_id 普遍为空，且 190 个 limitation 中有相当比例 description 缺失（如 sensitivity_characteristics、suitability_for_structural_variant_detection、narrative_synthesis_without_meta_analysis），其象限归属只能由 canonical_name 推断，标注为 inferred_from_description，置信度受限。</p><p>3. 缺少显式边：「limitation → 风险变量」的映射关系未在 KG 中显式建模，本次结论部分依赖跨论文综合，无法完全由结构化边支撑。</p><p>4. 跨域语义异质：基因编辑、临床预测、汽车安全、化工过程安全四个域的 limitation 语义异质，同一维度标签下混入不可比对象，象限密度只能作为「文献注意力分布」近似，不能读作「可量化程度」的严格度量。</p><p>5. 认知盲区未沉淀：论文 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 明确指出的三大结构性 gap（大结构变异检测不足、组织水平生物分布表征不足、各平台 off-target 谱缺乏统一标准）在 KG 中尚未沉淀为独立 limitation 节点，属于认知盲区而非已识别 limitation。</p><p>6. 覆盖不足的域：肾脏/肺部靶向递送、肌肉编辑的量化 limitation 在 67 项研究综述 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 中被明确指出「underrepresented」，KG 中相应节点稀疏；基线风险模型（fixed dose、亚组公平性）的 limitation 在 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 中也报告不足。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ4.1，KG 中的 Limitation 主要分布在两个正交维度构成的二维矩阵上：以「验证/部署阶段 × 证据价值不确定」为最高密度象限（占比约 60%），「部署/验证 × Safety 安全」为次高密度象限。</p><p>可直接转化为风险模型输入变量的 limitation 分三类：（1）证据价值不确定类（外部验证缺失、校准漂移、研究异质性、认知不确定）——可直接映射为 Monte Carlo 范式中的 epistemic uncertainty → uniform 分布 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；（2）安全类可观测 limitation（off-target 率、编辑效率、转染效率）——可作为条件概率节点或 RPN/S-F-P 中间变量的观测值 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>；（3）系统级安全目标可经 HAZOP→FTA→pmi 链条分解到组件级概率声明 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>不宜直接赋值的 limitation 分两类：（1）测量协议缺失型（ADA 测定非定量、AAV 免疫监测无标准方案）——须先解决测量标准化 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>；（2）物理/生物硬约束（AAV 4.7 kb 上限、Cas9 160 kDa）——应作为约束条件或贝叶斯先验 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p><p>综合判断：约 55–65% 的 limitation 可经既有中间层转化为风险模型输入变量；约 20–30% 属需先解决测量标准化的「测量协议缺失型」；约 15–20% 属物理/生物硬约束。建议后续用 A1.1-c（分层堆栈）补充维度遗漏，并对 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 指出的三大认知盲区建立独立 limitation 节点。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Beyond probability-impact matrices in project risk management: A quantitative methodology for risk prioritisation&nbsp;<code style="font-size:0.82em;color:#888">0109_beyond_probabilityimpact_matrices_in_project_risk_management</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;SQUADfps: Integrated model-based machine safety and product quality for flexible production systems&nbsp;<code style="font-size:0.82em;color:#888">0026_squadfps_integrated_modelbased_machine_safety_and_product_qu</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Reliability Assessment and Safety Arguments for Machine Learning Components in System Assurance&nbsp;<code style="font-size:0.82em;color:#888">0173_reliability_assessment_and_safety_arguments_for_machine_lear</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Navigating off-target effects in CRISPR-based genome editing for safer gene therapies&nbsp;<code style="font-size:0.82em;color:#888">0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Assessing the Effectiveness of Driver Training Interventions in Improving Safe Engagement with Vehicle Automation Systems&nbsp;<code style="font-size:0.82em;color:#888">0055_assessing_the_effectiveness_of_driver_training_interventions</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Risk prediction in spine surgery: a scoping review of traditional models, artificial intelligence, and the challenge of clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0040_Risk_prediction_in_spine_surgery_a_scoping_review_of_traditi</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Non-viral delivery of CRISPR–Cas9 complexes for targeted gene editing via a polymer delivery system&nbsp;<code style="font-size:0.82em;color:#888">0089_Non-viral_delivery_of_CRISPR_Cas9_complexes_for_targeted_gen</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Comprehensive review of CRISPR-based gene editing: mechanisms, challenges, and applications in cancer therapy&nbsp;<code style="font-size:0.82em;color:#888">0186_comprehensive_review_of_crisprbased_gene_editing_mechanisms</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Overview of Delivery Methods for Gene Editing&nbsp;<code style="font-size:0.82em;color:#888">0025_Overview_of_Delivery_Methods_for_Gene_Editing</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Reducing Immunogenicity by Design: Approaches to Minimize Immunogenicity of Monoclonal Antibodies&nbsp;<code style="font-size:0.82em;color:#888">0037_Reducing_Immunogenicity_by_Design_Approaches_to_Minimize_Imm</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;ARBitox: platform for the prediction of TCRs potential off-target binding&nbsp;<code style="font-size:0.82em;color:#888">0143_arditox_platform_for_the_prediction_of_tcrs_potential_offtar</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Immunogenicity of Recombinant Adeno-Associated Virus (AAV) Vectors for Gene Transfer&nbsp;<code style="font-size:0.82em;color:#888">0036_Immunogenicity_of_Recombinant_Adeno-Associated_Virus_AAV_Vec</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;VSRQ: Quantitative Assessment Method for Safety Risk of Vehicle Intelligent Connected System&nbsp;<code style="font-size:0.82em;color:#888">0167_vsrq_quantitative_assessment_method_for_safety_risk_of_vehic</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;The Digital Divide in Process Safety: Quantitative Risk Analysis of Human-AI Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0350_the_digital_divide_in_process_safety_quantitative_risk_analy</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;Mitigating off-target effects in CRISPR/Cas9-mediated in vivo gene editing&nbsp;<code style="font-size:0.82em;color:#888">0031_Mitigating_off-target_effects_in_CRISPRCas9-mediated_in_vivo</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;Cytosine base editing systems with minimized off-target effect and molecular size&nbsp;<code style="font-size:0.82em;color:#888">0093_Cytosine_base_editing_systems_with_minimized_off-target_effe</code></li>
+<li id="ref-18" style="margin-bottom:4px"><span class="ref-id">[18]</span>&nbsp;Gene Editing for the Treatment of Hypercholesterolemia&nbsp;<code style="font-size:0.82em;color:#888">0034_Gene_Editing_for_the_Treatment_of_Hypercholesterolemia</code></li>
+<li id="ref-19" style="margin-bottom:4px"><span class="ref-id">[19]</span>&nbsp;CRISPR-Cas systems as next-generation antimicrobials: a systemic review of mechanisms, delivery strategies, and translational challenges&nbsp;<code style="font-size:0.82em;color:#888">0258_CRISPR-Cas_systems_as_next-generation_antimicrobials_a_syste</code></li>
+<li id="ref-20" style="margin-bottom:4px"><span class="ref-id">[20]</span>&nbsp;CRISPR Therapies for Treating Monogenic Neurodevelopmental Disorders&nbsp;<code style="font-size:0.82em;color:#888">0596_CRISPR_Therapies_in_Treating_Monogenic_Neurodevelopmental_Di</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.1 · 2026-10-13 20:34</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.1-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.1-b 分析报告</h1>
+<div class="meta">RQ [RQ1.2]：[父问题 RQ1] LLM 驱动的多智能体协作中，错误如何在 agent 间传播并导致行为退化，现有抑制机制可归纳为哪些类别且各自有效性如何？
+[本子问题 RQ1.2] 现有工作提出哪些错误传播抑制或行为锚定机制，它们分别作用于协作流程的哪个阶段？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0204_LLM-Powered_Fully_Automated_Chaos_Engineering_Towards_Enabli, 0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati, 0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion, 0893_RoCo_Dialectic_Multi-Robot_Collaboration_with_Large_Language, 1059_DesignGPT_Multi-Agent_Collaboration_in_Design, 1663_ColaCare_Enhancing_Electronic_Health_Record_Modeling_through）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_生命周期阶段模型_归纳自文献">生命周期阶段模型（归纳自文献）</a></li>
+<li><a href="#sec_核心分析_抑制机制分类与作用阶段">核心分析：抑制机制分类与作用阶段</a></li>
+<li><a href="#sec_各阶段研究密度分布">各阶段研究密度分布</a></li>
+<li><a href="#sec_关键量化证据汇总">关键量化证据汇总</a></li>
+<li><a href="#sec_跨阶段错误传播链">跨阶段错误传播链</a></li>
+<li><a href="#sec_被低估的阶段_S1_规划与_S6_长时部署">被低估的阶段：S1 规划与 S6 长时部署</a></li>
+<li><a href="#sec_机制有效性的分歧点与不确定性">机制有效性的分歧点与不确定性</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ1.2「现有工作提出哪些错误传播抑制或行为锚定机制，它们分别作用于协作流程的哪个阶段」，以 6 篇冻结证据论文（ChaosEater<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、NADER<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、MCCD<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、RoCo<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、DesignGPT<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、ColaCare<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）为核心，并补充知识图谱中同语料的高相关论文（0203<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、0206<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、0176<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、0210<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、3835<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、3836<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、3839<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>）作为证据。</p><p>分析首先从文献中归纳出六阶段协作流程模型（S1 规划分解 → S2 知识检索/接地 → S3 生成/执行 → S4 验证/校验 → S5 协调/辩论 → S6 事后整合/部署），进而将抑制机制归纳为五大类：结构化验证/形式化校验、结构化交接与问责、对抗性辩论与共识、元认知反思/经验库、行为锚定与漂移治理。结论显示：抑制机制高度集中在「验证/校验」与「协调/辩论」阶段，而「规划分解」与「长时部署」阶段被系统性低估；最强的量化有效性证据来自验证类机制（如 CHASE 召回 0.984、假阳率 0.08%<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>；NADER 成功率 0.62→0.88<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>），但各类机制缺乏统一的「错误抑制率」评测口径。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析覆盖知识图谱七类节点：Problem（问题）454 个、Method（方法）380 个、Paper（论文）186 篇、Dataset/benchmark 243 个、Metric（指标）278 个、Limitation（局限）170 个、Assumption（假设）119 个。</p><p>在结构数据之外，针对 6 篇冻结证据论文与 9 篇同语料高相关论文执行了 RAG 原文段落检索（search_paper_sections），精读段落覆盖方法学章节、消融实验、失败分析与威胁模型，共提取 13 条带章节定位的原文证据片段。关系边层面重点分析了 proposes、addresses、targets、has_limitation、evaluated_on、measured_by 等边类型，用于确定机制—问题—阶段的映射。</p>
+
+<h2 id="sec_生命周期阶段模型_归纳自文献">生命周期阶段模型（归纳自文献）</h2>
+<p>六阶段模型综合自 ChaosEater 的 CE 循环<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、NADER 的研究/开发团队分工<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、RoCo 的对话-规划-执行流程<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、问责管线的 Planner→Executor→Critic 结构<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 以及 0203 的三级失败分类（规划/执行/响应生成）<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。S6（事后整合/部署）在近期文献中才显现（记忆合并、审计记录、漂移监控），状态标注为 emerging。</p>
+<h3>协作流程阶段模型与典型 agent 角色</h3>
+<table><thead><tr><th>阶段</th><th>名称</th><th>描述</th><th>输入</th><th>输出</th><th>状态</th></tr></thead><tbody><tr><td>S1</td><td>规划/分解</td><td>路由/规划 agent 将任务分解为可执行子任务（Conductor、Planner、Supervisor、Analyst）</td><td>用户需求</td><td>任务计划/子任务序列</td><td>established</td></tr>
+<tr><td>S2</td><td>知识检索/接地</td><td>Reader/RAG 从文献/外部知识库检索接地知识，补足 LLM 静态知识滞后</td><td>任务计划+查询</td><td>接地知识/证据文档</td><td>established</td></tr>
+<tr><td>S3</td><td>生成/执行</td><td>Modifier/Coder/实验 agent 生成代码、网络、图像或执行动作</td><td>计划+知识</td><td>候选产物/动作</td><td>established</td></tr>
+<tr><td>S4</td><td>验证/校验</td><td>Reflector/Evaluator/Critic/VaC 对产物做可执行性、正确性、约束校验并回传反馈</td><td>候选产物</td><td>验证结果+反馈</td><td>established</td></tr>
+<tr><td>S5</td><td>协调/辩论</td><td>多 agent 对话、辩论、结构化交接与共识达成</td><td>各 agent 输出</td><td>一致方案/最终报告</td><td>established</td></tr>
+<tr><td>S6</td><td>事后整合/部署</td><td>事后整合、记忆合并、问责记录与长时漂移监控</td><td>已完成轨迹</td><td>审计记录/更新记忆/部署产物</td><td>emerging</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析_抑制机制分类与作用阶段">核心分析：抑制机制分类与作用阶段</h2>
+<p>分析识别出五大类错误传播抑制/行为锚定机制，并标注其作用的生命周期阶段。结构化验证类机制最丰富且量化证据最强。</p>
+<h3>错误传播抑制与行为锚定机制分类及其作用阶段</h3>
+<table><thead><tr><th>机制类别</th><th>作用阶段</th><th>代表方法</th><th>关键证据/效果</th><th>来源</th></tr></thead><tbody><tr><td>结构化验证/形式化校验</td><td>S4</td><td>NADER Reflector、ChaosEater VaC、RoCo 五级校验</td><td>LIF 可执行率 0.54→0.64；LDE 成功率 0.62→0.88</td><td>[2][1][4]</td></tr>
+<tr><td>结构化交接与问责/归因</td><td>S5→S6</td><td>Accountable Pipeline、CHASE 中央状态</td><td>PythonIO 准确率提升 &gt;36 分；假阳率 0.08%</td><td>[10][9]</td></tr>
+<tr><td>对抗性辩论与共识</td><td>S5</td><td>ColaCare 辩论+RAG、MCCD backward feedback</td><td>MIMIC-IV/ESRD AUROC 优于 EMERGE 等基线</td><td>[6][3]</td></tr>
+<tr><td>元认知反思/经验库</td><td>S2→S4</td><td>NADER Reader+Reflector 经验库</td><td>检索 5 条相似经验注入上下文降重复错误</td><td>[2]</td></tr>
+<tr><td>行为锚定与漂移治理</td><td>S6</td><td>Adaptive Behavioral Anchoring、Constraint State Governance</td><td>报告 67–81% 错误削减；输出级过滤不足</td><td>[11][12]</td></tr>
+<tr><td>前置 SOP/角色专业化</td><td>S1</td><td>DesignGPT SOP、ReDeFo Analyst 需求形式化</td><td>完整性 +24.26%、可行性 +39.90%</td><td>[5][8]</td></tr>
+</tbody></table>
+
+<h2 id="sec_各阶段研究密度分布">各阶段研究密度分布</h2>
+<p>将问题/威胁节点与论文按阶段归类后，各阶段密度差异显著：验证/校验（S4）与协调/辩论（S5）为研究饱和区，规划（S1）与长时部署（S6）为研究滞后区，知识检索（S2）为稀疏区。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各生命周期阶段的论文数量分布", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["S1 规划", "S2 知识检索", "S3 生成/执行", "S4 验证/校验", "S5 协调/辩论", "S6 部署/整合"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "论文数", "type": "bar", "data": [4, 2, 4, 6, 5, 2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>各阶段的密度标签与研究状态</h3>
+<table><thead><tr><th>阶段</th><th>问题数</th><th>论文数</th><th>密度标签</th><th>研究状态判断</th></tr></thead><tbody><tr><td>S1 规划</td><td>3</td><td>4</td><td>under_studied</td><td>研究滞后区：规划错误是管线失败最强预测因子，但直接抑制的量化证据少</td></tr>
+<tr><td>S2 知识检索</td><td>2</td><td>2</td><td>sparse</td><td>稀疏：新兴阶段或被忽视的接地环节</td></tr>
+<tr><td>S3 生成/执行</td><td>3</td><td>4</td><td>balanced</td><td>平衡：生成质量有较多工作，但多为任务指标而非错误抑制率</td></tr>
+<tr><td>S4 验证/校验</td><td>4</td><td>6</td><td>over_studied</td><td>研究饱和区：机制最丰富、量化证据最强</td></tr>
+<tr><td>S5 协调/辩论</td><td>4</td><td>5</td><td>over_studied</td><td>研究饱和区：辩论/共识/交接机制集中</td></tr>
+<tr><td>S6 部署/整合</td><td>3</td><td>2</td><td>under_studied</td><td>研究滞后区/新兴：长时漂移与约束保持机制刚起步</td></tr>
+</tbody></table>
+
+<h2 id="sec_关键量化证据汇总">关键量化证据汇总</h2>
+<p>下表汇总各机制的直接量化有效性证据。需注意：验证类机制给出的是错误抑制/检出类指标，而设计类、临床类机制给出的是任务结果提升指标，二者口径不同。</p>
+<h3>机制有效性的量化证据与口径</h3>
+<table><thead><tr><th>论文</th><th>机制</th><th>阶段</th><th>量化结果</th><th>指标口径</th></tr></thead><tbody><tr><td>NADER[2]</td><td>LIF+LDE 即时反馈与经验库</td><td>S4</td><td>可执行率 0.54→0.64；成功率 0.62→0.88；执行率 92%</td><td>消融增量</td></tr>
+<tr><td>ChaosEater[1]</td><td>Validation-as-Code</td><td>S4</td><td>低成本完成合理 CE 循环（$0.2–0.8, 11–25min）</td><td>任务完成性</td></tr>
+<tr><td>RoCo[4]</td><td>五级计划校验+反馈回灌</td><td>S4</td><td>RoCoBench 全任务高成功率</td><td>任务成功率</td></tr>
+<tr><td>CHASE[9]</td><td>Supervisor-Worker+中央状态</td><td>S5→S6</td><td>召回 0.984、精度 0.996、假阳率 0.08%</td><td>检测性能</td></tr>
+<tr><td>Accountable[10]</td><td>结构化可问责交接</td><td>S5→S6</td><td>PythonIO 准确率提升 &gt;36 分</td><td>准确率增量</td></tr>
+<tr><td>GUARDIAN[13]</td><td>时序图+信息瓶颈异常检测</td><td>S4/S5</td><td>MATH 准确率较最佳基线 +7.1%；平均检测率&gt;80%</td><td>检测率/准确率</td></tr>
+<tr><td>Agent Drift[11]</td><td>行为锚定+记忆合并+漂移路由</td><td>S6</td><td>报告 67–81% 错误削减</td><td>仿真外推</td></tr>
+<tr><td>DesignGPT[5]</td><td>SOP+角色专业化</td><td>S1/S5</td><td>完整性 +24.26%、可行性 +39.90%</td><td>设计质量</td></tr>
+<tr><td>ColaCare[6]</td><td>多轮辩论+RAG 证据共识</td><td>S5</td><td>MIMIC-IV/ESRD AUROC 优于 EMERGE</td><td>AUROC</td></tr>
+</tbody></table>
+
+<h2 id="sec_跨阶段错误传播链">跨阶段错误传播链</h2>
+<p>文献提供了错误跨阶段级联的具体证据：RoCo 观察到「一个 agent 出错会使后续对话建立在错误推理上」——某 agent 误判任务完成后，其他 agent 附和并等待，导致任务实际未完成<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；GUARDIAN 形式化了幻觉放大与错误注入的传播不等式（∑h_t,i ≥ ∑h_{t-1,i}）<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>；0203 的失败分类显示规划阶段错误（不当分解、失败自细化、不现实规划）会级联至执行与响应生成阶段<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。这表明仅在验证阶段设置拦截点，不足以阻断源头规划错误向生成、协调阶段的级联。</p>
+<h3>阶段间错误传播链</h3>
+<table><thead><tr><th>起点阶段</th><th>终点阶段</th><th>触发问题</th><th>导致问题</th><th>证据论文</th></tr></thead><tbody><tr><td>S1 规划</td><td>S3 执行</td><td>不当任务规划</td><td>非功能性代码生成</td><td>0203[7]</td></tr>
+<tr><td>S3 执行</td><td>S5 协调</td><td>错误注入与传播</td><td>幻觉放大</td><td>GUARDIAN[13]</td></tr>
+<tr><td>S5 协调</td><td>S5 协调</td><td>幻觉放大</td><td>协调与同步失败</td><td>RoCo[4]</td></tr>
+<tr><td>S4 验证</td><td>S6 部署</td><td>缺乏系统性失败分析</td><td>agent 行为漂移</td><td>Agent Drift[11]</td></tr>
+</tbody></table>
+
+<h2 id="sec_被低估的阶段_S1_规划与_S6_长时部署">被低估的阶段：S1 规划与 S6 长时部署</h2>
+<p>证据一致指向两个被低估的抑制点。第一，规划阶段：问责管线研究明确指出「Planner 的杠杆最大，其错误率是管线失败的最强预测因子」<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>，0203 亦将规划错误列为三大失败类之首<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>；然而冻结的 6 篇论文中，仅 ReDeFo 的 Analyst 在需求阶段通过细化与形式化来消歧<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、DesignGPT 通过 SOP 前置约束角色行为<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>触及规划前置抑制。第二，长时部署阶段：Agent Drift 报告 agent 漂移「几乎影响半数长时 agent，导致任务成功率下降 42%、人工干预需求增加 3.2×、inter-agent 冲突增加 487.5%」<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>，但该类机制目前以仿真外推为主，几乎没有真实部署验证，且冻结证据集中无一篇设置专门的部署后监控机制。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "五大类抑制机制在证据集中的分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "五大类抑制机制在证据集中的分布", "type": "pie", "radius": "55%", "data": [{"name": "结构化验证/形式化校验", "value": 3}, {"name": "结构化交接与问责", "value": 2}, {"name": "对抗性辩论与共识", "value": 2}, {"name": "元认知反思/经验库", "value": 1}, {"name": "行为锚定与漂移治理", "value": 2}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_机制有效性的分歧点与不确定性">机制有效性的分歧点与不确定性</h2>
+<p>分析揭示三处主要分歧与不确定性。第一，评测口径不一致：验证类机制给出错误检出率/假阳率（如 CHASE 召回 0.984<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、GUARDIAN 检测率&gt;80%<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>），而设计类与临床类机制给出的是任务结果提升（DesignGPT 完整性 +24.26%<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、ColaCare AUROC<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>），二者无法直接比较。第二，有效性来源的可信度差异：行为锚定/漂移治理的效果（67–81% 错误削减）来自模拟框架的投影而非真实部署<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>，其外推效度存疑。第三，机制成本与前提条件：问责管线以成本 2–3×、延迟 8–10×（约 20–25s）为代价<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>，且归因假设可获取 ground-truth 标签；约束状态治理亦假设完整审计记录可重建<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>，在开放部署中均难以满足。</p>
+<div class="note">本报告所有结论均标注证据来源。标为「仿真外推」的结论（Agent Drift 的 67–81% 错误削减）来自模拟框架，非真实系统验证；标为「机制」的条目为定性描述，其量化有效性未被原始论文直接给出。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>1）数据覆盖：冻结的 6 篇证据论文中，仅 NADER<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、ChaosEater<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、RoCo<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 提供了较清晰的抑制机制与量化效果，其余（MCCD<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、DesignGPT<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、ColaCare<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）以任务结果指标为主，缺少错误抑制率的直接测量。</p><p>2）证据外推：行为锚定、漂移治理、约束保持类机制主要来自同语料扩展论文（Agent Drift<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、约束漂移<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>），且多为仿真或可重放反事实验证，真实部署有效性待验证。</p><p>3）阶段归类的主观性：阶段归属主要依据 description 字段与原文语义判断，部分节点（如「非平稳性 moving-target problem」）超出六阶段模型，归类失败率约 1/20，提示模型可能存在微小覆盖漏洞。</p><p>4）传播链证据不完整：跨阶段传播链有定性证据（RoCo<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、GUARDIAN<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>），但缺乏定量传播率，无法量化各阶段的「传播能力」与「被污染程度」。</p><p>5）评测标准缺失：不同论文的错误抑制定义与评测口径割裂，尚无统一的错误传播抑制率基准。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ1.2，本研究得出三点结论：其一，现有错误传播抑制/行为锚定机制可归纳为五大类（结构化验证/形式化校验、结构化交接与问责、对抗性辩论与共识、元认知反思/经验库、行为锚定与漂移治理），其中前三类集中在验证/校验与协调/辩论阶段<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。其二，机制有效性证据高度集中于验证类：NADER 成功率 0.62→0.88<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、CHASE 召回 0.984 且假阳率 0.08%<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、GUARDIAN 检测率&gt;80%<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 是当前最强的量化证据；而设计/临床类机制多报告任务结果提升而非错误抑制率。其三，阶段覆盖严重不均——S4 验证与 S5 协调已研究饱和，而 S1 规划（Planner 错误率是失败最强预测因子<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>）与 S6 长时部署（agent 漂移导致成功率下降 42%<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>）是被低估的抑制点，且错误跨阶段级联证据<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>表明仅在验证阶段拦截不足以阻断源头错误的传播。未来研究需建立统一的错误传播抑制评测基准，并向规划源头抑制与部署后漂移治理两端延伸。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;LLM-Powered Fully Automated Chaos Engineering (ChaosEater)&nbsp;<code style="font-size:0.82em;color:#888">0204_LLM-Powered_Fully_Automated_Chaos_Engineering_Towards_Enabli</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;NADER: Neural Architecture Design via Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;MCCD: Multi-Agent Collaboration-based Compositional Diffusion for Complex Text-to-Image Generation&nbsp;<code style="font-size:0.82em;color:#888">0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;RoCo: Dialectic Multi-Robot Collaboration with Large Language Models&nbsp;<code style="font-size:0.82em;color:#888">0893_RoCo_Dialectic_Multi-Robot_Collaboration_with_Large_Language</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;DesignGPT: Multi-Agent Collaboration in Design&nbsp;<code style="font-size:0.82em;color:#888">1059_DesignGPT_Multi-Agent_Collaboration_in_Design</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;ColaCare: Enhancing Electronic Health Record Modeling through LLM-Driven Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1663_ColaCare_Enhancing_Electronic_Health_Record_Modeling_through</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Exploring Autonomous Agents: A Closer Look at Why They Fail When Completing Tasks&nbsp;<code style="font-size:0.82em;color:#888">0203_Exploring_Autonomous_Agents_A_Closer_Look_at_Why_They_Fail_W</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Requirements Development and Formalization for Reliable Code Generation: A Multi-Agent Vision (ReDeFo)&nbsp;<code style="font-size:0.82em;color:#888">0206_Requirements_Development_and_Formalization_for_Reliable_Code</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;CHASE: LLM Agents for Dissecting Malicious PyPI Packages&nbsp;<code style="font-size:0.82em;color:#888">0176_CHASE_LLM_Agents_for_Dissecting_Malicious_PyPI_Packages</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Traceability and Accountability in Role-Specialized Multi-Agent LLM Pipelines&nbsp;<code style="font-size:0.82em;color:#888">0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Agent Drift: Quantifying Behavioral Degradation in Multi-Agent LLM Systems&nbsp;<code style="font-size:0.82em;color:#888">3835_agent_drift_quantifying_behavioral_degradation_in_multiagent</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Safe Multi-Agent Behavior Must Be Maintained, Not Merely Asserted: Constraint Drift in LLM-Based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3836_safe_multiagent_behavior_must_be_maintained_not_merely_asser</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;GUARDIAN: Safeguarding LLM Multi-Agent Collaborations with Temporal Graph Modeling&nbsp;<code style="font-size:0.82em;color:#888">3839_guardian_safeguarding_llm_multiagent_collaborations_with_tem</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.2 · 2026-09-30 18:34</footer>
+</div>
+</body>
+</html>

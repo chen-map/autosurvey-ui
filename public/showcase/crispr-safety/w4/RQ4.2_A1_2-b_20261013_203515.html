@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ4.2]：[父问题 RQ4] 如何把大量定性 limitation 与 assumption/constraint 结构化为可计算的风险模型（风险矩阵 / 概率图模型 / 贝叶斯网络），以支撑临床前到临床的可复现决策？
+[本子问题 RQ4.2] `AssumptionConstraint` 节点（116 个）中，哪些（如 `Chromatin accessibility`、`Context-dependent delivery`、`Cargo choice determines delivery window`）应作为风险模型的条件变量，当前为何未被连接？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0350_the_digital_divide_in_process_safety_quantitative_risk_analy）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_第一层论证_哪些假设在定义上必须成为条件变量">第一层论证：哪些假设在定义上必须成为条件变量</a></li>
+<li><a href="#sec_第二层论证_KG_中已有可承载这些条件变量的风险模型管线">第二层论证：KG 中已有可承载这些条件变量的风险模型管线</a></li>
+<li><a href="#sec_第三层论证_为何当前未被连接_三层结构性原因">第三层论证：为何当前未被连接（三层结构性原因）</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ4.2 展开定义驱动的推演：在知识图谱（KG）的 AssumptionConstraint 节点中，哪些（如 Chromatin accessibility、Context-dependent delivery、Cargo choice determines delivery window）应当作为可计算风险模型（风险矩阵 / 概率图模型 / 贝叶斯网络）的条件变量，以及当前为何未被连接。核心结论是：这批约束在科学本质上都是风险模型中典型的「条件变量 / 前因节点」——按贝叶斯网络（BN）的形式化定义（依赖随机变量的条件依赖结构，CPT 基于专家知识<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>），任何调制下游事件概率且可取值不同的量都必须被建模为父节点，因此染色质可及性、货物选择、递送上下文、载体容量上限、长期表达等均满足该条件。</p><p>然而，KG 探测显示这些 AssumptionConstraint 节点全部为结构性孤立点：origin_paper_id 为空串，且 requires/relaxes/violates/instantiates 的入边与出边均为空列表。同一概念在 Problem 侧却存在已连接的孪生节点（如 'Chromatin accessibility affecting off-target profiles' 被论文 0032 以 addresses 边连接<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>），形成「概念二重化但无桥接边」的割裂格局。未被连接的根因可归结为三层：抽取层孤儿化、概念二重化缺桥接边、以及跨域 Schema 缺失（CRISPR 预测工具与过程安全 BN/LOPA 分属不同子图）。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析通过知识图谱工具系统性采集了七类节点数据。节点规模：AssumptionConstraint 节点 116 个（其中 Problem 312 个、Method 312 个、Paper 138 个、Limitation 190 个、Dataset 114 个、Metric 175 个）。工具对问题、方法、数据集基准、指标、局限、假设六类节点均执行了针对性查询，并对 8 篇以上关键论文（冻结论文 0350 及风险建模、CRISPR off-target、递送策略等领域的核心文献）进行了深度原文段落检索。</p><p>关键的一跳关系探测包括：对三个 RQ 点名假设节点的 get_relation（both 方向）返回空列表；对 paper 0350 的 proposes/addresses 边查询成功返回；对 Problem 'Chromatin accessibility affecting off-target profiles' 的 addresses 入边返回论文 0032；对 Problem 'Lack of efficient and safe delivery system for CRISPR–Cas9' 的 targets/addresses 边返回方法 HPAE-EB 与论文 0089。</p>
+<h3>核心假设节点：应作为风险模型条件变量 vs. KG 连接状态</h3>
+<table><thead><tr><th>AssumptionConstraint 节点</th><th>所属域</th><th>科学角色（应为何种条件变量）</th><th>origin_paper_id</th><th>requires/relaxes 边</th><th>violates/instantiates 边</th></tr></thead><tbody><tr><td>Chromatin accessibility</td><td>CRISPR off-target</td><td>off-target 概率的父节点（异染色质限制 Cas9 结合）</td><td>空串</td><td>空</td><td>空</td></tr>
+<tr><td>Context-dependent delivery</td><td>CRISPR 递送</td><td>递送失败概率的组织/货物条件因子</td><td>空串</td><td>空</td><td>空</td></tr>
+<tr><td>Cargo choice determines delivery window</td><td>CRISPR 递送</td><td>决定可接受编辑窗口与 off-target 风险的条件变量</td><td>空串</td><td>空</td><td>空</td></tr>
+<tr><td>Chromatin context</td><td>CRISPR off-target</td><td>off-target 检测/预测的上下文条件</td><td>空串</td><td>空</td><td>空</td></tr>
+<tr><td>AAV vector size limit</td><td>载体容量</td><td>载体可行性布尔/阈值约束</td><td>空串</td><td>空</td><td>空</td></tr>
+<tr><td>Long-term expression of CRISPR-Cas9 increases off-target activity</td><td>CRISPR off-target</td><td>暴露时长→累积 off-target 的中介变量</td><td>空串</td><td>空</td><td>空</td></tr>
+<tr><td>ISO 13849 risk graph</td><td>工程安全</td><td>风险图参数化框架（S/F/P→PLr）</td><td>空串</td><td>空</td><td>空</td></tr>
+</tbody></table>
+<div class="note">表中所有 AssumptionConstraint 的 origin_paper_id 均为空串，且 requires/relaxes/violates/instantiates 边全部为空——这是本报告最关键的 KG 结构性发现。注意：未使用 origin_paper_id（空）进行编号，故该表中节点不进入参考文献列表。</div>
+<h3>KG 概念二重化：同名的 Problem 节点（已连接） vs. AssumptionConstraint 节点（孤立）</h3>
+<table><thead><tr><th>概念</th><th>Problem 节点连接状态</th><th>AssumptionConstraint 节点连接状态</th><th>连接证据</th></tr></thead><tbody><tr><td>染色质可及性对 off-target 的影响</td><td>已连接：论文 0032 以 addresses 边（confidence 0.85）</td><td>零边孤立</td><td>Epigenomic state influences Cas9 binding and cleavage, causing cell-type-dependent off-target events [2]</td></tr>
+<tr><td>高效安全递送系统的缺失</td><td>已连接：论文 0089 与 HPAE-EB 方法以 addresses/targets 边（confidence 0.95）</td><td>零边孤立（对应 Context-dependent delivery）</td><td>The lack of an efficient and safe delivery system into cells and tissues continues to hinder clinical translation [3]</td></tr>
+</tbody></table>
+
+<h2 id="sec_第一层论证_哪些假设在定义上必须成为条件变量">第一层论证：哪些假设在定义上必须成为条件变量</h2>
+<p>BN 的形式化定义要求建模「随机变量的条件依赖结构」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。据此，任何「调节下游事件发生概率、且自身可取值不同」的量在逻辑上必然成为条件变量。Chromatin accessibility 正符合此标准：其定义明言异染色质限制 Cas9 结合、改变 off-target 谱。实证支撑强——GUIDE-seq 的 off-target 位点显著富集于开放染色质（ATAC-seq）区域，DNABERT-Epi 的 SHAP 分析显示 H3K27ac（活动增强子标记）是预测细胞内 off-target 活性「最重要的特征」<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。另一篇综述亦指出「染色质状态在评估中被忽略」是 Digenome-seq 的主要缺陷，需 DIG-seq 补偿，直接印证染色质状态对 off-target 活性的影响<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>Cargo choice determines delivery window 同理：RNP 递送的 off-target indel 通常 &lt;1%，而质粒为 5–15%，原文明确「货物选择直接决定可接受的递送窗口：质粒的持续表达增加 off-target 风险，而瞬时的 RNP 递送将其最小化」<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。Context-dependent delivery 在该综述的「三部分决策矩阵（靶器官可达性、货物大小与期望表达时长、可接受安全风险）」中被直接形式化为决策变量<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p>
+
+<h2 id="sec_第二层论证_KG_中已有可承载这些条件变量的风险模型管线">第二层论证：KG 中已有可承载这些条件变量的风险模型管线</h2>
+<p>冻结论文 0350 展示了完整的 BN + LOPA 量化管线：LOPA 用公式 P_consequence = IEF ∏PFD_i 计算事故频率<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，并进一步扩展为信度网络（credal network）——「用区间代替固定数值」——以 LPL/UPL 表达数据不确定性<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。这为染色质可及性这类「有方向但难精确赋概率」的假设提供了理想容器：不是点概率，而是由状态条件化的区间。论文 0109 提供不确定性分类学（aleatoric / stochastic / epistemic），指出 epistemic 不确定性「特征是无法精确知道发生概率」，应用概率分布函数建模<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，正对应这些假设节点。</p><p>论文 0409 的 BN 框架更直接给出机制：「引入额外节点以表达共同原因 / 耦合因子」以显式化依赖，并强调「DAG 中边的方向应为因→果」<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。Chromatin accessibility 与 Cargo choice 都是典型的共同原因 / 耦合因子，按此应成为父节点。论文 0026 则示范了工程安全路径：ISO 13849 风险图以严重度 (S)、频率 (F)、可避免性 (P) 三参数导出所需性能等级 (PLr)<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，说明「假设即风险图参数」已是成熟范式，但这些参数化节点同样未与基因治疗侧假设连接。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "风险建模方法对「假设作为条件变量」的支持度（按证据论文计数）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["BN/CPT 条件依赖", "信度网络（区间不确定性）", "耦合因子/共同因果节点", "ISO 风险图参数化", "MCS 不确定性分类"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "支持该能力的关键论文数", "type": "bar", "data": [3, 1, 1, 1, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_第三层论证_为何当前未被连接_三层结构性原因">第三层论证：为何当前未被连接（三层结构性原因）</h2>
+<p>（a）抽取层断裂：所有 AssumptionConstraint 节点的 origin_paper_id 为空，意味着它们未经「论文→假设」的溯源挂接，因而无法经由 paper→method→problem 链路参与推理。（b）概念二重化：同一概念在 KG 中存在「已连接的问题节点」和「孤立的假设节点」两份拷贝，二者之间未建立 instantiates/conditions 桥接边，导致同一知识被割裂。（c）跨域 Schema 缺失：CRISPR 领域的 off-target 预测工具（CRISOT<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、CCLMoff<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、DNABERT-Epi<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）与过程安全/自动驾驶领域的 BN/LOPA（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>）在 KG 中分属不同子图，没有任何 Method 同时 targets 一个 off-target Problem 并 requires 一个递送/染色质 Assumption，因此条件变量无处挂载。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，本分析未找到任何论文显式把 «Chromatin accessibility» 命名为某个 BN 的节点；论文 0409 仅给出「耦合因子应成节点」的通用原则，未落到 CRISPR，因此「应作为条件变量」主要依赖 BN 定义的结构必然推理，而非文献直接断言，相应认知强度应降级为 medium。其二，论文 0109 明确警告概率-影响矩阵存在量化失真（「有时对数量级差异显著的赋值相近评级」），且其 MCS 方法假设风险独立<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，与染色质↔货物↔递送之间显存的共同因果依赖相冲突，形成方法论张力。其三，论文 0350 自承其概率「仍来自人工判断……不精确的概率区间只能用于比较研究」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，说明即便接上条件变量，这些假设的 CPT 仍缺乏定量数据支撑，临床前到临床的可复现性受限。其四，本轮分析受工具调用预算约束，未穷尽全部 116 个 AssumptionConstraint 节点的一一跳关系探测，结论以抽样代表性节点为据。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>应作为风险模型条件变量的是那批「调制下游概率、可取值、有明确因果关系」的 AssumptionConstraint 节点：染色质可及性（off-target 的父节点）、货物选择（决定递送窗口）、递送上下文（组织/货物条件因子）、载体容量上限（可行性阈值约束）、以及长期表达（暴露时长的中介变量）。它们当前未被连接的直接原因是三重结构缺陷——抽取层孤儿化（origin_paper_id 为空、零边）、概念二重化无桥接边（Problem 侧已连接而 Assumption 侧孤立）、以及跨域 Schema 缺失；根本原因是这些定性约束节点尚未被二次编译进任何 BN/风险图结构。要支撑临床前到临床的可复现决策，需在 KG 中显式补齐 instantiates/requires 桥接边，并按论文 0409 的耦合因子范式将其挂载为 BN 父节点，以信度网络区间<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>或分布函数<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>承载其不确定性。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;The Digital Divide in Process Safety: Quantitative Risk Analysis of Human-AI Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0350_the_digital_divide_in_process_safety_quantitative_risk_analy</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Navigating off-target effects in CRISPR-based genome editing for safer gene therapies&nbsp;<code style="font-size:0.82em;color:#888">0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Non-viral delivery of CRISPR–Cas9 complexes for targeted gene editing via a polymer delivery system&nbsp;<code style="font-size:0.82em;color:#888">0089_Non-viral_delivery_of_CRISPR_Cas9_complexes_for_targeted_gen</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Improved CRISPR/Cas9 off-target prediction with DNABERT and epigenetic features&nbsp;<code style="font-size:0.82em;color:#888">0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Off-target effects in CRISPR/Cas9 gene editing&nbsp;<code style="font-size:0.82em;color:#888">0238_Off-target_effects_in_CRISPRCas9_gene_editing</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Beyond probability-impact matrices in project risk management: A quantitative methodology for risk prioritisation&nbsp;<code style="font-size:0.82em;color:#888">0109_beyond_probabilityimpact_matrices_in_project_risk_management</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Safety Integrity Framework for Automated Driving&nbsp;<code style="font-size:0.82em;color:#888">0409_safety_integrity_framework_for_automated_driving</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;SQUADfps: Integrated model-based machine safety and product quality for flexible production systems&nbsp;<code style="font-size:0.82em;color:#888">0026_squadfps_integrated_modelbased_machine_safety_and_product_qu</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Genome-wide CRISPR off-target prediction and optimization using RNA-DNA interaction fingerprints&nbsp;<code style="font-size:0.82em;color:#888">0098_Genome-wide_CRISPR_off-target_prediction_and_optimization_us</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;A versatile CRISPR/Cas9 system off-target prediction tool using language model&nbsp;<code style="font-size:0.82em;color:#888">0101_A_versatile_CRISPRCas9_system_off-target_prediction_tool_usi</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.2 · 2026-10-13 20:35</footer>
+</div>
+</body>
+</html>

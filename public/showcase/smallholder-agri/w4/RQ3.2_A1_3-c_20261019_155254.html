@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.3-c 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.3-c 分析报告</h1>
+<div class="meta">RQ [RQ3.2]：[父问题 RQ3] 小农异质性与&quot;理性小农&quot;建模假设之间的张力，应如何被理论化并纳入采纳机制模型？
+[本子问题 RQ3.2] 是否显式建模&quot;约束下有限理性采纳&quot;，可借鉴哪些理论构件？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2959_unlocking_ais_potential_in_agriculture_the_critical_role_of, 3002_learning_principalagent_contracts_for_equitable_smallholder, 0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i, 2923_selfconsistency_in_visionlanguage_models_for_precision_agric, 2802_adaptive_transfer_learning_for_plant_phenotyping, 2882_tractor_service_utilization_profitability_and_adoption_deter）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心发现一_旧范式内核_约束外生化的理性小农">核心发现一：旧范式内核——约束外生化的理性小农</a></li>
+<li><a href="#sec_核心发现二_新范式的理论构件已在少数模型与框架中成形">核心发现二：新范式的理论构件已在少数模型与框架中成形</a></li>
+<li><a href="#sec_核心发现三_约束_内生化_带来质变而非量变">核心发现三：约束&quot;内生化&quot;带来质变而非量变</a></li>
+<li><a href="#sec_分歧点_证据缺口与不确定性">分歧点、证据缺口与不确定性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ3.2（是否显式建模&quot;约束下有限理性采纳&quot;，可借鉴哪些理论构件），以知识图谱 A1.3-c 范式转移对比框架对新旧范式进行系统分析。结论是：可以也应当显式建模&quot;约束下有限理性采纳&quot;，证据矩阵已提供一套可操作的理论构件清单。范式转移的内容不是&quot;理性 vs 非理性&quot;的对立，而是方法论重心的转移——从&quot;约束作外生协变量的期望效用/利润最大化理性小农&quot;转向&quot;在多重结构性约束下做局部、短视野、风险规避、信息不完备型最优化的有限理性采纳者&quot;，并把约束从回归中的系数提升为改变个体最优化问题本身的结构变量 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>旧范式内核是&quot;约束外生化的理性小农&quot;：采纳计量研究普遍采用&quot;期望效用 Ua&gt;Una 则采纳&quot;的效用最大化模型，将信贷、推广、地块距离等约束作为外生解释变量 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。新范式的可计算实现已现雏形——POMDP 形式化显式建模私人采纳成本、不可观测努力与部分可观测总体并假定农户&quot;近视最优反应&quot; <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；行为经济学框架补充了风险规避、信任、社会学习、学习成本等构件 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。约束&quot;内生化&quot;具有质变后果：在池化合约下利润最大化聚合者使大农场可达采纳 87.7%、小农仅 8.2% <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；而&quot;90% 认为有用但仅 14% 获取、首因为知识不足 64% 而非价格&quot;的认知—采纳悖论，则是有限理性最直接的经验签名 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析基于知识图谱（KG）结构化数据与论文原文段落检索（RAG）两类来源。共执行 22 轮工具调用，覆盖六类节点：method（方法）、assumption（假设/约束）、problem（问题）、limitation（局限）、dataset（数据集基准）、metric（指标）以及 paper（论文）。KG 规模统计：method 节点 231 个、assumption 节点 61 个、problem 节点 226 个、limitation 节点 137 个、dataset 节点 104 个、metric 节点 132 个（均为已被加载的节点类型总量）。</p><p>深度精读论文 12 篇，包括证据矩阵冻结的 6 篇（2959、3002、0680、2923、2802、2882）以及从 KG 关系网络与原文检索中补充的 6 篇（3033、3044、0023、2846、0655、2980）。核心范式对比证据主要来自：POMDP 合约模型（3002）的方法与假设节点、采纳计量研究（3033、2882）的理论基础章节、行为经济学综述（2846）的采纳研究谱系陈述、以及保险采纳悖论（0655）的定量结果。</p>
+<h3>新旧范式对比矩阵（基于 KG 假设节点与论文原文证据）</h3>
+<table><thead><tr><th>对比维度</th><th>旧范式（约束外生化）</th><th>新范式（约束结构化）</th><th>变化类型</th><th>证据论文</th></tr></thead><tbody><tr><td>理性假设</td><td>期望效用/利润最大化（Ua&gt;Una 则采纳）</td><td>近视最优反应 + 短规划视野</td><td>质变（前提条件被替换）</td><td>[2][3][4]</td></tr>
+<tr><td>约束地位</td><td>信贷/推广/距离等作回归外生协变量</td><td>私人采纳成本 θj~U[0,1] 不可观测，进入最优化问题</td><td>质变（从系数到结构变量）</td><td>[4][2]</td></tr>
+<tr><td>风险态度</td><td>风险中性（隐含或未建模）</td><td>风险/损失规避，有限财务缓冲下权衡</td><td>质变（报酬函数重构）</td><td>[4][5][8]</td></tr>
+<tr><td>信息状态</td><td>完全信息 / 仅观测噪声</td><td>部分可观测（POMDP）+ 不可观测努力</td><td>质变（信息结构改变）</td><td>[4]</td></tr>
+<tr><td>决策报酬函数</td><td>产量或利润最大化</td><td>投资回报率（ROI）优先，受风险与偏好调节</td><td>质变（目标函数重构）</td><td>[6]</td></tr>
+<tr><td>社会维度</td><td>个体独立决策</td><td>社会学习、同伴示范、集体信任、条件合作</td><td>质变（新增结构层）</td><td>[5][7]</td></tr>
+<tr><td>约束异质性</td><td>异质性=可观测协变量分布</td><td>约束排序随群体系统性变化（内生）</td><td>定量→质变</td><td>[3]</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现一_旧范式内核_约束外生化的理性小农">核心发现一：旧范式内核——约束外生化的理性小农</h2>
+<p>证据矩阵中的采纳计量研究几乎都建立在&quot;理性小农&quot;内核上。一项埃塞俄比亚改良小麦采纳研究采用&quot;若采纳的期望效用 Ua 大于未采纳的 Una 则采纳&quot;的效用最大化定义，并使用 Double-Hurdle 模型将性别、年龄、信贷、推广、地块距离作为&quot;是否采纳/采纳强度&quot;的外生解释变量 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。另一项加纳拖拉机服务研究以利润最大化理论（Varian 2014）、效用最大化理论（Mas-Colell 1995）与 Rogers 扩散理论为三重理论基础，用 MVP/PSM 估计采纳决定因素与盈利溢价 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>在这一范式里，&quot;异质性&quot;被处理成可观测协变量的分布差异，约束是回归中的系数，而非改变个体最优化问题本身的结构。KG 中虽登记了&quot;金融约束对所有农户类别普遍约束&quot;&quot;终端用户特征制约使用&quot;等假设节点，但这些约束并未进入最优化问题，仍是外生标签。这正是范式转移需要跨越的起点。</p>
+
+<h2 id="sec_核心发现二_新范式的理论构件已在少数模型与框架中成形">核心发现二：新范式的理论构件已在少数模型与框架中成形</h2>
+<p>最接近&quot;约束下有限理性采纳&quot;的可计算实现是 POMDP 形式化的碳农业合约模型 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。它显式建模私人采纳成本（adverse selection，θj 服从 <sup class="cite"><a href="#ref-0" style="text-decoration:none">[0]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 均匀分布且不可观测）、不可观测努力（moral hazard）、部分可观测的农户总体（聚合器仅见均值等统计量），并明确假定农户每季&quot;myopically best-respond&quot;且具有短规划视野，引用 Duflo、Kremer 与 Robinson（2011）关于小农短视野的行为经济学证据支撑该假设。</p><p>印尼小农的数字技术采纳研究提出 ASTAD（Adaptive Socio-Technical Agrarian Digitalization）模型，明确主张&quot;采纳并非个体理性思辨的结果&quot;，提出经济风险缓冲能力（ERBC）、数字学习弹性（DLE）、集体信任基础设施（CTI）、同伴示范效应（PDE）等构件 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。智慧互联农场综述则提供了最完整的行为构件库：风险与损失规避者更晚采纳、条件合作者需要信任、社会学习与学习成本 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。数字农业推广研究进一步指出，农户在流动性、运输成本与市场预期约束下按投资回报率（ROI）而非产量最大化决策，且 ROI 受风险与偏好影响 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "[3002] 实现的可达采纳比例（RAS）按农场规模分组的梯度（%）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["小农 (1-4 ha)", "中农 (4-7 ha)", "大农 (7-10 ha)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "RL Adoption / First-Best Adoption (%)", "type": "bar", "data": [8.2, 23.8, 87.7], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心发现三_约束_内生化_带来质变而非量变">核心发现三：约束&quot;内生化&quot;带来质变而非量变</h2>
+<p>约束若仅在回归中作外生协变量，模型会系统性低估被排斥的程度。在 POMDP 池化合约模型中，一旦把固定 MRV 成本、私人成本与池化约束内生化，利润最大化聚合者并非&quot;继承&quot;而是放大对小农的排斥：大农场实现 87.7% 的可能采纳，小农仅 8.2%（Realised Adoption Share, RAS 指标）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。该残差超出成本结构本身所能解释的范围；而当反事实把 MRV 成本改为纯面积比例分摊后，规模梯度完全消失 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>更直接的有限理性经验签名来自加纳农业保险研究：绝大多数（90%）农户认为保险有用，但仅 14% 实际获取，首要障碍是&quot;知识不足&quot;（64%）而非价格（仅 5% 认为贵）<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。这一&quot;高认知—低采纳&quot;悖论无法由纯价格/效用最大化解释，只能由信息不完备与认知约束（即有限理性）解释。约束异质性同样内生：加纳拖拉机研究显示金融约束在所有规模与性别类别中均排第一，但小农把&quot;政府支持不足&quot;排第 2 而大农排第 4，约束排序随群体系统性变化，而非外生噪声 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p>
+<h3>可借鉴的六类理论构件清单（RQ 直接答案）</h3>
+<table><thead><tr><th>编号</th><th>理论构件</th><th>可操作化方式</th><th>来源论文</th></tr></thead><tbody><tr><td>TC1</td><td>近视最优反应 / 短规划视野</td><td>每季局部最优替换多季前瞻最优，作为有限理性的可计算代理</td><td>[4]</td></tr>
+<tr><td>TC2</td><td>风险规避 / 有限财务缓冲权衡</td><td>经济风险缓冲能力（ERBC）；风险/损失偏好进入报酬函数</td><td>[5][7][8]</td></tr>
+<tr><td>TC3</td><td>私人信息与不可观测约束</td><td>adverse selection（私人采纳成本）+ moral hazard（不可观测努力）</td><td>[4]</td></tr>
+<tr><td>TC4</td><td>部分可观测 + 多季动态</td><td>POMDP 形式化，聚合器仅观测总体统计量，跨季动态</td><td>[4]</td></tr>
+<tr><td>TC5</td><td>社会学习 / 信任 / 学习成本</td><td>同伴示范效应（PDE）、集体信任基础设施（CTI）、条件合作、学习成本</td><td>[5][7]</td></tr>
+<tr><td>TC6</td><td>ROI 优先的报酬函数重构</td><td>以投资回报率替代产量最大化，受风险与偏好调节</td><td>[6]</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "[0655] 农业保险未购买原因分布（%）：知识约束主导而非价格", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "[0655] 农业保险未购买原因分布（%）：知识约束主导而非价格", "type": "pie", "radius": "55%", "data": [{"name": "不了解/知识不足 (64%)", "value": 64}, {"name": "产品不可得 (23%)", "value": 23}, {"name": "其他/资金等 (8%)", "value": 8}, {"name": "认为太贵 (5%)", "value": 5}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">范式转移标注为 implicitly_discussed（隐式）：证据矩阵中没有任何一篇论文对&quot;理性小农 vs 有限理性&quot;做正面的范式对比声明。新旧范式的对立是从模型底层假设（如 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 myopic best-response、<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 的 ROI 替代产量）与理论构件（如 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的风险、信任、社会学习）逆推得到，而非原文直接声明。其中，<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的综述给出了最接近显式的谱系陈述：&quot;传统农业采纳研究以经济、制度、农户特征等外生因素解释采纳；较新研究脉络纳入社会网络、学习、信念、风险、信任等行为力量&quot;。</div>
+
+<h2 id="sec_分歧点_证据缺口与不确定性">分歧点、证据缺口与不确定性</h2>
+<p>第一，范式对比的隐式性。如上述，无一篇论文正面声明新旧范式对立，<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 为概念性综合、未做实证假设检验，<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 为专家评述，<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 为综述性讨论，行为构件多引自二手文献（如 Liu 2013 关于中国棉农风险规避与 Bt 棉花迟采纳），未在本证据矩阵农场采纳样本中直接检验。</p><p>第二，构件分散、未被整合。POMDP 模型 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 明确假定农户风险中性、无信贷/参与成本，故其虽内化了信息约束与近视理性，却未内化风险规避与信贷约束；而 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 恰恰将风险规避与信贷/知识约束视为有限理性核心。两类证据互补但未在同一模型中同时实现。</p><p>第三，验证层级不足。<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的核心量化结果（87.7% vs 8.2%）来自可配置模拟器而非田间部署，作者本人称其排除性估计为下界。</p><p>第四，数据稀缺约束的类比证据较弱。植物表型研究显示训练样本从 10% 降至 5% 时 PLSR/MLP 的 RMSE 从 0.7363/0.6923 恶化至 1.0058/1.1547 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，这提示数据贫乏环境下模型质量退化，但属于类比推理，而非农户采纳行为的直接证据。</p><p>综上，现有文献缺少同时纳入风险偏好、社会学习、部分可观测与多季动态的统一采纳机制模型，这正是 RQ3.2 的开放前沿。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>本子问题可给出肯定回答：现有文献已支持显式建模&quot;约束下有限理性采纳&quot;，其成熟度是部分实现、碎片化存在。旧范式（约束外生化的期望效用/利润最大化理性小农）在 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 中清晰可辨；新范式的可计算骨架已在 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 POMDP 形式化中成形，行为理论构件在 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 中齐备，而 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的&quot;90% 认为有用 / 14% 获取 / 知识不足为首因&quot;悖论提供了有限理性最直接的经验签名。约束内生化具有质变后果 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。可直接借鉴的六类构件为：近视最优反应（TC1）、风险规避与有限财务缓冲（TC2）、私人信息与不可观测约束（TC3）、部分可观测+多季动态（TC4）、社会学习/信任/学习成本（TC5）、ROI 优先的报酬函数（TC6）。下一步的建模任务，是把 TC2 与 TC5 内生化进 TC3+TC4 的计算框架，形成一个统一的风险—社会—信息—动态采纳机制模型，并辅以田间验证。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Smart connected farms and networked farmers to tackle climate change (behavioral factors and adoption research lineage)&nbsp;<code style="font-size:0.82em;color:#888">2846_smart_connected_farms_and_networked_farmers_to_tackle_climat</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Agricultural technology adoption and its impact on smallholder farmer's welfare in Ethiopia&nbsp;<code style="font-size:0.82em;color:#888">3033_Agricultural_technology_adoption_and_its_impact_on_smallhold</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Tractor service utilization, profitability and adoption determinants&nbsp;<code style="font-size:0.82em;color:#888">2882_tractor_service_utilization_profitability_and_adoption_deter</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Learning Principal-Agent Contracts for Equitable Smallholder Carbon Farming under Moral Hazard and Adverse Selection Risk&nbsp;<code style="font-size:0.82em;color:#888">3002_learning_principalagent_contracts_for_equitable_smallholder</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Digital Technology Adoption by Smallholder Farmers in Indonesia (ASTAD model)&nbsp;<code style="font-size:0.82em;color:#888">3044_Digital_Technology_Adoption_by_Smallholder_Farmers_in_Indone</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Digital Agricultural Extension for Development&nbsp;<code style="font-size:0.82em;color:#888">0023_Digital_Agricultural_Extension_for_Development</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Smart connected farms and networked farmers — behavioral economics of adoption (risk, trust, social learning)&nbsp;<code style="font-size:0.82em;color:#888">2846_smart_connected_farms_and_networked_farmers_to_tackle_climat</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Agricultural insurance access and acceptability: examining the case of smallholder farmers in Ghana&nbsp;<code style="font-size:0.82em;color:#888">0655_Agricultural_insurance_access_and_acceptability_examining_th</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Adaptive Transfer Learning for Plant Phenotyping&nbsp;<code style="font-size:0.82em;color:#888">2802_adaptive_transfer_learning_for_plant_phenotyping</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.2 · 2026-10-19 15:52</footer>
+</div>
+</body>
+</html>

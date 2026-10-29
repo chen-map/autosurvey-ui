@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ5.2]：[父问题 RQ5] LLM 安全领域的不确定性建模与风险预测能力，能否迁移到 CRISPR 临床前安全评估，形成 LLM-assisted risk prediction 的交叉框架？
+[本子问题 RQ5.2] 能否用 LLM 从序列 / 载体 / 剂量等输入预测脱靶与免疫风险，KG 中是否存在任何跨聚类的 `extends` / `compares_with` / `supports` 边作为先例？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0233_Feature_representation_for_explainable_CRISPR_off-target_pre, 0098_Genome-wide_CRISPR_off-target_prediction_and_optimization_us, 0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e, 0477_how_should_ai_safety_benchmarks_benchmark_safety, 0101_A_versatile_CRISPRCas9_system_off-target_prediction_tool_usi）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_研究背景与问题界定">研究背景与问题界定</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_论证主线一_序列_脱靶预测的_ML_基础坚实_强证据">论证主线一：序列→脱靶预测的 ML 基础坚实（强证据）</a></li>
+<li><a href="#sec_论证主线二_载体_剂量_免疫风险有计算免疫学基础_但形态不同_中证据">论证主线二：载体/剂量→免疫风险有计算免疫学基础，但形态不同（中证据）</a></li>
+<li><a href="#sec_论证主线三_LLM_安全不确定性建模的接口存在_但从未被接到_CRISPR_关键缺口">论证主线三：LLM 安全不确定性建模的接口存在，但从未被接到 CRISPR（关键缺口）</a></li>
+<li><a href="#sec_论证主线四_唯一的跨域锚点_CRISPR_GPT_孤例">论证主线四：唯一的跨域锚点——CRISPR-LLM 孤例</a></li>
+<li><a href="#sec_推演出的问题关系与蕴含强度">推演出的问题关系与蕴含强度</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ5.2——能否用 LLM 从序列/载体/剂量等输入预测脱靶与免疫风险，以及 KG 中是否存在任何跨聚类的 extends/compares_with/supports 边作为先例——进行了系统性的定义驱动推演与跨聚类边审计。核心结论是：**迁移方向在原理上可行且已有组件级先例，但知识图谱中不存在真正的跨聚类先例。** 所有 compares_with/extends 边均发生在同一聚类内部（脱靶预测工具之间、LLM 安全基准之间），没有任何一条边把 LLM 安全不确定性建模（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）与 CRISPR 脱靶/免疫预测连接起来。</p><p>序列→脱靶预测侧证据坚实：CRISOT <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 在独立测试集上 PR-AUC 平均 0.46 并超越全部学习型与假设驱动方法（p&lt;0.05），CCLMoff <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 已直接用 RNA 预训练语言模型实现强跨数据集泛化，DNABERT-Epi <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 相比从零训练 PR-AUC 提升 +0.1653（p&lt;0.001）。载体/剂量→免疫风险侧则并行为结构式计算免疫学管线（NetMHCIIpan，<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>），而非 LLM。唯一的跨域架构先例是 CRISPR-LLM <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>——一个将 off-target prediction 列为 meta-task 的 LLM agent，但 KG 未记录其跨聚类边，属孤例。</p>
+
+<h2 id="sec_研究背景与问题界定">研究背景与问题界定</h2>
+<p>RQ5.2 是父问题 RQ5 的子问题，追问一个交叉可行性判断：LLM 安全领域的不确定性建模与风险预测能力，能否迁移到 CRISPR 临床前安全评估。本子问题进一步收窄为两个可证伪的问题：(1) 能否用 LLM 从序列/载体/剂量等输入预测脱靶与免疫风险；(2) KG 中是否存在任何跨聚类的 extends/compares_with/supports 边作为先例。</p><p>本分析采用「定义驱动推演」视角：以 CRISOT/DNABERT-Epi 等脱靶预测的形式化/操作性定义作为公理，推演其约束被违反时所对应的问题类别，并审计这些类别之间是否存在 KG 记录的逻辑连接（对比、扩展、支持）。证据矩阵为冻结的 5 篇论文：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 0098、<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 0101、<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 0203、<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 0477、<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 0221。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析全程基于知识图谱（KG）结构化查询与 132 篇 paper card 的原文语义检索，共执行 38 次工具调用，覆盖全部六类节点。</p><p>• 节点类型覆盖：paper（138 篇）、problem（312 个）、method（312 个）、dataset/benchmark（114 个）、metric（175 个）、limitation（190 条）、assumption/constraint（108 条）均为全量加载后再条件过滤。</p><p>• 关系边查询：对证据矩阵 5 篇核心论文及扩展论文逐一拉取一跳关系边（out/in/both），重点抽取 extends / compares_with / supports / addresses / proposes / evaluated_on / measured_by 等边型。</p><p>• 原文精读：用 search_paper_sections 对 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 等 9 篇关键论文的多个章节段落做了语义检索与阅读理解，累计检索 11 组 query。</p>
+<h3>跨聚类边审计结果：证据矩阵论文的 extends/compares_with/supports 边去向</h3>
+<table><thead><tr><th>源论文</th><th>边型</th><th>目标论文/结论</th><th>是否跨聚类</th></tr></thead><tbody><tr><td>0101 CCLMoff [2]</td><td>compares_with</td><td>0098 CRISOT [1]</td><td>否（脱靶预测簇内）</td></tr>
+<tr><td>0101 CCLMoff [2]</td><td>extends</td><td>0032 Navigating off-target [9]</td><td>否（脱靶预测簇内）</td></tr>
+<tr><td>0201 CRISPR-M [10]</td><td>compares_with</td><td>0098 CRISOT [1]</td><td>否（脱靶预测簇内）</td></tr>
+<tr><td>0203 DNABERT-Epi [3]</td><td>compares_with</td><td>0101 CCLMoff [2] / 0201 CRISPR-M [10]</td><td>否（脱靶预测簇内）</td></tr>
+<tr><td>0233 Feature representation [11]</td><td>extends</td><td>0221 ML-driven [8]</td><td>否（脱靶预测簇内）</td></tr>
+<tr><td>0440 AI gRNA design [12]</td><td>extends</td><td>0221 ML-driven [8] / 0239 [13]</td><td>否（脱靶预测簇内）</td></tr>
+<tr><td>0477 AI safety benchmarks [4]</td><td>extends（入边）</td><td>0484 / 0509 / 0522（皆 LLM 安全论文）</td><td>否（LLM 安全簇内）</td></tr>
+<tr><td>0371 CRISPR-LLM [7]</td><td>proposes/addresses</td><td>仅连向自身方法与问题节点，无跨聚类出边</td><td>否（孤例，无跨簇边）</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "证据矩阵论文的跨聚类 vs 同聚类边分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "证据矩阵论文的跨聚类 vs 同聚类边分布", "type": "pie", "radius": "55%", "data": [{"name": "同聚类 compares_with/extends 边", "value": 9}, {"name": "跨聚类 extends/compares_with/supports 边", "value": 0}, {"name": "孤例（无记录跨簇边）", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_论证主线一_序列_脱靶预测的_ML_基础坚实_强证据">论证主线一：序列→脱靶预测的 ML 基础坚实（强证据）</h2>
+<p>脱靶预测已是一个成熟的监督学习问题，这正是 LLM 迁移的算力基础。CRISOT <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 用分子动力学派生 RNA-DNA 相互作用指纹，在独立测试集上 PR-AUC 平均 0.46，并超越四个假设驱动工具（KinPred/CRISPRoff/uCRISPR/CFD）与四个学习型工具（MOFF/CRISPRnet/DLcrispr/CNN_std），显著性 p&lt;0.05。<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> CCLMoff 引入 RNAcentral 预训练 RNA 语言模型，在 13 种全基因组脱靶检测技术的数据集上展现强跨数据集泛化，模型解释还揭示了 seed region 的生物学重要性。<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> DNABERT-Epi 用两阶段微调（先错配位置预测、再二分类）的 DNA 基础模型，相比从零训练 PR-AUC 提升 +0.1653（p&lt;0.001），加入表观遗传特征后 F1/MCC/PR-AUC 显著改进（p&lt;0.001）。这三条证据共同表明：「预训练基础模型 + 序列输入 → 脱靶风险」范式已被实证，且 language-model 直接用于脱靶预测本身已有先例（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>）。</p>
+<div id="chart_2" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "序列→脱靶预测关键方法的性能证据（PR-AUC 或提升量）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["CRISOT [1]", "CCLMoff [2]", "DNABERT-Epi 微调增益 [3]"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "量化指标（PR-AUC / ΔPR-AUC）", "type": "bar", "data": [0.46, 0.0, 0.1653], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">说明：CCLMoff <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的原文未在检索段落中给出单一 PR-AUC 数值，仅有「在 13 种检测技术数据集上强跨数据集泛化」的定性结论，故图表中以 0 占位表示「无具体数值可提取」，不代表性能为零。CRISOT 0.46 为 in vitro/in cell 独立测试集的平均 PR-AUC。</div>
+
+<h2 id="sec_论证主线二_载体_剂量_免疫风险有计算免疫学基础_但形态不同_中证据">论证主线二：载体/剂量→免疫风险有计算免疫学基础，但形态不同（中证据）</h2>
+<p>免疫风险侧存在并行的计算管线，但采用 MHC-I/II 结合亲和力的结构式建模而非 LLM。<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 详述 NetMHCIIpan 4.0/4.2 等算法基于肽-HLA-II 结合亲和力与质谱洗脱配体数据训练，可将 107 个 mAb 有效分为高/低免疫原性，但明确指出现有免疫原性预测算法「依赖线性序列表位、忽略三级结构与翻译后修饰，对新型序列预测不精确」。<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 指出脱靶效应与免疫原性受「CRISPR 效应蛋白持久性与活性」共同调控，限制作用时长可同时降低两者——这为「联合预测」提供机制依据。<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 还报告商业 Cas9 蛋白来自 7 家厂商时内毒素水平不一，且免疫评估缺乏标准化协议。综合来看，「载体→免疫」预测在方法上存在，但输入是蛋白序列/表位，而非 LLM 直接理解「载体类型+剂量」组合——后者在 KG 中无任何直接证据。</p>
+
+<h2 id="sec_论证主线三_LLM_安全不确定性建模的接口存在_但从未被接到_CRISPR_关键缺口">论证主线三：LLM 安全不确定性建模的接口存在，但从未被接到 CRISPR（关键缺口）</h2>
+<p>LLM 安全侧已发展出可直接被迁移的形式化接口。<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 对 210 个安全基准的综述确立了 Probabilistic Risk Assessment（PRA）框架——风险 = 违规概率 × 后果严重度——并暴露三大结构性缺陷：81%（N=170）基准只评测「已知已知」、79%（N=166）把经验频率当作概率而无置信区间、缺乏分布漂移鲁棒性。这与 CRISPR 侧的核心痛点高度同构：脱靶预测同样面临约 97% 类别不平衡（<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 因此弃用 AUROC 改用 AUPR）、跨数据集泛化不足（<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>）、以及 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 指出的免疫原性模型不精确问题。</p><p>然而，KG 中断言这一迁跃的 extends/supports 边并不存在。<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的出边 extends 仅指向 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 0484、<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> 0509、<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup> 0522 三篇 LLM 安全论文，全部停留在 AI 安全簇内。因此「LLM 安全不确定性建模 → CRISPR」目前仅为类比推论（类比而非演绎），推演强度应降级为 weak。</p>
+
+<h2 id="sec_论证主线四_唯一的跨域锚点_CRISPR_GPT_孤例">论证主线四：唯一的跨域锚点——CRISPR-LLM 孤例</h2>
+<p>跨域桥接的唯一实质先例是 CRISPR-LLM <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。它是一个 LLM-powered 设计与规划 agent，明确将「Prediction of Off-target Effects」列为 6 大核心 meta-task 之一，并设有专门的 Off-target Prediction Mode，同时集成 gRNA 设计工具（Broad Institute gold-standard 库、CRISPRPick）与外部工具集。这在方法层面直接示范了「LLM agent 编排 + 领域预测器」的架构——即 RQ5.2 所设想的交叉框架的雏形。</p><p>但 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 在 KG 中既无 extends/supports 出边连向任何脱靶预测工具（如 CRISOT/CCLMoff），也无相关入边，故只能作为孤例（weak evidence）。其局限还包括：current agent 无法从自然语言生成完整载体/构建体，这恰好命中 RQ5.2 中「从载体输入预测」这一环的能力空白。</p>
+<h3>定义/接口 → 问题类别的映射：脱靶预测形式化约束被违反所对应的问题</h3>
+<table><thead><tr><th>形式化接口/定义来源</th><th>约束条件</th><th>被违反时对应的问题类别</th><th>KG 中是否存在跨簇连接</th></tr></thead><tbody><tr><td>CRISOT 指纹编码 [1]</td><td>RNA-DNA 相互作用特征可区分真/假脱靶（高类别不平衡）</td><td>有限性能的计算工具、跨数据集泛化不足</td><td>否</td></tr>
+<tr><td>CCLMoff 语言模型 [2]</td><td>捕获 sgRNA-靶点互信息、seed region 敏感</td><td>现有方法对未见序列泛化差</td><td>否</td></tr>
+<tr><td>DNABERT-Epi 多模态 [3]</td><td>序列+表观遗传上下文共同决定活性脱靶</td><td>染色质可及性影响脱靶谱</td><td>否</td></tr>
+<tr><td>PRA 风险分解 [4]</td><td>风险=违规概率×严重度，需校准与置信区间</td><td>概率严谨性缺失、构念覆盖失衡</td><td>否（仅在 LLM 安全簇内）</td></tr>
+<tr><td>NetMHCIIpan [6]</td><td>肽-HLA-II 结合亲和力+质谱洗脱数据</td><td>免疫原性预测不精确、标签标准化缺失</td><td>否</td></tr>
+</tbody></table>
+
+<h2 id="sec_推演出的问题关系与蕴含强度">推演出的问题关系与蕴含强度</h2>
+<p>基于上述映射，可推演出以下问题间关系（含强度分级）：</p><p>• 【subsumes，strong】「CRISPR off-target effects」问题被「CRISPR off-target prediction」方法类所针对（CRISOT→targets 边、confidence 0.95），序列预测是脱靶安全的下位机制。</p><p>• 【implies，weak】「概率严谨性缺失」（LLM 安全侧）与「脱靶预测泛化不足」（CRISPR 侧）在结构上同构，但二者之间不存在 KG 记录的 extends/supports 边，属类比蕴含，需外部假设（跨领域风险度量可移植）支撑。</p><p>• 【mutually_exclusive，strong】载体/剂量→免疫与序列→脱靶是两条独立输入通道：前者由结构式表位建模承担，后者由序列深度学习承担，无任何一篇论文同时建模二者。</p><p>• 【subsumes，strong】「限制 CRISPR 效应蛋白持久性」（<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）同时降低脱靶与免疫风险，是唯一被文献支持的机制性联结。</p>
+<h3>关键结论主张与置信度汇总</h3>
+<table><thead><tr><th>主张编号</th><th>结论句</th><th>类型</th><th>支撑论文</th><th>置信度</th></tr></thead><tbody><tr><td>C1</td><td>KG 不存在连接 LLM 安全簇与 CRISPR 脱靶/免疫预测簇的跨聚类边；0477 出边仅指向 LLM 安全论文</td><td>结构性空隙</td><td>[4][14][15][16]</td><td>high</td></tr>
+<tr><td>C2</td><td>序列→脱靶预测是成熟监督学习问题：CRISOT 独立测试 PR-AUC 平均 0.46 超越全部对比方法（p&lt;0.05）</td><td>方法可行性</td><td>[1]</td><td>high</td></tr>
+<tr><td>C3</td><td>语言模型用于脱靶预测已有先例：CCLMoff 在 13 种检测技术数据集上强跨数据集泛化</td><td>跨域先例</td><td>[2]</td><td>high</td></tr>
+<tr><td>C4</td><td>预训练 DNA 基础模型迁移有效：DNABERT-Epi 相比从零训练 PR-AUC +0.1653（p&lt;0.001）</td><td>方法有效性</td><td>[3]</td><td>high</td></tr>
+<tr><td>C5</td><td>载体→免疫预测由结构式计算免疫学承担：NetMHCIIpan 可将 107 个 mAb 分为高/低免疫原性</td><td>方法基础</td><td>[6]</td><td>medium</td></tr>
+<tr><td>C6</td><td>CRISPR-LLM 是唯一跨域架构先例（off-target 为 meta-task），但无记录跨簇边，属孤例</td><td>跨域先例</td><td>[7]</td><td>high</td></tr>
+<tr><td>C7</td><td>LLM 安全基准接口与 CRISPR 痛点同构：81% 只评测已知已知、79% 概率无置信区间</td><td>结构同构</td><td>[4][11][10]</td><td>medium</td></tr>
+<tr><td>C8</td><td>不确定性与校准在 CRISPR 风险预测中完全缺位</td><td>证据缺口</td><td>[4][11]</td><td>medium</td></tr>
+<tr><td>C9</td><td>免疫风险预测缺乏标签质量基础：7 家厂商 Cas9 内毒素水平不一、评估协议未标准化</td><td>数据/证据缺口</td><td>[5][17]</td><td>medium</td></tr>
+<tr><td>C10</td><td>脱靶与免疫风险可联动：限制效应蛋白持久性同时降低两者</td><td>机制支持</td><td>[5]</td><td>medium</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>1. **跨聚类先例的结论为「不存在」，而非「不可能」**：KG 边可能不完整，审计结果只能说明「未被记录」，不能排除未发表的实际迁移工作。故 C1 的穷尽性受限于 KG 覆盖率。</p><p>2. **免疫风险侧证据稀疏**：KG 中载体/剂量→免疫的 LLM 化证据与不确定性量化实证几乎为空，C5、C9 的置信度仅为 medium；模型只能证明「结构式管线存在」，无法评估 LLM 迁移的实际性能。</p><p>3. **形式化定义强度参差**：CRISOT/DNABERT-Epi 给出的更多是操作性定义（方法如何计算）而非公理化定义（∀/∃ 量词的完备约束），因此本报告的「定义驱动推演」在脱靶侧是操作约束违反的映射，在 LLM 安全侧（PRA）才是较强形式化的框架，两侧推演效力不对等。</p><p>4. **存在性偏倚**：证据矩阵论文以「正面结果」为主（方法优于基线），负面结果与失败案例（如跨物种泛化失败）在 KG 中记录不足，可能高估迁移可行性。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>回答 RQ5.2：**用 LLM 从序列/载体/剂量输入预测脱靶与免疫风险在原理上可行，但 KG 中不存在系统性的跨聚类先例。** 序列→脱靶预测已有成熟的 ML/预训练模型基础（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>），载体→免疫有结构式计算免疫学基础（<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>），LLM 安全侧已提供可迁移的风险量化接口（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）。唯一的跨域架构锚点是 CRISPR-LLM <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的孤例，而连接 LLM 安全簇与 CRISPR 预测簇的 extends/compares_with/supports 边为零。</p><p>因此，该交叉框架需由研究者从零搭建，其最薄弱环节是：(a) 免疫风险的 LLM 化——目前无一篇论文用 LLM 从载体/剂量组合预测免疫原性；(b) 不确定性量化——LC 侧的 PRA/校准思想尚未在 CRISPR 风险预测中落地；(c) 联合建模——脱靶与免疫仅在「效应蛋白持久性」这一机制维度上被文献连接。建议未来工作以 CRISPR-LLM 为架构模板，将 CRISOT/CCLMoff/DNABERT-Epi 作为可调用预测器，并显式引入校准与置信区间评估，以填补 KG 中观测到的跨聚类连接空白。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Genome-wide CRISPR off-target prediction and optimization using RNA-DNA interaction fingerprints&nbsp;<code style="font-size:0.82em;color:#888">0098_Genome-wide_CRISPR_off-target_prediction_and_optimization_us</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;A versatile CRISPR/Cas9 system off-target prediction tool using language model&nbsp;<code style="font-size:0.82em;color:#888">0101_A_versatile_CRISPRCas9_system_off-target_prediction_tool_usi</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Improved CRISPR/Cas9 off-target prediction with DNABERT and epigenetic features&nbsp;<code style="font-size:0.82em;color:#888">0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;How Should AI Safety Benchmarks Benchmark Safety?&nbsp;<code style="font-size:0.82em;color:#888">0477_how_should_ai_safety_benchmarks_benchmark_safety</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Immunogenicity of CRISPR therapeutics—Critical considerations for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0237_immunogenicity_of_crispr_therapeuticscritical_considerations</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Reducing Immunogenicity by Design: Approaches to Minimize Immunogenicity of Monoclonal Antibodies&nbsp;<code style="font-size:0.82em;color:#888">0037_Reducing_Immunogenicity_by_Design_Approaches_to_Minimize_Imm</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;CRISPR-LLM for Agentic Automation of Gene-editing Experiments&nbsp;<code style="font-size:0.82em;color:#888">0371_crisprgpt_for_agentic_automation_of_geneediting_experiments</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Machine Learning-Driven Prediction of CRISPR-Cas9 Off-Target&nbsp;<code style="font-size:0.82em;color:#888">0221_Machine_Learning-Driven_Prediction_of_CRISPR-Cas9_Off-Target</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Navigating off-target effects in CRISPR-based genome editing for safer gene therapies&nbsp;<code style="font-size:0.82em;color:#888">0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;CRISPR-M: Predicting sgRNA off-target effect using a multi-view deep learning network&nbsp;<code style="font-size:0.82em;color:#888">0201_CRISPR-M_Predicting_sgRNA_off-target_effect_using_a_multi-vi</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Feature representation for explainable CRISPR off-target prediction&nbsp;<code style="font-size:0.82em;color:#888">0233_Feature_representation_for_explainable_CRISPR_off-target_pre</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Artificial Intelligence for CRISPR Guide RNA Design: Explainable Models and Off-Target Safety&nbsp;<code style="font-size:0.82em;color:#888">0440_artificial_intelligence_for_crispr_guide_rna_design_explaina</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Beyond the promise: evaluating and mitigating off-target effects in CRISPR gene editing for safer therapeutics&nbsp;<code style="font-size:0.82em;color:#888">0239_Beyond_the_promise_evaluating_and_mitigating_off-target_effe</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Assessing Risks of Large Language Models in Mental Health Support: A Framework for Automated Clinical AI Red Teaming&nbsp;<code style="font-size:0.82em;color:#888">0484_assessing_risks_of_large_language_models_in_mental_health_su</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Evaluating Patient Safety Risks in Generative AI Development&nbsp;<code style="font-size:0.82em;color:#888">0509_evaluating_patient_safety_risks_in_generative_ai_development</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;EvalSafetyGap: A Hybrid Survey and Conceptual Framework for LLM Evaluation-Safety Failures&nbsp;<code style="font-size:0.82em;color:#888">0522_evalsafetygap_a_hybrid_survey_and_conceptual_framework_for_l</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;Immunogenicity of Recombinant Adeno-Associated Virus (AAV) Vectors for Gene Transfer&nbsp;<code style="font-size:0.82em;color:#888">0036_Immunogenicity_of_Recombinant_Adeno-Associated_Virus_AAV_Vec</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.2 · 2026-10-13 20:41</footer>
+</div>
+</body>
+</html>

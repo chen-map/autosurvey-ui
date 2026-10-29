@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.1-c 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.1-c 分析报告</h1>
+<div class="meta">RQ [RQ5.1]：[父问题 RQ5] 自然语言会话与信息共享机制在多智能体协作中受哪些通信约束，这些约束如何被抽象为可复用的协作设计维度？
+[本子问题 RQ5.1] 自然语言协调中的歧义（ambiguity）与上下文约束（context window size、context availability）如何影响协作正确性？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion, 1717_multiagentesc_a_llmbased_multiagent_collaboration_framework, 0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati, 1663_ColaCare_Enhancing_Electronic_Health_Record_Modeling_through, 1706_longagent_achieving_question_answering_for_128ktokenlong_doc, 1159_Heterogeneous_Embodied_Multi-Agent_Collaboration）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心机制一_歧义作为根因层风险源点">核心机制一：歧义作为根因层风险源点</a></li>
+<li><a href="#sec_核心机制二_上下文约束的_信息丢失_幻觉_级联_三段式放大">核心机制二：上下文约束的「信息丢失—幻觉—级联」三段式放大</a></li>
+<li><a href="#sec_核心机制三_L4_通信_协调层的跨层传播与放大">核心机制三：L4 通信/协调层的跨层传播与放大</a></li>
+<li><a href="#sec_对抗性验证_层级边界与归类稳定性">对抗性验证：层级边界与归类稳定性</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ5.1「自然语言协调中的歧义与上下文约束（context window size、context availability）如何影响协作正确性？」执行 A1.1-c 分层抽象栈分析。通过对知识图谱中 454 个 Problem、380 个 Method、186 篇 Paper 及 170 个 Limitation、119 个 Assumption、243 个 Dataset、278 个 Metric 节点的系统扫描，并结合对 6 篇冻结证据论文及 5 篇支撑论文原文段落的语义检索，归纳出一个五层技术栈模型（数据/上下文层 → 指令/歧义层 → 智能体推理层 → 通信/协调层 → 任务输出层）。</p><p>核心结论是：歧义与上下文约束通过「歧义/上下文缺口 → 幻觉与误解 → 错误级联 → 协作正确性下降」的跨层传播链损害协作正确性。歧义是根因层风险源点，上下文不足是放大器，通信/协调层是传播枢纽。量化证据显示：LongAgent 通过上下文共享使 LLaMA-2 7B 在长文档 QA 上分别较 LLM 提升 16.42% 与 1.63%<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；可问责的结构化交接使 PythonIO 准确率提升超过 36 个百分点，但成本增加约 2–3 倍、延迟增加约 8–10 倍<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；ColaCare 缺少外部上下文时死亡率预测 AUPRC 从 54.05 降至 51.57<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）结构化数据与论文原文 RAG 检索双路证据。KG 侧共加载七类节点：Problem（454）、Method（380）、Paper（186）、Limitation（170）、Assumption/Constraint（119）、Dataset/Benchmark（243）、Metric（278）。边关系通过 get_relation / get_head_entity / get_tail_entity 检索，覆盖 addresses、proposes、targets、has_limitation、evaluated_on、measured_by、requires、extends、compares_with 等类型。</p><p>文本侧通过 search_paper_sections 对 6 篇冻结证据论文（0406、1717、0401、1663、1706、1159）及 5 篇补强论文（3815、3813、0210、3810、0615、1672）进行语义检索，精读相关段落。全流程共执行工具调用约 47 次，含 11 篇论文的定向原文段落精读。</p>
+<h3>KG 数据规模一览</h3>
+<table><thead><tr><th>节点类型</th><th>数量</th><th>本分析中的用途</th></tr></thead><tbody><tr><td>Problem</td><td>454</td><td>分层归类的对象，提取层级信号词与根因层</td></tr>
+<tr><td>Method</td><td>380</td><td>识别防御集中层与缓解策略</td></tr>
+<tr><td>Paper</td><td>186</td><td>来源与传播链证据锚点</td></tr>
+<tr><td>Limitation</td><td>170</td><td>识别开销-正确性权衡与证据缺口</td></tr>
+<tr><td>Assumption/Constraint</td><td>119</td><td>识别方法依赖的上下文/通信前提</td></tr>
+<tr><td>Dataset/Benchmark</td><td>243</td><td>评估场景与泛化边界</td></tr>
+<tr><td>Metric</td><td>278</td><td>协作正确性度量（Suc、Acc、AUPRC、F1 等）</td></tr>
+</tbody></table>
+<h3>五层技术栈模型（从底层到上层）</h3>
+<table><thead><tr><th>层级 ID</th><th>层级名称</th><th>层级描述</th><th>层级信号词/代表节点</th></tr></thead><tbody><tr><td>L1</td><td>数据/上下文层</td><td>由数据集、文档分片、记忆与外部知识构成的可访问上下文；决定智能体能看到什么</td><td>dataset, chunk, context window, memory[2][6][12]</td></tr>
+<tr><td>L2</td><td>指令/歧义层</td><td>自然语言目标与协调策略的规约；歧义在此层产生</td><td>ambiguity, specification, instruction, requirement[1][10]</td></tr>
+<tr><td>L3</td><td>智能体推理层</td><td>个体智能体的解析、推理与幻觉生成；歧义与上下文缺口在此被放大</td><td>hallucination, reasoning, parsing, bias[2][4][3]</td></tr>
+<tr><td>L4</td><td>通信/协调层</td><td>智能体间消息传递、带宽/令牌预算、交接协议；错误级联的枢纽</td><td>communication, bandwidth, message, handoff[6][5][12]</td></tr>
+<tr><td>L5</td><td>任务输出层</td><td>最终答案/代码/预测的正确性；影响在此被观测</td><td>success rate, accuracy, AUPRC, F1[2][4][5]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各层根因问题密度（Problem 节点数，基于 KG 语义归类）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["L1 数据/上下文", "L2 指令/歧义", "L3 智能体推理", "L4 通信/协调", "L5 任务输出"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "根因问题数", "type": "bar", "data": [7, 6, 6, 9, 5], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>层级风险指标与标签</h3>
+<table><thead><tr><th>层级</th><th>根因问题数</th><th>涉及论文数</th><th>传播中心性</th><th>依赖放大度</th><th>风险标签</th></tr></thead><tbody><tr><td>L1 数据/上下文</td><td>7</td><td>5</td><td>中</td><td>高（L2-L5 均依赖可见上下文）</td><td>amplifier 传播放大层</td></tr>
+<tr><td>L2 指令/歧义</td><td>6</td><td>4</td><td>高</td><td>高（向下传导至全部上层）</td><td>source 风险源点层</td></tr>
+<tr><td>L3 智能体推理</td><td>6</td><td>6</td><td>中</td><td>中</td><td>amplifier 传播放大层</td></tr>
+<tr><td>L4 通信/协调</td><td>9</td><td>8</td><td>高</td><td>低</td><td>source 风险源点层 / 传播枢纽</td></tr>
+<tr><td>L5 任务输出</td><td>5</td><td>6</td><td>低</td><td>无（终端层）</td><td>sink 影响承接层</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心机制一_歧义作为根因层风险源点">核心机制一：歧义作为根因层风险源点</h2>
+<p>歧义首先在 L2 指令/歧义层产生。AgentCoord 明确指出「自然语言灵活性导致协调策略含糊，需要反复的补救式规定（repeated remedial specification）」，其用户研究记录了自由形式策略使「执行过程中途偏离用户预期并越走越远，甚至陷入无限循环」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。作者论证结构化表示能「对齐人与 LLM 的意图、强制双方基于同一套概念与抽象层级沟通，有效减少自然语言歧义导致的相互误解」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>跨域佐证：MetaGPT 采用中间结构化输出（PRD、设计图、流程图、接口规范）「显著提升目标代码生成成功率，因为有助于保持沟通一致性、最小化协作中的歧义与错误」<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。MultiAgentESC 把歧义的对偶问题——策略选择的「一对多」特性——视为协作正确性核心挑战，用相似案例与多智能体辩论缓解<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。这些证据表明歧义并非表面措辞问题，而是被结构性重述所针对的根因层缺陷。</p>
+
+<h2 id="sec_核心机制二_上下文约束的_信息丢失_幻觉_级联_三段式放大">核心机制二：上下文约束的「信息丢失—幻觉—级联」三段式放大</h2>
+<p>L1 数据/上下文层通过上下文窗口大小与可用性约束 L3 推理层。LongAgent 提供最量化证据：处理文档可达 128k token，远超单模型窗口，故采用分治策略将文档切成 chunk（1024/2048 token，显著小于 LLaMA2 的 4096 窗口）分配给成员智能体<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。论文明确指出错误主要源于一种特定成员幻觉——「当分派给成员的文本块不含与 leader 查询相关的信息时，成员有时会捏造回答」，其缓解机制是成员间 chunk 共享使幻觉成员在收到含正确答案的 chunk 后修正<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这直接证明上下文可用性是协作正确性的决定变量。</p><p>系统综述进一步将「管理复杂且分层的上下文信息（整体任务上下文、单智能体上下文、智能体间共识知识）」列为多智能体相较单智能体的核心新增挑战，指出「每个智能体可能只掌握关键信息片段，其无缝整合对整体系统性能至关重要」<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。MiTa 则指出 LLM 多智能体系统存在「记忆不一致导致信息丢失与上下文追踪差」的问题，用情景记忆整合来保留长时程上下文<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。</p>
+
+<h2 id="sec_核心机制三_L4_通信_协调层的跨层传播与放大">核心机制三：L4 通信/协调层的跨层传播与放大</h2>
+<p>L4 通信/协调层是错误级联的枢纽。在异构具身协作中，1159 通过控制通信量（ACm）与成功率（Suc）证明「通信不足→信息不完整→决策错误」：压缩通信虽降低带宽但「解码压缩消息会丢失有效信息」；仅交换状态因「对其他智能体决策的错误推理与信息交换不完整」而成功率低<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>在错误级联方面，0210 用 Planner→Executor→Critic 流水线量化了错误如何「悄悄从一阶段传到下一阶段」，证明「结构化、可问责的交接」能防止失败级联，在 PythonIO 上把准确率提升超过 36 个百分点<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。ColaCare 在医疗场景提供互补证据：缺少 RAG（即缺少外部上下文）时死亡率预测 AUPRC 从 54.05±4.88 降至 51.57±4.76，缺少 MDT 协作过程则降至 50.63±5.02<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p>
+<h3>跨层传播链与证据状态</h3>
+<table><thead><tr><th>传播链</th><th>问题链示例</th><th>跳类型</th><th>证据论文</th><th>证据状态</th></tr></thead><tbody><tr><td>L2→L3</td><td>协调策略歧义 → 智能体误解/策略偏差</td><td>adjacent</td><td>AgentCoord[1], MultiAgentESC[3]</td><td>search_verified</td></tr>
+<tr><td>L1→L3</td><td>上下文缺失 → 成员幻觉捏造回答</td><td>adjacent</td><td>LongAgent[2]</td><td>search_verified</td></tr>
+<tr><td>L3→L4→L5</td><td>阶段错误 → 交接传播 → 最终答案错误</td><td>skip</td><td>Traceability/Accountability[5]</td><td>search_verified</td></tr>
+<tr><td>L1→L5</td><td>缺少外部上下文(RAG) → 临床预测正确性下降</td><td>skip</td><td>ColaCare[4]</td><td>search_verified</td></tr>
+<tr><td>L4→L5</td><td>压缩/不完整通信 → 任务成功率先升后降</td><td>adjacent</td><td>Heterogeneous Embodied[7]</td><td>search_verified</td></tr>
+<tr><td>L2→L5</td><td>复杂提示解析歧义 → 属性绑定/空间混淆</td><td>skip</td><td>MCCD[8]</td><td>kg_edge</td></tr>
+<tr><td>L3→L5</td><td>多步推理错误累积 → 下游失败</td><td>adjacent</td><td>MiTa[12], GraphCogent[13]</td><td>kg_edge</td></tr>
+</tbody></table>
+<h3>关键量化证据汇总</h3>
+<table><thead><tr><th>论文</th><th>指标</th><th>数值/结论</th><th>对应层级</th></tr></thead><tbody><tr><td>LongAgent[2]</td><td>单跳/多跳 QA 相对 LLM 增益</td><td>+16.42% / +1.63%</td><td>L1→L5</td></tr>
+<tr><td>Traceability[5]</td><td>PythonIO 准确率提升（可问责交接）</td><td>&gt;36 个百分点</td><td>L4→L5</td></tr>
+<tr><td>Traceability[5]</td><td>成本/延迟开销</td><td>2–3 倍 / 8–10 倍（~2s→20–25s）</td><td>L4 权衡</td></tr>
+<tr><td>Traceability[5]</td><td>planner 错误率（最优/最差）</td><td>7.35% / 40.49%</td><td>L3</td></tr>
+<tr><td>ColaCare[4]</td><td>无 RAG 死亡率 AUPRC</td><td>54.05→51.57</td><td>L1→L5</td></tr>
+<tr><td>ColaCare[4]</td><td>无 MDT 死亡率 AUPRC</td><td>→50.63</td><td>L4→L5</td></tr>
+<tr><td>AgentCoord[1]</td><td>自由策略失败模式</td><td>偏离预期、无限循环</td><td>L2→L3</td></tr>
+<tr><td>MCCD[8]</td><td>推理开销随对象数增长</td><td>正相关（定性）</td><td>L3 权衡</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "本层次分析证据来源分布（按证据状态）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "本层次分析证据来源分布（按证据状态）", "type": "pie", "radius": "55%", "data": [{"name": "search_verified 原文验证", "value": 5}, {"name": "kg_edge 结构化边", "value": 2}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_对抗性验证_层级边界与归类稳定性">对抗性验证：层级边界与归类稳定性</h2>
+<p>对层级划分执行反例检查，发现两处边界模糊性：(1) L1 数据/上下文层与 L3 智能体推理层边界模糊——「成员幻觉」在 LongAgent 中被列为推理层症状，但其根因是上下文不可用，导致该问题在 L1/L3 间归类不稳定<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。(2) L2 指令/歧义层与 L4 通信/协调层边界模糊——「协调策略歧义」既是单条指令的语义问题（L2），也表现为智能体间沟通不一致（L4），AgentCoord 的结构化表示同时作用于两层<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p>
+<h3>层级归类不稳定节点</h3>
+<table><thead><tr><th>问题节点</th><th>歧义所在层</th><th>归类置信度</th></tr></thead><tbody><tr><td>member_hallucination[2]</td><td>L1 上下文 / L3 推理</td><td>low</td></tr>
+<tr><td>ambiguity_in_natural_language_coordination[1]</td><td>L2 指令 / L4 通信</td><td>low</td></tr>
+<tr><td>information_loss_in_communication_protocols</td><td>L4 通信 / L1 上下文</td><td>medium</td></tr>
+<tr><td>managing_complex_and_layered_context_information[6]</td><td>L1 上下文 / L4 通信</td><td>medium</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>(1) 证据解耦不足：多数协作正确性证据来自长文档 QA、代码生成、医疗预测等特定任务，对「歧义导致的错误」与「上下文不足导致的错误」缺乏解耦度量；LongAgent 将错误基本归于成员幻觉，可视为上下文缺失的下游表现，但二者边界未清晰分离<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>(2) 跨层传播链的证据强度不均：除 Heterogeneous Embodied<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 与 Traceability<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 有直接实验量化外，L2→L5、L3→L5 部分链条仅有 KG 结构化边或机制推断支撑，标注为 kg_edge / inferred_no_direct_support，尚缺直接因果实验。</p><p>(3) 正确性-开销权衡无统一准则：0210 报告可问责流水线成本增加 2–3 倍、延迟 8–10 倍<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，而 1159 显示最小通信量（IntenComm.）反而正确性差、全量通信（CentralComm./BroadComm.）成本不划算<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，说明存在未被刻画的中间最优点。</p><p>(4) 领域覆盖偏斜：6 篇冻结论文集中于多智能体 LLM 协作，对传统 MARL 通信约束（如带宽受限信道）覆盖较少，MADRL 侧证据多来自补强论文。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ5.1 的答案为：歧义与上下文约束通过三条交织机制损害协作正确性。歧义在 L2 指令/歧义层产生，表现为协调策略的反复重述与执行偏离，是根因层风险源点；上下文窗口与可用性约束在 L1 数据/上下文层产生，迫使信息切分、压缩或不可见，触发成员幻觉并使错误沿 L3 推理层与 L4 通信/协调层向上级联至 L5 任务输出层。L4 通信/协调层既是第二个风险源点（高传播中心性），也是最有效的防御着力点——结构化交接、成员间上下文共享与可问责机制均在此层显著提升正确性。</p><p>实践含义：缓解歧义应优先在 L2 采用结构化策略表示与标准化中间输出<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>；缓解上下文约束应优先在 L1/L4 采用上下文共享与记忆整合机制<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>；而任何防御方案都需权衡正确性收益与成本/延迟代价<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。未来工作应建立跨任务的歧义-上下文解耦度量，并刻画通信量/上下文规模的最优点。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;AgentCoord: Visually Exploring Coordination Strategy for LLM-based Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">3815_agentcoord_visually_exploring_coordination_strategy_for_llmb</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;LONGAGENT: Achieving Question Answering for 128k-Token-Long Documents through Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1706_longagent_achieving_question_answering_for_128ktokenlong_doc</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;MultiAgentESC: A LLM-based Multi-Agent Collaboration Framework for Emotional Support Conversation&nbsp;<code style="font-size:0.82em;color:#888">1717_multiagentesc_a_llmbased_multiagent_collaboration_framework</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;ColaCare: Enhancing Electronic Health Record Modeling through Large Language Model-Driven Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1663_ColaCare_Enhancing_Electronic_Health_Record_Modeling_through</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Traceability and Accountability in Role-Specialized Multi-Agent LLM Pipelines&nbsp;<code style="font-size:0.82em;color:#888">0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;LLM Multi-Agent Systems: Challenges and Open Problems&nbsp;<code style="font-size:0.82em;color:#888">3813_llm_multiagent_systems_challenges_and_open_problems</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Heterogeneous Embodied Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1159_Heterogeneous_Embodied_Multi-Agent_Collaboration</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;MCCD: Multi-Agent Collaboration-based Compositional Diffusion for Complex Text-to-Image Generation&nbsp;<code style="font-size:0.82em;color:#888">0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;NADER: Neural Architecture Design via Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework&nbsp;<code style="font-size:0.82em;color:#888">3810_metagpt_meta_programming_for_a_multiagent_collaborative_fram</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Requirements Development and Formalization for Reliable Code Generation: A Multi-Agent Vision&nbsp;<code style="font-size:0.82em;color:#888">0206_Requirements_Development_and_Formalization_for_Reliable_Code</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;MiTa: A Hierarchical Multi-Agent Collaboration Framework with Memory-Integrated Task Allocation&nbsp;<code style="font-size:0.82em;color:#888">0615_MiTa_A_Hierarchical_Multi-Agent_Collaboration_Framework_with</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;GraphCogent: Mitigating LLMs' Working Memory Constraints via Multi-Agent Framework&nbsp;<code style="font-size:0.82em;color:#888">1672_GraphCogent_Mitigating_LLMs_Working_Memory_Constraints_via</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.1 · 2026-09-30 18:50</footer>
+</div>
+</body>
+</html>

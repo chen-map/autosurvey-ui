@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.4-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.4-a 分析报告</h1>
+<div class="meta">RQ [RQ2.3]：[父问题 RQ2] 集中式与去中心化协作架构、固定角色与演化角色分工，在任务编排层面各自的适用边界与权衡是什么？
+[本子问题 RQ2.3] 角色定义（固定 vs 演化）如何影响协作效率与错误抑制，是否存在可复用的角色设计模式？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：1380_LLM4MAC_An_LLM-Driven_Reinforcement_Learning_Framework_for_M）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_帕累托前沿_固定角色_vs_演化角色的效能向量">帕累托前沿：固定角色 vs 演化角色的效能向量</a></li>
+<li><a href="#sec_证据主线一_固定角色的可复用_流水线_验证器_模式">证据主线一：固定角色的可复用「流水线 + 验证器」模式</a></li>
+<li><a href="#sec_证据主线二_演化角色的自适应收益与代价">证据主线二：演化角色的自适应收益与代价</a></li>
+<li><a href="#sec_证据主线三_文献级矛盾与混合架构仲裁">证据主线三：文献级矛盾与混合架构仲裁</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ2.3「角色定义（固定 vs 演化）如何影响协作效率与错误抑制，是否存在可复用的角色设计模式」，在知识图谱（186 篇论文、380 个方法、454 个问题、278 个指标、170 条局限、119 条假设、243 个数据集）上执行多维帕累托权衡分析。核心结论是：固定角色与演化角色并非「谁更优」的二元选择，而是同一条帕累托前沿上的两种价值权重——固定角色以「编排稳定性、可追踪性、错误可归因」换取「对任务漂移的适应力」；演化/动态角色以「自适应效率、异构任务泛化」换取「可解释性与收敛可预测性」。真正不可逃避的权衡约束是：角色自适应粒度上升必然带来协调/通信开销上升、可追踪性与可预测性下降 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱的结构化节点与边。共加载 7 类节点：paper（186）、method（380）、problem（454）、metric（278）、limitation（170）、assumption（119）、dataset（243）。通过 measured_by 边覆盖计数筛选出社区共识的效能维度，通过 has_limitation 边执行对抗验证，通过 contradicts 边识别文献级矛盾。同时使用语义检索工具对 15 篇以上关键论文（含冻结证据论文 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>）精读原文段落，作为量化证据来源。所有性能数字均精确引用来源论文，不跨论文合并。</p>
+<h3>效能维度集合（KG 驱动，由 measured_by 边覆盖计数确定）</h3>
+<table><thead><tr><th>维度</th><th>方向</th><th>KG 覆盖</th><th>代表指标节点</th><th>主要证据论文</th></tr></thead><tbody><tr><td>Accuracy / Goal Success Rate</td><td>越高越好</td><td>≥10 methods</td><td>metric_accuracy_f676b93ef9</td><td>[1][4][7][10]</td></tr>
+<tr><td>Token / Cost per Prompt</td><td>越低越好</td><td>≥3 methods</td><td>metric_median_cost_per_prompt_79da69d43a</td><td>[1][4][7][8]</td></tr>
+<tr><td>Latency</td><td>越低越好</td><td>≥3 methods</td><td>metric_median_latency_9227f973dd</td><td>[1][9]</td></tr>
+<tr><td>Token consumption</td><td>越低越好</td><td>≥3 methods</td><td>metric_token_consumption_66913a7785</td><td>[7][8]</td></tr>
+<tr><td>Scalability / Adaptability</td><td>越高越好</td><td>新兴维度</td><td>（定性）</td><td>[2][10][12]</td></tr>
+<tr><td>Error-suppression / Stability</td><td>越高越好</td><td>新兴维度</td><td>（repair vs harm, 幻觉率）</td><td>[1][3][13]</td></tr>
+</tbody></table>
+
+<h2 id="sec_帕累托前沿_固定角色_vs_演化角色的效能向量">帕累托前沿：固定角色 vs 演化角色的效能向量</h2>
+<p>下表汇总落在帕累托前沿上的代表性方案及其在各效能维度上的量化表现与代价。固定角色方案（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）在准确率与错误抑制维度占优，但以成本/延迟为代价；演化角色方案（<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>）在 token 效率与自适应维度占优，但牺牲可解释性；混合方案（<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>）在成功率与扩展性上同时达到前沿。</p>
+<h3>帕累托前沿方法性能向量（含代价）</h3>
+<table><thead><tr><th>论文/方案</th><th>角色设计</th><th>最优维度（量化）</th><th>牺牲维度</th><th>证据类型</th></tr></thead><tbody><tr><td>[1] Accountable Pipeline</td><td>固定顺序角色 + 结构化交接</td><td>AgiEval 93.54%、PythonIO 99.21%、LogiQA 85.51%；PythonIO +36pt</td><td>成本 2–3×、延迟 8–10×</td><td>实证</td></tr>
+<tr><td>[4] MetaGPT</td><td>固定 SOP 角色</td><td>HumanEval 85.9%、MBPP 87.7% Pass@1；修订成本 10→2.5</td><td>刚性、难适应新领域；token $0.915→$1.385</td><td>实证</td></tr>
+<tr><td>[10] HMAS-2</td><td>混合（中心化规划+局部反馈）</td><td>3/6 机器人均 100% 成功率；token 效率最佳</td><td>API 调用升至 3.45×（3 robots）</td><td>实证</td></tr>
+<tr><td>[7] AgentDropout</td><td>演化/动态角色剪枝</td><td>prompt token −21.6%、completion token −18.4%、性能 +1.14</td><td>需预定义初始角色；可解释性下降</td><td>实证</td></tr>
+<tr><td>[8] AgentNet</td><td>去中心化演化角色</td><td>MATH 85 vs 77.86、BBH 86 vs 76、API-Bank 32 vs 23</td><td>递减收益（80.38→81.18）、协调开销</td><td>实证</td></tr>
+<tr><td>[9] Evolving Orchestration</td><td>演化中心化编排器</td><td>解质量提升 + 计算成本下降</td><td>固定 agent/tool 集；偶发误协调</td><td>实证</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "代表性方案准确率对比（同一或可比 benchmark 指标）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["Accountable(LogiQA)[1]", "MetaGPT(HumanEval)[4]", "AgentNet(BBH)[8]", "MetaGPT(LogicQA)[8]", "Simple MMF-无结构[1]"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "准确率/成功率 (%)", "type": "bar", "data": [85.51, 85.9, 86.0, 53.0, 60.0], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div id="chart_2" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "演化角色的效率收益（AgentDropout，百分比变化绝对值）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["prompt token 降幅", "completion token 降幅", "性能提升分"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "变化量", "type": "bar", "data": [21.6, 18.4, 1.14], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_证据主线一_固定角色的可复用_流水线_验证器_模式">证据主线一：固定角色的可复用「流水线 + 验证器」模式</h2>
+<p>固定角色在结构确定性任务中稳居帕累托前沿，并收敛出一类可复用设计模式。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的 Planner→Executor→Critic 固定流水线在结构化交接（blame attribution）下，AgiEval 达 93.54%、PythonIO 达 99.21%、LogiQA 达 85.51%，相比无结构流水线在 PythonIO 上准确率提升超过 36 个百分点；Critic 修复率 5.20%、Executor 修复率 10.01% 显著压低错误级联。MetaGPT <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 SOP 角色链（PM→Architect→Engineer→QA）在 HumanEval 达 85.9%、MBPP 达 87.7% Pass@1，每增一专用角色，人工修订成本从 10 降至 2.5。相同模式在多领域复用：RTL 生成中的 Review Agent（语法检查）+ Verification Agent（功能验证）双角色闭环 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、HPC 测试中的 Recipe Agent + Test Agent critique loop <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，均验证「专职验证角色 = 错误抑制」这一可复用设计模式。Croto <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 的专职聚合角色移除后质量从 3.083 跌至 2.341，进一步佐证角色分工的价值。</p>
+
+<h2 id="sec_证据主线二_演化角色的自适应收益与代价">证据主线二：演化角色的自适应收益与代价</h2>
+<p><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> AgentDropout 证明动态角色剪枝可同时降低 prompt token 21.6%、completion token 18.4% 并提升性能 1.14——罕见的「双赢」前沿点，但其作者明确标注框架「仍受限于预定义角色与提示」，跨域仍需人工重设。AgentNet <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 让智能体自主演化专精，MATH 从 77.86 升至 85、BBH 从 76 升至 86、API-Bank 从 23 升至 32，但训练准确率随智能体数仅从 80.38 微升至 81.18，呈明显递减收益；作者还承认 3 agents 时同质配置反而最好，异质引入协调开销。Evolving Orchestration <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 的 RL 编排器在提升解质量的同时降低 token 消耗，代价是「固定 agent/tool 集合、偶发误协调」。ReSo <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> 用 reward-driven 自组织彻底消除手工角色设计，代表演化路线的极端。</p>
+
+<h2 id="sec_证据主线三_文献级矛盾与混合架构仲裁">证据主线三：文献级矛盾与混合架构仲裁</h2>
+<p>固定 vs 演化的结论存在真实矛盾。<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> AgentNet 明确批判静态/SOP 角色造成「单点故障、可扩展性局限、无法适应实时波动」，并直接与 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup> 存在 contradicts 关系；而 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> Evolving Orchestration 又反过来 contradicts <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>，主张中心化可学习编排器更优。关键仲裁证据来自 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>：其在 3 与 6 机器人上比较中心化（CMAS）、去中心化（DMAS）与两种混合（HMAS-1/2），发现混合 HMAS-2（中心化规划+局部反馈）在全部四类任务上成功率最高（3/6 robots 均 100%）且扩展性最佳——既不同于 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的「去中心化绝对更优」，也不完全等同于 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 的「中心化更优」，提示「中心-局部混合」才是鲁棒前沿点。</p>
+<h3>核心权衡与「不可能三角」</h3>
+<table><thead><tr><th>维度 A</th><th>维度 B</th><th>相关性</th><th>是否被文献证实</th><th>证据论文</th></tr></thead><tbody><tr><td>角色自适应性 ↑</td><td>可追踪性/错误抑制可预测性 ↓</td><td>负相关</td><td>是</td><td>[1][3][17]</td></tr>
+<tr><td>角色专业化程度 ↑</td><td>token 成本 &amp; 延迟 ↑</td><td>负相关</td><td>是</td><td>[1][4]</td></tr>
+<tr><td>角色自适应性 ↑</td><td>token 成本 ↑</td><td>负相关但可打破</td><td>混合（动态剪枝可双赢）</td><td>[7][9]</td></tr>
+</tbody></table>
+<div class="note">不可逃避的「不可能三角」：最大化角色自适应性 + 最大化可追踪性/可预测性 + 最小化协调成本，三者不可同时满足。角色自适应需动态重分配与探索，必然引入协调开销并削弱固定责任边界的可追踪性 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup>。</div>
+<h3>可复用角色设计模式（供 RQ2.3 直接引用）</h3>
+<table><thead><tr><th>模式名称</th><th>角色类型</th><th>适用场景</th><th>证据论文</th></tr></thead><tbody><tr><td>顺序流水线 + 结构化交接</td><td>固定角色</td><td>结构明确、需可追踪/可审计的确定性任务</td><td>[1][4]</td></tr>
+<tr><td>主管-专家层级 + 动态路由</td><td>混合角色</td><td>混合复杂度请求、需按复杂度自适应协调开销</td><td>[16][10]</td></tr>
+<tr><td>专职验证/批判角色（Critic/Review/Verification）</td><td>固定角色</td><td>错误抑制优先、需可解释修复信号</td><td>[1][5][6]</td></tr>
+<tr><td>动态剪枝/演化编排</td><td>演化角色</td><td>token/成本效率优先、任务结构可在线反馈优化</td><td>[7][9][15]</td></tr>
+</tbody></table>
+<div id="chart_3" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_3'));
+  c.setOption({"title": {"text": "纳入分析的论文按角色设计范式分布（示意）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "纳入分析的论文按角色设计范式分布（示意）", "type": "pie", "radius": "55%", "data": [{"name": "固定角色类", "value": 12}, {"name": "演化/动态角色类", "value": 9}, {"name": "混合架构类", "value": 5}, {"name": "错误抑制/防御类", "value": 5}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>条件性推荐（按应用场景）</h3>
+<table><thead><tr><th>应用场景</th><th>优先维度</th><th>推荐方法</th><th>必须接受的代价</th></tr></thead><tbody><tr><td>高可追踪性/可审计（合规、医疗）</td><td>准确率、可追踪性、错误抑制</td><td>[1] Accountable 流水线 / [4] MetaGPT SOP</td><td>成本 2–3×、延迟 8–10×</td></tr>
+<tr><td>成本敏感、结构稳定的大规模代码/推理</td><td>token 效率、准确率</td><td>[7] AgentDropout / [9] Evolving Orchestration</td><td>可解释性下降、需预定义初始角色</td></tr>
+<tr><td>异构、需求快速漂移的长时程任务</td><td>扩展性、自适应性、成功率</td><td>[10] HMAS-2 混合 / [8] AgentNet</td><td>API 调用增加、协调开销、规模递减收益</td></tr>
+<tr><td>简单请求为主的企业级路由</td><td>延迟、成本</td><td>[16] 动态 agent routing</td><td>复杂请求下收益下降</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析的证据完整性标注为 partial，不确定性主要来自三方面：(1) 数据集偏差与不可比性——现有数字跨论文、跨数据集、跨 backbone，指标定义不一致（F1 正类定义、GSR 断言定义各异），不能直接合并比较；<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的异构优势主要来自 BBH/API-Bank，是否泛化到其他域未验证。(2) 规模证据缺口——多数研究仅在 3–9 个智能体小规模验证，<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 明确仅测试至 6 agents，大规模（&gt;10 agents）下是否仍占前沿未验证。(3) 纵向证据缺失——演化角色的长期行为漂移缺乏实测，<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup> 提示需额外治理机制，但其数据部分为模拟而非实证。(4) 对抗验证结果：对所有声称位于前沿的方法执行 has_limitation 检查，均发现具体失效条件（如 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的 construct validity 与成本局限、<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的预定义角色局限、<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的小团队协调开销局限），故不存在「万能方法」，本报告所有前沿结论均标注 confidence=medium。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ2.3 的回答：角色定义（固定 vs 演化）对协作效率与错误抑制的影响是条件性的，二者坐落于同一帕累托前沿的不同位置，而非优劣排序。固定角色在结构确定性任务中通过「顺序流水线 + 专职验证角色」实现最高准确率与最强错误抑制（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> PythonIO 提升 &gt;36pt；<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> HumanEval 85.9%），代价是成本 2–3× 与延迟 8–10×；演化角色在异构、漂移场景中通过动态重分配获得自适应效率（<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> token 降 21.6%、性能 +1.14；<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> MATH +7.14pt），代价是可解释性下降与协调开销。二者的根本权衡约束为：角色自适应粒度 ↑ ⇒ 协调开销 ↑ 且可追踪性 ↓，此「不可能三角」在当前技术条件下不可同时最优。关于可复用角色设计模式，证据支持四类模式：顺序流水线+结构化交接、主管-专家层级+动态路由、专职验证/批判角色、动态剪枝/演化编排。证据最强的仲裁结论是：中心化规划 + 去中心化执行的混合架构（<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> HMAS-2）在成功率与扩展性上同时占优，提示工程实践应优先考虑混合而非极端选择。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Traceability and Accountability in Role-Specialized Multi-Agent LLM Pipelines&nbsp;<code style="font-size:0.82em;color:#888">0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Safe Multi-Agent Behavior Must Be Maintained, Not Merely Asserted: Constraint Drift in LLM-Based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3836_safe_multiagent_behavior_must_be_maintained_not_merely_asser</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Agent Drift: Quantifying Behavioral Degradation in Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3835_agent_drift_quantifying_behavioral_degradation_in_multiagent</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework&nbsp;<code style="font-size:0.82em;color:#888">3810_metagpt_meta_programming_for_a_multiagent_collaborative_fram</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;EDA-Aware RTL Generation with Large Language Models&nbsp;<code style="font-size:0.82em;color:#888">1742_EDA-Aware_RTL_Generation_with_Large_Language_Models</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;HPCAgentTester: A Multi-Agent LLM Approach for Enhanced HPC Unit Test Generation&nbsp;<code style="font-size:0.82em;color:#888">0177_HPCAgentTester_a_Multi-Agent_LLM_Approach_for_Enhanced_HPC_U</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;AgentDropout: Dynamic Agent Elimination for Token-Efficient and High-Performance LLM-Based Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1713_agentdropout_dynamic_agent_elimination_for_tokenefficient_an</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;AgentNet: Decentralized Evolutionary Coordination for LLM-based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3840_agentnet_decentralized_evolutionary_coordination_for_llmbase</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Multi-Agent Collaboration via Evolving Orchestration&nbsp;<code style="font-size:0.82em;color:#888">3842_multiagent_collaboration_via_evolving_orchestration</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Scalable Multi-Robot Collaboration with Large Language Models: Centralized or Decentralized Systems?&nbsp;<code style="font-size:0.82em;color:#888">0892_Scalable_Multi-Robot_Collaboration_with_Large_Language_Model</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;LLM4MAC: An LLM-Driven Reinforcement Learning Framework for MAC Protocol Emergence&nbsp;<code style="font-size:0.82em;color:#888">1380_LLM4MAC_An_LLM-Driven_Reinforcement_Learning_Framework_for_M</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;LLM Multi-Agent Systems: Challenges and Open Problems&nbsp;<code style="font-size:0.82em;color:#888">3813_llm_multiagent_systems_challenges_and_open_problems</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;GUARDIAN: Safeguarding LLM Multi-Agent Collaborations with Temporal Graph Learning&nbsp;<code style="font-size:0.82em;color:#888">3839_guardian_safeguarding_llm_multiagent_collaborations_with_tem</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Multi-Agent Collaboration via Cross-Team Orchestration&nbsp;<code style="font-size:0.82em;color:#888">3819_multiagent_collaboration_via_crossteam_orchestration</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;ReSo: A Reward-driven Self-organizing LLM-based Multi-Agent System&nbsp;<code style="font-size:0.82em;color:#888">1718_reso_a_rewarddriven_selforganizing_llmbased_multiagent_syste</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;Towards Effective GenAI Multi-Agent Collaboration: Design and Evaluation for Enterprise Applications&nbsp;<code style="font-size:0.82em;color:#888">3825_towards_effective_genai_multiagent_collaboration_design_and</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;Embodied LLM Agents Learn to Cooperate in Organized Teams&nbsp;<code style="font-size:0.82em;color:#888">1443_Embodied_LLM_Agents_Learn_to_Cooperate_in_Organized_Teams</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.3 · 2026-09-30 18:39</footer>
+</div>
+</body>
+</html>

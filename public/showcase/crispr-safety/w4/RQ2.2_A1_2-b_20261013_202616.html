@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ2.2]：[父问题 RQ2] 免疫原性为何在现有基因编辑研究中被系统性忽视，如何将其重建为「递送载体 → 免疫应答 → 编辑持久性 → 临床风险」的因果链并纳入风险模型？
+[本子问题 RQ2.2] 不同递送载体（AAV vs LNP vs electroporation vs RNP）对应的免疫应答类型与强度，在 KG 中是否有可提取的对照证据？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0249_CRISPR_medicine_for_blood_disorders_Progress_and_challenges, 0212_Gene_Editing_for_Duchenne_Muscular_Dystrophy_From_Experiment, 0588_crisprcas9_gene_editing_for_monogenic_diabetes_therapeutic_p, 0034_Gene_Editing_for_the_Treatment_of_Hypercholesterolemia, 0419_subtle_risks_critical_failures_a_framework_for_diagnosing_ph, 0579_Application_of_CRISPR-Cas_technology_in_food_safety）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_证据一_AAV_免疫原性具有_KG_强锚定与临床风险闭环">证据一：AAV 免疫原性具有 KG 强锚定与临床风险闭环</a></li>
+<li><a href="#sec_证据二_LNP_免疫特征为固有免疫_支持重复给药但非免疫惰性">证据二：LNP 免疫特征为固有免疫，支持重复给药但非免疫惰性</a></li>
+<li><a href="#sec_证据三_electroporation_RNP_的低免疫原性_间接但有关键临床对照">证据三：electroporation/RNP 的低免疫原性——间接但有关键临床对照</a></li>
+<li><a href="#sec_证据四_免疫原性缓解框架与因果链整合">证据四：免疫原性缓解框架与因果链整合</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对研究子问题 RQ2.2——「不同递送载体（AAV vs LNP vs electroporation vs RNP）对应的免疫应答类型与强度，在 KG 中是否有可提取的对照证据」——展开定义驱动的证据抽取。分析结论为：KG 中**存在可提取的对照证据，但证据强度在四种载体间高度不均衡**，属「拼图式（mosaic）」而非「矩阵式」证据。AAV 与 LNP 之间存在方向一致、含量化数字的直接对照证据，均指向 AAV 免疫原性显著更强；electroporation/RNP 则主要通过 ex vivo 场景与临床试点数据体现低免疫原性，缺少与 AAV/LNP 同模型 head-to-head 的免疫学定量测量。</p><p>从「递送载体→免疫应答→编辑持久性→临床风险」因果链看，四类载体的免疫强度排序为 AAV ≫ LNP &gt; electroporation/RNP（最弱）。AAV 对应「预存体液免疫 + 适应性 T 细胞免疫」双重负担，因诱导免疫记忆而阻碍重复给药 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；LNP 主要触发固有免疫刺激，降低适应性免疫但仍引发抗 Cas9 免疫削弱编辑持久性 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；ex vivo 编辑（electroporation/RNP）因瞬时暴露将免疫窗口最小化，CLIMB SCD-121 试验中 31 名患者未检出 anti-Cas9 抗体，与 AAV in vivo 试验的高免疫原性形成直接临床对照 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。由于 KG 缺乏四载体同体系定量对照、且抗 Cas9/抗 AAV 人群患病率报道跨研究冲突剧烈，本子问题判定为 partial（部分回答）。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析完全基于知识图谱（KG）结构化数据与 132 篇论文段落原文的语义检索，未使用任何 LLM 先验知识填充。分析共执行 45 次工具调用，覆盖全部六类节点：problem（问题）、method（方法）、paper（论文）、dataset（数据集基准）、metric（评估指标）、limitation（局限）、assumption（假设）。</p><p>核心数据规模如下：KG 共含 312 个问题节点、312 个方法节点、138 篇论文节点，以及大量 limitation/assumption/metric/dataset 节点（分别约 190/108/175/114 个）。本次分析对 RQ2.2 冻结的六篇论文全部检索：0249、0212、0588、0034、0419、0579，其中 0249/0212/0588/0034 四篇为基因编辑-免疫原性相关，0419（LLM 具身安全）与 0579（食品安全）经检索确认与主题无实质关联，构成证据矩阵的信噪比缺口。为补全对照证据，另深度精读 0036、0237、0575、0585、0231、0195 六篇关键论文，共计约 15 篇论文的相关段落被原文引用。关键技术证据锚点包括：问题节点 problem_problem_aav_immunogenicity_5994b9ccad（被 0036 以 confidence 0.95 直接 addresses）、方法节点 method_method_electroporation_8c7ee5e19f、method_method_n_acetylgalactosamine_coupled_lipid_nanoparticles_8dc9b6cbae、method_method_rnp_electroporation_75441843d5、method_method_lnp_delivery_740a15128a，以及局限节点 limitation_limitation_immunogenicity_of_viral_vectors_5a8ac593a5。</p>
+<h3>四类递送载体的免疫应答类型与强度对照</h3>
+<table><thead><tr><th>递送载体</th><th>主要免疫应答类型</th><th>免疫强度</th><th>可重复给药</th><th>编辑持久性</th><th>关键证据</th></tr></thead><tbody><tr><td>AAV（病毒载体）</td><td>预存体液免疫（NAb）+ 适应性 T 细胞免疫</td><td>最强（2–60% 血清含抗 AAV NAb；10–100% 有 capsid-specific T 细胞）</td><td>受阻（诱导免疫记忆，NHP 再给药无增效）</td><td>长效（episomal 持续表达）</td><td>[1][2]</td></tr>
+<tr><td>LNP（脂质纳米粒）</td><td>固有免疫刺激（RNA/脂质触发 TLR/干扰素），降低适应性免疫</td><td>中等（可管理；但可诱发抗 Cas9 抗体）</td><td>支持（重复给药在免疫上无问题）</td><td>瞬态（Cas9 mRNA 快速降解）</td><td>[2][3][4]</td></tr>
+<tr><td>Electroporation（物理）</td><td>极小（ex vivo，无病毒载体暴露）</td><td>最弱（体外操作，无系统性免疫暴露）</td><td>不适用于 in vivo（高侵袭性）</td><td>瞬态（需重复给药）</td><td>[5][7]</td></tr>
+<tr><td>RNP（蛋白复合物）</td><td>最弱（预组装蛋白瞬时作用，无 DNA 整合）</td><td>最弱（CLIMB 试验 31 人无 anti-Cas9 抗体）</td><td>ex vivo 场景无免疫障碍</td><td>瞬态（数小时内降解）</td><td>[6]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "不同研究报道的抗 SpCas9 抗体人群患病率（%）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["Simhadri 2018", "Ferdosi 2019", "Charlesworth 2019", "Tang 2022"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "抗 SpCas9 抗体阳性率（%）", "type": "bar", "data": [2.5, 5, 58, 95], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_证据一_AAV_免疫原性具有_KG_强锚定与临床风险闭环">证据一：AAV 免疫原性具有 KG 强锚定与临床风险闭环</h2>
+<p>AAV 是四类载体中 KG 锚定最强、临床风险证据最完整的载体。问题节点 problem_problem_aav_immunogenicity_5994b9ccad 被论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 以 confidence 0.95 直接 addresses，其核心描述为「宿主对 AAV 载体与转基因的免疫应答阻碍 AAV 基因治疗临床成功」。KG 同时存在支持边指向该问题，形成可提取的强证据链。</p><p>在免疫应答类型上，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 记载 AAV 面临双重负担：体液免疫方面，「2–60% 的人血清含抗 AAV 中和抗体」，且 NAb 因 AAV capsid 高度同源而高度交叉反应；细胞免疫方面，「10–100% 的健康人存在针对多种 AAV 血清型的功能性循环 capsid-specific T 细胞」。高剂量 AAV8-hFIX 临床出现肝酶升高、转氨酶上升与转基因表达丢失，需类固醇干预。</p><p>在可重复给药的因果链上，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确记载「AAV 基因递送后诱导适应性免疫应答，产生免疫记忆，从而抑制 AAV 的重复给药」；NHP 中 AAV8 再次给药未提升转基因表达，却升高抗 AAV 抗体水平。这一机制直接削弱编辑持久性。<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 进一步从转录组角度解释：AAV 递送的 Cas9 可表达数月，「increasing the risk of off-target edits and immune responses」，且预存 anti-AAV 抗体可限制转导。</p><p>在临床风险维度，<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 记载 DMD 患者接受高剂量 AAV9（5.5×10¹⁴–1.8×10¹⁵ vg/kg）微萎缩蛋白基因治疗后出现心肺功能不全、血小板减少乃至死亡；FDA 加速批准的 Elevidys 对 exon 8/9 缺失患者因「severe immune-mediated myositis」被列为禁忌；首个 DMD n-of-1 试验患者死于高剂量 AAV 而非 CRISPR 本身。上述证据完整支撑「AAV→强免疫应答→编辑持久性受损→临床风险」的因果链。</p>
+
+<h2 id="sec_证据二_LNP_免疫特征为固有免疫_支持重复给药但非免疫惰性">证据二：LNP 免疫特征为固有免疫，支持重复给药但非免疫惰性</h2>
+<p>LNP 的免疫应答特征与 AAV 有本质区别。<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 明确区分：「Transient delivery using LNP-mRNA may reduce adaptive immune activation, but innate immune stimulation from RNA and lipids must be managed」——即 LNP 降低的是适应性免疫激活，而非消除全部免疫应答，其固有免疫刺激（TLR 激活、干扰素）仍需管理。<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 同时指出 LNP-mRNA 提供瞬态 Cas9 表达从而降低脱靶风险，但 LNP 相关的输注反应与免疫原性「manageable but require monitoring」。</p><p>在可重复给药维度，<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 与 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 提供了明确证据。<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 记载 Han et al. 用 LNP 递送 CRISPR-Cas9 使 Serpinc1 基因功能下调 70%，并明确指出「unlike viral vectors, repeated in vivo application of LNPs is not problematic in terms of induction of immune response」。<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 引用 Kenjo et al. 研究标题「Low immunogenicity of LNP allows repeated administrations of CRISPR-Cas9 mRNA into skeletal muscle in mice」，进一步印证 LNP 支持重复给药。<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的对照表也量化区分：LNP 编辑时长「瞬态」、rAAV「长效」，安全性上 rAAV 为「Viral, potentially immunogenic」、LNP 为「Nonviral, potentially immunogenic」。</p><p>但 LNP 并非免疫惰性。<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 记载 Rothgangl 等在食蟹猴中经 LNP 递送碱基编辑器，PCSK9 编辑效率仅 25%，且「were able to find antibodies directed against the introduced Cas9 protein in the blood of lipid nanoparticle-treated animals during the course of the study」，作者推测 T 细胞介导的靶肝细胞杀伤解释了疗效受限。这是一条 LNP 场景下「免疫应答→编辑持久性受损」的关键因果证据。</p>
+
+<h2 id="sec_证据三_electroporation_RNP_的低免疫原性_间接但有关键临床对照">证据三：electroporation/RNP 的低免疫原性——间接但有关键临床对照</h2>
+<p>electroporation 与 RNP 的免疫原性证据以间接对照为主，但 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 提供了一条罕见的跨载体类型直接临床对照。<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 记载 ex vivo CRISPR-Cas9 编辑 CD34+ 细胞的 CLIMB SCD-121（exa-cel）试验中，31 名患者「none experienced treatment-related serious adverse events, and no anti-Cas9 antibodies were reported」；而同一文献明确指出「in vivo gene editing trials using AAV-delivered CRISPR-Cas9 (e.g., clinical studies targeting inherited retinal diseases) have documented higher immunogenicity risks」——AAV capsid 蛋白可触发预存抗体或 T 细胞应答，部分患者需免疫抑制方案控制炎症。</p><p>在机制层面，<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 记载「Transferring Cas9 protein and gRNA as an RNP complex can solve molecular stability issues, providing high editing efficiency and low toxicity due to immediate gene editing」；RNP 作为预组装蛋白复合物瞬时作用，无 DNA 整合风险。<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 从 CRISPR effector 持续时长角度补充：限制 CRISPR effector 的持续存在「limits both off-target effects and immunogenicity」，因细胞免疫应答仅局限于 CRISPR effector 衍生免疫原性表位在细胞表面展示的时期。</p><p>在物理方法层面，<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的对照表评定 electroporation 为「Nonimmunogenic, potentially highly cytotoxic in vivo」——即免疫原性最低，但代价是 in vivo 高细胞毒性与高侵袭性，「Unlike LNPs and rAAVs, electroporation is highly invasive in vivo」。这一权衡是 electroporation 未能进入 in vivo 主流应用的根本原因。</p>
+<h3>KG 中四类载体相关的可提取节点与关系边</h3>
+<table><thead><tr><th>节点/边类型</th><th>节点 ID 或关系</th><th>关联论文</th><th>置信度</th></tr></thead><tbody><tr><td>Problem</td><td>problem_problem_aav_immunogenicity_5994b9ccad</td><td>0036</td><td>—</td></tr>
+<tr><td>Edge (addresses)</td><td>0036 → problem_aav_immunogenicity</td><td>0036</td><td>0.95</td></tr>
+<tr><td>Method</td><td>method_method_electroporation_8c7ee5e19f</td><td>0025 / 0231</td><td>—</td></tr>
+<tr><td>Method</td><td>method_method_n_acetylgalactosamine_coupled_lipid_nanoparticles_8dc9b6cbae</td><td>0034</td><td>—</td></tr>
+<tr><td>Edge (proposes)</td><td>0034 → GalNAc-LNP</td><td>0034</td><td>0.90</td></tr>
+<tr><td>Method</td><td>method_method_rnp_electroporation_75441843d5</td><td>0238</td><td>—</td></tr>
+<tr><td>Method</td><td>method_method_lnp_delivery_740a15128a</td><td>0238</td><td>—</td></tr>
+<tr><td>Limitation</td><td>limitation_limitation_immunogenicity_of_viral_vectors_5a8ac593a5</td><td>0025</td><td>—</td></tr>
+<tr><td>Edge (has_limitation)</td><td>0025 → immunogenicity_of_viral_vectors</td><td>0025</td><td>0.90</td></tr>
+</tbody></table>
+
+<h2 id="sec_证据四_免疫原性缓解框架与因果链整合">证据四：免疫原性缓解框架与因果链整合</h2>
+<p>论文 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 提供了本子问题中最系统的免疫原性分析框架，其 Figure 1 从七个维度解构免疫原性来源与缓解策略，并明确将「递送载体」与「治疗路径」列为关键维度：</p><p>- （A）治疗路径：ex vivo 基因编辑的免疫风险小于 in vivo 给药，但 ex vivo 对需系统性递送组分的疾病效用有限；</p><p>- （D）递送载体：病毒载体效率高于 LNP 等非病毒载体，但其免疫原性与同源体交叉反应可能限制重复给药，病毒载体的组织嗜性可用于靶向从而降低剂量与系统性免疫应答；</p><p>- （F）CRISPR 作用时长：控制 CRISPR effector 的持续存在可限制特异性免疫应答。</p><p><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 的 Table 2 系统列出缓解策略及其验证结果：Treg 细胞过继转移可抑制效应 T 细胞；免疫正交的 CRISPR effector 同源体在重复给药时获得更高编辑效率；工程化免疫沉默表位可消除/降低免疫识别；免疫豁免部位（如人眼，LCA10 试验）未检出 Cas9 特异性 B/T 细胞应答；免疫抑制（TTR 淀粉样变性试验中糖皮质激素+抗组胺）无严重不良事件。</p><p>将上述框架与四载体证据整合，可完整重述 RQ2.2 的因果链：**AAV** → 预存 NAb + 适应性 T 细胞应答（强）→ 诱导免疫记忆阻碍再给药、T 细胞清除转导细胞 → 编辑持久性受损 → DMD 高剂量下心肺功能不全/死亡 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>；**LNP** → 固有免疫刺激 + 抗 Cas9 抗体（中）→ 瞬态表达限制免疫窗口，但抗 Cas9 免疫仍可致编辑低效 → 疗效受限 → 需监测输注反应 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；**electroporation/RNP** → 极低免疫暴露（弱）→ 瞬时编辑、无整合、无病毒载体 → 编辑持久性依赖重复给药或 ex vivo 回输 → in vivo 高侵袭性/高细胞毒性限制应用 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p>
+<div class="note">证据分级说明：本子问题证据为「拼图式（mosaic）」而非「矩阵式」。AAV 免疫原性证据强度为 strong（KG 边 confidence 0.95 + 人体临床数据）；LNP 低适应性免疫原性为 strong；electroporation/RNP 最低免疫原性为 weak（间接类比 + 单条 ex vivo 临床对照），缺乏与 AAV/LNP 同模型的 head-to-head 免疫学定量测量。四载体同体系定量对照在 KG 中完全缺失。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>第一，**缺少四载体 head-to-head 免疫学定量对照**。KG 中 electroporation 与 RNP 缺少与 AAV/LNP 在同一实验体系下的免疫应答强度直接比较；RNP 的「低免疫原性」多来自效率-安全性论断（如 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）而非独立免疫学终点测量，属间接推断。</p><p>第二，**抗 Cas9/抗 AAV 人群患病率报道高度冲突**。<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 汇总多研究显示抗 SpCas9 抗体阳性率从 2.5%（Simhadri 2018）到 95%（Tang 2022），T 细胞应答率 57%–95%，量级差异跨越近 40 倍，使「Cas9 免疫强度」难以给出单一可靠数值。这种冲突本身反映检测方法学（NAb vs TAb 检测、样本处理、采样时间）缺乏标准化。</p><p>第三，**冻结论文的信噪比缺口**。RQ2.2 冻结的六篇论文中，仅 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 与 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 直接测量免疫终点，其余 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 仅在安全或局限性章节定性提及免疫原性；<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>（LLM 具身安全）与 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>（食品安全）经语义检索确认与基因编辑免疫原性无实质关联。这意味着「免疫原性被系统性忽视」的父问题前提在冻结证据矩阵层面亦得到印证。</p><p>第四，**KG 缺少独立免疫机制节点**。LNP 抗 PEG 抗体这一独立于抗 Cas9 的免疫机制在 KG 中未被节点化（PEG 免疫原性仅在 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 参考文献标题中出现）；此外 limitation 节点 limitation_limitation_lack_of_standard_protocols_for_immune_assays_bd2acd740f 虽表征了免疫检测标准化缺失，但其未与具体载体节点建立边关系，削弱了可推演性。</p><p>第五，**免疫原性的定义属 operational/qualitative 级**。文献中未以单一形式化公式给出免疫原性定义，本报告采用的操用性定义为「宿主对载体或编辑元件产生的固有/适应性免疫应答，其强度影响编辑持久性与安全性」（源自 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>），故所有推演结论为逻辑推断而非数学证明。综合以上，本子问题判定为 partial，整体置信度约 0.8。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ2.2，KG 中**存在可提取的对照证据，但证据强度在四种载体间高度不均衡**，须分级采纳。</p><p>（1）**AAV 免疫原性证据最充分**：问题节点 problem_problem_aav_immunogenicity_5994b9ccad 被 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 以 confidence 0.95 直接锚定；2–60% 血清含抗 AAV NAb、10–100% 有 capsid-specific T 细胞；适应性免疫记忆阻碍重复给药；DMD 高剂量下关联死亡等临床风险 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。因果链完整：AAV→强免疫→持久性受损→临床风险。</p><p>（2）**LNP 免疫特征为固有免疫、支持重复给药，但非免疫惰性**：降低适应性免疫激活但仍需管理固有刺激 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；重复给药在免疫上无问题 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；但 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 记录抗 Cas9 抗体削弱 PCSK9 编辑效率至 25%。</p><p>（3）**electroporation/RNP 免疫原性最弱但证据间接**：RNP 预组装瞬时作用、无 DNA 整合 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 提供直接临床对照——ex vivo CLIMB 试验 31 人无 anti-Cas9 抗体，与 AAV in vivo 高免疫原性形成反差；<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 评定 electroporation 为 nonimmunogenic 但 highly cytotoxic in vivo。</p><p>（4）**证据缺口明确**：四载体同模型 head-to-head 定量对照缺失，抗 Cas9/抗 AAV 人群患病率报道冲突剧烈，LNP 抗 PEG 独立机制未节点化。</p><p>综合判定：本子问题为 **partial（部分回答）**。建议后续纳入 0237、0195、0231 等对照型论文以补全四载体 head-to-head 免疫学数据，并将免疫终点从「挑战/局限」小节提升为风险模型的主变量。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Immunogenicity of Recombinant Adeno-Associated Virus (AAV) Vectors for Gene Transfer&nbsp;<code style="font-size:0.82em;color:#888">0036_Immunogenicity_of_Recombinant_Adeno-Associated_Virus_AAV_Vec</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;CRISPR-Cas9 and Base Editing: Recent Clinical Progress and Delivery&nbsp;<code style="font-size:0.82em;color:#888">0585_CRISPR-CAS9_AND_BASE_EDITING_RECENT_CLINICAL_PROGRESS_AND_DE</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Gene Editing for the Treatment of Hypercholesterolemia&nbsp;<code style="font-size:0.82em;color:#888">0034_Gene_Editing_for_the_Treatment_of_Hypercholesterolemia</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;CRISPR medicine for blood disorders: Progress and challenges in delivery&nbsp;<code style="font-size:0.82em;color:#888">0249_CRISPR_medicine_for_blood_disorders_Progress_and_challenges</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Research on Reducing the Immunogenicity of Nucleases in Gene Therapy&nbsp;<code style="font-size:0.82em;color:#888">0575_Research_on_Reducing_the_Immunogenicity_of_Nucleases_in_Gene</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Comparing CRISPR-Cas9 Gene Therapy Delivery Systems: Implications and Optimization for Hyperargininemia&nbsp;<code style="font-size:0.82em;color:#888">0231_Comparing_CRISPR-Cas9_Gene_Therapy_Delivery_Systems_Implicat</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Gene Editing for Duchenne Muscular Dystrophy: From Experimental Models to Emerging Therapies&nbsp;<code style="font-size:0.82em;color:#888">0212_Gene_Editing_for_Duchenne_Muscular_Dystrophy_From_Experiment</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Immunogenicity of CRISPR therapeutics—Critical considerations for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0237_immunogenicity_of_crispr_therapeuticscritical_considerations</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;CRISPR-Cas9 Gene Editing for Monogenic Diabetes: Therapeutic Potential and Clinical Challenges&nbsp;<code style="font-size:0.82em;color:#888">0588_crisprcas9_gene_editing_for_monogenic_diabetes_therapeutic_p</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Subtle Risks, Critical Failures: A Framework for Diagnosing Physical Safety of LLM Embodied Decision Making&nbsp;<code style="font-size:0.82em;color:#888">0419_subtle_risks_critical_failures_a_framework_for_diagnosing_ph</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Application of CRISPR-Cas technology in food safety&nbsp;<code style="font-size:0.82em;color:#888">0579_Application_of_CRISPR-Cas_technology_in_food_safety</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.2 · 2026-10-13 20:26</footer>
+</div>
+</body>
+</html>

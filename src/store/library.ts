@@ -1,0 +1,172 @@
+import { create } from 'zustand';
+import { USE_MOCK } from '@/services/api';
+import { ukey } from '@/lib/userScope';
+
+// 知识库：个人收藏的论文。持久化：演示模式 localStorage；真实模式后端 KV 同步（启动拉取 + 变更推送）
+// source：corpus=语料库收藏（paperIdx 关联语料库）；upload=上传 PDF；manual=手动录入
+export interface LibraryItem {
+  key: string;
+  paperIdx?: number;
+  fp?: string;  // 内容指纹 norm(title)+year——跨分页/会话稳定的去重键（paperIdx 是视图下标，翻页即漂移，实测 NaN 重复）
+  source: 'corpus' | 'upload' | 'manual';
+  title: string;
+  authors?: string;
+  venue?: string;
+  year?: number;
+  citations?: number;
+  collection: string;
+  savedAt: string;
+}
+
+const itemsKey = () => ukey('as.library-items');
+const collsKey = () => ukey('as.library-collections');
+
+function read<T>(key: string, fallback: T): T {
+  try {
+    const v = JSON.parse(localStorage.getItem(key) ?? 'null');
+    return v ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function fingerprint(title: string, year?: number): string {
+  const t = (title || '').toLowerCase().replace(/[^a-z0-9一-龥]+/g, '').slice(0, 60);
+  return t + '|' + (year ?? '');
+}
+
+export interface NewLibraryInput {
+  paperIdx?: number;
+  source: LibraryItem['source'];
+  title: string;
+  authors?: string;
+  venue?: string;
+  year?: number;
+  citations?: number;
+  collection?: string;
+}
+
+interface LibraryState {
+  items: LibraryItem[];
+  collections: string[];
+  toggleSave: (item: NewLibraryInput) => boolean;
+  addManual: (item: NewLibraryInput) => void;
+  remove: (key: string) => void;
+  moveTo: (key: string, collection: string) => void;
+  addCollection: (name: string) => void;
+}
+
+function pushLibrary(items: LibraryItem[], collections: string[]) {
+  if (USE_MOCK) return;
+  const API = import.meta.env.VITE_API_BASE ?? '/api';
+  const token = localStorage.getItem('as.token') ?? '';
+  fetch(`${API}/me/library`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ items, collections }),
+  }).catch(() => {});
+}
+
+async function pullLibrary(set: (s: Partial<LibraryState>) => void) {
+  if (USE_MOCK) return;
+  const API = import.meta.env.VITE_API_BASE ?? '/api';
+  const token = localStorage.getItem('as.token') ?? '';
+  try {
+    const res = await fetch(`${API}/me/library`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!res.ok) return;
+    const d = await res.json();
+    const seen = new Set<string>();
+    const dedup = (Array.isArray(d.items) ? d.items : []).filter((i: LibraryItem) => {
+      const fp = i.fp ?? fingerprint(i.title, i.year);
+      if (seen.has(fp)) return false;  // 存量重复防御（lib-c-NaN 时代产物）
+      seen.add(fp);
+      if (!i.fp) i.fp = fp;
+      return true;
+    });
+    const colls = Array.isArray(d.collections) && d.collections.length > 0 ? d.collections : ['方法参考', '待精读'];
+    localStorage.setItem(itemsKey(), JSON.stringify(dedup));
+    localStorage.setItem(collsKey(), JSON.stringify(colls));
+    set({ items: dedup, collections: colls });
+  } catch { /* 后端不可达时保留本地 */ }
+}
+
+export const useLibrary = create<LibraryState>((set, get) => ({
+  items: (() => {
+    const seen = new Set<string>();
+    return read<LibraryItem[]>(itemsKey(), []).filter((i) => {
+      const fp = i.fp ?? fingerprint(i.title, i.year);
+      if (seen.has(fp)) return false;
+      seen.add(fp);
+      return true;
+    });
+  })(),
+  collections: read(collsKey(), ['方法参考', '待精读']),
+  toggleSave: (item) => {
+    const fp = fingerprint(item.title, item.year);
+    const items = get().items;
+    const existing = items.find((i) => (i.fp ?? fingerprint(i.title, i.year)) === fp);
+    let next: LibraryItem[];
+    let added: boolean;
+    if (existing) {
+      next = items.filter((i) => i.key !== existing.key);
+      added = false;
+    } else {
+      const badIdx = item.paperIdx == null || Number.isNaN(item.paperIdx);
+      next = [
+        { ...item, paperIdx: badIdx ? undefined : item.paperIdx, fp,
+          key: `lib-f-${fp.slice(0, 24)}`, collection: '未分类', savedAt: new Date().toLocaleString() },
+        ...items,
+      ];
+      added = true;
+    }
+    localStorage.setItem(itemsKey(), JSON.stringify(next));
+    pushLibrary(next, get().collections);
+    set({ items: next });
+    return added;
+  },
+  addManual: (item) => {
+    const fp = fingerprint(item.title, item.year);
+    if (get().items.some((i) => (i.fp ?? fingerprint(i.title, i.year)) === fp)) return;  // 手动录入也防重
+    const next = [
+      { ...item, fp, collection: item.collection ?? '未分类', key: `lib-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, savedAt: new Date().toLocaleString() },
+      ...get().items,
+    ];
+    localStorage.setItem(itemsKey(), JSON.stringify(next));
+    pushLibrary(next, get().collections);
+    set({ items: next });
+  },
+  remove: (key) => {
+    const next = get().items.filter((i) => i.key !== key);
+    localStorage.setItem(itemsKey(), JSON.stringify(next));
+    pushLibrary(next, get().collections);
+    set({ items: next });
+  },
+  moveTo: (key, collection) => {
+    const next = get().items.map((i) => (i.key === key ? { ...i, collection } : i));
+    localStorage.setItem(itemsKey(), JSON.stringify(next));
+    pushLibrary(next, get().collections);
+    set({ items: next });
+  },
+  addCollection: (name) => {
+    const c = get().collections;
+    const name0 = name.trim();
+    if (!name0 || c.includes(name0)) return;
+    const next = [...c, name0];
+    localStorage.setItem(collsKey(), JSON.stringify(next));
+    pushLibrary(get().items, next);
+    set({ collections: next });
+  },
+}));
+
+// 切换账号后重建本地状态：按当前用户键重读 localStorage，再从后端拉取覆盖
+export async function rehydrateLibrary() {
+  const seen = new Set<string>();
+  const items = read<LibraryItem[]>(itemsKey(), []).filter((i) => {
+    const fp = i.fp ?? fingerprint(i.title, i.year);
+    if (seen.has(fp)) return false;
+    seen.add(fp);
+    return true;
+  });
+  useLibrary.setState({ items, collections: read(collsKey(), ['方法参考', '待精读']) });
+  await pullLibrary(useLibrary.setState);
+}

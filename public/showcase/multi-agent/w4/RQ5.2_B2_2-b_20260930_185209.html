@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.2-b 分析报告</h1>
+<div class="meta">RQ [RQ5.2]：[父问题 RQ5] 自然语言会话与信息共享机制在多智能体协作中受哪些通信约束，这些约束如何被抽象为可复用的协作设计维度？
+[本子问题 RQ5.2] 通信工程约束（latency、bandwidth、dedicated control channels、delay-free 假设）在协作架构中被如何处理或简化？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati, 0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion, 0883_Who2com_Collaborative_Perception_via_Learnable_Handshake_Com, 1059_DesignGPT_Multi-Agent_Collaboration_in_Design, 1186_LLM_Enabled_Multi-Agent_System_for_6G_Networks_Framework_and, 1654_MACRec_A_Multi-Agent_Collaboration_Framework_for_Recommendat）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析一_显式带宽建模_Who2com_的孤例价值">核心分析一：显式带宽建模——Who2com 的孤例价值</a></li>
+<li><a href="#sec_核心分析二_工程性转移_6G_论文的延迟规避">核心分析二：工程性转移——6G 论文的延迟规避</a></li>
+<li><a href="#sec_核心分析三_默认消隐_四篇通用协作框架的隐性假设">核心分析三：默认消隐——四篇通用协作框架的隐性假设</a></li>
+<li><a href="#sec_IPO_边界信息损耗审计">IPO 边界信息损耗审计</a></li>
+<li><a href="#sec_输入表示与处理算法的适配规律">输入表示与处理算法的适配规律</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对研究问题 RQ5.2「通信工程约束（latency、bandwidth、dedicated control channels、delay-free 假设）在协作架构中被如何处理或简化」，对证据矩阵冻结的六篇论文执行了 IPO（Input-Process-Output）数据流拆解与 I→P、P→O 边界信息损耗审计。核心结论是：在这六篇协作架构论文中，通信工程约束的处理呈现明显的三分格局——仅 Who2com <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 把带宽作为一等设计目标显式建模并量化优化；6G 多智能体论文 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 把约束工程性转移为「调度/计算延迟优化」而非信道建模；其余四篇（NADER <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、MCCD <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、DesignGPT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、MACRec <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）则完全默认消隐 latency、bandwidth、信道与 delay-free 等约束，将智能体间通信视为零成本、瞬时、无差错的信息传递。</p><p>换言之，本批多智能体协作架构处理通信约束的主流范式是「假设理想信道 + 用架构设计间接规避」，而非「显式信道建模」。这一发现与经典 Comm-MADRL 领域对通信约束的系统性分类（<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的 limited bandwidth / noisy / cost 维度）形成鲜明的方法论落差。图谱结构亦佐证该结论：KG 中确实存在 Perfect control channels、TDMA scheme、Packet erasure channel 等精细通信工程假设节点，但它们归属于无线 MAC 协议学习论文 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，与本次六篇冻结论文之间不存在 requires 边，说明本批架构论文在知识图谱建模层面即缺失通信工程假设。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析基于知识图谱（KG）结构化数据与论文原文语义检索（search_paper_sections）两类来源，累计执行工具调用 31 次。KG 层面加载并筛选了以下节点类型：Paper（186 个，其中定位并深读 6 篇冻结论文 + 4 篇外部锚点论文）、Method（380 个）、Problem（454 个）、Metric（278 个）、Assumption（119 个）、Limitation（170 个）、Dataset（243 个）。</p><p>对冻结六篇论文逐一执行了 proposes / addresses / targets / evaluated_on / measured_by / has_limitation / extends 等一跳关系边查询，并通过 search_paper_sections 对 Who2com、6G-MAS、NADER、MCCD、DesignGPT、MACRec 六篇进行了逐篇原文段落精读（每篇 3-5 轮语义检索），另精读外部锚点论文 0009（通信约束综述）、1690（CoDe 延迟容忍）、0517/0520（无线 MAC 协议学习）以补全 delay-free 假设与专用控制信道的批判性证据。</p>
+<h3>表 1：六篇冻结论文的通信工程约束处理方式对比（IPO 视角）</h3>
+<table><thead><tr><th>论文</th><th>输入表示</th><th>处理范式</th><th>输出/度量</th><th>带宽约束</th><th>延迟约束</th><th>信道/控制信道假设</th><th>delay-free 假设</th></tr></thead><tbody><tr><td>Who2com [1]</td><td>多智能体 RGB/深度图像 + pose（感知特征）</td><td>三阶段握手通信（request-match-connect）+ message/key/value 非对称压缩</td><td>语义分割特征图（mIoU、bandwidth kpbf）</td><td>显式建模并优化（一等目标）</td><td>未建模</td><td>未建模（仅假设 equal cost links）</td><td>隐含假设（无显式声明）</td></tr>
+<tr><td>6G-MAS [2]</td><td>多模态感知（视频/点云/信号）+ 自然语言意图</td><td>双环边缘-终端协作 + LLMCompiler 并行工具调用（DAG）+ 调度 offloading</td><td>任务规划/工具调用拓扑（成功率 SR、延迟-工具数）</td><td>推入 Open Challenges，未建模</td><td>以计算/调度延迟为目标（非信道延迟）</td><td>视为内部可靠传输，未建模</td><td>隐含假设（无显式声明）</td></tr>
+<tr><td>NADER [3]</td><td>神经网络架构图（DAG，节点=算子）</td><td>Research Team + Development Team 多轮 dialogue 协作</td><td>可执行网络架构代码（executability、quality、accuracy）</td><td>默认消隐</td><td>默认消隐</td><td>默认消隐（多轮自然语言对话）</td><td>隐含假设</td></tr>
+<tr><td>MCCD [4]</td><td>复杂文本 prompt（多物体+关系）</td><td>多智能体场景解析（conductor 协调 6 类 agent，前向 CoT + 后向反馈）</td><td>边界框 + 物体/背景描述（Attribute Binding/Relationship/Complex）</td><td>默认消隐</td><td>以对象数量为代理间接感知（推理时间随边界框增加）</td><td>默认消隐（MLLM 内部通信）</td><td>隐含假设</td></tr>
+<tr><td>DesignGPT [5]</td><td>设计需求 + 图片（BLIP 转文本）</td><td>chat room 式多角色会议模拟设计公司 SOP</td><td>设计方案（novelty/completeness/feasibility）</td><td>默认消隐</td><td>默认消隐（仅 30 分钟任务时限）</td><td>默认消隐（群聊式对话）</td><td>隐含假设</td></tr>
+<tr><td>MACRec [6]</td><td>推荐任务对话 + 用户/物品信息</td><td>Manager/Analyst/Reflector/Searcher/Task Interpreter 对话式协作</td><td>推荐排序/解释（rating prediction 等）</td><td>默认消隐</td><td>默认消隐（未量化 token/传输成本）</td><td>默认消隐</td><td>隐含假设</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1：六篇冻结论文对通信工程约束的处理策略分布", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["显式建模(Who2com)", "工程性转移(6G)", "默认消隐(NADER/MCCD/DesignGPT/MACRec)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "论文数量", "type": "bar", "data": [1, 1, 4], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2：通信工程约束建模程度占比", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 2：通信工程约束建模程度占比", "type": "pie", "radius": "55%", "data": [{"name": "完全默认消隐（4篇）", "value": 4}, {"name": "工程性转移（1篇）", "value": 1}, {"name": "显式建模（1篇）", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析一_显式带宽建模_Who2com_的孤例价值">核心分析一：显式带宽建模——Who2com 的孤例价值</h2>
+<p>Who2com <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 是六篇中唯一把「带宽敏感通信」（problem_bandwidth_sensitive_communication）明确列为问题的方法。其 I→P 边界是将多智能体 RGB/深度图像与 pose 通过 message/key/value 三类生成器解耦编码，P→O 边界则解耦为「低维 request message + 匹配分数 + 高维特征图」的非对称输出。作为知识图谱中显式标注的 targets 边，该方法直接针对 bandwidth_sensitive_communication 问题 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>关键量化结果：在语义分割任务上，Who2com 以「约四分之一带宽（a quarter of the bandwidth）」达到与中心化方法可比的精度，相对 CatAll 基线整体精度提升 16.51%，相对 Compression 基线提升 20.06%，mIoU 相对提升 29.49% <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。消融实验显示 message size=4、key size=8/1024 的非对称配置即饱和性能，message 与 key 无需传输的特性使其带宽随智能体数量扩展时增长有界 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>然而，Who2com 亦显式声明并简化了一条通信约束——「我们假设智能体间链路成本相等（equal cost links）」，把 per-link cost 差异留作未来工作 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。这意味着它只建模了「传多少」，未建模「传到哪里成本更高」，其带宽模型仍是同质信道假设。</p>
+
+<h2 id="sec_核心分析二_工程性转移_6G_论文的延迟规避">核心分析二：工程性转移——6G 论文的延迟规避</h2>
+<p>6G 多智能体论文 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 是六篇中最接近通信工程语境的方法，但其约束处理属于「工程性转移」而非「信道建模」。I→P 边界将多模态感知（视频、点云、信号）投射为标准化向量与自然语言意图；处理逻辑是双环结构（外环任务分解、内环 LLMCompiler 并行工具调用），P→O 输出为 DAG 拓扑的工具调用方案 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 把 latency 作为可测量指标，通过并行工具拓扑 + 调度 offloading「降低任务执行延迟」，实验显示并行拓扑相对顺序 ReAct 方案在云执行与边缘协作两种模式下均降低延迟，多设备协作优于单点执行 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。但关键在于：其优化对象是计算与调度延迟，而非信道传输延迟；智能体间消息传递被默认为内部、可靠、瞬时。带宽与信道问题被整体推入「Open Challenges」章节——论文明确承认多轮推理涉及私有数据与执行参数交换会带来「excessive communication overhead」与信息泄露风险，需通过 key information extraction、routing、加密通信等未来机制解决 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这本质上是对延迟约束的工程化规避，把信道代价外部化为「未来工作」。</p>
+
+<h2 id="sec_核心分析三_默认消隐_四篇通用协作框架的隐性假设">核心分析三：默认消隐——四篇通用协作框架的隐性假设</h2>
+<p>NADER <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、MCCD <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、DesignGPT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、MACRec <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 均把智能体间通信实现为无约束的自然语言对话或共享记忆，未提出任何带宽、延迟或信道假设。NADER 的 Reader/Proposer/Modifier/Reflector 通过「multi-round dialogue」协作 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；MACRec 的 Manager/Analyst/Reflector/Searcher 通过对话式 inter-agent communication 协作 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；DesignGPT 用「chat room style interface」模拟设计公司会议 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；MCCD 的 conductor/evaluator 协调六类 agent 做前向 CoT 与后向反馈 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>这些方法的「通信成本」只以隐式形式出现。MCCD 自陈「推理开销随物体/边界框数量增加而增加」，即延迟以对象数量为代理被间接感知，并将高效推理优化列为未来工作 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。MACRec 将通信实现为共享对话历史，未量化 token 或传输成本 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。依据 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的 Comm-MADRL 分类体系，这些方法实质落在「Unconstrained communication」类别——通信信道、消息内容、是否通信均未被显式限制。</p><p>值得强调的是：图谱结构本身构成证据。KG 中存在「Perfect control channels」（控制消息无差错）、「TDMA scheme」、「Packet erasure channel（TBLER 建模）」等精细通信工程假设节点，但它们归属于无线 MAC 协议学习论文 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，与六篇冻结论文之间没有 requires 边。即本批协作架构在知识图谱建模层面即缺失通信工程假设，这与正文的「默认消隐」结论相互印证。</p>
+<h3>表 2：delay-free 与专用控制信道假设的 KG 归属核查</h3>
+<table><thead><tr><th>通信工程假设节点</th><th>所属论文</th><th>是否属于冻结六篇</th><th>与冻结集的 requires 边</th></tr></thead><tbody><tr><td>Perfect control channels（控制消息无差错）</td><td>[8]/[9] 无线 MAC 协议学习</td><td>否</td><td>无</td></tr>
+<tr><td>TDMA scheme（时分多址）</td><td>[8]/[9] 无线 MAC 协议学习</td><td>否</td><td>无</td></tr>
+<tr><td>Packet erasure channel（TBLER 建模）</td><td>[8]/[9] 无线 MAC 协议学习</td><td>否</td><td>无</td></tr>
+<tr><td>Equal cost links（链路成本相等）</td><td>[1] Who2com</td><td>是</td><td>论文原文自陈，未挂 requires 边</td></tr>
+<tr><td>delay-free communication（无延迟通信）</td><td>[10] CoDe（外部锚点，批判性引用）</td><td>否</td><td>无</td></tr>
+</tbody></table>
+<div class="note">外部锚点佐证：论文 CoDe <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 明确指出『previous research has typically assumed delay-free communication, a strong assumption that is challenging to meet in practice』，并指出智能体实际经历 channel delays，形成 Asynchronous Communication，导致认知偏差与协作崩溃 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。该论断精准刻画了 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 这批以对话/共享记忆为通信范式、依赖理想通信条件（unlimited bandwidth、noise-free channels、delay-free transmissions）的架构所隐含的假设。</div>
+
+<h2 id="sec_IPO_边界信息损耗审计">IPO 边界信息损耗审计</h2>
+<p>I→P 边界损耗方面：Who2com 的输入是图像特征，处理是端到端可微压缩，损耗表现为几何 warping 误差与匹配误差——论文提及不准确 pose 下 BIS 下降但方法仍鲁棒 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。6G 论文的输入含多模态感知，处理前的 denoise/align 步骤是信息损失的来源，但论文未量化 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。四篇对话式框架的 I→P 边界损耗集中在「自然语言 → 结构化动作」的转换：NADER 的 Architect 图表示故意剥离文本样式与格式以聚焦结构，属选择性丢弃 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；DesignGPT 用 BLIP 把图片转文本描述再拼入 prompt，是二次信息损失 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>P→O 边界损耗方面：MCCD 的处理内部有丰富的中间表示（六 agent 多轮解析 + 评估反馈），但输出压缩为边界框 + 描述文本，丢失了不确定性信息 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。6G 论文输出为 DAG 工具调用拓扑，但信道代价在输出层完全不可见 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。These 边界损耗大多未在 KG 中被 has_limitation 边覆盖——仅 MCCD 的「推理开销随对象数增加」被显式建模为 limitation 节点，其余通信相关的边界损耗均为本报告新识别的隐性局限。</p>
+<h3>表 3：六篇论文输出表示与可机器评估性</h3>
+<table><thead><tr><th>论文</th><th>输出格式</th><th>置信度表示</th><th>可机器评估性</th><th>通信成本可测量</th></tr></thead><tbody><tr><td>Who2com [1]</td><td>语义分割标签图 + 压缩特征</td><td>score（匹配分数）</td><td>高（mIoU）</td><td>是（bandwidth kpbf）</td></tr>
+<tr><td>6G-MAS [2]</td><td>DAG 工具调用拓扑</td><td>none</td><td>中（成功率）</td><td>部分（延迟-工具数曲线）</td></tr>
+<tr><td>NADER [3]</td><td>可执行架构代码</td><td>none</td><td>高（executability/accuracy）</td><td>否</td></tr>
+<tr><td>MCCD [4]</td><td>边界框 + 自然语言描述</td><td>none</td><td>中（VQA 自动评分）</td><td>否</td></tr>
+<tr><td>DesignGPT [5]</td><td>自然语言设计方案</td><td>none</td><td>低（专家 CAT 主观打分）</td><td>否</td></tr>
+<tr><td>MACRec [6]</td><td>推荐排序 + 自然语言解释</td><td>none</td><td>中</td><td>否</td></tr>
+</tbody></table>
+
+<h2 id="sec_输入表示与处理算法的适配规律">输入表示与处理算法的适配规律</h2>
+<p>基于六篇样本，可观察到输入表示与处理范式之间的关联规律（样本量小，仅作方向性观察）：6 篇中 1 篇（16.7%）采用感知特征输入并使用可微压缩处理（Who2com <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>）；1 篇（16.7%）采用多模态感知 + 意图输入并使用分层调度处理（6G <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>）；4 篇（66.7%）采用自然语言/结构化文本输入并使用对话式多智能体协作处理（NADER <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、MCCD <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、DesignGPT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、MACRec <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）。</p><p>进一步的规律是：凡采用「对话式自然语言通信」范式的 4 篇，其通信约束均默认消隐、通信成本均不可测量；唯一涉及物理信道成本的两篇（Who2com、6G）分别来自具身感知与通信网络领域，而非通用 LLM 协作领域。这暗示「约束是否被建模」与「方法所处的应用领域」强相关——面向物理层的架构不得不处理信道代价，而面向应用层的 LLM 协作架构则系统性地将其消隐。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本报告存在以下局限与不确定性：</p><p>（1）结构性证据缺失：六篇中五篇（NADER <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、MCCD <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、DesignGPT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、MACRec <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、6G <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>）在 KG 中未挂载任何 latency/bandwidth 相关的 assumption 节点（仅 MCCD 有推理开销 limitation），其通信约束处理只能从原文间接推断，缺乏结构化图谱证据支撑。</p><p>（2）缺乏可比通信成本指标：仅 Who2com 报告 bandwidth（kpbf）、6G 报告延迟-工具数曲线，其余四篇无任何通信成本量化，导致无法在同一量纲下横向对比「约束处理程度」。</p><p>（3）delay-free 假设的量化违背缺乏直接实验：冻结集内没有一篇通过实验测量 delay-free 假设被违背的后果，本报告对该点的论证依赖外部锚点论文 CoDe <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>，其论断非直接针对六篇。</p><p>（4）样本量限制：仅六篇样本，上述分布与关联规律（如图 1、适配规律）仅作方向性观察，不具备统计泛化力。</p><p>（5）KG assumption 节点归属核查基于边查询结果：Perfect control channels 等节点与冻结集无 requires 边，但不能完全排除原文中存在未被 KG 建模的通信假设表述。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ5.2 的答案可凝练为「三分格局 + 主流消隐」：</p><p>① 显式建模是极少数派——仅 Who2com <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 把带宽作为一等目标，以四分之一带宽实现与中心化可比的精度（相对 CatAll 提升 16.51%、mIoU 相对提升 29.49%），但仍假设 equal cost links。</p><p>② 工程性转移是过渡形态——6G 论文 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 把延迟约束转化为调度/计算延迟优化，信道与带宽被推入 Open Challenges，实质是外部化而非建模。</p><p>③ 默认消隐是主流——NADER <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、MCCD <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、DesignGPT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、MACRec <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 四篇（占比 66.7%）完全将智能体间通信视为零成本、瞬时、无差错，属于 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 定义的 Unconstrained communication；其中仅 MCCD 以对象数量为代理间接感知延迟。</p><p>④ 图谱与外部文献双重佐证：KG 中精细的通信工程假设节点（Perfect control channels、TDMA、Packet erasure channel）均归属 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 而非冻结集，冻结集与这些 assumption 节点无 requires 边；外部论文 CoDe <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 直接批判既有协作研究普遍假设 delay-free communication。</p><p>⑤ 抽象层面的关键缺口：三种处理策略（显式建模 / 工程转移 / 默认消隐）概念互不可通约，本批协作架构尚未把通信工程约束抽象为统一的、可复用的协作设计维度——这正是父问题 RQ5 所追问的「约束如何被抽象为可复用设计维度」在本子问题上的核心障碍。建议后续工作显式引入信道成本、延迟、控制信道可靠性等约束维度，并报告可比的通信成本指标，以弥合物理层协作与应用层 LLM 协作之间的方法论断层。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Who2com: Collaborative Perception via Learnable Handshake Communication&nbsp;<code style="font-size:0.82em;color:#888">0883_Who2com_Collaborative_Perception_via_Learnable_Handshake_Com</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;LLM Enabled Multi-Agent System for 6G Networks: Framework and Method of Dual-Loop Edge-Terminal Collaboration&nbsp;<code style="font-size:0.82em;color:#888">1186_LLM_Enabled_Multi-Agent_System_for_6G_Networks_Framework_and</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;NADER: Neural Architecture Design via Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;MCCD: Multi-Agent Collaboration-based Compositional Diffusion for Complex Text-to-Image Generation&nbsp;<code style="font-size:0.82em;color:#888">0406_MCCD_Multi-Agent_Collaboration-based_Compositional_Diffusion</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;DesignGPT: Multi-Agent Collaboration in Design&nbsp;<code style="font-size:0.82em;color:#888">1059_DesignGPT_Multi-Agent_Collaboration_in_Design</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;MACRec: a Multi-Agent Collaboration Framework for Recommendation&nbsp;<code style="font-size:0.82em;color:#888">1654_MACRec_A_Multi-Agent_Collaboration_Framework_for_Recommendat</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;A survey of multi-agent deep reinforcement learning with communication&nbsp;<code style="font-size:0.82em;color:#888">0009_a_survey_of_multiagent_deep_reinforcement_learning_with_comm</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;The Emergence of Wireless MAC Protocols with Multi-Agent Reinforcement Learning&nbsp;<code style="font-size:0.82em;color:#888">0517</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Learning Generalized Wireless MAC Communication Protocols&nbsp;<code style="font-size:0.82em;color:#888">0520_Learning_Generalized_Wireless_MAC_Communication_Protocols_vi</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;CoDe: Communication Delay-Tolerant Multi-Agent Collaboration via Dual Alignment of Intent and Timeliness&nbsp;<code style="font-size:0.82em;color:#888">1690</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.2 · 2026-09-30 18:52</footer>
+</div>
+</body>
+</html>

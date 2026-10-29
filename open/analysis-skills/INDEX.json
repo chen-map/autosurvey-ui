@@ -1,0 +1,301 @@
+{
+ "count": 37,
+ "items": [
+  {
+   "id": "A1.1-a_orthogonal_matrix_mapping",
+   "title": "A1.1-a 多维正交矩阵映射",
+   "space": "problem_space",
+   "rq_type": "有什么？（类型枚举 / 分布统计）",
+   "description": "从KG的Problem Space中提取问题实体的两个正交属性，构建分布矩阵，统计各象限密度，识别研究热点与冷区。用于回答RQ「有什么问题/威胁/现象？」的清单枚举与分布统计类分析。",
+   "path": "problem_space/P1_1/A1.1-a_orthogonal_matrix_mapping.md"
+  },
+  {
+   "id": "A1.1-b_lifecycle_stage_decomposition",
+   "title": "A1.1-b 生命周期阶段拆解",
+   "space": "problem_space",
+   "rq_type": "有什么？（分布统计 / 属性刻画）",
+   "description": "将研究对象的问题/威胁按完整生命周期阶段归类，统计各阶段的文献密度，揭示阶段间的研究分布失衡。用于回答RQ「有什么问题，各阶段分布如何？」的流程导向分类分析。",
+   "path": "problem_space/P1_1/A1.1-b_lifecycle_stage_decomposition.md"
+  },
+  {
+   "id": "A1.1-c_layered_abstraction_stack",
+   "title": "A1.1-c 分层抽象堆栈",
+   "space": "problem_space",
+   "rq_type": "有什么？（属性刻画 · 技术特征）",
+   "description": "按系统抽象层级（硬件→OS→框架→应用→生态）垂直分层，将KG中的Problem节点归入特定技术层，分析问题的层间传播路径。用于回答RQ「问题发生在哪一层？如何跨层传播？」的技术栈拓扑分析。",
+   "path": "problem_space/P1_1/A1.1-c_layered_abstraction_stack.md"
+  },
+  {
+   "id": "A1.1-d_temporal_drift_analysis",
+   "title": "A1.1-d 问题形态的时间漂移分析",
+   "space": "problem_space",
+   "rq_type": "有什么？（动态演化 · 自然漂移）",
+   "description": "引入时间轴，按年份聚类KG中的Problem节点，分析问题实体的定义偏移、形态升级与演化拐点。用于回答RQ「问题如何随时间演化？」的动态演化分析。",
+   "path": "problem_space/P1_1/A1.1-d_temporal_drift_analysis.md"
+  },
+  {
+   "id": "A1.2-a_orthogonal_decoupling_taxonomy",
+   "title": "A1.2-a 正交解耦与矩阵重构",
+   "space": "problem_space",
+   "rq_type": "怎么划分？（分类体系构建）",
+   "description": "诊断现有分类体系的重叠与模糊缺陷，提取两个更本质的正交属性重构MECE矩阵分类法。用于回答RQ「如何对问题进行本质性划分？」的分类体系构建与重构。",
+   "path": "problem_space/P1_2/A1.2-a_orthogonal_decoupling_taxonomy.md"
+  },
+  {
+   "id": "A1.2-b_definition_driven_inference",
+   "title": "A1.2-b 定义驱动的逻辑推演",
+   "space": "problem_space",
+   "rq_type": "怎么划分？（关系建模 · 因果链）",
+   "description": "提取核心概念的形式化定义（数学公式/公理），从定义约束推演问题实体间的必然关系结构。用于回答RQ「这些问题/概念之间存在什么必然联系？」的关系建模与因果链构建。",
+   "path": "problem_space/P1_2/A1.2-b_definition_driven_inference.md"
+  },
+  {
+   "id": "A1.2-c_paradigm_lineage_clustering",
+   "title": "A1.2-c 范式和谱系聚类",
+   "space": "problem_space",
+   "rq_type": "怎么划分？（维度分解 / 演化规律）",
+   "description": "归纳现有分类维度的最大公约数，识别元维度，建立2-3层谱系树，揭示问题分类维度的演进逻辑与谱系脉络。用于回答RQ「这些分类维度背后的演化逻辑是什么？」的维度分解与谱系构建。",
+   "path": "problem_space/P1_2/A1.2-c_paradigm_lineage_clustering.md"
+  },
+  {
+   "id": "A1.3-a_causal_chain_capability_risk",
+   "title": "A1.3-a 因果链溯源（能力-风险）",
+   "space": "problem_space",
+   "rq_type": "为什么？（脆弱性本源）",
+   "description": "识别研究对象的核心能力/特性，建立「因具备X能力→必然导致Y风险」的强因果映射，将问题的深层根因锁定到系统的本质属性。用于回答RQ「为什么这些问题不可避免？」的脆弱性本源分析。",
+   "path": "problem_space/P1_3/A1.3-a_causal_chain_capability_risk.md"
+  },
+  {
+   "id": "A1.3-b_causal_chain_painpoint_remedy",
+   "title": "A1.3-b 因果链溯源（痛点-解药）",
+   "space": "problem_space",
+   "rq_type": "为什么？（采用动机）",
+   "description": "系统性总结旧方法/现有方案的核心痛点，将新技术/新范式的能力作为对应「解药」进行一一对齐，解释为何当前问题域需要新的解决思路。用于回答RQ「为什么旧方法不够用？」的采用动机分析。",
+   "path": "problem_space/P1_3/A1.3-b_causal_chain_painpoint_remedy.md"
+  },
+  {
+   "id": "A1.3-c_paradigm_shift_contrast",
+   "title": "A1.3-c 范式转移对比与边界界定",
+   "space": "problem_space",
+   "rq_type": "为什么？（深层机制解释）",
+   "description": "构建新旧范式的多维对比矩阵，展示新范式在关键维度上的断层，解释旧范式的因果链为何在新场景下系统性失效。用于回答RQ「为什么旧的认知框架不再适用？」的范式转移深层机制解释。",
+   "path": "problem_space/P1_3/A1.3-c_paradigm_shift_contrast.md"
+  },
+  {
+   "id": "A1.4-a_multidimensional_impact_analysis",
+   "title": "A1.4-a 多维权衡与边界分析",
+   "space": "problem_space",
+   "rq_type": "带来什么后果？（系统级影响）",
+   "description": "提取多个系统影响维度（可靠性/安全性/隐私/效率/合规等），对每个维度分析Problem节点造成的损害类型与严重程度，绘制影响热力图。用于回答RQ「这些问题带来什么多维度后果？」的系统级影响量化。",
+   "path": "problem_space/P1_4/A1.4-a_multidimensional_impact_analysis.md"
+  },
+  {
+   "id": "A1.4-b_evaluation_meta_audit",
+   "title": "A1.4-b 评估实践元分析与基准审计",
+   "space": "problem_space",
+   "rq_type": "带来什么后果？（认知级偏差）",
+   "description": "将「评估行为」本身作为研究对象，审查领域内评估数据集的来源偏差、标签质量与覆盖盲区，揭示偏差如何导致对Problem后果的系统性低估。用于回答RQ「我们对问题后果的评估是否可信？」的认知级偏差审计。",
+   "path": "problem_space/P1_4/A1.4-b_evaluation_meta_audit.md"
+  },
+  {
+   "id": "A1.4-c_coverage_gap_analysis",
+   "title": "A1.4-c 覆盖率缺口分析",
+   "space": "problem_space",
+   "rq_type": "带来什么后果？（领域级风险）",
+   "description": "枚举现实中所有高危应用场景，构建「现实风险场景集 × 研究覆盖集」布尔矩阵，计算覆盖率，识别「高危害低覆盖」的领域级风险盲区。用于回答RQ「哪些高危场景被研究忽视了？」的领域级风险覆盖审计。",
+   "path": "problem_space/P1_4/A1.4-c_coverage_gap_analysis.md"
+  },
+  {
+   "id": "A1.5-a_blind_spot_extrapolation",
+   "title": "A1.5-a 盲区/留白外推",
+   "space": "problem_space",
+   "rq_type": "还缺什么？（覆盖缺口）",
+   "description": "扫描Problem Space分类矩阵，定位文献密度极低或为零的「空白单元格」，分析其被忽视的原因（技术难度高/认知盲区），量化领域的覆盖缺口。用于回答RQ「还有哪些问题类别被研究忽视？」的覆盖缺口定位。",
+   "path": "problem_space/P1_5/A1.5-a_blind_spot_extrapolation.md"
+  },
+  {
+   "id": "A1.5-b_bottleneck_reverse_mapping",
+   "title": "A1.5-b 瓶颈/缺陷逆向映射",
+   "space": "problem_space",
+   "rq_type": "还缺什么？（根本性障碍）",
+   "description": "汇总前序各层分析中反复出现的共性局限性，聚类抽象为根本性硬约束，论证这些约束在当前框架下不可逾越。用于回答RQ「当前研究面临什么根本性障碍？」的硬约束提炼与不可逾越性论证。",
+   "path": "problem_space/P1_5/A1.5-b_bottleneck_reverse_mapping.md"
+  },
+  {
+   "id": "A1.5-c_paradigm_shift_derivation",
+   "title": "A1.5-c 范式转移推导",
+   "space": "problem_space",
+   "rq_type": "还缺什么？（新兴未知）",
+   "description": "识别当前范式无法解释的「异常现象」，引入跨域新概念作为新分析框架，论证其如何打开对未知问题域的探索通道。用于回答RQ「现有认知框架的边界在哪里，下一个范式是什么？」的新兴未知探索。",
+   "path": "problem_space/P1_5/A1.5-c_paradigm_shift_derivation.md"
+  },
+  {
+   "id": "A1.6-a_adversarial_coevolution_tracing",
+   "title": "A1.6-a 攻防协同演化轨迹绘制",
+   "space": "problem_space",
+   "rq_type": "问题如何被解法「逼」着进化？（对抗性动态）",
+   "description": "交错分析攻击与防御的出现时序，绘制「出现-封堵-变异」螺旋上升轨迹，揭示攻防双方的协同演化动力学。用于回答RQ「问题如何被防御手段「逼」着进化？」的对抗性动态追踪。",
+   "path": "problem_space/P1_6/A1.6-a_adversarial_coevolution_tracing.md"
+  },
+  {
+   "id": "A1.6-b_solution_induced_problem_shift",
+   "title": "A1.6-b 解药诱导的「问题位移」识别",
+   "space": "problem_space",
+   "rq_type": "问题如何被解法「逼」着进化？（次生灾害 / 补偿性风险）",
+   "description": "对比引入解决方案前后的系统状态，识别因解法副作用而「新暴露」或「问题位移」的安全/隐私属性，评估次生灾害是否超过原问题。用于回答RQ「解药是否带来了更危险的副作用？」的次生灾害与补偿性风险分析。",
+   "path": "problem_space/P1_6/A1.6-b_solution_induced_problem_shift.md"
+  },
+  {
+   "id": "B2.1-a_paradigm_abstraction_clustering",
+   "title": "B2.1-a 范式抽象与谱系聚类",
+   "space": "solution_space",
+   "rq_type": "用什么方案？（技术流派归类）",
+   "description": "忽略具体工具名称，从KG的Solution节点中提取方法的底层决策逻辑，聚类为N个互斥的「元范式」，揭示解法流派的谱系关系。用于回答RQ「这些方案背后的元级逻辑是什么？」的技术流派归类与元范式抽象。",
+   "path": "solution_space/S2_1/B2.1-a_paradigm_abstraction_clustering.md"
+  },
+  {
+   "id": "B2.1-b_task_mechanism_orthogonal_matrix",
+   "title": "B2.1-b 任务-机制正交矩阵",
+   "space": "solution_space",
+   "rq_type": "用什么方案？（架构设计）",
+   "description": "将KG中的解法按「任务目标类型」与「技术架构类型」两个正交维度映射到矩阵，统计各象限密度，揭示任务-架构的适配规律与空白区域。用于回答RQ「不同任务目标对应什么技术架构？」的任务-架构适配分析。",
+   "path": "solution_space/S2_1/B2.1-b_task_mechanism_orthogonal_matrix.md"
+  },
+  {
+   "id": "B2.1-c_technology_lineage_evolution",
+   "title": "B2.1-c 技术谱系演化分析",
+   "space": "solution_space",
+   "rq_type": "用什么方案？（工具/框架演进）",
+   "description": "引入时间维度，追踪KG中各技术流派在时间轴上的兴衰更替，标注关键工具/框架的出现节点，分析范式迁移的时间拐点。用于回答RQ「技术方案如何演化？」的技术谱系历史演进分析。",
+   "path": "solution_space/S2_1/B2.1-c_technology_lineage_evolution.md"
+  },
+  {
+   "id": "B2.2-a_universal_architecture_alignment",
+   "title": "B2.2-a 通用架构对齐与参数化",
+   "space": "solution_space",
+   "rq_type": "具体怎么落地？（适配策略）",
+   "description": "定义所有方法共享的通用「超模型」流水线骨架，将每篇论文的方法拆解为组件配置变体，通过横向对比揭示设计选择的多样性与规律。用于回答RQ「各方法在通用框架下有什么设计差异？」的通用架构对齐分析。",
+   "path": "solution_space/S2_2/B2.2-a_universal_architecture_alignment.md"
+  },
+  {
+   "id": "B2.2-b_ipo_component_decomposition",
+   "title": "B2.2-b 输入-处理-输出组件拆解",
+   "space": "solution_space",
+   "rq_type": "具体怎么落地？（输入/输出 / 集成方式）",
+   "description": "将每个解法还原为「输入-处理-输出」数据流管道，精确标注输入数据类型、核心处理算法类别、输出格式及外部工具集成点。用于回答RQ「方法的数据流是什么？」的IPO白盒化拆解分析。",
+   "path": "solution_space/S2_2/B2.2-b_ipo_component_decomposition.md"
+  },
+  {
+   "id": "B2.2-c_internal_external_adaptation_decoupling",
+   "title": "B2.2-c 内外部适应机制解耦",
+   "space": "solution_space",
+   "rq_type": "具体怎么落地？（干预深度分析）",
+   "description": "按「内部参数干预程度」和「外部资源依赖程度」两个维度将适配策略分层，揭示方法在轻量适配到深度定制光谱上的分布。用于回答RQ「方法对基础模型/系统的干预程度如何？」的适配深度解耦分析。",
+   "path": "solution_space/S2_2/B2.2-c_internal_external_adaptation_decoupling.md"
+  },
+  {
+   "id": "B2.3-a_evaluation_practice_meta_analysis",
+   "title": "B2.3-a 评估实践元分析",
+   "space": "solution_space",
+   "rq_type": "效果好不好？（评估方法论）",
+   "description": "将「评估行为」本身作为研究对象，对每篇论文的评估设计编码分类（形式/指标/基线），统计领域评估实践的分布规律，揭示评估方法论的系统性偏好与盲区。用于回答RQ「领域如何评估解法效果？评估方法论本身是否可靠？」",
+   "path": "solution_space/S2_3/B2.3-a_evaluation_practice_meta_analysis.md"
+  },
+  {
+   "id": "B2.3-b_benchmark_data_lineage_audit",
+   "title": "B2.3-b 基准审计与数据谱系审查",
+   "space": "solution_space",
+   "rq_type": "效果好不好？（实验设计）",
+   "description": "对Solution Space评估中使用的基准数据集执行谱系审查，分析来源、标签方式、粒度、覆盖度，标记高风险偏差及其对结论可信度的影响。用于回答RQ「评估所用数据集是否可信？」的基准数据质量审计。",
+   "path": "solution_space/S2_3/B2.3-b_benchmark_data_lineage_audit.md"
+  },
+  {
+   "id": "B2.3-c_baseline_fairness_analysis",
+   "title": "B2.3-c 基线对比公平性分析",
+   "space": "solution_space",
+   "rq_type": "效果好不好？（基线对比）",
+   "description": "检查每篇论文的对比基线是否代表同期SOTA、实验条件是否一致（硬件/超参），识别「不公平对比」案例，评估其对性能声明有效性的影响。用于回答RQ「论文的性能提升声明有多少可信？」的基线公平性分析。",
+   "path": "solution_space/S2_3/B2.3-c_baseline_fairness_analysis.md"
+  },
+  {
+   "id": "B2.4-a_multidimensional_tradeoff_pareto",
+   "title": "B2.4-a 多维权衡与边界分析",
+   "space": "solution_space",
+   "rq_type": "优劣势如何？（代价权衡）",
+   "description": "提取多个效能维度（精度/效率/成本/鲁棒性），分析解法在多维效能空间中的取舍关系，绘制帕累托前沿，识别「综合最优」与「单维最优」解法的差异。用于回答RQ「不同方案的优劣势如何权衡？」的多维效能帕累托分析。",
+   "path": "solution_space/S2_4/B2.4-a_multidimensional_tradeoff_pareto.md"
+  },
+  {
+   "id": "B2.4-b_constraint_sensitivity_analysis",
+   "title": "B2.4-b 约束变量敏感性分析",
+   "space": "solution_space",
+   "rq_type": "优劣势如何？（适用边界）",
+   "description": "识别影响方法效能的关键约束变量（如规模、数据量、模型大小），分析性能对这些变量的敏感性，界定各方法的有效工作区间和失效临界点。用于回答RQ「方法在什么条件下有效，什么条件下失效？」的约束边界敏感性分析。",
+   "path": "solution_space/S2_4/B2.4-b_constraint_sensitivity_analysis.md"
+  },
+  {
+   "id": "B2.4-c_systemic_failure_pattern_induction",
+   "title": "B2.4-c 系统性缺陷归纳",
+   "space": "solution_space",
+   "rq_type": "优劣势如何？（是否真优于SOTA）",
+   "description": "横向归纳Solution Space中所有方法的共性失败模式，分析这些失败是源于个别实现缺陷还是范式的固有假设缺陷，识别技术路线的系统性天花板。用于回答RQ「当前所有方案共同面临什么系统性缺陷？」的技术路线天花板分析。",
+   "path": "solution_space/S2_4/B2.4-c_systemic_failure_pattern_induction.md"
+  },
+  {
+   "id": "B2.4-d_solution_coverage_audit",
+   "title": "B2.4-d 解药-痛点映射与覆盖率审计",
+   "space": "solution_space",
+   "rq_type": "优劣势如何？（闭环验证）",
+   "description": "对比解法对Problem Space中问题清单的覆盖率，并联动A1.6-b的次生灾害清单对高风险解法的覆盖分数乘以0.5权重惩罚，输出「经风险校正的」解法覆盖率排名。用于回答RQ「现有解法是否真正解决了全部问题？」的闭环覆盖验证。",
+   "path": "solution_space/S2_4/B2.4-d_solution_coverage_audit.md"
+  },
+  {
+   "id": "B2.5-a_evidence_chain_completeness_audit",
+   "title": "B2.5-a 证据链完整性审计",
+   "space": "solution_space",
+   "rq_type": "离实用多远？（工业适配）",
+   "description": "绘制「理论模型→工具实现→工业应用」三级证据链，量化每级文献质量与数量，定位证据链断裂点，评估方案离工业落地的距离。用于回答RQ「方案距离实际部署还有多远？」的工业落地成熟度评估。",
+   "path": "solution_space/S2_5/B2.5-a_evidence_chain_completeness_audit.md"
+  },
+  {
+   "id": "B2.5-b_trust_gap_governance_analysis",
+   "title": "B2.5-b 信任缺口与治理需求分析",
+   "space": "solution_space",
+   "rq_type": "离实用多远？（可解释/可信）",
+   "description": "分析方案在规模化部署后新出现的「信任真空」（可解释性/审计性/合规性），推导必须引入的治理原语（沙箱/审计日志/访问控制等），评估当前方案的信任工程成熟度。用于回答RQ「规模化后还需要哪些信任机制？」的可信工程需求分析。",
+   "path": "solution_space/S2_5/B2.5-b_trust_gap_governance_analysis.md"
+  },
+  {
+   "id": "B2.5-c_solution_paradigm_shift_derivation",
+   "title": "B2.5-c 范式转移推导（解决域）",
+   "space": "solution_space",
+   "rq_type": "离实用多远？（进化方向）",
+   "description": "识别Solution Space当前范式的硬性性能瓶颈，引入外部变量（跨域概念/新技术）构建下一代解法蓝图，绘制从当前范式到新范式的跃迁路线图。用于回答RQ「下一代解法的范式是什么？」的解决域范式转移推导。",
+   "path": "solution_space/S2_5/B2.5-c_solution_paradigm_shift_derivation.md"
+  },
+  {
+   "id": "B2.6-a_resource_cost_profiling",
+   "title": "B2.6-a 硬性资源与成本剖析",
+   "space": "solution_space",
+   "rq_type": "花多少钱？能复现吗？（算力/数据/人力成本）",
+   "description": "从文献中提取方法在训练/推理阶段的显式成本数据（GPU时长/参数量/数据规模/API调用费用），构建「成本画像」，识别成本黑盒问题与高成本瓶颈。用于回答RQ「运行这些方案需要多少资源？」的算力与成本显式化分析。",
+   "path": "solution_space/S2_6/B2.6-a_resource_cost_profiling.md"
+  },
+  {
+   "id": "B2.6-b_reproducibility_diagnosis",
+   "title": "B2.6-b 科研成果可复现性诊断",
+   "space": "solution_space",
+   "rq_type": "花多少钱？能复现吗？（开源完备性 / 工程文化）",
+   "description": "审查每篇论文的代码可用性、依赖完备性、数据集可访问性和随机种子固定情况，诊断领域的科研可复现性状况，识别复现障碍类型与严重程度。用于回答RQ「这些工作能复现吗？」的科研成果可复现性系统诊断。",
+   "path": "solution_space/S2_6/B2.6-b_reproducibility_diagnosis.md"
+  },
+  {
+   "id": "B2.6-c_solution_feedback_loop_identification",
+   "title": "B2.6-c 解法反噬与反馈闭环识别",
+   "space": "solution_space",
+   "rq_type": "花多少钱？能复现吗？（解法负面外溢性）",
+   "description": "链接解法与A1.6-b的次生灾害输出，构建「解法A→副作用B→催生新问题C」的反馈回路，分析不改变解法时次生灾害如何放大原问题，提出阻断反馈回路的改进点。用于回答RQ「解法的负面外溢如何形成闭环？」的解法反噬反馈回路分析。",
+   "path": "solution_space/S2_6/B2.6-c_solution_feedback_loop_identification.md"
+  }
+ ]
+}

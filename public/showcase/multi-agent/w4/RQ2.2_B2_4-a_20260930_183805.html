@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.4-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.4-a 分析报告</h1>
+<div class="meta">RQ [RQ2.2]：[父问题 RQ2] 集中式与去中心化协作架构、固定角色与演化角色分工，在任务编排层面各自的适用边界与权衡是什么？
+[本子问题 RQ2.2] 集中式（如 SOP/固定角色）与去中心化（如演化协调）路线在任务类型、可扩展性、鲁棒性上的权衡证据是什么？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0287_Assessing_and_Enhancing_the_Robustness_of_LLM-Based_Multi-Ag, 1665_Flow-of-Action_SOP_Enhanced_LLM-Based_Multi-Agent_System_for, 0689, 0884_Enhancing_Multi-Agent_Systems_via_Reinforcement_Learning_wit, 1443_Embodied_LLM_Agents_Learn_to_Cooperate_in_Organized_Teams, 0023_Chatlaw_A_Multi-Agent_Legal_Assistant_based_on_a_Role-Aligne）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_1_研究背景与分析框架">1. 研究背景与分析框架</a></li>
+<li><a href="#sec_2_数据来源与规模">2. 数据来源与规模</a></li>
+<li><a href="#sec_3_任务类型维度的权衡证据">3. 任务类型维度的权衡证据</a></li>
+<li><a href="#sec_4_可扩展性维度的权衡证据">4. 可扩展性维度的权衡证据</a></li>
+<li><a href="#sec_5_鲁棒性维度的权衡证据">5. 鲁棒性维度的权衡证据</a></li>
+<li><a href="#sec_6_核心权衡模式与_不可能三角">6. 核心权衡模式与「不可能三角」</a></li>
+<li><a href="#sec_7_场景化推荐_条件性最优">7. 场景化推荐（条件性最优）</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ2.2——集中式（SOP/固定角色）与去中心化（演化协调）路线在任务类型、可扩展性、鲁棒性上的权衡证据——进行了系统性的知识图谱（KG）多维效能分析。分析的核心结论是：两条路线之间不存在客观上的「最优」，而是一个条件性的帕累托权衡结构。集中式系统在任务准确性与可追溯鲁棒性上系统性占优：Flow-of-Action 用 SOP flow 将 RCA 准确率从 ReAct 的 35.50% 提升至 64.01%<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，MetaGPT 的 SOP 装配线在代码生成上取得 85.9%/87.7% Pass@1<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，Chatlaw 的固定角色 RA-MoE 在 LawBench 上较 LLM 提升 7.73%<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。去中心化系统则在规模化扩展性与跨组织适应性上占优：AgentNet 以 DAG 路由与 RAG 内存构建自组织、容错架构<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>分析识别出一个不可逃避的三元约束（「不可能三角」）：无法同时最大化任务准确性、最小化成本/延迟、并实现 agent 数无上限线性扩展。集中式结构化的代价可量化——可问责管线成本增加约 2–3×、中位延迟从约 2s 升至 20–25s（约 8–10× 变慢）<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。三篇直接对照实验（0892 的四框架比较<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、AgentNet 的规模依赖实验<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、MACNET 的缩放律<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>）一致指向混合/条件性方案而非任一路线全面胜出，其中混合架构（如 HMAS-2、异构可问责管线 CBA）在多数对照中落在帕累托前沿。</p>
+
+<h2 id="sec_1_研究背景与分析框架">1. 研究背景与分析框架</h2>
+<p>本分析遵循 B2.4-a 多维效能空间帕累托分析方法，从 KG 中以 measured_by 边覆盖计数驱动效能维度选取，而非主观选择。核心问题不是「哪条路线更好」，而是「哪些权衡在当前技术条件下不可逃避」。分析通过 KG 一跳关系查询、六类节点（problem/method/paper/dataset/metric/limitation/assumption）的系统枚举，以及 14 段论文原文语义检索，为每个方法构建性能向量并识别帕累托前沿。</p><p>纳入分析的效能维度包括：任务准确性/成功率（多篇论文覆盖，usage_count 高）、成本（cost per prompt）、中位延迟（median latency）、token 消耗（token consumption）、通信成本（communication cost）。鲁棒性相关指标（error rates、fault detection rates）仅由单一论文<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>覆盖，usage_count&lt;3，按分析纪律标注为「新兴维度」，不纳入核心帕累托计算。</p>
+
+<h2 id="sec_2_数据来源与规模">2. 数据来源与规模</h2>
+<p>本分析的证据基础来自知识图谱的六类节点与七类关系边，辅以论文原文段落语义检索。具体规模如下表所示。</p>
+<h3>数据来源与规模统计</h3>
+<table><thead><tr><th>数据类型</th><th>数量/规模</th><th>说明</th></tr></thead><tbody><tr><td>KG 节点类型</td><td>7 类</td><td>problem(454)、method(380)、paper(186)、metric(278)、limitation(170)、assumption(119)、dataset(243)</td></tr>
+<tr><td>工具调用总次数</td><td>45 次</td><td>含节点枚举、一跳关系、约束过滤、反向查询、RAG 检索</td></tr>
+<tr><td>论文原文检索段落</td><td>14 段</td><td>覆盖 Flow-of-Action、MetaGPT、AgentNet、0892、0210、1443、3818 等 12+ 篇关键论文</td></tr>
+<tr><td>冻结证据矩阵论文</td><td>5 篇</td><td>0287、1665、0884、1443、0023（RQ2.2 指定）</td></tr>
+<tr><td>补充证据论文</td><td>15+ 篇</td><td>0210、3810、3818、3840、3842、1713、1718、1772、0892 等</td></tr>
+<tr><td>核心效能维度</td><td>5 个</td><td>accuracy/success_rate、cost、latency、token_consumption、communication_cost</td></tr>
+<tr><td>新兴维度</td><td>1 类</td><td>robustness（error rates 等，usage_count&lt;3，未纳入帕累托计算）</td></tr>
+</tbody></table>
+
+<h2 id="sec_3_任务类型维度的权衡证据">3. 任务类型维度的权衡证据</h2>
+<p>结构化、有既定诊断/合规流程的任务强烈偏向集中式 SOP 编排。Flow-of-Action 将 SRE 标准操作流程显式编码为 SOP flow，把 ReAct 的 35.50% 准确率提升到 64.01%（LLM）；消融实验显示移除 SOP 知识后平均准确率从 54.06% 崩至 15.39%、移除 SOP flow 后定位准确率从 54.22% 跌至 15.11%，证明固定流程是准确性的决定性来源<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。MetaGPT 将软件工程 SOP 编码为 prompt 序列，在 HumanEval/MBPP 上取得 85.9%/87.7% Pass@1<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。Chatlaw 以模拟律所 SOP 的 RA-MoE 架构在 LawBench 上较 LLM 提升 7.73%<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>相反，当任务开放、无既定流程时，固定角色反而受限。AgentNet 明确批评静态预定义工作流「无法适应 agent 表现的实时波动与快速变化的任务需求」<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。MetaGPT 作者亦承认其 SOP 装配线「难以满足真实世界应用的多样复杂需求」、无法覆盖 UI 与前端场景<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p>
+<h3>集中式 SOP/固定角色路线在结构化任务上的量化增益</h3>
+<table><thead><tr><th>方法</th><th>任务/基准</th><th>关键指标</th><th>数值</th><th>基线对比</th><th>来源</th></tr></thead><tbody><tr><td>Flow-of-Action (SOP flow)</td><td>RCA / GoogleOnlineBoutique</td><td>Average Accuracy</td><td>64.01%</td><td>ReAct 35.50%</td><td>[1]</td></tr>
+<tr><td>Flow-of-Action — w/o SOP 知识</td><td>RCA (消融)</td><td>Average Accuracy</td><td>15.39%</td><td>完整版 54.06%</td><td>[1]</td></tr>
+<tr><td>Flow-of-Action — w/o SOP flow</td><td>RCA (消融)</td><td>Location Accuracy</td><td>15.11%</td><td>完整版 54.22%</td><td>[1]</td></tr>
+<tr><td>MetaGPT (SOP 装配线)</td><td>HumanEval / MBPP</td><td>Pass@1</td><td>85.9% / 87.7%</td><td>SoTA</td><td>[2]</td></tr>
+<tr><td>Chatlaw (RA-MoE + SOP)</td><td>LawBench</td><td>Accuracy 提升</td><td>+7.73%</td><td>vs LLM</td><td>[3]</td></tr>
+</tbody></table>
+
+<h2 id="sec_4_可扩展性维度的权衡证据">4. 可扩展性维度的权衡证据</h2>
+<p>最直接的证据是 0892 的四框架对照实验。它在集中式 CMAS、去中心化 DMAS、混合 HMAS-1/HMAS-2 四种通信框架上，对 4–32 个机器人、四个协调依赖任务做了系统比较。结论是：混合框架 HMAS-2（中央规划 + 局部反馈）在全部四任务上取得最高成功率（3/6 机器人下达 100% 且步数最少）；去中心化的 DMAS 使用最多 API 调用与 token 且成功率最低——去中心化 agent 反复重述彼此观点、稀释关键上下文；纯集中的 CMAS 在小规模有竞争力，但随 agent 数显著退化，对复杂 Warehouse 任务在所有规模下都劣于 HMAS-2<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p><p>MACNET 的协作缩放律显示性能随 agent 数呈 sigmoid 饱和（约 2^4 节点为合理点），集中式拓扑超过 30 个 agent 时频发上下文爆炸<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。具身 LLM 团队实验发现 9 个 agent 的性能（60.67±15.06）反而不如 7 个（43.00±2.16），通信成本近乎线性增长<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。但去中心化的规模优势是有条件的：AgentNet 自身实验显示 3 个 agent 时完全同质最优（0.86），引入多样性反而降到 0.81，只有到 5 个 agent 时异质性才转为优势（0.85 vs 0.79）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "团队规模对任务性能的非单调影响（0492 具身 LLM 团队，越低越好）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["3 agents", "5 agents", "7 agents", "9 agents"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "任务完成时间/性能指标", "type": "bar", "data": [43.0, 45.0, 43.0, 60.67], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>可扩展性对照：四种 LLM 多机器人通信框架（0892）</h3>
+<table><thead><tr><th>框架</th><th>类型</th><th>任务成功率</th><th>API 调用</th><th>Token 消耗</th><th>可扩展性表现</th></tr></thead><tbody><tr><td>CMAS</td><td>纯集中式</td><td>小规模有竞争力</td><td>最少</td><td>最少</td><td>随 agent 数显著退化</td></tr>
+<tr><td>DMAS</td><td>纯去中心化</td><td>最低</td><td>最多</td><td>最多</td><td>对话冗长、上下文稀释</td></tr>
+<tr><td>HMAS-1</td><td>混合</td><td>优于 DMAS</td><td>中等</td><td>中等</td><td>初始计划改善对话</td></tr>
+<tr><td>HMAS-2</td><td>混合（中央+局部反馈）</td><td>最高（全部任务）</td><td>较低</td><td>较低</td><td>最佳，可纠错碰撞</td></tr>
+</tbody></table>
+
+<h2 id="sec_5_鲁棒性维度的权衡证据">5. 鲁棒性维度的权衡证据</h2>
+<p>集中式 SOP 通过软约束降低幻觉：Flow-of-Action 将 SOP 作为关键节点的软约束（而非 FastGPT 式硬约束）以引导正确轨迹，同时在无匹配 SOP 时以 generate_sop 动态生成，保留了灵活性<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。0210 证明结构化 handoff 能阻止失败级联，在 PythonIO 上把准确率从 61.42% 提升至 97.64%（+36.22 点）；但同一研究也测得严格 handoff 有时反而限制后续 agent 灵活性导致小幅准确率下降<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>集中式的鲁棒性代价可量化且高昂：可问责管线成本增加约 2–3×、中位延迟从约 2s 升至 20–25s（约 8–10× 变慢）<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；集中编排器本身构成单点故障<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。去中心化路线以牺牲部分协调确定性换取容错与隐私：AgentNet 用 DAG 路由构建「自组织、容错」架构，并通过 RAG 内存机制保护跨组织隐私<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。AgentDropout 则证明动态节点/边消除在 layered/random 多种初始拓扑下都能稳定提升性能与 token 效率，即「结构鲁棒性」<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p>
+<h3>鲁棒性与可靠性代价指标</h3>
+<table><thead><tr><th>维度</th><th>集中式/结构化路线</th><th>去中心化/演化路线</th><th>来源</th></tr></thead><tbody><tr><td>准确性/成功率影响</td><td>结构化 handoff 提准确率 +36.22 点（PythonIO）</td><td>AgentNet 提升 task efficiency/adaptability</td><td>[5][4]</td></tr>
+<tr><td>成本代价</td><td>成本增加约 2–3×</td><td>协调开销在大团队外较低</td><td>[5][4]</td></tr>
+<tr><td>延迟代价</td><td>中位延迟 2s→20–25s（8–10× 变慢）</td><td>DMAS 对话冗长、token 最多</td><td>[5][6]</td></tr>
+<tr><td>故障模式</td><td>单点故障（中央控制器）</td><td>小团队异质性引入协调开销</td><td>[4]</td></tr>
+<tr><td>鲁棒性测试证据</td><td>缺乏定量对照（0287 仅为研究计划）</td><td>AgentDropout 多拓扑稳定</td><td>[8][10]</td></tr>
+</tbody></table>
+
+<h2 id="sec_6_核心权衡模式与_不可能三角">6. 核心权衡模式与「不可能三角」</h2>
+<p>跨论文一致浮现「准确性–成本/延迟–可扩展性」三元约束。0210 显式给出准确率-成本-延迟的帕累托前沿，并确认「没有单一最优配置，选择取决于任务」，其结论明确将「异构管线」列为常处帕累托前沿的均衡选择<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。3842 的 Puppeteer 用 RL 编排器同时改善性能与 token 效率，但需以 λ 权重在准确率与成本间可调，且其方案仍是集中式（与 AgentNet 的去中心化直接矛盾）<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。3829 显示更强的 LLM 编排器带来更高准确率但成本同步上升<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。</p><p>可辨识的「不可能三角」是：无法同时（1）最大化任务准确性、（2）最小化成本/延迟、（3）实现 agent 数无上限线性扩展。SOP/结构化增强准确率但增成本延迟（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>），动态/去中心化增强扩展性但增协调开销与不确定性（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）。</p>
+<h3>帕累托前沿上的方法与其权衡定位</h3>
+<table><thead><tr><th>方法/架构</th><th>路线</th><th>占优维度</th><th>被牺牲维度</th><th>来源</th></tr></thead><tbody><tr><td>Flow-of-Action</td><td>集中式 SOP</td><td>任务准确性高（64.01%）</td><td>SOP 构建成本、依赖历史 incident</td><td>[1]</td></tr>
+<tr><td>HMAS-2 混合</td><td>混合</td><td>成功率最高 + 可扩展性</td><td>实现复杂度高</td><td>[6]</td></tr>
+<tr><td>Accountable Pipeline CBA</td><td>集中式结构化</td><td>准确率-成本帕累托均衡</td><td>成本 2–3×、延迟 8–10×</td><td>[5]</td></tr>
+<tr><td>Puppeteer</td><td>集中式 RL 编排</td><td>性能与 token 效率双改善</td><td>仍需 λ 调权、中央单点</td><td>[11]</td></tr>
+<tr><td>AgentNet</td><td>去中心化</td><td>可扩展性、容错、隐私</td><td>小团队（3 agent）准确率下降</td><td>[4]</td></tr>
+</tbody></table>
+
+<h2 id="sec_7_场景化推荐_条件性最优">7. 场景化推荐（条件性最优）</h2>
+<p>基于帕累托前沿，不同应用场景应选择不同权衡点。每项推荐均说明代价，不完整的推荐不成立。</p>
+<h3>场景化条件性推荐</h3>
+<table><thead><tr><th>应用场景</th><th>优先维度</th><th>推荐架构</th><th>接受的权衡代价</th><th>来源</th></tr></thead><tbody><tr><td>结构化高合规任务（RCA、法律、代码生成）</td><td>准确性/可追溯</td><td>集中式 SOP flow</td><td>SOP 构建成本、对新故障类型依赖历史匹配</td><td>[1][2][3]</td></tr>
+<tr><td>大规模、跨组织、隐私敏感</td><td>可扩展性/容错</td><td>去中心化（AgentNet 类）</td><td>小团队协调开销、准确率波动</td><td>[4]</td></tr>
+<tr><td>成本敏感但需高准确率</td><td>准确率-成本均衡</td><td>异构可问责管线（CBA）</td><td>相比纯单体延迟上升</td><td>[5]</td></tr>
+<tr><td>动态环境、任务多变</td><td>适应性</td><td>混合（HMAS-2 类）或动态编排</td><td>实现复杂度、调参成本</td><td>[6][11]</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>（1）鲁棒性对照证据最薄弱：本子问题冻结矩阵指定的 0287 仅为研究计划（multivocal review + GitHub 分析），尚未产生集中式 vs 去中心化的定量鲁棒性结果<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>，故「哪条路线更鲁棒」在矩阵内缺乏直接对照实验。（2）跨论文数字比较受限：1665/0210/3810/0892 使用不同基准（GoogleOnlineBoutique/PythonIO/HumanEval/BoxNet）与不同指标定义（Location Accuracy vs Pass@1 vs success rate），不可直接合并排序；本报告中的数字均在各自论文上下文内引用，未做横向合并。（3）方法论共性局限：0210 指出结论基于多选基准、blame 依赖 ground-truth 标签<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；1665 依赖历史 incident 匹配<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；0892 的混合优势仅在 warehouse 类任务上验证，泛化性待检验<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。（4）维度覆盖不足：鲁棒性作为正式效能维度因 usage_count&lt;3 被排除在核心帕累托计算外，属「新兴维度」。（5）路线之争在文献中直接对立（3842<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> vs 3840<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> vs 0892<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>），冲突可能源于任务差异而非架构本质，本报告将其作为分歧点如实标注。</p>
+<div class="note">认知坐标纪律：本分析的核心产出不是「谁最好的排名」，而是「哪些权衡在当前技术条件下不可逃避」。分析识别出的根本约束是「准确性 × 成本/延迟 × 可扩展性」三元权衡——任何路线都必须显式选择牺牲维度。混合架构（HMAS-2、异构管线 CBA）在多数对照实验中落在帕累托前沿，提示「演化角色 + 中央协调」的组合可能是当前实践中的稳健折衷，但其证据仍限于特定任务域。</div>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ2.2，文献证据给出的是一个条件性、无单一赢家的结论。集中式（SOP/固定角色）在任务准确性与可追溯鲁棒性上系统性占优<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，去中心化（演化协调）在规模化扩展性与跨组织适应性上占优<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。二者受制于「准确性 × 成本/延迟 × 可扩展性」这一不可逃避的三元约束，不存在客观意义上的最优路线。</p><p>最直接的对照实验证据（0892 的四框架比较<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、AgentNet 的规模依赖实验<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、MACNET 缩放律<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>）一致指向混合/条件性方案：混合架构 HMAS-2 在全部四个任务上取得最高成功率并最佳扩展<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，异构可问责管线 CBA 常处成本-准确率帕累托前沿<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，而固定 SOP 装配线在开放复杂任务上暴露边界<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>因此，路线选择应遵循条件性判据：结构化高合规任务选集中式 SOP，大规模/跨组织/动态任务倾向去中心化或混合，且任何路径都必须在准确性与成本-可扩展性之间做显式取舍。领域当前的核心证据缺口在于——集中式与去中心化在鲁棒性维度缺乏同基准对照实验（0287 尚未产出定量结果<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>），这是后续研究最值得填补的空隙。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Flow-of-Action: SOP Enhanced LLM-Based Multi-Agent System for Root Cause Analysis&nbsp;<code style="font-size:0.82em;color:#888">1665_Flow-of-Action_SOP_Enhanced_LLM-Based_Multi-Agent_System_for</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework&nbsp;<code style="font-size:0.82em;color:#888">3810_metagpt_meta_programming_for_a_multiagent_collaborative_fram</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Chatlaw: A Multi-Agent Legal Assistant based on a Role-Aligned Mixture-of-Experts Architecture&nbsp;<code style="font-size:0.82em;color:#888">0023_Chatlaw_A_Multi-Agent_Legal_Assistant_based_on_a_Role-Aligne</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;AgentNet: Decentralized Evolutionary Coordination for LLM-based Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3840_agentnet_decentralized_evolutionary_coordination_for_llmbase</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Traceability and Accountability in Role-Specialized Multi-Agent LLM Pipelines&nbsp;<code style="font-size:0.82em;color:#888">0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Scalable Multi-Robot Collaboration with Large Language Models: Centralized or Decentralized Systems?&nbsp;<code style="font-size:0.82em;color:#888">0892_Scalable_Multi-Robot_Collaboration_with_Large_Language_Model</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Scaling Large Language Model-based Multi-Agent Collaboration (MACNET)&nbsp;<code style="font-size:0.82em;color:#888">3818_scaling_large_language_modelbased_multiagent_collaboration</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Assessing and Enhancing the Robustness of LLM-based Multi-Agent Systems Through Chaos Engineering&nbsp;<code style="font-size:0.82em;color:#888">0287_Assessing_and_Enhancing_the_Robustness_of_LLM-Based_Multi-Ag</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Embodied LLM Agents Learn to Cooperate in Organized Teams&nbsp;<code style="font-size:0.82em;color:#888">1443_Embodied_LLM_Agents_Learn_to_Cooperate_in_Organized_Teams</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;AgentDropout: Dynamic Agent Elimination for Token-Efficient and High-Performance Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">1713_agentdropout_dynamic_agent_elimination_for_tokenefficient_an</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Multi-Agent Collaboration via Evolving Orchestration (Puppeteer)&nbsp;<code style="font-size:0.82em;color:#888">3842_multiagent_collaboration_via_evolving_orchestration</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Self-Resource Allocation in Multi-Agent LLM Systems&nbsp;<code style="font-size:0.82em;color:#888">3829_selfresource_allocation_in_multiagent_llm_systems</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.2 · 2026-09-30 18:38</footer>
+</div>
+</body>
+</html>

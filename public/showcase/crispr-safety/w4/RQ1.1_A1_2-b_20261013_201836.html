@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ1.1]：[父问题 RQ1] 如何将 CRISPR 递送效率与编辑安全性（脱靶效应、免疫原性）统一到同一可量化的目标函数中，从而给出「单位风险下的编辑收益」这一可比较指标？
+[本子问题 RQ1.1] 现有递送方法（viral vectors、electroporation、biomaterials-mediated delivery、RNP delivery）在 KG 中分别与哪些安全性问题节点存在显式或隐式关联，其关联强度如何？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0238_Off-target_effects_in_CRISPRCas9_gene_editing, 0093_Cytosine_base_editing_systems_with_minimized_off-target_effe, 0223_crisprcas9_and_gene_editing_in_drug_delivery_emerging_delive, 0579_Application_of_CRISPR-Cas_technology_in_food_safety, 0194_addressing_the_challenges_of_immunogenicity_heterogeneity_an, 0145_immune_and_mutational_profile_of_geneedited_lowimmunogenic_h）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_分析框架与认知坐标_从_定义约束_到_问题分类">分析框架与认知坐标：从「定义约束」到「问题分类」</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_分方法论证_Viral_Vectors_关联最强且显式">分方法论证：Viral Vectors（关联最强且显式）</a></li>
+<li><a href="#sec_分方法论证_Electroporation_双面关联">分方法论证：Electroporation（双面关联）</a></li>
+<li><a href="#sec_分方法论证_Biomaterials_mediated_Delivery_缓解型关联">分方法论证：Biomaterials-mediated Delivery（缓解型关联）</a></li>
+<li><a href="#sec_分方法论证_RNP_Delivery_安全关联最负向">分方法论证：RNP Delivery（安全关联最负向）</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对研究问题 RQ1.1——现有递送方法（viral vectors、electroporation、biomaterials-mediated delivery、RNP delivery）在知识图谱（KG）中分别与哪些安全性问题节点存在显式或隐式关联，以及关联强度如何——进行了系统性的定义驱动推演与证据溯源分析。</p><p>核心结论：这四类递送方法并非各自绑定一组不同名称的安全问题，而是以不同的「表达持续时间（expression duration）」与「载体固有属性」为参数，共同指向同一组核心安全性问题节点——脱靶效应（off-target effects）与免疫原性（immunogenicity）。关联强度呈明显梯度：viral vectors 与免疫原性、插入突变之间存在 KG 显式 has_limitation 边（confidence=0.9），为强关联 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；electroporation 的安全关联以「物理损伤/细胞毒性」为主，但 KG 中仅存在指向 delivery 问题的显式边，安全关联需原文补全，属中强隐式关联 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；biomaterials-mediated delivery 与 RNP delivery 的安全关联为「缓解型」，即二者本身即是针对同一批安全问题而设计的对策 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p>
+
+<h2 id="sec_分析框架与认知坐标_从_定义约束_到_问题分类">分析框架与认知坐标：从「定义约束」到「问题分类」</h2>
+<p>本次分析采用定义驱动推演的认知坐标：以「递送方法的表达动力学」为隐性公理，将各安全性问题视为该公理被违反时的逻辑后果，而非经验观察的归纳。</p><p>关键公理（来自 KG 方法与假设节点）：递送方法的药代动力学特征（transient vs. persistent expression）决定了编辑器在细胞内的暴露窗口，而暴露窗口直接约束脱靶切割与免疫识别的概率。KG 中 assumption 节点 'Cargo choice determines delivery window' 明确指出：'The choice of CRISPR cargo (plasmid DNA, mRNA, or RNP) directly affects the acceptable delivery window and off-target risk' <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。另一 assumption 节点 'CRISPR–Cas9 RNP delivery avoids DNA integration' 则给出一个约束：'As the Cas9 and sgRNA enter the cell as a pre-assembled complex, there is no risk of Cas9 causing DNA integration into the host genome' <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>基于此，本轮分析的推演链为：表达持续时间 → off-target 累积风险 → 各方法的关联方向；载体材料属性 → 免疫识别途径 → 各方法的免疫关联方向。需要特别说明的是：RQ1.1 证据集内不存在任何形式化的数学模型定义（无 ∀/∃/≤ 公式化的统一安全目标函数），核心定义均为定性/操作性定义（脱靶率、免疫原性流行率），因此本报告的推演为「定性逻辑关联」，不构成数学证明。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析通过 KG 工具调用共 42 次，覆盖全部七类节点：</p><p>- Problem 节点：312 个（总），针对性检索 8 个安全相关节点，包括 off_target_effects_in_crispr_cas9_gene_editing、vector_immunogenicity、immunogenicity_concerns、immunogenicity_of_cas_proteins、safety_concerns_of_viral_vectors、aav_immunogenicity、challenges_with_viral_and_nonviral_crispr_cas_delivery_carriers、off_target_mutagenesis。</p><p>- Method 节点：312 个（总），针对性检索 9 个递送方法节点。</p><p>- Paper 节点：138 个（总），精读原文段落 13 篇关键论文。</p><p>- Dataset/Metric/Limitation/Assumption 节点：分别为 114、175、190、108 个。</p><p>在 KG 结构化数据不足处以 search_paper_sections 工具对 132 篇 paper card 原文进行语义检索补全，重点精读 0238、0093、0223、0195、0231、0237、0257、0025 等 8 篇以上关键论文。冻结证据矩阵中的 6 篇论文（0238、0093、0223、0579、0194、0145）全部纳入分析。</p>
+<h3>递送方法与安全性问题节点的 KG 关联矩阵（含关联强度评级）</h3>
+<table><thead><tr><th>递送方法</th><th>关联的安全问题节点</th><th>关联类型</th><th>KG 显式边</th><th>关联强度</th><th>关键证据</th></tr></thead><tbody><tr><td>Viral vectors</td><td>Vector immunogenicity</td><td>has_limitation 显式边</td><td>是（confidence=0.9）</td><td>强</td><td>[1][2]</td></tr>
+<tr><td>Viral vectors</td><td>Immunogenicity + Insertional mutagenesis</td><td>has_limitation 显式边</td><td>是（confidence=0.9）</td><td>强</td><td>[2]</td></tr>
+<tr><td>Viral vectors</td><td>Off-target accumulation（持续性表达导致）</td><td>targets delivery problem + 原文机制</td><td>部分</td><td>强</td><td>[8]</td></tr>
+<tr><td>Electroporation</td><td>Delivery of CRISPR components</td><td>targets 显式边</td><td>是（confidence=0.9）</td><td>—（非安全节点）</td><td>[2][3]</td></tr>
+<tr><td>Electroporation</td><td>Cell toxicity / physical damage</td><td>隐式（原文补全）</td><td>否</td><td>中强</td><td>[2][3]</td></tr>
+<tr><td>RNP electroporation</td><td>Off-target effects（负相关，降低）</td><td>targets 显式边</td><td>是（confidence=0.9）</td><td>中强（缓解）</td><td>[8]</td></tr>
+<tr><td>Biomaterials-mediated delivery</td><td>Immunogenicity and cytotoxicity</td><td>targets 显式边</td><td>是（confidence=0.9）</td><td>中（缓解型）</td><td>[4]</td></tr>
+<tr><td>Biomaterials（LNP）</td><td>Off-target effects（负相关，降低）</td><td>targets 显式边</td><td>是（confidence=0.9）</td><td>中（缓解型）</td><td>[8]</td></tr>
+<tr><td>Biomaterials（LNP）</td><td>Inflammatory response / hepatotoxicity</td><td>原文补全（隐式）</td><td>否</td><td>中</td><td>[5][3]</td></tr>
+<tr><td>RNP delivery</td><td>Delivery of genome editing components</td><td>targets 显式边</td><td>是（confidence=0.9）</td><td>—（非安全节点）</td><td>[9]</td></tr>
+<tr><td>RNP delivery</td><td>Off-target effects（负相关，降低）</td><td>原文机制 + 综述量化</td><td>否</td><td>中强（缓解）</td><td>[5][8]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "四类递送方法与安全问题的关联强度指数（0–3，3 为最强）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["Viral vectors", "Electroporation", "Biomaterials-mediated", "RNP delivery"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "与安全问题节点关联强度", "type": "bar", "data": [3.0, 1.8, 1.5, 1.2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_分方法论证_Viral_Vectors_关联最强且显式">分方法论证：Viral Vectors（关联最强且显式）</h2>
+<p>Viral vectors（尤其 AAV 与 lentivirus）是四类方法中与安全性问题关联最强且最为显式的一类。KG 中存在两条高置信度显式边：viral vectors —has_limitation→ vector immunogenicity（confidence=0.9，来源 0595）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，以及 viral vectors —has_limitation→ 免疫原性与插入突变（来源 0025）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。</p><p>其内在逻辑由 DNA-based 载体属性决定。0025 原文指出：'DNA-based delivery strategies primarily utilize viral systems, resulting in sustained expression and increased editing efficiency; however, this also increases the probability of cleavage at off-target genomic sites' <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。0238 给出了同一机制的量化后果：'AAV-delivered gene expression is known to last for years in terminally differentiated cell types... AAV-mediated gene editing likely exhibits the propensity to accumulate undesired off-target mutations over time' <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。这直接印证了「表达持续时间 → 脱靶风险」的推演链。</p><p>免疫原性方面，0237 汇总多项人群研究，报告预存 anti-SpCas9 抗体流行率跨研究为 2.5%–58%、anti-SaCas9 为 4.8%–95%，预存 T 细胞反应出现在 57%–95% 的健康个体中 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。0195 进一步给出产业层面的后果：AAV 存在 '(i) pre-existing neutralizing antibodies in 30-50% of humans that preclude dosing, (ii) capsid-mediated immunogenicity requiring high-dose immunosuppression, (iii) hepatotoxicity at therapeutic doses, (iv) genotoxic risk from integration' <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p>
+
+<h2 id="sec_分方法论证_Electroporation_双面关联">分方法论证：Electroporation（双面关联）</h2>
+<p>Electroporation 在 KG 中的显式 targets 边指向 delivery 相关问题而非安全节点（来源 0025、0231），说明其安全关联在 KG 中是隐式的，需原文补全 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。其安全关联体现为「物理损伤/细胞毒性 + 仅限 ex vivo」：0025 记载 'Physical cell damage / Cell death / Unsuitable for in vivo'，并强调参数优化不当会 'trigger apoptotic pathways and lead to cell death' <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。0231 在直接对比后指出 electroporation 'is cytotoxic, tissue invasive, and transiently expressed'，且 'the persistent hepatotoxicity associated with pore formation, which has not yet been adequately addressed... is the most concerning' <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>但需注意其「双面性」：当 electroporation 与 RNP 联合使用时（RNP electroporation），KG 中存在显式边 rnp_electroporation —targets→ off_target_effects_in_crispr_cas9（confidence=0.9，来源 0238），原文称 'RNP electroporation exhibits higher on-target editing efficiency and lower off-target mutations than the other delivery methods' <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。因此 electroporation 与安全问题形成方向相反的关联：与细胞毒性/侵入性正相关，与脱靶负相关（仅当联合 RNP 时）。</p>
+
+<h2 id="sec_分方法论证_Biomaterials_mediated_Delivery_缓解型关联">分方法论证：Biomaterials-mediated Delivery（缓解型关联）</h2>
+<p>Biomaterials-mediated delivery（LNP、聚合物、脂质体、水凝胶）与安全性问题主要为缓解型关联。KG 存在显式边 biomaterials-mediated delivery —targets→ immunogenicity and cytotoxicity（confidence=0.9，来源 0246），其语义是「针对该问题而设计」<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。0223 原文指出非病毒系统 'have less immunogenicity and are scalable... They avoid insertional mutagenesis' <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。</p><p>但缓解并非消解。0231 指出 LNP 'may trigger inflammatory responses' 且其 'mild immunogenicity' 仍是临床障碍 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；0195 引用 Sabnis 指出 LNP 的 cationic lipids 可诱导剂量依赖的 'hepatotoxicity and pro-inflammatory cytokine release' <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。这说明 biomaterials 是把 viral vector 的强免疫/插入突变风险置换为较弱的炎症/肝毒风险，而非彻底消除安全性问题。</p>
+
+<h2 id="sec_分方法论证_RNP_Delivery_安全关联最负向">分方法论证：RNP Delivery（安全关联最负向）</h2>
+<p>RNP delivery 与安全性问题的关联是四类中最「负向」的——它被一致识别为降低安全风险的手段。0238 指出 RNP 递送实现 'transient peak expression of CRISPR/Cas9 followed by quick turnover of these editors to avoid off-target effects due to prolonged editor expression' <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。0195 汇总 67 项研究后给出量化梯度：'RNP delivery consistently shows the lowest off-target rates (typically &lt;1% vs. 5-15% for plasmids)'，且 RNP 具 'reduced immunogenicity, lower cell toxicity' <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>工程化改造可进一步放大并量化这一安全优势。0093 通过将脱氨酶 PmCDA1 截短并引入 W122E/W139Q 突变得到 tCDA1EQ，构建 AID-2S（N 端融合）与 AID-3S（嵌合）架构：AID-2S 与 AID-3S 分别相较原始 Target-AID 实现约 4.5 倍与 13.7 倍的 R-loop 脱靶降低，同时保持可观的 on-target 效率 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。结合小尺寸 SaCas9 后，该体系可纳入 AAV 4–5 kb 的尺寸限制，形成单 AAV 胞嘧啶碱基编辑 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。这印证了本 RQ 的核心洞见：递送方法对安全问题的作用方向取决于其表达持续性，而非载体类别本身。</p>
+<h3>表达持续时间—脱靶风险量化梯度（来自 67 项研究综述）</h3>
+<table><thead><tr><th>递送货物形态</th><th>表达动力学</th><th>脱靶率（典型）</th><th>相对风险</th></tr></thead><tbody><tr><td>质粒 DNA（plasmid）</td><td>persistent，数天至数周</td><td>5–15%（高度同源位点）</td><td>高 [5]</td></tr>
+<tr><td>Cas9 mRNA</td><td>transient，数小时至 2 天</td><td>较质粒降低约 5 倍</td><td>中 [5]</td></tr>
+<tr><td>RNP（蛋白/gRNA 复合物）</td><td>immediate，&lt; 24 h</td><td>&lt; 1%</td><td>低 [5][8]</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "KG 中「免疫原性」相关 Problem 节点的碎片化分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "KG 中「免疫原性」相关 Problem 节点的碎片化分布", "type": "pie", "radius": "55%", "data": [{"name": "vector immunogenicity（载体免疫原性）", "value": 1}, {"name": "AAV immunogenicity（AAV 免疫原性）", "value": 1}, {"name": "immunogenicity of Cas proteins（Cas 蛋白免疫原性）", "value": 1}, {"name": "immunogenicity and cytotoxicity（免疫原性与细胞毒性）", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">关联强度评级的推断依据：Viral vectors 存在 KG 显式 has_limitation 边且有多篇原文佐证，定为强（3.0）；Electroporation 的 KG 显式边指向 delivery 问题、安全关联需原文补全，但原文证据充分，定为中强（1.8）；Biomaterials 存在显式 targets 边但语义为缓解型，且缓解非消解，定为中（1.5）；RNP delivery 与安全节点的直接 KG 边缺失，仅由原文机制与综述量化支撑，但其缓解方向一致且证据丰富，定为中等偏下（1.2，方向为负）。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在以下证据覆盖不足与推断置信度问题：</p><p>第一，KG 结构碎片化。免疫原性在 KG 中被拆分为至少 4 个独立 Problem 节点（vector immunogenicity、AAV immunogenicity、immunogenicity of Cas proteins、immunogenicity and cytotoxicity），彼此间缺乏显式聚合边，导致跨方法的「关联强度」只能定性排序，无法量化统一打分。</p><p>第二，测量口径不统一。各论文对脱靶/免疫原性使用不同测量方法（indel 百分比、R-loop assay、ADA 流行率），0237 明确指出缺乏标准化（lack of standardization）使跨研究比较困难 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。0237 还引用 Simhadri 等指出市售 Cas9 蛋白含不同水平内毒素，可能造成 T 细胞检测假阳性 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p><p>第三，Electroporation 的 KG 显式安全边缺失。其安全关联部分依赖原文补全，属弱-中强度推断，在报告中已明确标注。</p><p>第四，缓解型结论缺乏头对头对照。Biomaterials 与 RNP 的「缓解」证据多来自综述性汇总（0195/0231），缺乏同靶点、同指标、头对头的对照实验直接验证，因此缓解结论的证据强度为中 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>第五，本 RQ 证据集内不存在形式化数学模型定义，所有推演为定性逻辑关联，不构成数学证明；报告中未将自然语言的因果关系等同于数学蕴含。</p>
+<h3>各方法安全关联的证据强度与不确定性汇总</h3>
+<table><thead><tr><th>递送方法</th><th>关联安全问题</th><th>证据来源类型</th><th>推断强度</th><th>主要不确定性</th></tr></thead><tbody><tr><td>Viral vectors</td><td>免疫原性 / 插入突变</td><td>KG 显式边 + 多篇原文</td><td>强</td><td>血清型差异大，AAV 被部分文献视为低免疫原性</td></tr>
+<tr><td>Viral vectors</td><td>脱靶累积</td><td>原文机制（持续性表达）</td><td>强</td><td>缺乏体内长期定量数据</td></tr>
+<tr><td>Electroporation</td><td>细胞毒性 / 侵入性</td><td>原文补全（KG 无边）</td><td>中强</td><td>RNP 联合时脱靶方向相反</td></tr>
+<tr><td>Biomaterials</td><td>免疫原性 / 细胞毒性</td><td>KG 显式边（缓解型）</td><td>中</td><td>LNP 仍可致炎症/肝毒，缓解非消解</td></tr>
+<tr><td>RNP delivery</td><td>脱靶（降低）/ 免疫原性（降低）</td><td>原文机制 + 综述量化</td><td>中强（负向）</td><td>稳定性差、配方复杂，体内验证不足</td></tr>
+</tbody></table>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ1.1，本分析的结论是：四类递送方法与安全性问题的关联并非彼此独立，而是围绕「表达持续时间」与「载体材料属性」两个参数共同映射到同一组核心安全节点（脱靶效应、免疫原性、细胞毒性）。Viral vectors 与免疫原性/插入突变的关联最强且显式（KG has_limitation 边 confidence=0.9）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；Electroporation 与细胞毒性/侵入性呈中强隐式关联，但与脱靶呈负相关（当联合 RNP 时）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>；Biomaterials 与 RNP delivery 的安全关联为「缓解型」，即它们是针对同一批安全问题而设计的对策，而非引入新问题类别 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>对母问题 RQ1 的启示：若要构建「单位风险下的编辑收益」这一统一可量化目标函数，其风险维度应以「表达持续时间 × 载体免疫原性 × 货物免疫原性」为坐标轴，而非按递送方法简单分类；当前 KG 对免疫原性的碎片化拆解（4 个无聚合边的节点）与测量口径的不统一，正是未来需要统一到同一目标函数中的关键缺口 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Gene-Editing and Drug Delivery Convergence (Pharmaceutical Strategies)&nbsp;<code style="font-size:0.82em;color:#888">0595_Gene-Editing_and_Drug_Delivery_Convergence_Pharmaceutical_St</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Overview of Delivery Methods for Gene Editing&nbsp;<code style="font-size:0.82em;color:#888">0025_Overview_of_Delivery_Methods_for_Gene_Editing</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Comparing CRISPR-Cas9 Gene Therapy Delivery Systems: Implications and Optimization&nbsp;<code style="font-size:0.82em;color:#888">0231_Comparing_CRISPR-Cas9_Gene_Therapy_Delivery_Systems_Implicat</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Biomaterials-mediated CRISPR/Cas9 delivery: recent challenges&nbsp;<code style="font-size:0.82em;color:#888">0246_Biomaterials-mediated_CRISPRCas9_delivery_recent_challenges</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;CRISPR medicine for blood disorders: Progress and challenges (cargo choice determines delivery window)&nbsp;<code style="font-size:0.82em;color:#888">0249_CRISPR_medicine_for_blood_disorders_Progress_and_challenges</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Overview of Delivery Methods for Gene Editing (RNP delivery avoids DNA integration assumption)&nbsp;<code style="font-size:0.82em;color:#888">0025_Overview_of_Delivery_Methods_for_Gene_Editing</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Off-target effects in CRISPR/Cas9 gene editing&nbsp;<code style="font-size:0.82em;color:#888">0238_Off-target_effects_in_CRISPRCas9_gene_editing</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;CRISPR medicine for blood disorders: Progress and challenges&nbsp;<code style="font-size:0.82em;color:#888">0249_CRISPR_medicine_for_blood_disorders_Progress_and_challenges</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Immunogenicity of CRISPR therapeutics: critical considerations&nbsp;<code style="font-size:0.82em;color:#888">0237_immunogenicity_of_crispr_therapeuticscritical_considerations</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;CRISPR/Cas9 and Gene Editing in Drug Delivery: Emerging Delivery Systems&nbsp;<code style="font-size:0.82em;color:#888">0223_crisprcas9_and_gene_editing_in_drug_delivery_emerging_delive</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Cytosine base editing systems with minimized off-target effect and molecular size&nbsp;<code style="font-size:0.82em;color:#888">0093_Cytosine_base_editing_systems_with_minimized_off-target_effe</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.1 · 2026-10-13 20:18</footer>
+</div>
+</body>
+</html>

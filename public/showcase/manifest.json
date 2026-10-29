@@ -1,0 +1,274 @@
+{
+  "generatedAt": "2026-10-29 10:44",
+  "note": "真实项目运行快照：只读、已脱敏，用于公开演示。",
+  "projects": [
+    {
+      "id": "multi-agent",
+      "title": "多智能体协作：失败诊断、架构与评估",
+      "fieldTags": [
+        "多智能体",
+        "LLM",
+        "失败诊断"
+      ],
+      "description": "覆盖多智能体协作的失效模式、协作架构、评估基准与安全约束，形成五层诊断框架。",
+      "status": "completed",
+      "createdAt": "2026-09-29 03:22:21",
+      "updatedAt": "2026-10-17 18:42:44",
+      "demo": true,
+      "stats": {
+        "papers": 197,
+        "kgEdges": 1679,
+        "rqs": 15,
+        "claims": {
+          "verified": 120,
+          "needsRevision": 0,
+          "shouldRemove": 0
+        }
+      },
+      "workflows": [
+        {
+          "id": "W1",
+          "name": "语料库构建",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W2",
+          "name": "事实记忆(KG)",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W3",
+          "name": "框架与RQ",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W4",
+          "name": "RQ证据",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W5",
+          "name": "综述写作",
+          "status": "done",
+          "progress": 100
+        }
+      ]
+    },
+    {
+      "id": "smallholder-agri",
+      "title": "面向小农的农业人工智能：从技术供给到采纳机制",
+      "fieldTags": [
+        "农业",
+        "小农",
+        "AI 采纳"
+      ],
+      "description": "把分散在农业经济、遥感、边缘设备与对话系统中的证据组织起来，讨论可用性、公平与可部署性。",
+      "status": "completed",
+      "createdAt": "2026-10-19 02:16:54",
+      "updatedAt": "2026-10-22 19:43:08",
+      "demo": true,
+      "stats": {
+        "papers": 84,
+        "kgEdges": 1325,
+        "rqs": 13,
+        "claims": {
+          "verified": 117,
+          "needsRevision": 0,
+          "shouldRemove": 0
+        }
+      },
+      "workflows": [
+        {
+          "id": "W1",
+          "name": "语料库构建",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W2",
+          "name": "事实记忆(KG)",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W3",
+          "name": "框架与RQ",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W4",
+          "name": "RQ证据",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W5",
+          "name": "综述写作",
+          "status": "done",
+          "progress": 100
+        }
+      ]
+    },
+    {
+      "id": "crispr-safety",
+      "title": "CRISPR 递送与编辑安全性：面向临床转化的风险建模",
+      "fieldTags": [
+        "基因编辑",
+        "递送系统",
+        "临床转化"
+      ],
+      "description": "打通病毒学、核酸酶工程与临床转化三条文献线，梳理递送选择如何传导为安全性风险。",
+      "status": "completed",
+      "createdAt": "2026-10-11 06:58:27",
+      "updatedAt": "2026-10-18 15:05:12",
+      "demo": true,
+      "stats": {
+        "papers": 139,
+        "kgEdges": 1482,
+        "rqs": 15,
+        "claims": {
+          "verified": 117,
+          "needsRevision": 0,
+          "shouldRemove": 0
+        }
+      },
+      "workflows": [
+        {
+          "id": "W1",
+          "name": "语料库构建",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W2",
+          "name": "事实记忆(KG)",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W3",
+          "name": "框架与RQ",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W4",
+          "name": "RQ证据",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W5",
+          "name": "综述写作",
+          "status": "pending",
+          "progress": 75
+        }
+      ]
+    },
+    {
+      "id": "agent-evolution",
+      "title": "Agent 进化轨迹：机制与路径",
+      "fieldTags": [
+        "自进化 Agent",
+        "软件工程",
+        "机制综述"
+      ],
+      "description": "围绕自进化 Agent 的定义、驱动机制、评估方式与安全边界，构建可比较的机制谱系。",
+      "status": "completed",
+      "createdAt": "2026-10-11 09:44:30",
+      "updatedAt": "2026-10-18 22:49:18",
+      "demo": true,
+      "stats": {
+        "papers": 276,
+        "kgEdges": 1800,
+        "rqs": 13,
+        "claims": {
+          "verified": 118,
+          "needsRevision": 0,
+          "shouldRemove": 0
+        }
+      },
+      "workflows": [
+        {
+          "id": "W1",
+          "name": "语料库构建",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W2",
+          "name": "事实记忆(KG)",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W3",
+          "name": "框架与RQ",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W4",
+          "name": "RQ证据",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W5",
+          "name": "综述写作",
+          "status": "done",
+          "progress": 100
+        }
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/projects",
+      "static": "showcase/manifest.json",
+      "desc": "项目列表（静态快照）"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/{id}/rqs",
+      "static": "showcase/{id}/rqs.json",
+      "desc": "RQ 体系、证据矩阵、claims 与原文定位"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/{id}/kg",
+      "static": "showcase/{id}/kg.json",
+      "desc": "论文关系图（节点/边）"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/{id}/corpus",
+      "static": "showcase/{id}/corpus.json",
+      "desc": "语料库与筛选漏斗"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/{id}/report",
+      "static": "showcase/{id}/report.json",
+      "desc": "综述大纲与评审记录"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/{id}/w4-reports",
+      "static": "showcase/{id}/reports.json",
+      "desc": "逐 RQ 分析报告索引"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/{id}/survey-pdf",
+      "static": "showcase/{id}/survey.pdf",
+      "desc": "生成的综述全文 PDF"
+    }
+  ]
+}

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-b 分析报告</h1>
+<div class="meta">RQ [RQ3.1]：[父问题 RQ3] 面对多源脱靶检测基准（CHANGE-seq、GUIDE-seq、Yeast CAN1 assay 等）与异构指标（Accuracy、Recall、Precision、Editing efficiency），如何建立跨基准的归一化风险标度？
+[本子问题 RQ3.1] KG 中脱靶检测基准节点与度量节点之间的 `evaluated_on` / `measured_by` 边分布如何，是否存在跨基准的 `compares_with` 连接？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e, 0221_Machine_Learning-Driven_Prediction_of_CRISPR-Cas9_Off-Target, 0233_Feature_representation_for_explainable_CRISPR_off-target_pre, 0093_Cytosine_base_editing_systems_with_minimized_off-target_effe, 0451_predictive_modeling_and_explainable_ai_for_veterinary_safety, 0102_gandlf_a_generally_nuanced_deep_learning_framework_for_scala）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析一_evaluated_on_边揭示_中心化_碎片化_并存的基准拓扑">核心分析一：evaluated_on 边揭示「中心化 + 碎片化」并存的基准拓扑</a></li>
+<li><a href="#sec_核心分析二_measured_by_边暴露度量语义异质与_Accuracy_陷阱">核心分析二：measured_by 边暴露度量语义异质与「Accuracy 陷阱」</a></li>
+<li><a href="#sec_核心分析三_compares_with_边存在但非归一化连接">核心分析三：compares_with 边存在但非归一化连接</a></li>
+<li><a href="#sec_核心分析四_覆盖盲区与高风险共识基准">核心分析四：覆盖盲区与高风险共识基准</a></li>
+<li><a href="#sec_对受影响论文结论置信度的影响评估">对受影响论文结论置信度的影响评估</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ3.1——「KG 中脱靶检测基准节点与度量节点之间的 evaluated_on / measured_by 边分布如何，是否存在跨基准的 compares_with 连接？」——对知识图谱中全部 114 个 dataset 节点、175 个 metric 节点、312 个 problem 节点、312 个 method 节点及论文节点进行了系统性谱系审查，并精读了 9 篇核心论文原文。</p><p>核心结论：KG 中脱靶基准与度量节点呈「星形辐散、跨基准比较边稀薄」的拓扑。CHANGE-seq 与 GUIDE-seq 是两个唯一达到「≥2 篇论文共用」事实标准地位的脱靶基准 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，Yeast CAN1 与 13-genome-wide-techniques 数据集仅被单篇论文使用，形成单点依赖盲区 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。跨基准的 compares_with 边确实存在，但置信度普遍仅 0.7，其 evidence 普遍自述为「implicit / empirical comparison of alternative approaches」，属并列式算法比较而非归一化式标度桥接。更根本的是，CHANGE-seq 与 GUIDE-seq 对「active off-target」的标签操作化定义完全不可通约（前者用 cleavage count &gt;100 机器阈值，后者用「实验检出即正」），且两者均具约 97% negative 的极端正负不平衡 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。因此，KG 层面不存在可用于建立跨基准归一化风险标度的共享坐标轴——「有连接边、无归一化骨架」。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱三类核心数据层：</p><p>（1）节点层：通过 get_entity_by_type 加载了 dataset（114 个，含 DatasetBenchmark 类型）、metric（175 个）、problem（312 个）、method（312 个）、limitation（190 个）、assumption（108 个）、paper（138 个）全部节点。</p><p>（2）边层：通过 get_relation / get_head_entity / get_tail_entity 获取了 CHANGE-seq、GUIDE-seq（及 5 个细胞系变体）、Yeast CAN1、13-technique、Hanna 等基准节点的一跳边，以及证据矩阵中 6 篇论文（0203、0221、0233、0093、0101、0451、0102）的全部输入输出边，累计解析 80+ 条 evaluated_on / measured_by / proposes / compares_with / has_limitation 边。</p><p>（3）原文层：通过 search_paper_sections 语义检索精读了 0203、0221、0233、0101、0093、0098、0032、0238、0577 共 9 篇论文的相关段落，获取标签阈值、样本规模、类不平衡比例、跨平台表现等细粒度证据。</p><p>关键 KG 节点标识：CHANGE-seq = datasetbenchmark_change_seq_f0958bd19b；GUIDE-seq = datasetbenchmark_guide_seq_02eada3e6c；Yeast CAN1 = datasetbenchmark_yeast_can1_assay_2e36e5194e；13-technique = datasetbenchmark_13_genome_wide_off_target_detection_techniques_5d73a4413b。</p>
+<h3>表 1 · 脱靶基准节点的 evaluated_on 边与事实标准地位</h3>
+<table><thead><tr><th>基准节点</th><th>样本规模/描述</th><th>关联论文数</th><th>关联方法/边数</th><th>benchmark_status</th></tr></thead><tbody><tr><td>CHANGE-seq [1][2]</td><td>202,044 off-target sites / 110 gRNAs（in vitro）</td><td>2（0203, 0233）</td><td>10+ 条边（DNABERT, XGBoost, One-Hot, K-mer, Bulges, NPM, SHAP）</td><td>de_facto_standard</td></tr>
+<tr><td>GUIDE-seq [1][2]</td><td>1,072–1,702 off-target sites / 58 gRNAs（in cellula）</td><td>2（0203, 0233）+ 分化为 4 细胞系变体</td><td>10+ 条边（同上方法集）</td><td>de_facto_standard（已碎片化）</td></tr>
+<tr><td>GUIDE-seq (Listgarten/Chen/Tsai-U2OS/Tsai-HEK293) [1]</td><td>独立测试子集（细胞系特异）</td><td>1（0203）</td><td>各 2 条边</td><td>niche / 变体</td></tr>
+<tr><td>TTISS (Schmid-Burgk) [1]</td><td>in cellula 迁移学习集</td><td>1（0203）</td><td>2 条边</td><td>niche</td></tr>
+<tr><td>Yeast CAN1 assay [4]</td><td>canavanine 抗性评分，测 base editing 效率与脱靶</td><td>1（0093）</td><td>2 条边</td><td>single_use</td></tr>
+<tr><td>13 genome-wide techniques [3]</td><td>13 种深度测序技术 / 21 篇文献汇编</td><td>1（0101）</td><td>1 条边</td><td>single_use</td></tr>
+<tr><td>Hanna [2]</td><td>11,088 gRNAs，z-scores（base editing 效率）</td><td>1（0233）</td><td>5 条边（XGBoost, One-Hot, K-mer, SHAP）</td><td>single_use</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1 · 主要脱靶基准的 KG 连接密度（关联论文数 vs 边数）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["CHANGE-seq", "GUIDE-seq", "TTISS", "Yeast CAN1", "13-technique", "Hanna"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "关联 evaluated_on 边数", "type": "bar", "data": [10, 10, 2, 2, 1, 5], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析一_evaluated_on_边揭示_中心化_碎片化_并存的基准拓扑">核心分析一：evaluated_on 边揭示「中心化 + 碎片化」并存的基准拓扑</h2>
+<p>KG 中 CHANGE-seq 与 GUIDE-seq 汇集了来自 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 两篇论文及其全部方法节点（DNABERT、XGBoost、One-Hot、K-mer、Bulges、NPM、SHAP）的 10+ 条 evaluated_on 边，是全库连接密度最高的脱靶基准。GUIDE-seq 进一步分化为 Listgarten、Chen、Tsai-(U2OS)、Tsai-(HEK293) 四个细胞系特异变体节点，每个仅挂接 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的 2 条边。</p><p>相反，Yeast CAN1 assay 只挂接 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 及其 tCDA1EQ 方法的 2 条边，13-genome-wide-techniques 数据集只挂接 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，Hanna 只挂接 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这印证了 Step 1 的筛选逻辑：只有两个脱靶基准达到了「≥2 篇论文共用」的事实标准地位。</p><p>值得注意的是规模悬殊：<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 原文明确「CHANGE-seq: Includes 202,044 off-target sites across 110 gRNAs；GUIDE-seq: Includes 1,072 off-target sites across 58 gRNAs」——两者规模相差约 188 倍，却在同一张表（Table 1）中并列报告 AUPR/F1/Accuracy/Precision/Recall/AUC，这是跨基准直接比较不可靠的结构性证据。</p>
+
+<h2 id="sec_核心分析二_measured_by_边暴露度量语义异质与_Accuracy_陷阱">核心分析二：measured_by 边暴露度量语义异质与「Accuracy 陷阱」</h2>
+<p>KG 的 metric 节点显示度量本身异构：Accuracy（描述含「94.36%」）、Recall（73.43%）、Precision、F1、PR-AUC/AUPR、Pearson correlation、Base editing efficiency、Off-target mutation rate、Editing efficiency。</p><p><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 通过 measured_by 同时挂接 Accuracy/Precision/Recall/F1 四个「平衡假设」指标，并在 472 正/472 负的人工平衡集上报告 ETC_ClassWeight 达 96.92% accuracy。而 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 报告真实极偏分布（约 97% negative）：CHANGE-seq 的 Accuracy 高达 0.990–0.992、AUC 高达 0.978，但 AUPR 仅 0.345–0.612、F1 仅 0.018–0.389。同一基准上，度量选择决定了结论量级相差数倍。</p><p><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 原文直陈其度量选择动机：「We specifically selected AUPR over AUROC ... Because AUROC incorporates True Negatives in its calculation, it can give an overly optimistic impression of performance on heavily skewed data」。这直接说明：若不同论文各自选用 KG 中不同的度量节点，跨基准的「风险标度」会被度量的分布敏感性系统性扭曲。</p>
+<h3>表 2 · 两个事实标准基准的标签定义与类不平衡对比</h3>
+<table><thead><tr><th>维度</th><th>CHANGE-seq [2]</th><th>GUIDE-seq [2]</th></tr></thead><tbody><tr><td>active 定义</td><td>cleavage count &gt; 100（机器阈值）</td><td>所有实验检出 off-target 即标记为 active</td></tr>
+<tr><td>inactive 来源</td><td>cleavage count ≤ 100</td><td>Cas-OFFinder 生成（≤6 mismatches），排除已知 active</td></tr>
+<tr><td>active 数</td><td>67,476</td><td>1,702</td></tr>
+<tr><td>inactive 数</td><td>2,806,152</td><td>1,476,301</td></tr>
+<tr><td>正负比</td><td>约 1:41.6</td><td>约 1:868</td></tr>
+<tr><td>负样本占比</td><td>约 97%</td><td>约 97%</td></tr>
+<tr><td>平台</td><td>in vitro（纯净 DNA）</td><td>in cellula（活细胞 dsODN 捕获）</td></tr>
+<tr><td>内生灵敏度上限</td><td>——</td><td>仅检出全部 DSB 的 30%–50% [6]</td></tr>
+</tbody></table>
+<div class="note">关键发现：CHANGE-seq 与 GUIDE-seq 对「active off-target」的核心概念操作化定义根本不同——前者用「≥100 reads」机器阈值，后者用「实验检出即正」。任何试图在两者间建立归一化风险标度的方案，都必须先重定义标签语义。「数据泄露」在本分析中未被证实：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确声明「four independent datasets that were entirely excluded from any training」，故不声明数据泄露。</div>
+
+<h2 id="sec_核心分析三_compares_with_边存在但非归一化连接">核心分析三：compares_with 边存在但非归一化连接</h2>
+<p>KG 检索到的跨基准 compares_with 边包括：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>↔<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>↔<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>↔<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>↔<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>↔<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>↔<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。这些边置信度普遍为 0.7（低于 proposes 的 0.95），其 evidence 明确标注为「primarily empirical comparison of alternative approaches」「no direct empirical comparison is stated」「does not directly extend or build upon the older method」。</p><p>这表明跨基准连接只是「同任务不同算法的并列」，不构成标度桥。领域权威综述 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 明确佐证：「The current literature contains off-target datasets that cannot be meaningfully compared because they were generated with different assays, sensitivity thresholds, reference genomes, and variant-calling criteria」，并指出「No current deep learning model has demonstrated robust cross-platform generalisation」。</p><p><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的跨基准数据进一步量化了该鸿沟：同一 CCLMoff 模型在 DIG-seq 上 AUROC=0.985/AUPRC=0.720，在 DISCOVER-seq 上 AUROC=0.944/AUPRC=0.661，但在 GUIDE-seq 上 AUROC 仅 0.279 而 AUPRC 达 0.810——AUROC 与 AUPRC 出现方向相反的指标撕裂。</p>
+<div id="chart_2" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2 · 同一模型（CCLMoff [3]）在不同检测平台基准上的表现撕裂", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["DIG-seq", "DISCOVER-seq", "GUIDE-seq"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "AUROC", "type": "bar", "data": [0.985, 0.944, 0.279], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析四_覆盖盲区与高风险共识基准">核心分析四：覆盖盲区与高风险共识基准</h2>
+<p>问题分类法覆盖度交叉检验显示，脱靶 problem 类型分为「Cas9 mismatch 依赖型」「染色质/细胞系依赖型」「deaminase 主导的非序列依赖型（base editing）」三大类。</p><p>第一类（mismatch 依赖）由 CHANGE-seq、GUIDE-seq、TTISS、13-technique 充分覆盖，属 adequate。第二类（染色质依赖）由 Tsai-(U2OS)、Tsai-(HEK293)、Lazzarotto 变体覆盖，属 adequate。第三类（deaminase 非序列依赖）仅由 Yeast CAN1/LYP1 覆盖，且仅被 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 单篇使用（2 条边），构成单点依赖盲区——现有所有 AUPR/Accuracy 标度均无法迁移至此模态。</p><p><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 原文印证该模态的本质差异：「the SNV off-targets induced by base editing appears to be independent of the target sequence and is thought to be caused by non-specific, random deamination」。</p><p>高风险共识基准识别：GUIDE-seq 被广泛使用但存在三重内生偏差：（1）dsODN 递送效率低致仅检出 30%–50% 的 DSB <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；（2）被碎片化为 4 个细胞系特异变体；（3）其 active 定义与 CHANGE-seq 不兼容 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这是一项需要在最终报告中突出的重要发现。</p>
+<h3>表 3 · 高风险共识基准的系统性偏差审查</h3>
+<table><thead><tr><th>偏差类型</th><th>严重度</th><th>描述</th><th>证据论文</th></tr></thead><tbody><tr><td>label_semantics</td><td>High</td><td>两个事实标准基准 active 定义不可通约（机器阈值 vs 实验检出）</td><td>[2]</td></tr>
+<tr><td>class_imbalance</td><td>High</td><td>约 97% negative，Accuracy/AUROC 虚高而 AUPR/F1 低</td><td>[2]</td></tr>
+<tr><td>label_noise（假阴性）</td><td>Medium</td><td>GUIDE-seq 仅检出 30%–50% DSB，正样本集天然欠完备</td><td>[6]</td></tr>
+<tr><td>distribution_shift</td><td>Medium</td><td>体外方法脱离染色质环境，可能高估真实细胞内脱靶位点</td><td>[6][9][10]</td></tr>
+<tr><td>coverage_gap</td><td>High</td><td>base editing 非序列依赖脱靶仅 CAN1 单点覆盖</td><td>[4]</td></tr>
+<tr><td>dataset_incomparability</td><td>High</td><td>不同 assay/阈值/参考基因组致数据无法有意义比较</td><td>[9]</td></tr>
+</tbody></table>
+<div id="chart_3" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_3'));
+  c.setOption({"title": {"text": "图 3 · 脱靶基准 benchmark_status 分布（KG 相关节点）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 3 · 脱靶基准 benchmark_status 分布（KG 相关节点）", "type": "pie", "radius": "55%", "data": [{"name": "de_facto_standard (CHANGE-seq, GUIDE-seq)", "value": 2}, {"name": "niche / 变体 (GUIDE-seq 4 变体, TTISS)", "value": 5}, {"name": "single_use (CAN1, 13-technique, Hanna)", "value": 3}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_对受影响论文结论置信度的影响评估">对受影响论文结论置信度的影响评估</h2>
+<p>基于 Step 5 的影响程度评估框架：</p><p>针对 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>（DNABERT-Epi）与 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>（XGBoost 特征表示）：两篇论文均在 Dataset/方法章节明确讨论了类不平衡与度量选择（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 显式说明选用 AUPR over AUROC 的理由；<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 采用 sgRNA-based cross-validation 防止信息泄露并报告 PR-AUC/MCC），属「作者已讨论偏差」，置信度无需额外降级（minor 或 none）。</p><p>针对 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>（Extra Trees）：在人工平衡集上报告 96.92% accuracy，未充分讨论该数字与人造分布绑定，相对真实极偏分布不可迁移，置信度标记为 moderate 降级。</p><p>针对 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>（CCLMoff）：采用 leave-one-dataset-out 策略并报告跨平台表现撕裂，作者知悉并讨论了 approach-specific 问题，降级为 minor。</p><p>特别说明：证据矩阵中的 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>（兽医安全）与 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>（GaNDLF）经 KG 检索确认与脱靶基准节点无任何 evaluated_on/measured_by 连接，只能作为「异构指标跨基准不可比」的元层面类比证据，不参与脱靶基准直接审计。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>（1）KG 结构化字段稀疏：多数数据集节点的 description 为空或极短（如 Lazzarotto GUIDE-seq 变体节点 description 完全为空），数据来源/标签方式/创建年份/样本量等谱系字段在 KG 中大多缺失，谱系细节主要依赖 search_paper_sections 的原文补充。</p><p>（2）边数不足导致置信度受限：Yeast CAN1 与 13-technique 基准在 KG 中仅 2 条与 1 条边，其偏差评估基于单篇论文的原文证据，统计代表性有限。</p><p>（3）证据矩阵中 2 篇（<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>）与脱靶基准无 KG 连接，无法提供直接证据，仅作类比。</p><p>（4）术语碎片化风险：GUIDE-seq 被拆分为 5 个独立节点（主节点 + 4 变体），可能低估其真实使用频次；同理 CHANGE-seq 在不同论文中亦存在源文献归属不一致（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 归 Cameron et al. 2017，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 归 Lazzarotto et al. 2020），提示跨论文的基准命名规范化不足。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ3.1，本分析得出三项结论：</p><p>第一，边分布层面：evaluated_on 边高度中心化于 CHANGE-seq 与 GUIDE-seq 两个事实标准基准，其余脱靶基准（CAN1、13-technique、Hanna）边数≤5，呈单点依赖；measured_by 边在基准之间不共享统一度量语义（分类基准走 AUPR/Accuracy，base editing 走 Pearson）。</p><p>第二，跨基准连接层面：compares_with 边确实存在（6 组），但置信度普遍仅 0.7，evidence 自述为「implicit / empirical comparison」，属算法并列而非标度桥接。KG 中不存在可用于跨基准归一化的共享坐标轴。</p><p>第三，可操作性层面：建立跨基准归一化风险标度的前置条件为（a）统一「active off-target」标签操作化定义（机器阈值 vs 实验检出）；（b）统一度量集合（以 AUPR/MCC 等不平衡稳健指标替代 Accuracy/AUROC）；（c）纳入非序列依赖的 base editing 脱靶模态（当前仅 CAN1 单点覆盖）。在这三项完成前，任何跨基准风险标度都建立在不可通约的标签与度量之上。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Improved CRISPR/Cas9 off-target prediction with DNABERT and epigenetic features&nbsp;<code style="font-size:0.82em;color:#888">0203_Improved_CRISPRCas9_off-target_prediction_with_DNABERT_and_e</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Feature representation for explainable CRISPR off-target prediction and base editing efficiency&nbsp;<code style="font-size:0.82em;color:#888">0233_Feature_representation_for_explainable_CRISPR_off-target_pre</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;A versatile CRISPR/Cas9 system off-target prediction tool using language model (CCLMoff)&nbsp;<code style="font-size:0.82em;color:#888">0101_A_versatile_CRISPRCas9_system_off-target_prediction_tool_usi</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Cytosine base editing systems with minimized off-target effect and molecular size&nbsp;<code style="font-size:0.82em;color:#888">0093_Cytosine_base_editing_systems_with_minimized_off-target_effe</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Machine Learning-Driven Prediction of CRISPR-Cas9 Off-Target&nbsp;<code style="font-size:0.82em;color:#888">0221_Machine_Learning-Driven_Prediction_of_CRISPR-Cas9_Off-Target</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Off-target effects in CRISPR/Cas9 gene editing&nbsp;<code style="font-size:0.82em;color:#888">0238_Off-target_effects_in_CRISPRCas9_gene_editing</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;CRISPR-M: Predicting sgRNA off-target effect using a multi-view deep learning network&nbsp;<code style="font-size:0.82em;color:#888">0201_CRISPR-M_Predicting_sgRNA_off-target_effect_using_a_multi-vi</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Genome-wide CRISPR off-target prediction and optimization using RNA-DNA interaction fingerprints (CRISOT)&nbsp;<code style="font-size:0.82em;color:#888">0098_Genome-wide_CRISPR_off-target_prediction_and_optimization_us</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Navigating off-target effects in CRISPR-based genome editing for safer gene therapies&nbsp;<code style="font-size:0.82em;color:#888">0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;How to Mitigate CRISPR-Cas9 Off-Target Effects: Evaluation of detection and mitigation methods&nbsp;<code style="font-size:0.82em;color:#888">0577_How_to_Mitigate_CRISPR-Cas9_Off-Target_Effects_Evaluation_of</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Predictive modeling and explainable AI for veterinary safety&nbsp;<code style="font-size:0.82em;color:#888">0451_predictive_modeling_and_explainable_ai_for_veterinary_safety</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;GaNDLF: the generally nuanced deep learning framework for scalable end-to-end clinical workflows&nbsp;<code style="font-size:0.82em;color:#888">0102_gandlf_a_generally_nuanced_deep_learning_framework_for_scala</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.1 · 2026-10-13 20:29</footer>
+</div>
+</body>
+</html>

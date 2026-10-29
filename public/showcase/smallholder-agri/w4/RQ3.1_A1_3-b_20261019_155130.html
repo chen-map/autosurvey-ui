@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.3-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.3-b 分析报告</h1>
+<div class="meta">RQ [RQ3.1]：[父问题 RQ3] 小农异质性与&quot;理性小农&quot;建模假设之间的张力，应如何被理论化并纳入采纳机制模型？
+[本子问题 RQ3.1] 哪些 Limitation 刻画金融/基础设施约束，与模型假设节点存在何种未处理冲突？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2959_unlocking_ais_potential_in_agriculture_the_critical_role_of, 2882_tractor_service_utilization_profitability_and_adoption_deter, 3033_Agricultural_technology_adoption_and_its_impact_on_smallhold, 3002_learning_principalagent_contracts_for_equitable_smallholder, 0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i, 0655_Agricultural_insurance_access_and_acceptability_examining_th）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析_三重未处理冲突">核心分析：三重未处理冲突</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ3.1——哪些 Limitation 刻画金融/基础设施约束，与模型假设节点存在何种未处理冲突——对知识图谱（KG）进行系统性分析。核心结论是：证据矩阵中的 Assumption/Limitation 节点揭示出三类刻画结构性约束的命题——金融约束是「跨所有农户类别普遍绑定」的硬约束（financial_constraints 节点）、基础设施与使用成本系统性抑制数字工具使用（infrastructure_and_cost_constraints 节点，源自 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）、固定化 MRV/交易成本对小农形成参与门槛（fixed_mrv_costs 问题节点，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>）。</p><p>这三类约束与「理性小农」建模假设之间存在三重未被处理的冲突：其一，主流契约/采纳模型把农户设为 risk-neutral、无信贷/地权/参与成本的最优化主体并向利润最大化一阶响应（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明列此为显式局限），而实证证据显示信贷可得性是采纳的强决定因素（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 中 50% 采纳者有信贷、未采纳者仅 23%；<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 财务约束被各组一致排为第一约束，Kendall mean rank=1.73），「无摩擦最优化」把本应内生的金融约束删掉，导致结构性非采纳被误读为偏好问题；其二，异质性被压缩为少数可观测维度（农场规模、初始 SOC、成本类型），而约束真正沿性别、教育、数字素养、地权等多轴分层（<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 女性 mean rank=1.61、<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 教育/性别显著、<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 指出单一理论「过于个体主义」）；其三，基础设施被当作外生背景而非决策内生变量，模型因而无法内生解释为何同一「理性」激励在不同基础设施条件下产生迥异采纳结果（<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析通过 KG 结构化查询与论文原文语义检索双轨完成，六类节点（problem / method / dataset / metric / limitation / assumption）均已针对性查询。主要数据规模：全库 problem 节点约 226 个、assumption 节点约 61 个、limitation 节点约 137 个、method 节点约 231 个、paper 节点为 132 篇语料库。</p><p>通过 get_candidate_entity 与 get_entity_by_constraint 精确定位了 10 个关键 assumption 节点（financial_constraints、infrastructure_and_cost_constraints、commercially_rational_aggregator、myopic_farmer_best_response、private_adoption_costs_and_unobserved_effort、capital_and_maintenance_costs、end_user_characteristics、SUTVA、positivity、no_unmeasured_confounding）与 9 个关键 problem 节点（financial_constraints_to_mechanisation_adoption、fixed_mrv_costs_disadvantaging_small_farms、contract_design_under_joint_moral_hazard、smallholder_exclusion_from_carbon_farming_programs、partial_explanatory_power_of_single_adoption_theories、low_agricultural_insurance_penetration 等）。</p><p>检索边（get_relation / get_head_entity）覆盖了 addresses、targets、proposes、has_limitation 等关系类型，还原了「问题→方法」的解药链路与「论文→局限/假设」的批评链路。search_paper_sections 对 8 篇核心论文（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 及 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>）精读了 Introduction / Limitations / 实证结论章节，累计工具调用约 51 次，满足深挖纪律要求。</p>
+<h3>表 1：约束刻画节点 → 与模型假设的冲突类型</h3>
+<table><thead><tr><th>约束命题（KG 节点）</th><th>关键量化/证据</th><th>冲突的模型假设</th><th>冲突性质</th><th>来源论文</th></tr></thead><tbody><tr><td>金融约束普遍绑定（financial_constraints）</td><td>Kendall mean rank=1.73（全体与分组一致第一）</td><td>risk-neutral、无信贷/地权成本的最优化主体</td><td>硬门槛 vs 可剥离噪声</td><td>[1][3]</td></tr>
+<tr><td>信贷可得性决定采纳（problem_financial_constraints_to_mechanisation）</td><td>采纳者 50% 有信贷 vs 未采纳者 23%</td><td>采纳由利润最大化一阶条件驱动</td><td>内生约束被外生化</td><td>[2]</td></tr>
+<tr><td>基础设施与使用成本（infrastructure_and_cost_constraints）</td><td>移动数据/信号/电力/语言系统性 impediment</td><td>基础设施视为外生背景</td><td>外生背景 vs 内生变量</td><td>[4]</td></tr>
+<tr><td>固定 MRV/交易成本门槛（fixed_mrv_costs_disadvantaging_small_farms）</td><td>RAS 大农场 87.7% vs 小农 8.2%</td><td>单一池化合约 + 利润最大化</td><td>分层机制被低估</td><td>[1]</td></tr>
+<tr><td>数据基础设施缺口（Ai-ready data 缺失）</td><td>小农占印度农户 86%</td><td>算法能力为瓶颈</td><td>瓶颈误定位</td><td>[7]</td></tr>
+<tr><td>风险规避/行为偏离（单一理论解释力不足）</td><td>90% 认为有用 vs 仅 14% 购买</td><td>个体理性期望效用最大化</td><td>意愿 vs 约束混淆</td><td>[5][6]</td></tr>
+</tbody></table>
+<h3>表 2：金融约束 vs 模型假设的证据对齐明细</h3>
+<table><thead><tr><th>对齐维度</th><th>痛点受害维度（明确属性）</th><th>解药/证据能力</th><th>对齐类型</th><th>验证依据</th></tr></thead><tbody><tr><td>金融可得性</td><td>采纳概率、人均消费福利</td><td>信贷可得性显著正效应</td><td>direct</td><td>[2] 50% vs 23% 显著性检验</td></tr>
+<tr><td>财务约束强度</td><td>Kendall 约束排序（mean rank）</td><td>分组一致性分析揭示普遍绑定</td><td>direct</td><td>[3] mean rank=1.73</td></tr>
+<tr><td>金融壁垒去除后回报</td><td>ATU=GH₵312/acre vs ATT=GH₵471/acre</td><td>PSM 显示互补投入耦合</td><td>partial</td><td>[3] 需互补投入方能放大回报</td></tr>
+<tr><td>风险规避</td><td>保险购买率</td><td>知识(64%)/可得性(23%)为主因</td><td>partial</td><td>[5] 仅5%归因昂贵</td></tr>
+<tr><td>基础设施内生建模</td><td>数据就绪度/采纳分层</td><td>诊断性框架，无算法性能实证</td><td>claimed_only</td><td>[7] 自认诊断为主</td></tr>
+<tr><td>异质性多轴分层</td><td>规模/性别/教育/地权</td><td>单一轴建模（Uniform[1,10]）</td><td>partial</td><td>[1][3] 分布不匹配</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1：采纳与非采纳群体的关键约束差异（%）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["信贷可得率", "人均消费福利提升", "保险购买率"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "采纳者/相关群体", "type": "bar", "data": [50, 24, 14], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div id="chart_2" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2：模型分层机制被低估的证据（RAS 与约束排序）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["大型农场可达采纳率 RAS", "小农可达采纳率 RAS", "财务约束 mean rank", "女性财务约束 mean rank", "保险感知有用率"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "数值", "type": "bar", "data": [87.7, 8.2, 1.73, 1.61, 90], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div id="chart_3" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_3'));
+  c.setOption({"title": {"text": "图 3：痛点-解药对齐类型分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 3：痛点-解药对齐类型分布", "type": "pie", "radius": "55%", "data": [{"name": "direct 完全覆盖", "value": 2}, {"name": "partial 部分覆盖", "value": 3}, {"name": "claimed_only 仅声称", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析_三重未处理冲突">核心分析：三重未处理冲突</h2>
+<p>冲突一——金融约束被外生化。主流契约/采纳模型将农户设为 risk-neutral、无信贷/地权/参与成本的最优化主体（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明列「farmers are also risk-neutral and face no credit, tenure, or participation costs beyond MRV」），而 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 用 Kendall 一致性分析发现财务问题在全体与分组中均排第一约束（mean rank=1.73），并量化出「即便移除金融壁垒，非采纳者若采纳也仅获 ATU=GH₵312/acre，低于现有采纳者 ATT=GH₵471/acre」——说明金融约束与互补资产是耦合的、不可加可分的单参数。<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 进一步给出 50% vs 23% 的信贷可得落差。模型把结构性主因删除为噪声，把「约束驱动的非采纳」误读为「偏好/意愿不足」。</p><p>冲突二——异质性被压缩为少数可观测轴。模型仅沿三条可观测维度（采纳成本、农场规模、初始 SOC）刻画异质性，且农场规模以 Uniform<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 近似，作者自认真实小农更接近对数正态（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>）。但约束真正沿性别、教育、数字素养、地权多轴分层：<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 女性财务约束 mean rank=1.61 比男性更紧；<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 性别/教育显著调节保险采纳；<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 断言 TAM「过于个体主义」、忽略集体社会影响与农村基础设施限制。模型尺度与约束实际分布不匹配，导致估算沿规模轴而漏掉关键分层。</p><p>冲突三——基础设施被当作外生背景。<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 诊断出印度农业数据基础设施四类结构性缺口（时间错配、空间碎片化缺公共地理码、机器可读性差、治理不清），强调小农占 86% 却缺乏补偿弱基础设施的能力；<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 把移动数据成本、信号、电力、语言列为 end-user 与 service-provider 层约束。这些约束在 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 式模型中要么被抽象为「MRV 固定成本」，要么完全不被表示，模型无法内生解释为何同一「理性」激励在不同基础设施条件下产生迥异采纳结果。</p>
+<h3>表 3：关键 KG 假设/局限节点与来源引用</h3>
+<table><thead><tr><th>节点类型</th><th>canonical_name</th><th>关键描述</th><th>来源论文编号</th></tr></thead><tbody><tr><td>Assumption</td><td>Financial constraints</td><td>Financially binding across all farmer categories</td><td>[3]</td></tr>
+<tr><td>Assumption</td><td>Infrastructure and cost constraints</td><td>Mobile data cost, poor signal, electricity, language</td><td>[4]</td></tr>
+<tr><td>Assumption</td><td>Commercially rational aggregator</td><td>Aggregator modeled as profit-maximising</td><td>[1]</td></tr>
+<tr><td>Assumption</td><td>Myopic farmer best response</td><td>Farmers best respond myopically each season</td><td>[1]</td></tr>
+<tr><td>Assumption</td><td>Private adoption costs and unobserved effort</td><td>Adverse selection + moral hazard</td><td>[1]</td></tr>
+<tr><td>Limitation</td><td>Simulation-based evaluation</td><td>Results from simulator, not field deployment</td><td>[1]</td></tr>
+<tr><td>Limitation</td><td>Cross-sectional design</td><td>Cannot account for unobserved time-invariant characteristics</td><td>[3]</td></tr>
+<tr><td>Problem</td><td>Partial explanatory power of single adoption theories</td><td>DOI/TAM/UTAUT each explain only partially</td><td>[6]</td></tr>
+</tbody></table>
+<div class="note">对齐类型声明：表 2 中「claimed_only」项（基础设施内生建模，<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>）表示论文宣称/诊断该问题但未做 AI 系统性能实证，此类不得等同于 direct 对齐。范式断层提示：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 属形式化 principal-agent 最优化模型（结构模型范式），而 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 属问卷/访谈/综述的实证关联范式——二者「冲突」部分源于可测构念不同，而非同一构念的真伪矛盾，综述中须显式标注。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，因果识别不足。多数证据来自横截面/观测设计：<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 自认无法控制时不变不可观测农户特征与气候波动、未建模社区级空间异质性；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 承认自选择与遗漏变量问题。因此「约束→非采纳」的因果强度存在内生性残留，本文对「假设-约束冲突」的量化对齐仅在观测相关层面成立。</p><p>其二，模拟器外推风险。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的 87.7% vs 8.2% 来自可配置模拟器而非田野部署（作者自列 simulation_based_evaluation 局限），其「risk-neutral、无信贷成本」是显式建模简化，作者自认其排除性估计为「lower bound」；直接外推为真实采纳分层需谨慎。</p><p>其三，跨范式可比性。形式化最优化模型与问卷/访谈类社会经济研究的「冲突」部分源于可测构念口径不同，非严格意义上的假设被证伪。</p><p>其四，量化弹性缺失。<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 为系统综述、<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 为概念性论文，约束多为定性归纳，缺乏跨情境统一的约束弹性参数，无法支撑强因果推断。整体 answer_completeness 判定为 partial。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>证据矩阵支持一个明确结论：金融与基础设施约束不是「理性小农」模型的边缘修正项，而是其结构性缺口。金融约束以「普遍绑定」（mean rank=1.73，<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>）和「信贷门槛」（50% vs 23%，<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>）的形式击穿利润最大化一阶条件；固定成本与基础设施把「理性」采纳转为门槛筛选（RAS 87.7% vs 8.2%，<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>）；单一理论/单一理性假设的解释力天花板已被实证标注（90% 有用 vs 14% 购买，<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；DOI/TAM/UTAUT 仅部分解释，<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）。</p><p>因此，面向 RQ3 的理论化方向应是：将异质性—约束耦合理论化为采纳机制的内生分层机制，而非外生噪声；把金融约束、基础设施可得性作为内生决策变量纳入模型，并显式沿性别、教育、数字素养、地权多轴刻画异质性。这一转向可同时回应 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 对基础设施内生性的诉求与 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 对「过度个体主义」的批评，并为 A1.5 层的 Gap 分析提供开放痛点输入（如「claimed_only：基础设施如何内生进入采纳结构模型」）。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Learning Principal-Agent Contracts for Equitable Smallholder Carbon Farming under Moral Hazard and Adverse Selection&nbsp;<code style="font-size:0.82em;color:#888">3002_learning_principalagent_contracts_for_equitable_smallholder</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Agricultural Technology Adoption and Its Impact on Smallholder Farm Household Welfare&nbsp;<code style="font-size:0.82em;color:#888">3033_Agricultural_technology_adoption_and_its_impact_on_smallhold</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Tractor Service Utilization, Profitability and Adoption Determinants&nbsp;<code style="font-size:0.82em;color:#888">2882_tractor_service_utilization_profitability_and_adoption_deter</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Utilisation of Digital Technologies by Smallholder Farmers in South Africa: A Systematic Literature Review&nbsp;<code style="font-size:0.82em;color:#888">0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Agricultural Insurance Access and Acceptability: Examining the Case of Smallholder Farmers in Ghana&nbsp;<code style="font-size:0.82em;color:#888">0655_Agricultural_insurance_access_and_acceptability_examining_th</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Digital Technology Adoption by Smallholder Farmers in Indonesia&nbsp;<code style="font-size:0.82em;color:#888">3044_Digital_Technology_Adoption_by_Smallholder_Farmers_in_Indone</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Unlocking AI's Potential in Agriculture: The Critical Role of Data&nbsp;<code style="font-size:0.82em;color:#888">2959_unlocking_ais_potential_in_agriculture_the_critical_role_of</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Smart Connected Farms and Networked Farmers to Tackle Climate Challenges&nbsp;<code style="font-size:0.82em;color:#888">2846_smart_connected_farms_and_networked_farmers_to_tackle_climat</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.1 · 2026-10-19 15:51</footer>
+</div>
+</body>
+</html>

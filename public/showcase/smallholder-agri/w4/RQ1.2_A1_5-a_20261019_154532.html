@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.5-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.5-a 分析报告</h1>
+<div class="meta">RQ [RQ1.2]：[父问题 RQ1] 面向小农的农业 AI 技术供给在多大程度上具备&quot;田间就绪性&quot;，其可及性约束与边缘部署评价缺口如何界定技术可行性的真实边界？
+[本子问题 RQ1.2] 边缘部署是否报告能效/时延/田间鲁棒性指标，评价维度缺失表现为何？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2980_pezegohitl_a_policygrounded_large_language_model_architectur, 2939_hardwareaware_yolo_compression_for_lowpower_edge_ai_on_stm32, 2974_smallholder_farmers_on_remote_islands_receiving_retrievalgro, 2978_phenonest_a_neurosymbolic_framework_for_ontologyaware_multim）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心发现一_能效与时延指标的_孤岛式_覆盖">核心发现一：能效与时延指标的&quot;孤岛式&quot;覆盖</a></li>
+<li><a href="#sec_核心发现二_能报时延的系统往往换了评价对象">核心发现二：能报时延的系统往往换了评价对象</a></li>
+<li><a href="#sec_核心发现三_田间鲁棒性是系统性空白且成因可诊断">核心发现三：田间鲁棒性是系统性空白且成因可诊断</a></li>
+<li><a href="#sec_核心发现四_缺失维度的四种具体表现形态">核心发现四：缺失维度的四种具体表现形态</a></li>
+<li><a href="#sec_核心发现五_小农语境使缺失具有非对称后果">核心发现五：小农语境使缺失具有非对称后果</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ1.2——边缘部署是否报告能效/时延/田间鲁棒性指标，评价维度缺失表现为何——基于知识图谱与 132 篇论文原文检索进行系统分析。核心结论是：在小农农业 AI 的边缘部署评价中，&quot;能效—时延—田间鲁棒性&quot;三个维度呈现严重不对称格局。能效与时延属于&quot;谁做压缩谁就报&quot;的工程自证指标，在整个知识图谱中&quot;每次推理能耗&quot;仅有 1 个指标节点、&quot;推理时延&quot;仅 1 个节点，呈孤岛式存在；田间鲁棒性则既无标准化指标，也极少在真实田间条件下被量化验证。</p><p>绝大多数被冻结论文用 mAP/AP/F1 一类静态精度指标替代了部署就绪性的完整刻画。评价维度的缺失可归纳为四种具体形态：指标替身、只报均值不报尾部分布、仅在模拟或策展样本上验证、明确声明未测。这一系统性缺失正是&quot;技术可行性真实边界&quot;被高估的核心机制。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析调用的知识图谱数据覆盖六类节点：problem（226 个）、method（231 个）、dataset（104 个）、metric（132 个）、limitation（137 个）、assumption（61 个）。在此基础上，针对四篇冻结论文（2980、2939、2974、2978）执行了完整的一跳关系边提取，并对 13 篇论文的相关段落进行了原文语义检索精读，累计检索查询 13 次。</p><p>关键的数据落差在于指标结构：132 个 metric 节点中，AP/mAP/F1/MAE/RMSE/Accuracy 一类静态精度指标占据绝大部分，而&quot;Energy consumption per inference&quot;、&quot;Latency per inference (ms)&quot;、&quot;Frame rate (fps)&quot;分别只有 1 个节点，且全部来自同一篇硬件论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。这一分布本身即构成对 RQ 的直接回答。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "知识图谱中各评价维度指标节点数量对比", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["静态精度指标（AP/mAP/F1/MAE/RMSE/Accuracy等）", "数据集/基准相关指标", "田间/鲁棒性相关指标", "推理时延 Latency", "推理帧率 FPS", "每次推理能耗 Energy"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "指标节点数量", "type": "bar", "data": [95, 18, 12, 1, 1, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">上图的数据来源说明：132 个 metric 节点中，绝大多数为以精度为核心的静态评测指标；&quot;推理时延&quot;、&quot;推理帧率&quot;、&quot;每次推理能耗&quot;三类边缘部署核心指标各仅 1 个节点，且全部归属同一篇 STM32 硬件压缩论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。这种极端不均衡直观反映了评价维度缺失的规模。</div>
+
+<h2 id="sec_核心发现一_能效与时延指标的_孤岛式_覆盖">核心发现一：能效与时延指标的&quot;孤岛式&quot;覆盖</h2>
+<p>能效与时延并非完全缺失，而是以孤岛形式存在——只有真正做硬件压缩与部署的工程导向工作才会系统报告。硬件感知 YOLO 压缩论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 给出了完整的部署体检指标：模型从 9.95 MB 压缩至 850.97 KB，RAM 从 2.5 MB 降至 677.30 KB，参数从约 3.2M 降至 960k，GMACs 从 0.50 降至 0.143；最终在 STM32U575ZI 微控制器上实现每次推理 51.8 mJ 能耗、1510 ms 时延、0.66 fps 吞吐，并测算 7000 mAh 电池可支撑约 189 天连续运行。该文是全部证据池中唯一同时报告能耗、时延与吞吐的工作。</p><p>值得警惕的是，该文明确将 0.66 fps 定位为&quot;适用于周期巡检而非实时连续检测&quot;，并在结论中承认 mAP50=0.517、mAP50-95=0.403 的精度&quot;对许多但并非全部真实农业场景可接受&quot; <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。相比之下，对话与咨询类系统的时延往往只以轶事性观察出现。远程岛屿小农 LLM 助手 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 明确承认简单查询约 15–20 秒、多工具查询约 1 分钟，但原文强调&quot;these are anecdotal observations rather than measured results&quot;，且全文尚无受控用户研究。</p>
+<h3>冻结论文的边缘部署评价维度报告情况</h3>
+<table><thead><tr><th>论文</th><th>能耗</th><th>时延</th><th>吞吐/fps</th><th>田间鲁棒性</th><th>验证基础</th><th>评价维度缺失表现</th></tr></thead><tbody><tr><td>硬件感知 YOLO 压缩 [1]</td><td>报告 51.8 mJ/推理</td><td>报告 1510 ms</td><td>报告 0.66 fps</td><td>未报告（仅称可用于开阔田间与温室）</td><td>CropAndWeed 数据集，80-20 划分</td><td>无田间实测鲁棒性，精度为数据集静态指标</td></tr>
+<tr><td>Pezego-HITL 政策接地 LLM [3]</td><td>未报告</td><td>报告 P95 12.9 s（从 28.6 s 降 55%）</td><td>未报告</td><td>未报告</td><td>1,240 模拟查询案例 + 30 ESO/36 农户调查</td><td>仅模拟遥测，非田间端到端实测</td></tr>
+<tr><td>远程岛屿检索接地助手 [2]</td><td>未报告</td><td>轶事性观察（15–20 s / 约 1 min）</td><td>未报告</td><td>未报告</td><td>无受控用户研究（作者明言）</td><td>明确声明未测，全部列为 future work</td></tr>
+<tr><td>PhenoNest 神经符号框架 [4]</td><td>未报告</td><td>未报告（作者承认框序列引致解码延迟）</td><td>未报告</td><td>未报告（仅 500 策展样本、单作物小麦）</td><td>500 个 WisWheat 样本</td><td>承认解码延迟制约田间边缘部署，但未量化</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现二_能报时延的系统往往换了评价对象">核心发现二：能报时延的系统往往换了评价对象</h2>
+<p>部分工作已把时延纳入正式评价协议，但其衡量对象并非小农真实环境下的端到端可用性。政策接地 LLM 架构 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 提出的 P-EVAL 协议把评价形式化为 PAR（政策对齐率）、AUR（农艺效用率）、P95 时延与人工监督负荷的多目标优化，实测 P95 时延从 28.6 s 降至 12.9 s（降幅 55%，对应 59.6% 的内存复用率），同时 PAR 达 0.94、AUR 达 0.95 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。这是图谱中时延被最认真对待的一例。</p><p>但该评测基于&quot;模拟查询遥测&quot;，其 1,240 个案例为 simulated cases，评估的是通信瓶颈下的可用性预期，而非田间实测可用性 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。也就是说，时延指标存在，但其评价对象从&quot;田间就绪性&quot;偏移到了&quot;服务侧响应性能&quot;。这一偏移是理解评价维度缺失的关键——指标在场，但指向的不是同一个问题。</p>
+<h3>P-EVAL 协议下各架构基线-时延-合规权衡实测数据 [3]</h3>
+<table><thead><tr><th>方法</th><th>PAR（政策对齐率）</th><th>AUR（农艺效用率）</th><th>P95 时延（s）</th></tr></thead><tbody><tr><td>B1 直接 LLM</td><td>0.62</td><td>0.78</td><td>8.4</td></tr>
+<tr><td>B2 标准向量 RAG</td><td>0.71</td><td>0.84</td><td>12.1</td></tr>
+<tr><td>B3 工具增强 RAG</td><td>0.83</td><td>0.88</td><td>14.8</td></tr>
+<tr><td>B4 多智能体批判</td><td>0.89</td><td>0.90</td><td>28.6</td></tr>
+<tr><td>Pezego-HITL（本文）</td><td>0.94</td><td>0.95</td><td>12.9</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现三_田间鲁棒性是系统性空白且成因可诊断">核心发现三：田间鲁棒性是系统性空白且成因可诊断</h2>
+<p>与植株/表型相关、与成像相关的评测几乎全部在受控或单季节条件下完成。PhenoNest 仅在 500 个经策展的 WisWheat 样本、且只在单一作物（小麦）上验证 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，作者自陈系统依赖绝对包围盒 token 序列会引入解码延迟，&quot;increases computational overhead and may constrain real-time deployment on field-edge processing hardware&quot;，并将&quot;训练更小的 VLM&quot;列为未来方向——这是&quot;技术难度高&quot;成因的一手证据。</p><p>MatchPlant 在 UAV 单株玉米检测上取得 AP@0.5 达 85.9%，但 mAP@0.5:0.95 骤降至 40.4%，且验证仅覆盖生长季早期（V1–V6 阶段）<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，作者明确指出缩小到中期或后期可能需要额外的方法开发。多光谱相机曝光研究则实证了测量条件敏感性：自动曝光下红边波段 R² 偏低、MAPE 偏高，高反射靶标在反射率 0.50 处饱和，造成&quot;unrecoverable loss of details&quot; <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。这些证据共同表明，田间鲁棒性并非被认为不重要，而是缺乏能把它转换为可比数字的评价协议。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "真盲区成因类型分布（按盲区维度对归类）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "真盲区成因类型分布（按盲区维度对归类）", "type": "pie", "radius": "55%", "data": [{"name": "技术难度高（technical_difficulty）", "value": 3}, {"name": "资源壁垒（resource_barrier）", "value": 1}, {"name": "认知盲区（awareness_gap）", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心发现四_缺失维度的四种具体表现形态">核心发现四：缺失维度的四种具体表现形态</h2>
+<p>综合分析四篇冻结论文与扩展检索结果，评价维度缺失并非单一现象，而呈现为四种可辨识的形态。</p><p>第一种是**指标替身**：用 mAP、F1、MAE/RMSE 替代部署指标。硬件压缩论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 在完成压缩后仍以 mAP50=0.517、mAP50-95=0.403 作为主结论。第二种是**只报均值不报尾部分布**：多数工作不给 P95/P99 时延，<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 是少数例外。</p><p>第三种是**仅在模拟或策展样本上验证**：<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的 1,240 模拟案例与 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 500 样本均属此类。第四种是**明确声明未测**：<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 把答案质量、接地忠实度、时延与用户满意度的定量验证全部列为 future work。此外还观察到**能力评测替代部署评测**的形态：PhenoAssistant <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的评测聚焦工具选择与流水线正确性，未报告 LLM 调用的时延、能耗或端到端成本。</p>
+<h3>盲区候选清单与优先级评估</h3>
+<table><thead><tr><th>维度交叉</th><th>论文数</th><th>真空白</th><th>成因类型</th><th>可行性</th><th>优先级</th></tr></thead><tbody><tr><td>能效指标 × 田间部署</td><td>1</td><td>是</td><td>技术难度高（需专用功率分析设备与测试台架）</td><td>中</td><td>高价值</td></tr>
+<tr><td>时延指标 × 小农真实端到端可用性</td><td>1</td><td>是</td><td>资源壁垒（仅模拟遥测）</td><td>高</td><td>高价值</td></tr>
+<tr><td>田间鲁棒性 × 跨季节/跨环境验证</td><td>0</td><td>是</td><td>技术难度高（缺统一鲁棒性阈值定义）</td><td>低</td><td>高价值</td></tr>
+<tr><td>LLM 调用能耗 × 农业咨询系统</td><td>0</td><td>是</td><td>认知盲区（仅报美元成本而非焦耳）</td><td>中</td><td>中价值</td></tr>
+<tr><td>不确定性量化 × 田间部署决策</td><td>1</td><td>是</td><td>技术难度高（共形预测尚未离机基准）</td><td>高</td><td>中价值</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现五_小农语境使缺失具有非对称后果">核心发现五：小农语境使缺失具有非对称后果</h2>
+<p>数字农业推广研究指出，对多数小农而言，部署硬件/传感器型精准农业技术将昂贵到 prohibitive，而数字信息服务成本已从 2017 年每农户每年 5.20 美元降至 2019 年 1.55 美元 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。智能互联农场研究则给出仅 26% 农村家庭拥有宽带（对比全美 93.5%），且农用字段的移动覆盖往往只在公路或人口密集区可用 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。</p><p>这意味着能效与时延不是锦上添花的优化项，而是可及性的硬闸门——正因为小农缺乏稳定电力、带宽与算力冗余，这几个指标才直接决定了&quot;能否用&quot;。而恰恰在这个语境下，最需要被报告的田间鲁棒性却最为缺失，形成需求与供给的错配。另需注意，数字孪生气象框架 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 虽系统量化了传感器故障、校准漂移、通信错误与网络攻击导致的田间数据不一致，并测得推理开销低于 1 s 与 0.5 MB 内存，但其评价重心是不确定性检测而非农艺精度鲁棒性。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在三点不可忽视的限制。第一，**图谱覆盖不完整**：能耗/时延指标在 KG 中仅出现 1–3 个节点，这既可能反映真实研究稀缺，也可能反映图谱抽取偏差——&quot;未被收录&quot;不等于&quot;未被研究&quot;，因此&quot;孤岛式存在&quot;的判断置信度仅为中等。</p><p>第二，**跨任务数字不可横向比较**：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的 51.8 mJ/0.66 fps 与 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的 12.9 s P95 时延属于不同任务、不同硬件、不同负载的产物，只能各自作为该任务类型的部署基准，不能用于排序或高下判断。</p><p>第三，**田间鲁棒性缺乏统一阈值定义**（如&quot;跨季节精度衰减 ≤X%&quot;），因此&quot;缺失&quot;本身只能定性判断，无法给出精确的覆盖率数字。此外，上游 A1.1-a 矩阵报告文件在本环境中不可访问，盲区单元格的判定改为基于四篇冻结论文与语料级 KG/RAG 证据的等价重构，跨 skill 一致性较弱。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ1.2 的回答是：边缘部署评价在&quot;能效—时延—田间鲁棒性&quot;三个维度上高度不对称。能效与时延在少数工程导向工作中被认真测量，硬件压缩工作 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 建立了每次推理 51.8 mJ、1510 ms、0.66 fps 的部署标杆，政策接地架构 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 把 P95 时延纳入正式协议并实现 55% 降幅；但这些指标要么孤立存在，要么评价对象已偏移为服务侧性能而非田间就绪性。</p><p>田间鲁棒性则处于&quot;被承认重要、被系统性跳过&quot;的状态：PhenoNest 限于 500 样本单作物 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，MatchPlant 仅覆盖生长季早期且 mAP 从 AP@0.5 的 85.9% 骤降至 40.4% <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，多光谱成像在自动曝光下出现靶标饱和与不可恢复细节丢失 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。评价维度的缺失表现为指标替身、只报均值、策展样本验证、明确声明未测四种形态，这一缺失正是&quot;田间就绪性&quot;与&quot;技术可行性真实边界&quot;之间落差的核心机制。对小农而言，由于硬件投入 prohibitive <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 且农村宽带覆盖仅 26% <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，能效与时延是可用性的硬约束，而田间鲁棒性的缺测则使&quot;能否在真实田间条件下稳定工作&quot;这一最关键问题长期悬空。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Hardware-Aware YOLO Compression for Low-Power Edge AI on STM32U5 for Weeds Detection in Digital Agriculture&nbsp;<code style="font-size:0.82em;color:#888">2939_hardwareaware_yolo_compression_for_lowpower_edge_ai_on_stm32</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Smallholder Farmers on Remote Islands Receiving Retrieval-Grounded Multilingual LLM Assistance and Agronomic Advice&nbsp;<code style="font-size:0.82em;color:#888">2974_smallholder_farmers_on_remote_islands_receiving_retrievalgro</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Pezego-HITL: A policy-grounded large language model architecture for agricultural extension in Ghana&nbsp;<code style="font-size:0.82em;color:#888">2980_pezegohitl_a_policygrounded_large_language_model_architectur</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;PhenoNest: A Neuro-Symbolic Framework for Ontology-Aware Multimodal Knowledge Graph Construction&nbsp;<code style="font-size:0.82em;color:#888">2978_phenonest_a_neurosymbolic_framework_for_ontologyaware_multim</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;MatchPlant: An Open-Source Pipeline for UAV-Based Single-Plant Detection&nbsp;<code style="font-size:0.82em;color:#888">0034_matchplant_an_opensource_pipeline_for_uavbased_singleplant_d</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Selection of appropriate multispectral camera exposure settings for radiometric accuracy in UAV imaging&nbsp;<code style="font-size:0.82em;color:#888">0018_selection_of_appropriate_multispectral_camera_exposure_setti</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;PhenoAssistant: A Conversational Multi-Agent AI System for Automated Plant Phenotyping&nbsp;<code style="font-size:0.82em;color:#888">0082_phenoassistant_a_conversational_multiagent_ai_system_for_aut</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Digital Agricultural Extension for Development&nbsp;<code style="font-size:0.82em;color:#888">0023_Digital_Agricultural_Extension_for_Development</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Smart Connected Farms and Networked Farmers to Tackle Climate Challenges Impacting Agricultural Production&nbsp;<code style="font-size:0.82em;color:#888">2846_smart_connected_farms_and_networked_farmers_to_tackle_climat</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Weather-Driven Agricultural Decision-Making Using Digital Twins Under Imperfect Conditions&nbsp;<code style="font-size:0.82em;color:#888">0641_weatherdriven_agricultural_decisionmaking_using_digital_twin</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.2 · 2026-10-19 15:45</footer>
+</div>
+</body>
+</html>

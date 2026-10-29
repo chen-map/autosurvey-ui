@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-a 分析报告</h1>
+<div class="meta">RQ [RQ1.2]：[父问题 RQ1] 如何用一个统一的&quot;进化轨迹&quot;概念框架刻画 LLM 智能体在交互、反馈与经验积累中的持续变化？
+[本子问题 RQ1.2] 能否将进化轨迹分解为&quot;进化载体（memory / policy / skill library / workflow / protocol）—更新信号（feedback / verifier / reflection）—更新算子（write / prune / optimize / compose）&quot;三层结构？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0014_selfreflection_in_llm_agents_effects_on_problemsolving_perfo, 2137_selfevolving_agents_with_reflective_and_memoryaugmented_abil, 2381_diffuseagentmi_distributionallygroundedtoolintegrated_selfev, 0004_Symbolic_learning_enables_self-evolving_agents, 0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve, 0038_Safety_in_Self-Evolving_Agents_A_Survey）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_研究问题与认知坐标">研究问题与认知坐标</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心发现一_载体轴是最稳健_证据最充分的一轴">核心发现一：载体轴是最稳健、证据最充分的一轴</a></li>
+<li><a href="#sec_核心发现二_算子轴是文献形式算子的合法粗粒度归并">核心发现二：算子轴是文献形式算子的合法粗粒度归并</a></li>
+<li><a href="#sec_核心发现三_更新信号_不是与载体_算子正交的第三轴">核心发现三：“更新信号”不是与载体、算子正交的第三轴</a></li>
+<li><a href="#sec_核心发现四_各载体上的更新产生可测增益_但普遍有益性存在强反证">核心发现四：各载体上的更新产生可测增益，但普遍有益性存在强反证</a></li>
+<li><a href="#sec_核心发现五_载体与算子之间存在内部化桥梁">核心发现五：载体与算子之间存在内部化桥梁</a></li>
+<li><a href="#sec_对_RQ_的直接答复与重构后的分类体系">对 RQ 的直接答复与重构后的分类体系</a></li>
+<li><a href="#sec_支持性证据与反证对照">支持性证据与反证对照</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告回答 RQ1.2：能否将 LLM 智能体的“进化轨迹”分解为“进化载体（memory / policy / skill library / workflow / protocol）—更新信号（feedback / verifier / reflection）—更新算子（write / prune / optimize / compose）”三层结构。基于知识图谱（629 Problem、558 Method、274 Paper、317 Limitation、200 Assumption、391 Metric、400 DatasetBenchmark 节点）与 14 篇核心论文的段落级精读，结论是：**该三层分解部分成立，但需要一处关键修正**。其中“进化载体”与“更新算子”两轴真正正交、可构成 MECE 骨架；而“更新信号”不是与二者并列的正交第三轴，而是算子的触发输入，应降格为算子层级上的子维度（信号源 × 更新目标）。</p><p>这一判断得到三条独立证据线支撑：SAVER 框架以 Substrate（载体）× Adaptation（算子）为核心配对关系 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；动态图视角综述把载体重述为类型化节点、把算子重述为 DPO 图重写规则 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；AGP 协议则把“载体（what evolves）”与“进化逻辑（how evolution occurs）”的分离升为核心设计原则 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。与此同时，Self-Improvements 综述给出的“信号 e_t → 更新算子 U”二层结构 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，恰好解释了为什么信号不应被视为独立维度——它是算子的输入而非并列的分类格。</p>
+
+<h2 id="sec_研究问题与认知坐标">研究问题与认知坐标</h2>
+<p>本分析采用**约束满足视角**：寻找唯一同时满足互斥性与穷尽性双硬约束的维度组合，而非追求维度命名上的“直觉合理性”。RQ1.2 提出的三层结构本质上是一个分类学主张——主张三个维度可以正交地张成一个覆盖全部演化事件的分类空间。判定标准因此是操作性的：若某一层与另两层无法互斥归类（同一演化事件可被多格覆盖），则该层不构成有效轴。</p><p>本子问题的六篇冻结证据论文为：0014（自反思）<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、2137（SAGE 反射+记忆）<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、2381（DiffuseAgent-MI 分布接地）<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、0004（符号学习）<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、0037（动态图转型综述）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、0038（自进化智能体安全综述）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。此外为验证分类学命题，补充检索了 2292（AGP 协议）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、2368（Self-Improvements 综述）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、2289（外部化综述）<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、2380（AgentStream 流式评测）<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、2387（FinEvo-Bench）<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、2420（Experience Funnel）<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、0073（SAGE 技能库 RL）<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、0001（超表面自进化框架）<sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 等。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析全部结论来自知识图谱的结构化节点/边与论文原文段落检索（search_paper_sections），未使用 LLM 先验知识填充。共执行 31 次工具调用，覆盖全部六类节点（problem、method、paper、dataset、metric、limitation、assumption），并对 14 篇关键论文做了段落级精读（≥8 篇的下限要求已满足）。</p><p>特别说明：知识图谱中混有大量与本 RQ 无关的论文（光学超表面、网络科学、LBM 数值方法等），因此分析以证据矩阵冻结的论文及其一跳关系邻居为锚点，避免被噪声污染。</p>
+<h3>KG 数据来源与规模概览</h3>
+<table><thead><tr><th>节点类型</th><th>KG 节点总数</th><th>本分析实际使用</th><th>主要来源论文</th></tr></thead><tbody><tr><td>Problem</td><td>629</td><td>结构性演化、评估治理缺口、权限坍缩、记忆分离、成本等约 12 个</td><td>0037、0038、2137、0033</td></tr>
+<tr><td>Method</td><td>558</td><td>约 15 个（SAVER、动态图转型、符号学习、技能进化、verifier+repair 等）</td><td>0038、0037、0004、0001、2381</td></tr>
+<tr><td>Paper</td><td>274</td><td>14 篇深度精读 + 约 40 篇关系邻居</td><td>冻结 6 篇 + 扩展 8 篇</td></tr>
+<tr><td>Metric</td><td>391</td><td>SG、SE、CPF、BM、Attempts、MI-Faith、SGC、TGC、PSR 等约 12 个</td><td>0001、2381、0073、0052</td></tr>
+<tr><td>Limitation</td><td>317</td><td>约 10 个（仅单步问题、特征提取器误设、verifier 迁移性等）</td><td>0014、2381、0038</td></tr>
+<tr><td>Assumption</td><td>200</td><td>约 6 个（固定基座模型、固定求解器、可复用影响等）</td><td>0001、0038</td></tr>
+<tr><td>DatasetBenchmark</td><td>400</td><td>约 12 个（AppWorld、AgentBench、GeoQA、Multi-type benchmark 等）</td><td>0073、2137、2381、0001</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现一_载体轴是最稳健_证据最充分的一轴">核心发现一：载体轴是最稳健、证据最充分的一轴</h2>
+<p>“进化载体”维度得到至少四条独立证据线的一致支持，彼此重合度极高。SAVER 框架 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 以 Substrate 为状态承载单元划分出 memory、tool/interface、skill/procedure、workflow、multi-agent、model/policy 六族，其关键论证是：**“同一句话在 transient context、durable memory、workflow rule、tool-bearing procedure 下后果不同”**，从必要性上确立了载体维度不可省略。动态图视角综述 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 独立地把同样内容重述为类型化节点（memory/tool/skill/workflow/agent/communication），其 Table I 的 Scope 列与 SAVER 载体族几乎一一对应。AGP 协议 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 把 prompts、tools、memory 等作为独立资源实体管理（RSPL 层），并明确“把载体与进化逻辑分离”使演化具备模块性、可追溯性与安全性。</p><p>RQ 提出的五项载体（memory / policy / skill library / workflow / protocol）可被上述证据线覆盖：policy 对应 model/policy substrate，protocol 对应 tool/interface 与 multi-agent 载体。外部化综述 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 进一步把 memory（externalized state）、skill（externalized expertise）、protocol（externalized interaction）列为三个并列模块，支持 protocol 作为独立载体保留。AgentStream <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 与 FinEvo-Bench <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 也以“context / memory / skill / harness / workflow / policy”为分类主轴，佐证载体轴已具备操作化评测基础。</p>
+<h3>载体轴的四方证据对照</h3>
+<table><thead><tr><th>证据来源</th><th>载体划分</th><th>关键论断</th></tr></thead><tbody><tr><td>SAVER 综述 [1]</td><td>memory / tool / skill / workflow / multi-agent / model-policy</td><td>同一内容在不同载体下后果不同，故载体必须先于安全判断识别</td></tr>
+<tr><td>动态图综述 [2]</td><td>memory / tool / skill / workflow / agent / communication（类型化节点）</td><td>agent state 可建模为动态图，载体即节点类型</td></tr>
+<tr><td>AGP 协议 [3]</td><td>prompts / tools / memory / agent 组件（RSPL 资源层）</td><td>载体与进化逻辑分离，使单一机制可跨资源类别泛化</td></tr>
+<tr><td>外部化综述 [9]</td><td>memory / skill / protocol（三模块）</td><td>三者分别为外部化状态、专业技能、交互结构</td></tr>
+<tr><td>AgentStream [10] / FinEvo-Bench [11]</td><td>context / memory / skill / harness / workflow / policy</td><td>按更新组件划分自进化方法，可直接用于受控对比</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现二_算子轴是文献形式算子的合法粗粒度归并">核心发现二：算子轴是文献形式算子的合法粗粒度归并</h2>
+<p>RQ 的 write / prune / optimize / compose 四类算子，实质上是文献中更细粒度形式算子的功能语义压缩。SAVER <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 用七族算子（add、abstract、activate、modify、forget、propagate、migrate）对全文献编码，并强调“算子只有结合其所作用的载体才具有安全含义”。动态图综述 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 给出 DPO 式算子：节点级 INSERT / DELETE / FEATUREUPDATE / MERGE，边级 LINK / UNLINK / REWIRE / EDGEFEATUREUPDATE，以及跨组件 CASCADE。RQ 四类恰是这些算子的语义归并：write≈INSERT/ADD，prune≈DELETE/FORGET/UNLINK，optimize≈FEATUREUPDATE/MODIFY，compose≈MERGE/LINK/cascade。</p><p>但归并过程会丢失两类信息。第一，**read-only activation**——<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 专门用一节论证它是一种不改变持久状态的算子，并强调“只有被激活的视图变化，持久图不变”，且“不应被误当作持久学习”；RQ 四类中没有对应项（最接近 prune 或 optimize 都不准确）。第二，**migrate / propagate 这类跨载体搬运算子**——<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确指出“传播倍增了影响可激活的位点，迁移改变了影响可被使用的权限制度”，<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 则用 CASCADE 刻画跨组件级联。这两类恰是两篇综述反复强调的演化关键形态，却是 RQ 四类算子的盲区。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "文献算子体系与 RQ 四类算子的覆盖对照（算子家族数量）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["write（增写）", "prune（删除/遗忘）", "optimize（改写/调优）", "compose（合并/组合）", "activate（只读激活）", "migrate/propagate（迁移传播）"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "对应形式算子数（基于 SAVER 七族 + 动态图 DPO 算子）", "type": "bar", "data": [2, 2, 2, 3, 1, 2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心发现三_更新信号_不是与载体_算子正交的第三轴">核心发现三：“更新信号”不是与载体、算子正交的第三轴</h2>
+<p>这是对 RQ 提法的核心修正。Self-Improvements 综述 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 给出了目前最清晰的二层结构：改进目标分为 foundation-model（更新参数 θ）与 scaffolding（更新外围脚手架 Σ），而每条更新路径都被写成“信号 e_t → 更新算子 U（Uθ 或 UΣ）”，即 **信号是算子的输入，不是并列维度**。它进一步把信号源细分为 rubric 反馈（评分/偏好）、consistency 反馈（多数投票/熵/自确定性）、corrective 反馈（自然语言批判 + 修正）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。这与 SAVER 的“selection before commitment”功能同构——<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 中效用代理 b_t 负责排序候选、c_t 限定资格，选择/评估只是算子提交前的环节。</p><p>三篇冻结论文提供了“同一更新事件可被三层描述同时覆盖”的直接反证：</p><p>- <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的反思既是 reflection 信号，其落地方式是把 guidance 注入 prompt（optimize 算子 × policy/context 载体）；</p><p>- <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 的 verifier 产生 faithfulness flag 后触发 re-sample（verifier 信号 × optimize 算子）；</p><p>- <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 的确定性物理 evaluator 产生 CPF/BM/SG 后改写 SKILL.md（verifier 信号 × optimize 算子 × skill 载体）。</p><p>若三层真正互斥，同一事件不应同时落入三格；实际却全部同时成立。故 feedback / verifier / reflection 三分描述的是“谁生成监督信号”，属于算子层的触发子维度，与“作用在哪个载体”“用哪种算子改状态”分属不同层级。</p>
+<h3>三层分解的互斥性检验（同一演化事件的多格覆盖）</h3>
+<table><thead><tr><th>演化事件</th><th>载体（谁是对象）</th><th>信号（谁提供监督）</th><th>算子（怎么改）</th><th>是否唯一归格</th></tr></thead><tbody><tr><td>反思 guidance 注入 prompt [5]</td><td>policy / context</td><td>reflection</td><td>optimize</td><td>否——三层同时成立</td></tr>
+<tr><td>verifier flag 触发 re-sample [7]</td><td>policy / reasoning trace</td><td>verifier</td><td>optimize（repair）</td><td>否——三层同时成立</td></tr>
+<tr><td>确定性 evaluator 改写 SKILL.md [14]</td><td>skill file</td><td>verifier（CPF/BM/SG）</td><td>optimize</td><td>否——三层同时成立</td></tr>
+<tr><td>MemorySyntax 衰减管理 [6]</td><td>memory</td><td>reflection</td><td>prune（forget）</td><td>否——三层同时成立</td></tr>
+<tr><td>RL reward 驱动技能库 [13]</td><td>skill library</td><td>reward/verifier</td><td>compose + write</td><td>否——三层同时成立</td></tr>
+<tr><td>图表 token 削减 [15]</td><td>trajectory / memory</td><td>reflection</td><td>prune</td><td>否——三层同时成立</td></tr>
+</tbody></table>
+<div class="note">上表是本次分析最关键的证据：第 5 列全部为“否”。这从操作上证明，“载体—信号—算子”不是三个互斥分类格，而是描述同一更新事件的不同侧面。正确的 MECE 骨架是“载体 × 算子”二维矩阵，信号作为算子格的触发标注。</div>
+
+<h2 id="sec_核心发现四_各载体上的更新产生可测增益_但普遍有益性存在强反证">核心发现四：各载体上的更新产生可测增益，但普遍有益性存在强反证</h2>
+<p>在“载体 × 算子”框架下，各载体上的更新确实产生了可量化增益，且增益形态与载体类型高度相关，这为框架的实用性提供了经验支撑。</p><p>- **skill 载体 + optimize 算子（0001 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>）**：在同型任务把成功率 SG 从 38% 提升到 74%，CPF 从 0.51 提升到 0.87，平均尝试次数从 4.10 降到 2.30，而基座语言模型与物理求解器全程固定。</p><p>- **skill library 载体 + RL 信号（0073 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>）**：在 AppWorld 达 72.0% TGC / 60.7% SGC，优于纯 GRPO 的 69.2%/51.8%，且交互步数从 16.4 降至 12.1、生成 token 从 3,613 降至 1,475。</p><p>- **memory 载体 + reflection 信号 + 衰减算子（2137 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）**：AgentBench 消融中，MemorySyntax 把 LLM 的 KG 任务从 6.8 提升到 45.3，把 Codellama-7B 从 0.0 提升到 48.0。</p><p>- **policy/推理载体 + verifier 信号 + repair 算子（2381 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>）**：MI-Faith / MI-Interp 从 ReAct 的 51.2/44.1 提升至 94.7/88.9，Loc-Acc / Fact-Acc 达 90.1/86.2。</p><p>但 AgentStream <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 的受控流式评测给出关键反证：自我进化**并非普遍有益**——最弱模型出现负增益、收益对模型能力呈非单调关系（中等能力模型获益超过更强模型）、无单一演化方法占优，且 context 类方法偏好 Isolated 场景、检索类方法偏好 Interleaved 场景。这说明“载体 × 算子”框架必须承认载体—场景—模型的交互效应，否则会显著高估通用性。</p>
+<h3>各载体-算子组合的经验增益（证据矩阵核心论文）</h3>
+<table><thead><tr><th>论文</th><th>载体</th><th>信号</th><th>算子</th><th>关键指标变化</th></tr></thead><tbody><tr><td>0001 [14]</td><td>skill file（SKILL.md）</td><td>确定性物理 evaluator（CPF/BM/SG）</td><td>optimize（改写）</td><td>SG 38%→74%；CPF 0.51→0.87；尝试 4.10→2.30</td></tr>
+<tr><td>0073 [13]</td><td>skill library</td><td>RL reward + verifier</td><td>compose + write</td><td>TGC 69.2→72.0；SGC 51.8→60.7；步数 16.4→12.1</td></tr>
+<tr><td>2137 [6]</td><td>memory（STM/LTM）</td><td>reflection + 稀疏奖励</td><td>prune（MemorySyntax 衰减）</td><td>LLM KG 6.8→45.3；Codellama-7B KG 0.0→48.0</td></tr>
+<tr><td>2381 [7]</td><td>policy / reasoning trace</td><td>verifier（faithfulness flag）</td><td>optimize（repair re-sample）</td><td>MI-Faith 51.2→94.7；MI-Interp 44.1→88.9</td></tr>
+<tr><td>0014 [5]</td><td>policy / context</td><td>reflection（6 种反馈）</td><td>optimize（guidance 注入）</td><td>全类型反思均显著提升（p&lt;0.001）</td></tr>
+<tr><td>0004 [8]</td><td>prompt + tool + pipeline</td><td>语言 loss / 语言梯度</td><td>optimize（三类 optimizer）</td><td>跨 LLM 基准、软件开发、创意写作均优于基线</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "核心论文关键指标提升幅度（百分点 / 倍数换算）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["0001 SG(36pp)", "0001 CPF(36pp)", "0073 SGC(8.9pp)", "2137 KG小模型(38.5pp)", "2381 MI-Faith(43.5pp)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "提升幅度（百分点）", "type": "bar", "data": [36, 36, 8.9, 38.5, 43.5], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心发现五_载体与算子之间存在内部化桥梁">核心发现五：载体与算子之间存在内部化桥梁</h2>
+<p>框架的一个重要补充发现是：载体轴并非静态切分。Experience Funnel <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 提出“状态—策略交替循环”，把外部 skill/memory 载体中的经验通过参数化/策略合并转化为 policy 内部能力，在 SearchQA / ALFWorld / WebShop 平均达 57.6%，超过最强显式状态方法 SkillOpt 的 53.9% 与最强策略内部化基线 OPID。这与 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的“foundation-model 改进 vs scaffolding 改进”二分直接呼应：**更新目标（θ 还是 Σ）本身就是信号层之下的一个关键区分维度，而它恰好刻画了载体之间的迁移方向**。</p><p>因此更精确的三层表述应为：**载体（六族） × 算子（四族，需补 activate 与 migrate/propagate）为主矩阵，信号作为每个格子的触发标注（信号源：feedback / verifier / reflection；更新目标：model 参数 vs scaffolding）**。</p>
+<div id="chart_3" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_3'));
+  c.setOption({"title": {"text": "修正后分类骨架的结构权重（以文献覆盖广度估计）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "修正后分类骨架的结构权重（以文献覆盖广度估计）", "type": "pie", "radius": "55%", "data": [{"name": "载体轴（六族，四方证据一致）", "value": 35}, {"name": "算子轴（四族+2 补充族）", "value": 30}, {"name": "信号子维度（信号源 × 更新目标）", "value": 25}, {"name": "跨维交互（载体-场景-模型）", "value": 10}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_对_RQ_的直接答复与重构后的分类体系">对 RQ 的直接答复与重构后的分类体系</h2>
+<p>RQ1.2 的原提法“载体—信号—算子”三层**部分成立**：载体轴与算子轴可作为正交双轴构成 MECE 骨架；信号层则不应与二者并列，而应降格为算子层的触发子维度。重构后的表达式为：</p><p>**进化轨迹 = ⟨载体 C, 算子 O, 触发 T⟩，其中 C ∈ {memory, tool/protocol, skill, workflow, multi-agent, model/policy}，O ∈ {write, prune, optimize, compose, activate*, migrate/propagate*}，T = ⟨信号源 ∈ {feedback, verifier, reflection}, 更新目标 ∈ {scaffolding, model}⟩（*为建议补充的算子族）。**</p><p>这一重构保留了 RQ 原三层中真正正交的两个轴，并把第三层重新定位为附着于算子格的标注，从而消除了原提法的类别重叠问题。同时它在载体轴上完整覆盖了六篇冻结论文的全部载体类型，在算子轴上覆盖了价值矩阵中的 6 个格子（见第三章表格）。</p>
+
+<h2 id="sec_支持性证据与反证对照">支持性证据与反证对照</h2>
+<p>为确保结论可核查，下表汇总支持性证据与反证/限制，并标注置信度。整体而言，载体轴与算子轴的证据强度高（置信度 0.78–0.90），而“信号为独立第三轴”这一原 RQ 主张的置信度很低（应被否定），AgentStream 的反证则为框架的普适性划定了边界。</p>
+<h3>关键结论的证据与反证对照</h3>
+<table><thead><tr><th>结论</th><th>支持证据</th><th>反证 / 限制</th><th>置信度</th></tr></thead><tbody><tr><td>载体轴正交成立（六族）</td><td>SAVER 六族 [1]、动态图节点 [2]、AGP RSPL [3]、外部化三模块 [9]</td><td>各族边界不完全一致（multi-agent vs harness），需人工对齐</td><td>0.90</td></tr>
+<tr><td>算子轴可归并四类</td><td>SAVER 七族 [1]、DPO 算子 [2]</td><td>遗漏 activate 与 migrate/propagate；0037 主张 activation 可折叠</td><td>0.78</td></tr>
+<tr><td>信号非独立第三轴</td><td>2368 信号→算子二层 [4]、SAVER selection before commitment [1]</td><td>0004 将语言 loss/梯度建模为独立阶段，可解读为支持独立成层 [8]</td><td>0.85</td></tr>
+<tr><td>feedback/verifier/reflection 为信号源类型</td><td>0014/2381/0001 三例同时覆盖 [5][7][14]</td><td>2368 细分信号源但未做正交性定量检验 [4]</td><td>0.82</td></tr>
+<tr><td>载体×算子能产生可测增益</td><td>0001 SG 38→74 [14]；0073 SGC 51.8→60.7 [13]；2137 KG 6.8→45.3 [6]；2381 MI-Faith 51.2→94.7 [7]</td><td>多为单载体、单基准验证，跨族泛化有限</td><td>0.88</td></tr>
+<tr><td>自进化普遍有益？</td><td>多数原论文报告正向增益</td><td>AgentStream：最弱模型负增益、收益非单调、无单一方法占优 [10]</td><td>0.80（对普适性存疑）</td></tr>
+<tr><td>载体可内部化迁移</td><td>Experience Funnel 平均 57.6% &gt; SkillOpt 53.9% [12]</td><td>内部化伴随遗忘/能力退化风险</td><td>0.75</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>**第一，正交性缺乏定量检验。** 本分析框架要求对候选维度对计算 Cramer's V 或 Jaccard 相似度（&gt;0.3 即判为不正交），但 KG 中的 Problem 节点未附带统一的“载体/算子”类别标注字段，且大量节点与本 RQ 无关（629 个 Problem 中绝大多数属光学、网络科学等其他领域）。因此在可操作的节点集合上无法执行真实的集合交并运算，正交性判断只能基于文献的结构性论述，属定性推断而非数值证明。</p><p>**第二，缺少直接文献背书。** 没有任何单篇论文把“载体 × 信号 × 算子”三轴明确并列作为分类体系。最接近的是 2368 的“信号→算子”二层 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 与 AGP 2292 的“载体/算子”二层 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，二者各自只支持两层。这意味着 RQ 的三层提法属于合理但未被直接验证的构想。</p><p>**第三，视角偏置。** 0037 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 自承其从动态图到自进化智能体的映射“主要是概念性的，不提供经验评估”；SAVER <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 以安全而非能力为主视角。因此两轴骨架在“安全性/可治理性”维度的证据强于“能力提升”维度。</p><p>**第四，定义性分歧。** activation 是否属于“演化”存在争议——<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 强调 read-only activation “不应被误当作持久学习”，若纳入算子轴会使“演化”的边界模糊，需下游研究澄清。</p><p>**第五，证据矩阵规模有限。** 六篇冻结论文中，0014 仅测单步问题 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，2381 的 verifier 在固定协议上训练 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，0073 仅在 AppWorld 验证 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>，0001 受限于单一求解器栈与单一基准设计 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>——各经验增益的外部效度均受约束。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ1.2 提出的三层分解**部分成立，但需结构性修正**。正确的分类骨架是“进化载体 × 更新算子”正交双轴：载体轴分六族（memory、tool/protocol、skill、workflow、multi-agent、model/policy），得到 SAVER <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、动态图综述 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、AGP 协议 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、外部化综述 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 四条独立证据线的一致支持；算子轴分四族（write、prune、optimize、compose），是文献形式算子（INSERT/DELETE/FEATUREUPDATE/MERGE、LINK/UNLINK/REWIRE、add/abstract/modify/forget）的合法粗粒度归并，但建议补充 activate 与 migrate/propagate 两族以覆盖 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 与 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 强调的关键演化形态。</p><p>“更新信号”不应作为并列第三轴：2368 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 将其严格建模为更新算子 U 的输入 e_t，SAVER <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 将其定位为算子提交前的选择/评估环节；且 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 三例证明同一更新事件可同时被三层描述覆盖，违背互斥性。信号应降格为算子层的触发子维度，其内部区分（信号源：feedback / verifier / reflection；更新目标：scaffolding / model）仍有分析价值，并与载体间的内部化迁移相耦合 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。</p><p>经验层面，各载体上的更新确实产生可量化增益（0001 SG 38%→74% <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>、0073 SGC 51.8%→60.7% <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、2137 KG 6.8→45.3 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、2381 MI-Faith 51.2→94.7 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>），但 AgentStream 的受控评测表明自进化并非普遍有益，其收益受模型能力与任务流结构门控 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>——因此“载体 × 算子”框架须显式纳入载体—场景—模型的交互项，方能在真实部署条件下成立。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Safety in Self-Evolving Agents: A Survey&nbsp;<code style="font-size:0.82em;color:#888">0038_Safety_in_Self-Evolving_Agents_A_Survey</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Self-Evolving Agents as Dynamic Graph Transformation: A Survey and New Perspective&nbsp;<code style="font-size:0.82em;color:#888">0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Autogenesis: A Self-Evolving Agent Protocol&nbsp;<code style="font-size:0.82em;color:#888">2292_autogenesis_a_selfevolving_agent_protocol</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Self-Improvements in Modern Agentic Systems: A Survey&nbsp;<code style="font-size:0.82em;color:#888">2368_selfimprovements_in_modern_agentic_systems_a_survey</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Self-Reflection in LLM Agents: Effects on Problem-Solving Performance&nbsp;<code style="font-size:0.82em;color:#888">0014_selfreflection_in_llm_agents_effects_on_problemsolving_perfo</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;SAGE: Self-evolving Agents with Reflective and Memory-augmented Abilities&nbsp;<code style="font-size:0.82em;color:#888">2137_selfevolving_agents_with_reflective_and_memoryaugmented_abil</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;DiffuseAgent-MI: Distributionally-Grounded, Tool-Integrated Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2381_diffuseagentmi_distributionallygroundedtoolintegrated_selfev</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Symbolic Learning Enables Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">0004_Symbolic_learning_enables_self-evolving_agents</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Externalization in LLM Agents: A Unified Review of Memory, Skills and Protocols&nbsp;<code style="font-size:0.82em;color:#888">2289_externalization_in_llm_agents_a_unified_review_of_memory_ski</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;AgentStream: How Well Do Self-Evolving LLM Agents Perform Under Streaming Tasks?&nbsp;<code style="font-size:0.82em;color:#888">2380_agentstream_how_well_do_selfevolving_llm_agents_perform_unde</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;FinEvo-Bench: A Longitudinal Benchmark for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2387_finevobench_a_longitudinal_benchmark_for_selfevolving_agents</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Experience Funnel: A State-Policy Alternating Loop for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2420_experience_funnel_a_statepolicy_alternating_loop_for_selfevo</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Reinforcement Learning for Self-Improving Agent with Skill Library&nbsp;<code style="font-size:0.82em;color:#888">0073_Reinforcement_Learning_for_Self-Improving_Agent_with_Skill_L</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;A Self-Evolving Agentic Framework for Metasurface Inverse Design&nbsp;<code style="font-size:0.82em;color:#888">0001_A_Self_Evolving_Agentic_Framework_for_Metasurface_Inverse_De</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Reducing Cost of LLM Agents with Trajectory Reduction&nbsp;<code style="font-size:0.82em;color:#888">0033_Reducing_Cost_of_LLM_Agents_with_Trajectory_Reduction</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.2 · 2026-10-18 21:37</footer>
+</div>
+</body>
+</html>

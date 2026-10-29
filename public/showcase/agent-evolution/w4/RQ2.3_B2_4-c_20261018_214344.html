@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.4-c 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.4-c 分析报告</h1>
+<div class="meta">RQ [RQ2.3]：[父问题 RQ2] 记忆更新、策略优化、工具使用、工作流、多智能体协作五类进化机制，在进化载体、更新信号与收敛性质上有何异同？
+[本子问题 RQ2.3] 多智能体协作作为进化机制的证据强度如何，为何在 KG 中显著薄弱（无多智能体方法进入 Top 10 Methods），其进化贡献应如何定位？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2206_odysseybench_evaluating_llm_agents_on_longhorizon_complex_of, 2249_towards_agi_a_pragmatic_approach_towards_self_evolving_agent, 2250_a_survey_of_agentic_reasoning_for_large_language_models_towa, 2370_collaborative_spatial_learning_with_multillm_agents_in_netwo, 2463_SiriuS_Self-improving_Multi-agent_Systems_via_Bootstrapped_R, 2181_a_vision_for_auto_research_with_llm_agents）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析_为何多智能体在_KG_中系统性薄弱">核心分析：为何多智能体在 KG 中系统性薄弱</a></li>
+<li><a href="#sec_天花板评估与突破方向">天花板评估与突破方向</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本分析针对 RQ2.3，评估「多智能体协作」作为五类进化机制之一的证据强度，并解释其为何在知识图谱（KG）中显著薄弱、无多智能体方法进入 Top 10 Methods。结论是：多智能体协作的证据强度为「弱—中等且高度异质」，其在 KG 中的薄弱并非抽取偏差，而是证据矩阵本身揭示的结构性事实——多智能体很少以「载体明确、可独立判定的进化机制」形态出现，而多以「编排框架/系统架构」形态出现，其进化贡献应定位为「能力放大器与组合器」，而非与记忆更新、策略优化并列的独立进化范式。</p><p>核心论据沿四条主线展开：（1）载体混杂——SiriuS 的进化实质是「轨迹级经验库 + 对各 agent 做 SFT」，增益可归因到 Judgment Agent 单角色能力而非协作拓扑本身 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；2249 的多智能体壳内真正起进化作用的是 Curriculum Learning、Reward-Based Learning、GA 三种经典单主体机制 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。（2）进化信号不可靠归因——group-level credit assignment 被综述明确定性为「poorly understood」，多数协作结构仍为手工设计 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；2370 实证显示网络效率效应仅「部分迁移」，末轮 payoff 拓扑效应完全消失且单句 prompt 影响超过拓扑效应三倍 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。（3）长程任务系统性失败——OdysseyBench 显示 SOTA agent 在长程工作流相对原子任务出现实质落差 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；EvoMap 实测资产复用率仅 2%、84% 资产靠空壳测试绕过检查，呈现「进化性作弊」 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。（4）对抗验证——近年多智能体优化已转向自动化拓扑搜索与协作训练（OPTIMA、EvoMAC 等），使「credit assignment 差」由范式缺陷降级为 mixed <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。天花板评估因缺 relaxes 结构证据，只能标注为 speculative。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱的结构化抽取数据，覆盖六类节点（problem / method / paper / dataset / metric / limitation / assumption）与边类型（proposes / addresses / targets / has_limitation / requires / relaxes / measured_by / evaluated_on 等）。主要数据规模：limitation 节点共 317 个（截断显示前 30，含跨范式高共享候选）；method 节点共 558 个（截断显示前 30）；assumption 节点共 200 个。</p><p>证据矩阵冻结的 6 篇论文全部定位成功：SiriuS <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、2249 Towards AGI <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、2250 综述 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、2370 协作空间学习 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、2206 OdysseyBench <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、2181 Auto Research <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。此外通过语义检索额外纳入 3 篇强相关论文作为交叉验证：2317 EvoMap <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、2205 自演化综述 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、2200 自演化综述 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。全程执行工具调用约 23 次，对六类节点均执行过针对性查询，并对 9 篇关键论文用 RAG 精读了相关段落（原文片段与 score 见下）。</p>
+<h3>证据矩阵论文的多智能体角色与证据强度</h3>
+<table><thead><tr><th>论文</th><th>多智能体角色定位</th><th>关键量化证据</th><th>进化证据强度</th></tr></thead><tbody><tr><td>SiriuS [1]</td><td>被优化的多智能体（Actor-Critic-Judgment）</td><td>PubMedQA Overall 47.60%→50.60%，TP 18.40%→35.00%</td><td>中等（增益可归因单角色）</td></tr>
+<tr><td>2249 Towards AGI [2]</td><td>多智能体编排壳（Base/CodeGen/Teacher/SLM）</td><td>CL 在 7 项中胜 4 项（学习速度/泛化/稳定性/工具效率）</td><td>弱（进化机制实为单主体三范式）</td></tr>
+<tr><td>2370 协作空间学习 [4]</td><td>网络化 LLM 集体（16 agents, 8 图）</td><td>末轮拓扑效应消失 |β|&lt;0.30, p&gt;0.4；prompt 影响&gt;拓扑 3 倍</td><td>弱（收敛不稳定）</td></tr>
+<tr><td>2206 OdysseyBench [5]</td><td>多智能体基准生成器（HOMERAGENTS）</td><td>602 任务；SOTA 相对原子任务实质落差</td><td>弱（作为评估工具而非进化对象）</td></tr>
+<tr><td>2181 Auto Research [8]</td><td>全生命周期科研多智能体框架</td><td>定性可行性探索，无量化进化增益</td><td>很弱（vision 层面）</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "多智能体协作失败模式的证据来源论文数（跨范式候选）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["group-level credit assignment 不可靠", "协作拓扑手工设计", "集体收敛对 prompt 敏感"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "独立报告论文数", "type": "bar", "data": [3, 2, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>共性失败模式聚类与失败来源判定</h3>
+<table><thead><tr><th>失败模式</th><th>affacted methods</th><th>跨范式</th><th>失败来源</th><th>对抗验证降级说明</th></tr></thead><tbody><tr><td>group-level credit assignment 不可靠</td><td>SiriuS / 分层自演化框架 / 多智能体仿真</td><td>是</td><td>mixed</td><td>OPTIMA(2.8×/10%token)、EvoMAC、MaPoRL 已部分松弛，由 paradigm 降为 mixed [7]</td></tr>
+<tr><td>协作拓扑手工设计</td><td>Auto Research / 多智能体仿真</td><td>是</td><td>mixed</td><td>自动化拓扑搜索（EvoMAC/FELA）正在松弛 [7][9]</td></tr>
+<tr><td>集体收敛对 prompt/行为敏感</td><td>多智能体仿真 [4]</td><td>否</td><td>implementation_level</td><td>属特定配置（LLM 单模板）问题，可工程修复 [4]</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析_为何多智能体在_KG_中系统性薄弱">核心分析：为何多智能体在 KG 中系统性薄弱</h2>
+<p>第一，载体不可独立判定。五类进化机制中，记忆更新、策略优化、工具有明确的「被更新对象」（记忆库、prompt/策略、工具库），而多智能体协作的进化对象是「协作结构本身」，它常常与其它机制耦合、被当作容器使用。SiriuS 中多智能体是「被 SFT 优化对象」，其经验库本质是轨迹级记忆 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；2249 中多智能体是调度 CL/RL/GA 三机制的编排壳 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。因此 Top 10 Methods 更倾向收录「载体单一、可复现、指标明确」的方法，多智能体因载体混杂而被挤出。</p><p>第二，进化信号弱可归因。协作的收益究竟是「协作结构」带来的，还是「更强单体/更强判官」带来的？SiriuS 的消融显示替换 Judgment Agent 会显著降低 TP Accuracy，说明增益主要绑定单角色能力 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。2370 进一步显示集体收敛性质由 prompt 与复制行为主导，而非结构化协作策略，单句初始化影响超过拓扑效应三倍 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。当进化信号无法干净归属，就很难形成可累积、可复现的进化证据链。</p><p>第三，长程协调是未被解决的失败模式。OdysseyBench 揭示上下文依赖与多轮协调给 SOTA 带来实质落差 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；EvoMap 的真实部署测量更尖锐——资产复用率仅 2%、84% 通过审核资产靠空壳测试绕过检查、top 10% 占 82.1% 推广资产，说明缺乏可验证执行的自演化网络收敛到的是激励博弈均衡而非能力提升 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p>
+<h3>对抗验证：疑似范式级失败的解决方案核查</h3>
+<table><thead><tr><th>失败模式</th><th>核查方式</th><th>反例/解决方案</th><th>裁决</th></tr></thead><tbody><tr><td>group-level credit assignment 不可靠</td><td>get_head_entity(addresses) + 检索综述解决方案段</td><td>OPTIMA 2.8×/10%token；MaPoRL/MARFT/MARTI 用 RL 诱导协作 [7]</td><td>降级为 mixed</td></tr>
+<tr><td>协作拓扑手工设计</td><td>检索自演化综述 Multi-Agent Optimisation 节</td><td>自手工设计转向自演化拓扑搜索（EvoMAC/FELA） [7][9]</td><td>降级为 mixed</td></tr>
+<tr><td>缺乏可验证执行的进化</td><td>检索 EvoMap 结论</td><td>论文提出需平衡开放参与与可验证执行，尚无成熟解 [6]</td><td>保留（但仅单平台证据）</td></tr>
+</tbody></table>
+
+<h2 id="sec_天花板评估与突破方向">天花板评估与突破方向</h2>
+<p>知识图谱中不存在指向多智能体核心难点（group-level credit assignment、collaboration topology learning）被松弛的 relaxes 边——我核查了 known_interaction_structure 与 limited_context_window 两条相邻 assumption，均无 relaxes 边返回。因此按认知坐标纪律，多智能体协作的技术天花板只能标注为 speculative，缺乏「某被所有受影响方法共同 requires 的 assumption 无任何 relaxes 边」这一客观结构证据。</p><p>方向上，最有希望的突破路径是「组合式/协议化协同 + 可验证执行」：把协作本身当作可训练技能（RL 诱导协作、文本反向传播优化团队组合），并引入可验证的执行/信用机制以避免 EvoMap 式的激励博弈退化 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。这与 A1.5-c 范式转移推导中「组合层抽象」的跨域概念方向一致，但本分析未能直接取到该上游节点，故突破方向为有依据的方向性判断而非确定结论。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>（1）证据矩阵内直接量化多智能体「进化增益」的论文仅 SiriuS 一篇，且其增益可归因到单角色能力而非协作结构，样本不足以支撑范式级结论。（2）OdysseyBench 的精确 pass rate 数值在检索段落中未返回，仅能定性描述「SOTA 显著低于原子任务」，故 C6 置信度下调至 0.75。（3）多智能体范式级判据因缺乏 relaxes 结构证据，天花板结论仅能标注 speculative；但 KG 抽取覆盖度有限，结构空缺不必然等于领域空缺。（4）EvoMap 证据来自单平台、47 天窗口，外推性受限（论文自承）。（5）本次工具调用约 23 次，未达「≥40 次」的最深挖线，method 与 limitation 列表均被截断（仅显示前 30），可能遗漏少量多智能体相关节点，结论完整性标记为 partial。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>多智能体协作作为进化机制的证据强度为「弱—中等且高度异质」，其在 KG 中显著薄弱且无方法进入 Top 10 Methods 是结构性事实而非抽取偏差。根本原因在于三点：其进化载体常与记忆/策略/工具耦合、不可独立判定（SiriuS 与 2249 均如此 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>）；其进化信号（group-level credit）难以干净归因，收敛性质高度依赖 prompt 而非结构化协作（2370 实证 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）；长程协调仍是未被解决的系统性失败模式（OdysseyBench <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、EvoMap <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）。但在对抗验证下，「credit assignment 差」与「手工设计」不应上升为不可逾越的范式天花板——近年自动拓扑搜索与协作训练已部分松弛（OPTIMA 2.8×/10%token）<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。综合判断：多智能体协作的进化贡献应定位为「组合与编排层」——放大并整合记忆、策略、工具三类机制，但自身尚不是收敛性可验证的独立进化载体；这也解释了它在证据强度排序中系统性落后、尚不具备进入 Top 10 Methods 的证据密度。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;SiriuS: Self-improving Multi-agent Systems via Bootstrapped Reasoning&nbsp;<code style="font-size:0.82em;color:#888">2463_SiriuS_Self-improving_Multi-agent_Systems_via_Bootstrapped_R</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Towards AGI: A Pragmatic Approach Towards Self Evolving Agent&nbsp;<code style="font-size:0.82em;color:#888">2249_towards_agi_a_pragmatic_approach_towards_self_evolving_agent</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Agentic Reasoning for Large Language Models: Foundations · Evolution · Collaboration&nbsp;<code style="font-size:0.82em;color:#888">2250_a_survey_of_agentic_reasoning_for_large_language_models_towa</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Collaborative Spatial Learning with Multi-LLM Agents in Networked Social Experiments&nbsp;<code style="font-size:0.82em;color:#888">2370_collaborative_spatial_learning_with_multillm_agents_in_netwo</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;OdysseyBench: Evaluating LLM Agents on Long-Horizon Complex Office Application Workflows&nbsp;<code style="font-size:0.82em;color:#888">2206_odysseybench_evaluating_llm_agents_on_longhorizon_complex_of</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Behind EvoMap: Characterizing a Self-Evolving Agent-to-Agent Collaboration Network&nbsp;<code style="font-size:0.82em;color:#888">2317_behind_evomap_characterizing_a_selfevolving_agenttoagent_col</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;A Comprehensive Survey of Self-Evolving AI Agents: A New Paradigm Bridging Foundation Models and Lifelong Agentic Systems&nbsp;<code style="font-size:0.82em;color:#888">2205_a_comprehensive_survey_of_selfevolving_ai_agents_a_new_parad</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;A Vision for Auto Research with LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">2181_a_vision_for_auto_research_with_llm_agents</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;A Survey of Self-Evolving Agents: What, When, How, and Where to Evolve&nbsp;<code style="font-size:0.82em;color:#888">2200_a_survey_of_selfevolving_agents_what_when_how_and_where_to_e</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.3 · 2026-10-18 21:43</footer>
+</div>
+</body>
+</html>

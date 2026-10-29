@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ4.2]：[父问题 RQ4] AI-ready 农业数据的治理与标准化处于何种成熟度，数据基础设施缺口如何构成小农采纳的制度性前提约束？
+[本子问题 RQ4.2] 数据治理概念是孤立概念还是可操作框架，与小农数据可及性关联如何？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：2959_unlocking_ais_potential_in_agriculture_the_critical_role_of）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_核心定义_数据治理作为操作性框架的内嵌维度">核心定义：数据治理作为操作性框架的内嵌维度</a></li>
+<li><a href="#sec_从定义约束到小农可及性的蕴含链">从定义约束到小农可及性的蕴含链</a></li>
+<li><a href="#sec_跨论文经验证据_治理_非孤立_的双向诊断">跨论文经验证据：治理「非孤立」的双向诊断</a></li>
+<li><a href="#sec_小农数据可及性与数据基础设施缺口的量化锚点">小农数据可及性与数据基础设施缺口的量化锚点</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_分析局限性与不确定性">分析局限性与不确定性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ4.2「数据治理概念是孤立概念还是可操作框架，与小农数据可及性关联如何？」展开定义驱动的知识图谱分析。核心结论是：在证据矩阵覆盖的文献中，「数据治理」并非一个自足、可独立操作的概念，而是被嵌套进更广义「AI-ready 数据」操作性框架中的一个必要但不充分的构成维度。核心论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 在 Section 5 将 AI-ready 数据形式化定义为『structured, standardized, and machine-accessible datasets that can be ingested into AI pipelines with minimal manual pre-processing』，并提炼出持久标识符、机器可访问格式、时间对齐、语义互操作、透明治理五个并列属性——治理是五属性之一的合取项，因此不是孤立概念。</p><p>同时，治理与小农数据可及性之间存在一条可由定义约束强推演的蕴含链：治理约束违反（同意/访问机制缺失）→地块级数据无法持续合规采集校验→小农作为原始数据提供者被排斥 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。跨论文证据将「治理尚未成为充分运作框架」的诊断推向经验层面：<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 明确断言决定小农采用的五维『do not operate in isolation』，<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 则揭示小农数字政策文本本身稀缺。本报告将治理→可及性关系判定为「强定义蕴含 + 中等经验支持」，而非已实证确证的因果定律。</p>
+
+<h2 id="sec_核心定义_数据治理作为操作性框架的内嵌维度">核心定义：数据治理作为操作性框架的内嵌维度</h2>
+<p>证据矩阵的核心论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 提供了一套可被逐项打分的操作性定义，而非带量词（∀/∃）的公理式公式。其形式化定义为：AI-ready 数据是『structured, standardized, and machine-accessible datasets that can be ingested into AI pipelines with minimal manual pre-processing』。该定义的操作性体现在 Table 2 的最小 schema 对照表中——以 JSON/XML 取代 PDF/HTML、以 ISO 8601 时间戳取代相对时间短语、以 CAS 化学编号取代商品名、以 API 查询取代手动下载。在这一框架里，「透明治理（transparent governance）」是五个并列属性之一，与标识符、格式、时间、语义四者相互约束，故治理是「AI-ready」这一复合谓词的一个合取项。</p><p>平行的第二套操作性框架 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 以公平、透明、问责、可持续、隐私、稳健六项伦理原则构成治理评估框架，并将「data governance / technology stewardship」显式操作化为对农业技术提供者（ATP）与政策制定者的可执行建议（数据可移植性、互操作标准、知情同意、隐私设计 PbD）。两套框架共同证明：治理在文献中是被「操作化」的（可打分、可撰写成条款），而非停留在口号层面。</p>
+<h3>AI-ready 数据的五属性与治理的框架内嵌地位（来源：[1]）</h3>
+<table><thead><tr><th>属性（Attribute）</th><th>约束要求</th><th>治理相关性问题实例（KG 节点）</th></tr></thead><tbody><tr><td>持久标识符 Persistent identifiers</td><td>农场/作物标准化 ID，支撑地块级追踪</td><td>空间碎片化（缺共同地理编码）</td></tr>
+<tr><td>机器可访问格式 Machine-accessible formats</td><td>JSON/XML/API 取代 PDF/HTML 静态格式</td><td>有限机器可读性</td></tr>
+<tr><td>时间对齐 Temporal alignment</td><td>ISO 8601 时间戳，对齐决策周期</td><td>数据时间错位</td></tr>
+<tr><td>语义互操作 Semantic interoperability</td><td>对齐 ICAR/NBSS&amp;LUP 等现有分类法</td><td>跨数据集整合失败</td></tr>
+<tr><td>透明治理 Transparent governance</td><td>机器可读同意机制、明确访问/复用规则</td><td>不清晰的数据治理限制访问与复用</td></tr>
+</tbody></table>
+
+<h2 id="sec_从定义约束到小农可及性的蕴含链">从定义约束到小农可及性的蕴含链</h2>
+<p>由 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的定义出发可作三段定义驱动推演。第一，『透明治理』约束要求机器可读的同意机制与明确的访问/复用规则；一旦违反，必然产生「不清晰的数据治理限制访问与复用」这一实例——该问题节点在 KG 中正是被 AI-ready 属性框架（method_f0b413bfbe）的 targets 边直接指向（confidence 0.9）。第二，治理缺位使农场地块级数据无法被持续、合规地采集与校验；<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确指出近期数据保护立法虽强化了法律保障，但『consent architectures 的实践指引仍然有限……granular farmer-level data is frequently underutilized』，并将治理成熟度定位在『transitional state』（Digital Agriculture Mission 拨款 2,817 crore，然而仅 19 个邦通过 MoU 接入，全国部署推迟至 2026-27）。第三，治理约束的直接后果落在小农身上：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 载明小农占印度农民 86%，『lack capacity to compensate for weak data infrastructure, risking exclusion』。</p><p>由此可见，KG 中的小农可及性问题节点（problem_smallholder_exclusion_from_data_driven_tools）在逻辑上是『透明治理』约束被违反的下游必然实例，而非并列独立的另一类问题。这一蕴含判定为 strong（可展示完整推演步骤），但需注意其经验环节依赖综述性论断而非逐环节量化因果检验。</p>
+<h3>定义→问题的关联映射（KG 边与推演强度）</h3>
+<table><thead><tr><th>定义（属性）</th><th>问题实例</th><th>关系类型</th><th>推演强度</th><th>证据来源</th></tr></thead><tbody><tr><td>透明治理 [1]</td><td>不清晰的数据治理限制访问与复用</td><td>instantiates</td><td>strong（KG 边 conf 0.9）</td><td>method_f0b413bfbe → problem_bdd9ff25e8</td></tr>
+<tr><td>透明治理 [1]</td><td>小农排斥于数据驱动工具</td><td>implies</td><td>strong（定义推演）+中等经验</td><td>[1][5][6]</td></tr>
+<tr><td>机器可访问格式 [1]</td><td>有限机器可读性</td><td>instantiates</td><td>strong（KG 边 conf 0.9）</td><td>method_f0b413bfbe → problem_193a0744d1</td></tr>
+<tr><td>时间对齐 [1]</td><td>数据时间错位</td><td>instantiates</td><td>strong（KG 边 conf 0.9）</td><td>method_f0b413bfbe → problem_3c951a6a25</td></tr>
+<tr><td>持久标识符 [1]</td><td>空间碎片化（缺地理编码）</td><td>instantiates</td><td>strong（KG 边 conf 0.9）</td><td>method_f0b413bfbe → problem_2df4192cbf</td></tr>
+</tbody></table>
+
+<h2 id="sec_跨论文经验证据_治理_非孤立_的双向诊断">跨论文经验证据：治理「非孤立」的双向诊断</h2>
+<p>跨论文证据把「治理孤立」诊断推向经验层面。<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 在其五维采用模型（ASTAD）中明确断言『these five dimensions do not operate in isolation, but rather mutually reinforce or weaken one another』，并将政策与数据制度支撑（policy- and data-based institutional support）与数字接入稳定性并列为决定小农采用的关键层；一旦某一维度失衡，『technology adoption risks being partial, unsustainable, and even widening the inequality gap』。这从系统论角度否定了「治理可孤立运作」的假设。</p><p><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 则从另一侧证实治理的制度性缺位：『the lack of reports and policy documents regarding smallholder farmer use of digital technology... raising questions about how smallholder digital technology policy is developed』——即在南非情境下，指导小农数字化的治理/政策文本本身稀缺。综合 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，现实中的治理既不是「完全孤立的概念」（规范层面已有操作化框架），也尚未成为「充分运作的框架」（落地层面碎片化、非制度化），而是一个定义完备但实施未成熟的内嵌维度。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "跨论文对「治理-可及性」关联强度的证据评级（0-100 置信度）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["[1] 定义蕴含", "[2] 平行框架", "[3] 系统论", "[4] 制度缺位", "[5] 可及性量化", "[6] 增产因果"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "置信度", "type": "bar", "data": [90, 88, 80, 75, 70, 75], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_小农数据可及性与数据基础设施缺口的量化锚点">小农数据可及性与数据基础设施缺口的量化锚点</h2>
+<p>尽管治理直接影响可及性的直接实验数据稀缺，邻近证据提供了可及性缺口的量级锚点。小农数字保险的接入/接受率仅 14%，而 90% 认为其有用，知识不足（64%）与产品不可得（23%）为主导障碍 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>——这与 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 所诊断的「访问规则不透明 + 机器可读同意缺失」在结构上同构。</p><p>反向证据同样有力：当数据基础设施较完善时，数据驱动推荐的经济回报可被因果识别——棉花播种建议带来 12-17% 产量提升 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，说明可及性改善是有可测量经济回报的，从而反证治理-基础设施缺口的实质成本。这两组证据<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>共同为「治理→可及性→产出」链条提供了上游障碍与下游回报的双向锚点。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "小农无法采用数字保险的主要原因分布（[5]，N=87）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "小农无法采用数字保险的主要原因分布（[5]，N=87）", "type": "pie", "radius": "55%", "data": [{"name": "知识不足（64%）", "value": 64}, {"name": "产品不可得（23%）", "value": 23}, {"name": "费用昂贵（5%）", "value": 5}, {"name": "其他（资金/理解，8%）", "value": 8}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱结构化节点与论文原文段落检索，覆盖六类节点：问题（problem）、方法（method）、数据集基准（dataset）、指标（metric）、局限性（limitation）、假设约束（assumption）。共查询 KG 节点逾 100 个（problem 226、method 231、assumption 61、limitation 137、dataset 104、metric 132 中的相关子集），精读 6 篇关键论文的相关段落。使用的关键节点包括：AI-ready 数据属性框架（method_f0b413bfbe）、数据就绪度评估框架（method_03b6d6df03）、伦理 AI 治理框架（method_9bc79589b0）、ATP 与政策制定者建议（method_0331ceacd7）；问题节点包括不清晰数据治理限制复用、小农排斥、时间错位、空间碎片化、有限机器可读性等；数据集基准包括 AgriStack、Soil Health Cards、Crop insurance data、Telangana ADeX；指标包括小农接入率（14%）、感知有用性（90%）、产量提升百分比（12-17%）。</p>
+<h3>六类 KG 节点覆盖情况与关键发现</h3>
+<table><thead><tr><th>节点类型</th><th>代表性节点</th><th>对 RQ4.2 的关键支撑</th></tr></thead><tbody><tr><td>问题 Problem</td><td>不清晰治理限制访问/复用；小农排斥；时间错位；空间碎片化</td><td>治理约束违反的必然下游实例</td></tr>
+<tr><td>方法 Method</td><td>AI-ready 属性框架；就绪度评估框架；伦理 AI 框架；ATP 建议</td><td>治理作为框架内嵌维度的操作化证据</td></tr>
+<tr><td>数据集基准 Dataset</td><td>AgriStack、SHC、Crop insurance、Telangana ADeX</td><td>治理成熟度「partial alignment」的诊断对象</td></tr>
+<tr><td>指标 Metric</td><td>接入/接受率 14%、感知有用性 90%、产量提升 12-17%</td><td>可及性缺口与回报的量级锚点</td></tr>
+<tr><td>局限 Limitation</td><td>诊断性而非实证；仅部分对齐；缺乏报告政策文档</td><td>概念操作化的强弱分歧与证据缺口</td></tr>
+<tr><td>假设 Assumption</td><td>基础设施与成本约束、终端用户特征、服务商特征</td><td>小农采用的结构性前提约束</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性与不确定性">分析局限性与不确定性</h2>
+<p>首要不确定性在于概念操作化的强弱分歧：核心论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 自陈其贡献『primarily diagnostic; it does not empirically evaluate AI system performance』（limitation_d07d9b2144a），即五属性框架是一个诊断性核对表而非经过实证校验的成熟治理度量，这削弱了「可操作框架」的强主张。</p><p>其次，反例存在：AgriStack 的 consent-driven 架构与 Telangana ADeX 提供了「formally governed、consent-based、API-enabled」的运行实例（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> Section 6.2 / 7.3），表明治理并非在所有情境下都孤立——但它们仅证明州级可行性，且『replication elsewhere depends on institutional capacity and sustained investment』，故不能推翻「全国层面治理未成熟」的判断。</p><p>第三，证据缺口：直接、量化地检验「治理成熟度→小农数据可及性」因果链的实证研究在冻结矩阵中缺位（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 为诊断性综述、<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 为规范性政策评议、<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 为概念性综合）。此外，<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的量化数据来自加纳保险情境，与印度数据治理情境存在跨情境外推风险。因此本报告将治理→可及性关系判定为「强定义蕴含 + 中等经验支持」，而非被实证确证的因果定律，整体答案完整度标记为 partial。</p>
+<div class="note">推断强度纪律提示：本报告中「治理→可及性」关系基于定义约束的逻辑推演（strong，可展示推导步骤）叠加诊断性/概念性/跨情境邻近证据（中等经验支持），未表述为数学证明或实证确证的因果定律。所有 KG 边引用均标注 confidence，所有原文引用均来自 search_paper_sections 检索返回的真实段落。</div>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ4.2，可得出三点结论。第一，数据治理在证据矩阵中不是孤立概念，而是「AI-ready 数据」操作性框架（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 五属性中的 transparent governance）与伦理 AI 治理框架（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 六原则）共同内嵌的必要维度；治理的可操作化已有规范层面基础（可打分、可成条款）。第二，治理在落地层面尚未成为充分运作的框架——<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的『transitional state』（仅 19 邦接入、部署延至 2026-27）、<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 揭示的政策文本稀缺，均为佐证。第三，治理与小农数据可及性之间存在强定义蕴含：治理约束违反是小农被排斥的结构性前提约束，<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 提供了下游可及性缺口（14% 接入率）与回报（12-17% 增产）的量化锚点。</p><p>综合而言，数据治理是「定义完备但实施未成熟」的内嵌维度，其对小农数据可及性构成结构性前提约束——这一关联在定义层面可由 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的五属性约束强推演、在系统与经验层面得 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 印证，但尚缺治理成熟度与可及性之间直接的量化因果检验，故现有证据支持「partial」完整度判定，需要后续实证研究（分离治理质量作为处理变量）加以确证。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Unlocking AI's Potential in Agriculture: The Critical Role of Data&nbsp;<code style="font-size:0.82em;color:#888">2959_unlocking_ais_potential_in_agriculture_the_critical_role_of</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Recommendations for ethical and responsible use of artificial intelligence in digital agriculture&nbsp;<code style="font-size:0.82em;color:#888">0710_Recommendations_for_ethical_and_responsible_use_of_artificia</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Digital Technology Adoption by Smallholder Farmers in Indonesia&nbsp;<code style="font-size:0.82em;color:#888">3044_Digital_Technology_Adoption_by_Smallholder_Farmers_in_Indone</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Utilisation of Digital Technologies by Smallholder Farmers in South Africa: A Systematic Literature Review&nbsp;<code style="font-size:0.82em;color:#888">0680_Utilisation_of_Digital_Technologies_by_Smallholder_Farmers_i</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Agricultural insurance access and acceptability: examining the case of smallholder farmers in Ghana&nbsp;<code style="font-size:0.82em;color:#888">0655_Agricultural_insurance_access_and_acceptability_examining_th</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Evaluating Digital Agriculture Recommendations with Causal Inference&nbsp;<code style="font-size:0.82em;color:#888">0678_Evaluating_Digital_Agriculture_Recommendations_with_Causal_I</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.2 · 2026-10-19 15:55</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-a 分析报告</h1>
+<div class="meta">RQ [RQ1.1]：[父问题 RQ1] 如何用一个统一的&quot;进化轨迹&quot;概念框架刻画 LLM 智能体在交互、反馈与经验积累中的持续变化？
+[本子问题 RQ1.1] 现有工作中&quot;进化（evolution / self-improvement）&quot;被赋予哪些不同含义，其概念边界如何界定？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0014_selfreflection_in_llm_agents_effects_on_problemsolving_perfo, 0850_uncertainty_on_asynchronous_time_event_prediction, 0933_cognitive_twins_for_supporting_decisionmakings_of_internet_o, 2202_metaagent_toward_selfevolving_agent_via_tool_metalearning, 2256_sidiffagent_selfimproving_diffusion_agent, 2281_experiential_reflective_learning_for_selfimproving_llm_agent）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_研究问题与分析方法">研究问题与分析方法</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析_正交重构维度与矩阵">核心分析：正交重构维度与矩阵</a></li>
+<li><a href="#sec_概念边界的四道判定关卡">概念边界的四道判定关卡</a></li>
+<li><a href="#sec_文献对现有分类的批评证据">文献对现有分类的批评证据</a></li>
+<li><a href="#sec_对抗性验证_新体系是否真正消除了旧缺陷">对抗性验证：新体系是否真正消除了旧缺陷</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ1.1“现有工作中『进化（evolution / self-improvement）』被赋予哪些不同含义，其概念边界如何界定？”进行系统性分析。核心结论是：现有文献中的“进化/自我改进”并非单一概念，而是一个被至少五种不可通约含义共享的伞形词。我们将其可操作的概念边界归结为两个正交判据的乘积：(A) 进化所改写的载体——是基座模型参数，还是模型之外的脚手架/持久状态；(B) 改进是否作为跨任务的持久提交——而非仅在单次任务内通过重试再答完成即时纠正。</p><p>六篇证据矩阵论文恰好落在“进化”含义谱系的不同位点上：<sup class="cite"><a href="#ref-0014" style="text-decoration:none">[0014]</a></sup> 代表最弱含义的回合内反思纠正，<sup class="cite"><a href="#ref-2281" style="text-decoration:none">[2281]</a></sup> 与 <sup class="cite"><a href="#ref-2202" style="text-decoration:none">[2202]</a></sup> 代表跨任务的脚手架内持久进化，<sup class="cite"><a href="#ref-2256" style="text-decoration:none">[2256]</a></sup> 代表训练无关的闭环自改进，而 <sup class="cite"><a href="#ref-0850" style="text-decoration:none">[0850]</a></sup> 与 <sup class="cite"><a href="#ref-0933" style="text-decoration:none">[0933]</a></sup> 则属于共享“随时间演化”表层语义、但不涉及智能体自身轨迹驱动的邻近用法，应被显式排除。文献中存在明确的分片化批评（<sup class="cite"><a href="#ref-2368" style="text-decoration:none">[2368]</a></sup> 指术语与范围碎片化，<sup class="cite"><a href="#ref-2200" style="text-decoration:none">[2200]</a></sup> 承认概念边界仍在协商），支撑了重构的必要性。</p>
+
+<h2 id="sec_研究问题与分析方法">研究问题与分析方法</h2>
+<p>本子问题聚焦于辨析“进化”一词在 LLM 智能体文献中的多义性及其概念边界。分析方法遵循“提取现有分类体系 → 操作化诊断其缺陷（重叠/遗漏/模糊边界）→ 推导正交重构维度 → 验证覆盖与互斥 → 对抗性检验”的流程，但所有信息均通过知识图谱（KG）的结构化节点与边、以及论文原文段落检索获得，而非依赖外部文件。</p><p>具体地，我们先从 KG 中加载 paper / problem / limitation / assumption / method / dataset / metric 七类节点，再对六篇证据论文逐一获取其 proposes/addresses/evaluated_on/measured_by/has_limitation 关系边，最后用语义检索工具精读约 16 篇综述与定位论文的定义章节，以确认不同作者对“self-evolving”与“self-improving”的界定方式。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析调用了知识图谱中的七类节点：paper（274 篇，截断展示）、problem（629 个）、limitation（317 个）、assumption（200 个）、metric（391 个）、dataset（400 个），并对六篇证据矩阵论文逐篇拉取了完整关系边与原文段落。语义检索覆盖对象包括 6 篇证据论文及约 10 篇综述/定位论文（2200、2205、2368、0037、0038、2315、2255、2190、2310、2291），累计约 44 次针对性工具调用。</p><p>需要说明的是，KG 中 paper 类型的 origin_paper_id 与节点 node_id 一致，因此下文引用编号均以该字段为准；problem/limitation/assumption/metric/dataset 等衍生节点的 origin_paper_id 多为空，故不作为文献编号来源。</p>
+<h3>现有分类体系的诊断（操作化 MECE 检验结果）</h3>
+<table><thead><tr><th>缺陷类型</th><th>具体表现</th><th>涉及含义/论文</th><th>boundary_type</th><th>诊断来源</th></tr></thead><tbody><tr><td>重叠（Overlap）</td><td>同一机制被不同标签同时归入多个类别（self-correction / meta-prompting / self-play 等标签交叠）</td><td>[2368]（术语碎片化）</td><td>literature_acknowledged</td><td>文献明确批评</td></tr>
+<tr><td>重叠（Overlap）</td><td>“反思”既被当作回合内技巧、又被当作跨任务进化机制</td><td>[0014] vs [2281]</td><td>empirically_observed</td><td>节点归类观察</td></tr>
+<tr><td>遗漏（Omission）</td><td>以组件/攻击类别为轴的分类无法覆盖“载体×操作”的转移单元</td><td>[0038]（把因果事件切碎）</td><td>literature_acknowledged</td><td>文献明确批评</td></tr>
+<tr><td>概念溢出（Overflow）</td><td>非智能体领域的时间演化（分布演化、数字孪生版本演化）被表层语义误卷入“自进化”</td><td>[0850]、[0933]</td><td>empirically_observed</td><td>术语检索观察</td></tr>
+<tr><td>边界模糊（Ambiguity）</td><td>“self-evolving”与“self-improving”在文献中常被混用，隐含边界未界定</td><td>[2200]、[2368]、[2205]</td><td>literature_acknowledged</td><td>文献承认仍在协商</td></tr>
+</tbody></table>
+<h3>六篇证据论文对“进化”的含义赋值与新分类归属</h3>
+<table><thead><tr><th>论文</th><th>“进化”含义</th><th>维度A（载体）</th><th>维度B（持续性）</th><th>可核验增益</th></tr></thead><tbody><tr><td>[1] 0014 Self-Reflection in LLM Agents</td><td>回合内反思—再答的即时纠正</td><td>脚手架</td><td>回合内</td><td>八种反思类型均显著提升（p&lt;0.001）</td></tr>
+<tr><td>[2] 2281 Experiential Reflective Learning</td><td>反思生成可迁移启发式的跨任务积累</td><td>脚手架</td><td>跨任务</td><td>Gaia2 成功率较 ReAct +7.8%（56.1% vs 48.3%）</td></tr>
+<tr><td>[3] 2202 MetaAgent</td><td>零参数更新的工具/知识元学习自进化</td><td>脚手架</td><td>跨任务</td><td>GAIA 22.3→47.6；Gemini-2.5-Flash 7.8→49.5</td></tr>
+<tr><td>[4] 2256 SiDiffAgent</td><td>训练无关的轨迹经验闭环自改进</td><td>脚手架</td><td>跨任务</td><td>VQAScore 0.789→0.852→0.884（Episode 2）</td></tr>
+<tr><td>[5] 0850 Asynchronous Time Event Prediction</td><td>预测分布随连续时间的演化（非智能体）</td><td>N/A（本体论排除）</td><td>N/A</td><td>—（与智能体更新无关）</td></tr>
+<tr><td>[6] 0933 Cognitive Twins</td><td>虚拟模型随生命周期的版本演化（非智能体）</td><td>N/A（本体论排除）</td><td>N/A</td><td>—（与智能体更新无关）</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "证据矩阵论文在各含义层的分布", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["回合内纠正（脚手架）", "跨任务（脚手架）", "参数内进化", "本体论排除（非智能体）"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "论文数量", "type": "bar", "data": [1, 3, 0, 2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析_正交重构维度与矩阵">核心分析：正交重构维度与矩阵</h2>
+<p>基于对 Problem 节点描述与各论文定义字段的归纳，我们提炼出两个满足穷尽性与互斥性的正交维度。维度 A（进化载体）取自 <sup class="cite"><a href="#ref-2368" style="text-decoration:none">[2368]</a></sup> 的“foundation model improvement vs scaffold improvement”二分，以及 <sup class="cite"><a href="#ref-0038" style="text-decoration:none">[0038]</a></sup> 的四元载体坐标（Θ_t 模型参数 / M_t 记忆 / T_t 工具 / W_t 工作流）；维度 B（持续性）取自 <sup class="cite"><a href="#ref-2368" style="text-decoration:none">[2368]</a></sup> 的形式化——自诱导算子 U 必须“提交持久变更”，而非 X_t 的瞬时演化；<sup class="cite"><a href="#ref-2200" style="text-decoration:none">[2200]</a></sup> 的“static / short-horizon / long-horizon”评估分层亦可印证该维度。</p><p>在此基础上增加一道准入规则：更新必须由智能体自身轨迹或反馈驱动。该规则用于排除 <sup class="cite"><a href="#ref-0850" style="text-decoration:none">[0850]</a></sup> 的分布时间演化与 <sup class="cite"><a href="#ref-0933" style="text-decoration:none">[0933]</a></sup> 的数字孪生版本演化——二者虽含“evolution”字样，但不满足“智能体—自身轨迹”的因果链。经此三维约束，六篇证据论文均获得唯一归属或明确的排除理由，矩阵中不存在无法判定的孤儿节点。</p><p>值得强调的是，这一重构的价值在于它把此前分散于不同综述的两种“两分法”（<sup class="cite"><a href="#ref-2368" style="text-decoration:none">[2368]</a></sup> 的模式二分与 <sup class="cite"><a href="#ref-0038" style="text-decoration:none">[0038]</a></sup> 的载体坐标）统一为一套可判定的准入规则，从而使“什么算进化、什么只是即时纠正、什么根本无关”成为可由判据机械执行的操作。</p>
+<h3>正交重构矩阵（载体 × 持续性）</h3>
+<table><thead><tr><th></th><th>回合内即时纠正（Transient）</th><th>跨任务持久提交（Durable）</th></tr></thead><tbody><tr><td>脚手架 / 状态内（Scaffold）</td><td>[1] 0014 自我反思重答：单步纠正、无持久状态</td><td>[2] 2281 启发式池；[3] 2202 内置知识库；[4] 2256 轨迹经验库</td></tr>
+<tr><td>参数内（Foundation-model）</td><td>（理论可存在，证据矩阵内无正面实例）</td><td>仅由 [7] 0001 / [8] 0004 的“固定参数、只改技能文件”反例间接体现，缺正面量化例证</td></tr>
+</tbody></table>
+<div class="note">覆盖性检查：六篇证据矩阵论文 100% 获得唯一归属或明确排除理由（4 篇归位 + 2 篇显式排除），无遗漏节点。互斥性检查：每篇论文仅落入一个格子，无多重归类。但“参数内进化”这一维度在证据矩阵内没有任何正面实例，仅由 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的固定参数设定间接反衬，因此该格基本为空——这是本分类体系在当前证据范围内的主要结构性缺口。</div>
+
+<h2 id="sec_概念边界的四道判定关卡">概念边界的四道判定关卡</h2>
+<p>综合文献，可将“什么是严格意义上的自我进化”整理为依次通过的四道关卡，任何一道不通过即落入不同含义层或直接被排除。</p><p>第一关（是否存在持久载体）：改进是否被写入某种可复用的持久状态？<sup class="cite"><a href="#ref-0014" style="text-decoration:none">[0014]</a></sup> 的反思文本只注入当次再答提示、任务结束即消失，故止步于此关，属于“即时纠正”而非进化。第二关（载体类型）：持久状态是模型参数还是外部脚手架？这一关区分了 <sup class="cite"><a href="#ref-2368" style="text-decoration:none">[2368]</a></sup> 的两条路径，也解释了为何 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 均可在冻结参数下实现进化。第三关（持续性跨度）：改进是否跨任务/跨回合被提交并复用？<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 Episode 2 复用第一回合经验库后 VQAScore 由 0.852 升至 0.884，是其跨任务性的直接量化证据。第四关（驱动来源）：更新是否由智能体自身轨迹驱动？这是排除 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 与 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 的关键——它们虽有“evolution”之名，却与智能体的自我更新无关。</p><p>该四关框架同时也解释了术语混乱的根源：不同作者往往只强调其中一关（如 <sup class="cite"><a href="#ref-2205" style="text-decoration:none">[2205]</a></sup> 强调“闭合部署—改进环路”，<sup class="cite"><a href="#ref-0038" style="text-decoration:none">[0038]</a></sup> 强调“可复用状态”），而缺乏统一的四关判据，导致同一机制被贴上不同标签。</p>
+
+<h2 id="sec_文献对现有分类的批评证据">文献对现有分类的批评证据</h2>
+<p>重构动机有明确的文献支撑，而不仅出自我们的推断。<sup class="cite"><a href="#ref-2368" style="text-decoration:none">[2368]</a></sup> 直言“the broader research landscape remains highly fragmented in both terminology and scope”，并指出 self-correction、meta-prompting、self-play 等相近思想“常以不同标签出现，掩盖了底层机制的相似性”。<sup class="cite"><a href="#ref-2200" style="text-decoration:none">[2200]</a></sup> 承认该研究领域“conceptual boundaries are still being actively negotiated”，因而刻意以“引导性综合”而非刚性边界来组织综述。<sup class="cite"><a href="#ref-0038" style="text-decoration:none">[0038]</a></sup> 则批评传统基于组件或攻击类别的分类“can fragment what is in fact one causal incident”，主张以“载体×操作”的转移为最小比较单元。</p><p>这些批评共同指向同一病灶：既有的“按组件/按标签”分类既不互斥（同一机制可落入多类），也不穷尽（新兴机制无法归位），并且容易把语义相近但本体不同的现象（如非智能体的“evolution”）错误卷入。我们的正交重构正是针对这三点的直接回应。</p>
+<h3>旧体系局限与新体系的对应解决</h3>
+<table><thead><tr><th>旧体系局限</th><th>新体系解决方案</th><th>支撑文献</th></tr></thead><tbody><tr><td>术语碎片化，同一机制多个标签</td><td>以“载体×持续性”两维替代标签驱动归类，机制相似者自动归入同一格</td><td>[2368]</td></tr>
+<tr><td>按组件/攻击类别分类切碎因果事件</td><td>以“载体×操作”为最小比较单元，关注更新本身而非模块位置</td><td>[0038]</td></tr>
+<tr><td>概念边界仍在协商、缺乏判定规则</td><td>引入“自身轨迹驱动”准入关，把非智能体用法显式排除</td><td>[2200]</td></tr>
+<tr><td>瞬时状态演化与持久改进混淆</td><td>维度B以“是否提交持久变更”为判据将二者分离</td><td>[2368]</td></tr>
+<tr><td>参数冻结系统是否算“进化”存疑</td><td>维度A明确容纳脚手架内进化，承认冻结参数下的自进化合法</td><td>[3]、[4]</td></tr>
+</tbody></table>
+
+<h2 id="sec_对抗性验证_新体系是否真正消除了旧缺陷">对抗性验证：新体系是否真正消除了旧缺陷</h2>
+<p>我们逐一比对新体系是否实质解决了旧缺陷。对于“术语碎片化”缺陷：在新矩阵中，<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 三种被不同标签描述的机制（经验反思学习、元工具学习、闭环自改进）均落入同一格（脚手架×跨任务），且其共性被显式刻画为“持久脚手架状态的跨任务复用”，说明相似机制不再被标签割裂。</p><p>对于“概念溢出”缺陷：新体系通过第四道关卡把 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 与 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 显式判为 N/A，并给出可复核理由（非智能体轨迹驱动），从而不再让非智能体的“evolution”稀释“自进化”的内涵。</p><p>但仍需诚实指出未完全解决之处。其一，<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 Episode 2 是否构成真正跨部署的持续进化存在争议——若经验库不跨部署复用，其跨任务性弱于 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。其二，<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 自身报告迭代式 ERL 源任务成功率更高但测试泛化反而下降 5.4%，说明“经验累积”未必等于“进化”，新体系目前只能标注该现象，尚无法用维度自动判别“有效进化 vs 无效累积”。其三，也是最重要的——新体系在“参数内进化”格上几乎为空，因为六篇证据论文无一提供参数更新的正面量化实例。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本报告的主要局限在于证据覆盖的不对称。六篇证据矩阵论文几乎全部集中在“脚手架内进化”一侧：四篇提供了可核验的量化增益（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> p&lt;0.001 的显著提升、<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> +7.8%、<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> GAIA 22.3→47.6、<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> VQAScore 0.789→0.884），而“参数内进化”这一维度在证据矩阵内没有任何正面实例，仅由 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的“固定参数、只改技能文件”设定间接反衬。因此，本报告对完整含义谱系的刻画在参数内一维上覆盖不足，相关判断（例如“参数内进化可能带来安全对齐退化”）多为文献综述层面的推断而非证据矩阵内的直接验证。</p><p>其次，术语本身尚未统一：“self-evolving”与“self-improving”在文献中长期混用。本报告建议以“self-evolving”作为伞概念，但这一选择属于约定而非领域共识。此外，持续性维度缺少可量化的最小持续阈值，目前只能做定性二分（回合内 vs 跨任务），无法对“轻度持久”与“强持久”作更细的区分。最后，<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 与 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 被排除的理由是“非智能体轨迹驱动”，这是基于本体语义的判断；若未来出现把分布演化或孪生版本演化与智能体更新耦合的工作，则这一排除边界需要重新审视。综合而言，本报告结论的置信度约为 0.84。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ1.1 的答案是：现有工作中的“进化/自我改进”是一个多义伞形词，至少包含五种含义——(1) 可复用状态的持久改写（主流定义，<sup class="cite"><a href="#ref-0038" style="text-decoration:none">[0038]</a></sup><sup class="cite"><a href="#ref-2368" style="text-decoration:none">[2368]</a></sup>）；(2) 回合内反思—再答的即时纠正（<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>）；(3) 反思生成可迁移启发式的跨任务积累（<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>）；(4) 零参数更新的工具/知识元学习（<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>）；(5) 训练无关的轨迹经验闭环自改进（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>）；此外还有必须排除的邻近用法——非智能体的分布时间演化（<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）与数字孪生版本演化（<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）。</p><p>其概念边界可用“载体（参数内 vs 脚手架内）× 持续性（回合内纠正 vs 跨任务提交）”两个正交判据界定，并辅以“更新须由智能体自身轨迹驱动”的准入关。该矩阵使六篇证据论文各自获得唯一归属或明确排除理由，并统一了此前分散于不同综述的两种两分法。</p><p>最重要的启示对父问题 RQ1 有直接价值：若要用统一的“进化轨迹”概念框架刻画 LLM 智能体的持续变化，则“轨迹”不能仅指交互序列，而必须指持久载体状态随时间的被改写过程——这正是本报告二维矩阵中“跨任务持久提交”一列所刻画的对象。当前证据的最大缺口在于参数内进化缺少正面量化实例、以及缺少能量化“持续程度”的阈值，这应成为后续工作优先补齐的方向。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Self-Reflection in LLM Agents: Effects on Problem-Solving Performance&nbsp;<code style="font-size:0.82em;color:#888">0014_selfreflection_in_llm_agents_effects_on_problemsolving_perfo</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Experiential Reflective Learning for Self-Improving LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">2281_experiential_reflective_learning_for_selfimproving_llm_agent</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;MetaAgent: Toward Self-Evolving Agent via Tool Meta-Learning&nbsp;<code style="font-size:0.82em;color:#888">2202_metaagent_toward_selfevolving_agent_via_tool_metalearning</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;SiDiffAgent: Self-Improving Diffusion Agent&nbsp;<code style="font-size:0.82em;color:#888">2256_sidiffagent_selfimproving_diffusion_agent</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Uncertainty on Asynchronous Time Event Prediction&nbsp;<code style="font-size:0.82em;color:#888">0850_uncertainty_on_asynchronous_time_event_prediction</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Cognitive Twins for Supporting Decision-Makings of Internet of Things Systems&nbsp;<code style="font-size:0.82em;color:#888">0933_cognitive_twins_for_supporting_decisionmakings_of_internet_o</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;A Self-Evolving Agentic Framework for Metasurface Inverse Design&nbsp;<code style="font-size:0.82em;color:#888">0001_A_Self_Evolving_Agentic_Framework_for_Metasurface_Inverse_De</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Symbolic Learning Enables Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">0004_Symbolic_learning_enables_self-evolving_agents</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Self-Evolving Agents as Dynamic Graph Transformation: A Survey and New Perspective&nbsp;<code style="font-size:0.82em;color:#888">0037_Self-Evolving_Agents_as_Dynamic_Graph_Transformation_A_Surve</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Safety in Self-Evolving Agents: A Survey&nbsp;<code style="font-size:0.82em;color:#888">0038_Safety_in_Self-Evolving_Agents_A_Survey</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;A Survey of Self-Evolving Agents: What, When, How, and Where to Evolve&nbsp;<code style="font-size:0.82em;color:#888">2200_a_survey_of_selfevolving_agents_what_when_how_and_where_to_e</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;A Comprehensive Survey of Self-Evolving AI Agents: A New Paradigm Bridging Foundation Models and Lifelong Agentic Systems&nbsp;<code style="font-size:0.82em;color:#888">2205_a_comprehensive_survey_of_selfevolving_ai_agents_a_new_parad</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Self-Improvements in Modern Agentic Systems: A Survey&nbsp;<code style="font-size:0.82em;color:#888">2368_selfimprovements_in_modern_agentic_systems_a_survey</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;EVE-Agent: Evidence-Verifiable Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">2315_eveagent_evidenceverifiable_selfevolving_agents</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.1 · 2026-10-18 21:36</footer>
+</div>
+</body>
+</html>

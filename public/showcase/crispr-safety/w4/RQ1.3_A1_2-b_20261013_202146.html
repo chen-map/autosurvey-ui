@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ1.3]：[父问题 RQ1] 如何将 CRISPR 递送效率与编辑安全性（脱靶效应、免疫原性）统一到同一可量化的目标函数中，从而给出「单位风险下的编辑收益」这一可比较指标？
+[本子问题 RQ1.3] 能否构造一个统一目标函数（如 benefit-risk ratio、risk-adjusted editing yield），使不同递送-编辑组合可在同一标度上比较？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0093_Cytosine_base_editing_systems_with_minimized_off-target_effe）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_论证主线一_收益轴与风险轴各自已量化_但缺乏共同标度">论证主线一：收益轴与风险轴各自已量化，但缺乏共同标度</a></li>
+<li><a href="#sec_论证主线二_最接近统一目标函数的是_特异性评分_族与_跨平台设计矩阵">论证主线二：最接近统一目标函数的是「特异性评分」族与「跨平台设计矩阵」</a></li>
+<li><a href="#sec_论证主线三_跨领域方法学类比证明_可加权聚合_在技术上可行">论证主线三：跨领域方法学类比证明「可加权聚合」在技术上可行</a></li>
+<li><a href="#sec_定义驱动推演_约束违反_必然问题类别">定义驱动推演：约束违反 → 必然问题类别</a></li>
+<li><a href="#sec_分歧点与关键证据缺口">分歧点与关键证据缺口</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对研究问题 RQ1.3——「能否构造一个统一目标函数（如 benefit-risk ratio、risk-adjusted editing yield），使不同递送-编辑组合可在同一标度上比较」——采用 A1.2-b 定义驱动推演框架，对知识图谱中 CRISPR 递送与编辑安全性的相关文献进行了系统性分析。</p><p>结论是**条件性肯定**：在冻结的证据矩阵内，尚不存在任何论文或 KG 节点把「递送效率」与「编辑安全性（脱靶 + 免疫原性）」形式化地合并进同一个可比较标量。因此，统一目标函数只能作为 `operational / qualitative` 构造提出，而非文献中已确立的数学公理。构造统一标量所需的两条「轴」——收益轴（on-target editing efficiency / delivery efficiency）与风险轴（off-target mutation rate + immunogenicity）——各自都已有可量化代表指标，但二者被分列报告、彼此不可公度。证据矩阵内最接近统一目标函数的是「特异性评分」族（CRISOT-Spec/MIT/CFD，含显式公式）与两张「跨平台设计矩阵」；跨领域的加权聚合范式（Weighted Brier Score、加权 safety/effectiveness 总分）证明技术上可行，但尚未被移植到 CRISPR 场景。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析基于 RQ1.3 证据矩阵关联的知识图谱，系统性地对六类节点执行了针对性查询。KG 全局共包含 problem 节点 312 个、method 节点 312 个、metric 节点 175 个、dataset/benchmark 节点 114 个、limitation 节点 190 个、assumption/constraint 节点 108 个、paper 节点 138 个。其中与 CRISPR 递送效率、脱靶效应、免疫原性直接相关的核心节点约 40 余个，包括 problem_problem_off_target_effects_in_base_editing、problem_problem_aav_immunogenicity、problem_problem_immunogenicity_of_crispr_therapeutics、problem_problem_lack_of_efficient_and_safe_delivery_system_for_crispr_cas9 等。</p><p>分析共执行 50 次工具调用，对 problem / method / dataset / metric / limitation / assumption 六类节点均完成逐类查询，并通过 search_paper_sections 对 14 篇关键论文的原文段落进行了精读（含 0093、0098、0089、0195、0032、0036、0237、0575、0598、0246、0034、0585、0381、0436），提取了其中含关键数字与公式的原文证据。</p>
+<h3>核心形式化定义与候选统一指标的检索结果</h3>
+<table><thead><tr><th>概念/指标</th><th>形式化程度</th><th>表达式/构造</th><th>来源论文</th></tr></thead><tbody><tr><td>benefit-risk ratio / risk-adjusted editing yield</td><td>无（未检出）</td><td>证据矩阵内无任何论文给出该公式</td><td>—</td></tr>
+<tr><td>CRISOT-Spec 特异性评分</td><td>数学（含公式）</td><td>CRISOT-Spec = 10/(10 + P_off), P_off = Σ_k N_k·P_k（改写自 MIT specificity score）</td><td>[1]</td></tr>
+<tr><td>CRISOT-Score 位点切割概率</td><td>数学（含公式）</td><td>S_RD,i = Σ top-N 特征 SHAP 聚合</td><td>[1]</td></tr>
+<tr><td>CRISOT-Opti 优化</td><td>操作化</td><td>在 CRISOT-Score ≥ 0.8–0.85 硬约束下最大化 CRISOT-Spec</td><td>[1]</td></tr>
+<tr><td>on/off-target profile</td><td>定性二维图</td><td>纵轴平均 on-target 编辑率 × 横轴平均 off-target 编辑率</td><td>[2]</td></tr>
+<tr><td>跨平台设计矩阵（递送）</td><td>定性分级</td><td>靶器官 × cargo 大小 × 可接受安全风险（低/中/高）</td><td>[3][4]</td></tr>
+<tr><td>Weighted Brier Score</td><td>数学（含公式，跨领域）</td><td>决策论加权风险评分，分解为 discrimination/calibration</td><td>[13]</td></tr>
+<tr><td>加权 safety-effectiveness 总分</td><td>数学（含公式，跨领域）</td><td>Score_total = Σ w_i·Score_i / Σ w_i（风险等级 1–5 加权）</td><td>[14]</td></tr>
+</tbody></table>
+
+<h2 id="sec_论证主线一_收益轴与风险轴各自已量化_但缺乏共同标度">论证主线一：收益轴与风险轴各自已量化，但缺乏共同标度</h2>
+<p>收益侧与风险侧的关键指标在 KG 中均已有明确的量化证据，但产生于不同检测平台、灵敏度阈值、细胞类型与报告口径，无法直接相除得到有意义的比值。</p><p>在收益侧：0093 用 base editing efficiency 与 on-target editing frequency 量化，AID-2S/-3S 在 HEK293T 八个位点维持可比 on-target 活性 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；0089 用 transfection efficiency（HEK293 中 GFP 阳性 55–67.3%）与 target genomic excision efficiency（RDEB 角质细胞中 RNP 达 43.2%，质粒仅 8.2%）量化 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；0195 对 67 篇研究给出平台效率排序（LNP 肝脏 60–80%、AAV CNS/视网膜 30–80%）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。</p><p>在风险侧：0093 用 off-target mutation rate 量化，明确报告 AID-2S/-3S 相对 Target-AID 分别降低约 4.5 倍与 13.7 倍 R-loop off-target <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；0036 用 anti-AAV NAb 血清阳性率（不同衣壳 2–60%）量化免疫原性 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；0237 报告 SpCas9/SaCas9 预存 B/T 细胞免疫在一般人群中盛行率自 5% 到 95% 不等，跨研究差异巨大 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>关键障碍在于：0032 明确指出不同 assay/阈值/参考基因组产生的 off-target 数据集「无法有意义地比较」，跨研究 safety 对比缺乏参考标准 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各递送/编辑平台在体内非肝脏组织的编辑效率区间（%）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["AAV (CNS/视网膜)", "LNP (肝脏)", "金纳米颗粒", "外泌体", "阳离子聚合物"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "中位效率(%)", "type": "bar", "data": [55, 70, 30, 62, 15], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_论证主线二_最接近统一目标函数的是_特异性评分_族与_跨平台设计矩阵">论证主线二：最接近统一目标函数的是「特异性评分」族与「跨平台设计矩阵」</h2>
+<p>0098 的 CRISOT-Spec 是 KG 中唯一含量化公式的候选统一指标：CRISOT-Spec = 10/(10 + P_off)，其中 P_off = Σ_k N_k·P_k，先由 CRISOT-Score 聚合各位点被切割概率，再归一化到 (0,1]，公式明确改写自 MIT specificity score <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。这在数学上已是一个「收益（on-target 可切割性）× 风险（全基因组 off-target 概率）」聚合标量。CRISOT-Opti 进一步在 on-target 分数（0.8–0.85）为硬约束下最大化 CRISOT-Spec，本质即「约束下的风险-收益优化」，与 RQ 所求 risk-adjusted editing yield 在逻辑结构上同构——实测将 EMX1 位点 off-target reads 从 51967 降至 1072（约 50 倍），active off-target sites 从 57 降至 11，on-target 频率维持约 0.351（对照 WT 0.365）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>0093 则给出二维统一框架：以平均 on-target 编辑率为纵轴、平均 off-target 编辑率为横轴绘制 on/off-target profile，不同编辑器落在同一平面上即可比较——这是「同一标度比较」的雏形，只是未被压缩为单一标量 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。在递送层面，0598 与 0195 给出跨平台对照矩阵（cargo capacity × expression profile × 组织靶向 × 免疫原性 × 重新给药能力），0195 更提出「靶器官可及性 × cargo 大小 × 可接受安全风险」的三部分决策矩阵，是目前最接近统一比较框架的定性构造 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p>
+<h3>跨平台递送系统的效率-安全性取舍对照</h3>
+<table><thead><tr><th>递送平台</th><th>代表性效率/性质</th><th>免疫原性</th><th>重复给药</th><th>关键局限</th></tr></thead><tbody><tr><td>AAV</td><td>CNS/视网膜 30–80% [3]</td><td>中–高（2–60% 人群预存 NAb）[6]</td><td>受限（中和抗体阻止再转导）[4]</td><td>cargo 上限 ~4.7 kb，长期表达增脱靶</td></tr>
+<tr><td>LNP</td><td>肝脏 60–80% [3]</td><td>中（无抗载体中和免疫）[4]</td><td>可行 [4]</td><td>肝外靶向差，内体逃逸挑战</td></tr>
+<tr><td>非病毒聚合物（HPAE-EB）</td><td>HEK293 55–67.3%；RDEB 角质细胞 43.2%（RNP）[5]</td><td>低 [5]</td><td>可行</td><td>跨细胞系效率骤降</td></tr>
+<tr><td>慢病毒</td><td>造血细胞可 &gt;98% [3]</td><td>中 [4]</td><td>受限</td><td>整合致插入突变风险</td></tr>
+<tr><td>病毒样颗粒（VLP）</td><td>碱基编辑细胞 65%、小鼠肝 14% [3]</td><td>低–中 [4]</td><td>潜在可行</td><td>生产复杂、靶向特异性待优化</td></tr>
+</tbody></table>
+
+<h2 id="sec_论证主线三_跨领域方法学类比证明_可加权聚合_在技术上可行">论证主线三：跨领域方法学类比证明「可加权聚合」在技术上可行</h2>
+<p>证据矩阵虽来自生物医学，但 KG 内其他领域的成熟做法支持统一标量在技术上的可行性：0381 提出 Weighted Brier Score，把决策论代价权重引入总体风险评分，并分解为 discrimination 与 calibration 分量 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>；0436 用 clinical-risk-level（1–5）加权聚合安全性（safety score）与有效性（effectiveness score）为单一总分，公式为 Score_total = Σ w_i·Score_i / Σ w_i <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。这为 CRISPR 场景中「以风险严重度为权重，把 off-target + 免疫原性 + 效率聚合成一个可比较标量」提供了直接的可移植范式。</p>
+
+<h2 id="sec_定义驱动推演_约束违反_必然问题类别">定义驱动推演：约束违反 → 必然问题类别</h2>
+<p>若以 risk-adjusted editing yield = f(on-target benefit, off-target risk, immunogenicity risk) 为待构造公理，则三个自变量被违反分别对应 KG 中三类现存问题：(i) benefit 过低 → 低转染效率 / 低编辑效率（problem_low_transfection_efficiency、problem_limited_editing_efficiency）；(ii) off-target 风险升高 → off-target effects in base editing、CRISPR/Cas9 off-target effects；(iii) 免疫原性升高 → AAV immunogenicity、immunogenicity of CRISPR therapeutics。</p><p>KG 边证据支持该映射：0093 同时 `addresses` off-target 与 large molecular size 两类问题，且 `measured_by` 同时指向 base editing efficiency 与 off-target mutation rate 两个指标 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；0089 的 HPAE-EB 聚合物 `targets` lack of efficient and safe delivery system <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；high-fidelity Cas9 与 transient RNP 递送则同时降低风险而尽量不牺牲收益（0575 报告 HypaCas9 保持 &gt;95% 编辑效率且免疫反应降 60–75%）<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。因此，这三类问题在本质上是同一目标函数不同约束被违反的实例，而非彼此独立的问题——这正是定义驱动推演相对于经验归纳的核心价值。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "各类问题在「统一目标函数约束违反」映射中的分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "各类问题在「统一目标函数约束违反」映射中的分布", "type": "pie", "radius": "55%", "data": [{"name": "收益轴违反（低效率/低转染）", "value": 3}, {"name": "脱靶风险违反（DNA/RNA off-target）", "value": 4}, {"name": "免疫原性违反（AAV/Cas 免疫）", "value": 3}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">定义驱动推演的重要纪律：上述「三约束违反 → 三类问题」的映射是基于 KG 边证据的定性逻辑推断（inference_strength: weak/qualitative），而非数学蕴含。将自然语言的「因为…所以…」直接等同于数学的蕴含关系（→）是禁止的。所有跨轴统一关系均须标注为构造性结论。</div>
+
+<h2 id="sec_分歧点与关键证据缺口">分歧点与关键证据缺口</h2>
+<p>第一，**无形式化定义**：证据矩阵内没有任何论文给出把递送效率与安全性统一起来的显式数学公式，故本分析所有跨轴聚合结论均为 qualitative/operational 构造，不构成数学证明。</p><p>第二，**不可公度性**：0032 与 0036/0237 反复强调 off-target 检测流程与免疫检测缺乏标准化（「off-target datasets that cannot be meaningfully compared」「lack of standard protocols for immune assays」），这意味着任何跨研究的 benefit/risk 比在当前证据下都只在同一实验内有效 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>第三，**维度缺失**：0098 的 specificity score 只覆盖 off-target 序列风险，未纳入免疫原性；0237 的免疫原性指标亦未与编辑效率联合建模——二者从未被同一研究合并 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>第四，**定义冲突**：0093 的 off-target mutation rate 同时涵盖 RNA 与 DNA（gRNA 依赖/非依赖）off-target，而 0098 的 specificity 评分仅针对 DNA NGG-PAM off-target、明确排除 DNA/RNA bulge——两者定义的 off-target 空间不同，直接影响风险项分母，是统一标量必须先解决的语义统一问题 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>第五，**交付效率 ≠ 安全性** 的经验张力：0093 与 0575 表明工程化改造可同时改善两轴，但 0195/0598 显示高 in vivo 效率的病毒载体往往伴随高免疫原性（AAV 30–50% 人群预存中和抗体、无法重复给药），暗示两轴在载体选择层面存在真实 trade-off，而非总能双赢 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p>
+<div id="chart_3" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_3'));
+  c.setOption({"title": {"text": "关键指标的量级对比（对数示意）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["AID-2S R-loop 脱靶降幅(倍)", "AID-3S R-loop 脱靶降幅(倍)", "HypaCas9 抗体滴度降幅(%)", "HypaCas9 T细胞因子降幅(%)", "CRISOT-Opti 脱靶reads降幅(倍)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "数值", "type": "bar", "data": [4.5, 13.7, 60, 75, 50], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>RQ1.3 回答的完整度评估</h3>
+<table><thead><tr><th>维度</th><th>状态</th><th>说明</th></tr></thead><tbody><tr><td>是否存在显式形式化定义</td><td>否</td><td>证据矩阵内无 benefit-risk ratio 公式</td></tr>
+<tr><td>统一构造是否技术可行</td><td>是（有类比）</td><td>CRISOT-Spec + 加权聚合范式（0381/0436）</td></tr>
+<tr><td>跨组合可比性</td><td>受限</td><td>检测标准化缺口 + 维度缺失</td></tr>
+<tr><td>免疫原性是否纳入</td><td>否</td><td>从未与编辑效率在同一研究中联合建模</td></tr>
+<tr><td>整体回答</td><td>partial</td><td>只能作为操作化构造提出</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在若干覆盖不足与推断置信度问题，需明确说明。</p><p>1. **定义缺失导致的降级**：由于证据矩阵内不存在显式的统一目标函数形式化定义，本报告所有跨轴的聚合与等价性结论均为定性逻辑推断（inference_strength: weak），不能表述为数学证明。只有单轴内部的强蕴含（如 CRISOT-Spec 的显式公式、0093 的 4.5/13.7 倍降幅）具备 strong 置信度。</p><p>2. **可比性受限**：0032 与 0036/0237 明确记载 off-target 与免疫检测缺乏标准化，导致任何跨研究的 benefit/risk 比当前仅在同一实验内部有效，无法直接横向比较不同递送-编辑组合。</p><p>3. **维度缺失**：免疫原性维度（problem_problem_aav_immunogenicity、problem_problem_immunogenicity_of_crispr_therapeutics）与编辑效率指标从未被同一研究联合建模，使「完整」的 risk-adjusted editing yield 中的免疫原性项缺乏可标定的权重。</p><p>4. **跨领域类比的迁移风险**：0381（Weighted Brier Score）与 0436（加权 safety/effectiveness）来自医学 AI/风险预测领域，其加权聚合范式能否直接迁移到 CRISPR 生物系统（其中「风险严重程度」难以像临床风险等级那样离散化为 1–5）尚需验证，故相关 claim 置信度标为 medium。</p><p>5. **KG 边完整性**：KG 中 violates/instantiates 类边可能不完整，本分析通过语义搜索补全关联，但对部分 Problem 节点（origin_paper_id 为空的节点）的来源补全依赖文本匹配，可能遗漏个别关联。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ1.3「能否构造统一目标函数使不同递送-编辑组合可在同一标度上比较」，本报告的核心结论是：**可以构造，但当前只能作为操作化构造（operational/qualitative），而非已完成的形式化公理**。</p><p>统一目标函数所需的两条轴——收益轴（on-target editing efficiency / delivery efficiency）与风险轴（off-target mutation rate + immunogenicity）——在 KG 中各自都已有可量化的代表指标（0093/0089/0195 的收益指标；0093/0036/0237 的风险指标），但二者被分列报告、产生于不可公度的检测平台，且缺乏跨研究的标准化基准 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>最接近统一目标函数的两类现成构造是：（1）0098 的特异性评分族 CRISOT-Spec（含显式公式 CRISOT-Spec = 10/(10 + P_off)），它已在数学上实现了「收益（on-target 可切割性）× 风险（off-target 概率）」的聚合，且 CRISOT-Opti 已示范「约束下风险-收益优化」，与 risk-adjusted editing yield 逻辑同构 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；（2）0195/0598 的跨平台决策/设计矩阵，提供了同一标度下的定性横向比较框架 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p><p>具体推荐路径为：以 specificity-score（如 CRISOT-Spec）为 off-target 风险分量、以 immunogenicity-penalty（如 NAb 阳性率或预存免疫盛行率）为免疫风险分量、以 on-target/delivery efficiency 为收益分量，借鉴 0381/0436 的加权聚合范式（Score_total = Σ w_i·Score_i / Σ w_i）构建加权乘积或 Pareto 前沿 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。但该构造的跨组合可比性受制于三大缺口——检测标准化缺口、免疫原性维度与效率维度的建模缺位、以及 off-target 定义的语义冲突 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>——因此必须先在受控同平台数据中标定权重，才可能从「操作化构造」升级为可跨研究使用的标量指标。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Genome-wide CRISPR off-target prediction and optimization using RNA-DNA interaction fingerprints (CRISOT)&nbsp;<code style="font-size:0.82em;color:#888">0098_Genome-wide_CRISPR_off-target_prediction_and_optimization_us</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Cytosine base editing systems with minimized off-target effect and molecular size&nbsp;<code style="font-size:0.82em;color:#888">0093_Cytosine_base_editing_systems_with_minimized_off-target_effe</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;In vivo delivery strategies for therapeutic CRISPR genome editing&nbsp;<code style="font-size:0.82em;color:#888">0598_In_vivo_delivery_strategies_for_therapeutic_CRISPR_genome_ed</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Non-viral delivery of CRISPR–Cas9 complexes for targeted gene editing via a polymer delivery system&nbsp;<code style="font-size:0.82em;color:#888">0089_Non-viral_delivery_of_CRISPR_Cas9_complexes_for_targeted_gen</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Immunogenicity of Recombinant Adeno-Associated Virus (AAV) Vectors for Gene Transfer&nbsp;<code style="font-size:0.82em;color:#888">0036_Immunogenicity_of_Recombinant_Adeno-Associated_Virus_AAV_Vec</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Immunogenicity of CRISPR therapeutics—critical considerations for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0237_immunogenicity_of_crispr_therapeuticscritical_considerations</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Navigating off-target effects in CRISPR-based genome editing for safer gene therapies&nbsp;<code style="font-size:0.82em;color:#888">0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Research on Reducing the Immunogenicity of Nucleases in Gene Therapy&nbsp;<code style="font-size:0.82em;color:#888">0575_Research_on_Reducing_the_Immunogenicity_of_Nucleases_in_Gene</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Biomaterials-mediated CRISPR/Cas9 delivery: recent challenges and future prospects&nbsp;<code style="font-size:0.82em;color:#888">0246_Biomaterials-mediated_CRISPRCas9_delivery_recent_challenges</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Gene Editing for the Treatment of Hypercholesterolemia&nbsp;<code style="font-size:0.82em;color:#888">0034_Gene_Editing_for_the_Treatment_of_Hypercholesterolemia</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;CRISPR-Cas9 and Base Editing: Recent Clinical Progress and Delivery Challenges&nbsp;<code style="font-size:0.82em;color:#888">0585_CRISPR-CAS9_AND_BASE_EDITING_RECENT_CLINICAL_PROGRESS_AND_DE</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Weighted Brier Score - an Overall Summary Measure for Risk Prediction Models with Clinical Utility Consideration&nbsp;<code style="font-size:0.82em;color:#888">0381_weighted_brier_score_an_overall_summary_measure_for_risk_pre</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;A Novel Evaluation Benchmark for Medical LLMs: Illuminating Safety and Effectiveness&nbsp;<code style="font-size:0.82em;color:#888">0436_a_novel_evaluation_benchmark_for_medical_llms_illuminating_s</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.3 · 2026-10-13 20:21</footer>
+</div>
+</body>
+</html>

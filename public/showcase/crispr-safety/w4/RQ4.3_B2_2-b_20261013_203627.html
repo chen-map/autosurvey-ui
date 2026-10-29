@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.2-b 分析报告</h1>
+<div class="meta">RQ [RQ4.3]：[父问题 RQ4] 如何把大量定性 limitation 与 assumption/constraint 结构化为可计算的风险模型（风险矩阵 / 概率图模型 / 贝叶斯网络），以支撑临床前到临床的可复现决策？
+[本子问题 RQ4.3] 现有临床转化路线图（如 #5/#8 roadmap 论文）提供了哪些可结构化的风险要素，能否映射为风险矩阵或贝叶斯网络的节点与条件概率？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0109_beyond_probabilityimpact_matrices_in_project_risk_management, 0350_the_digital_divide_in_process_safety_quantitative_risk_analy, 0389_safebench_a_safety_evaluation_framework_for_multimodal_large, 0396_a_geometric_analysisbased_safety_assessment_framework_for_ma, 0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing, 0189_Current_and_prospective_strategies_for_advancing_the_targete）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_论证主线一_路线图提供的是_节点级_而非_参数级_风险要素">论证主线一：路线图提供的是「节点级」而非「参数级」风险要素</a></li>
+<li><a href="#sec_论证主线二_风险矩阵映射已有工程先例_但来自非医学领域">论证主线二：风险矩阵映射已有工程先例，但来自非医学领域</a></li>
+<li><a href="#sec_论证主线三_通往贝叶斯网络的核心缺口是_条件概率">论证主线三：通往贝叶斯网络的核心缺口是「条件概率」</a></li>
+<li><a href="#sec_分歧点与证据缺口">分歧点与证据缺口</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告对子问题 RQ4.3——「现有临床转化路线图（如 #5/#8 roadmap 论文）提供了哪些可结构化的风险要素，能否映射为风险矩阵或贝叶斯网络的节点与条件概率？」——进行了系统性的知识图谱分析。分析表明：现有临床转化路线图论文系统性地提供了三类可结构化风险要素：(a) 离散化的风险类别/子类（taxonomy），(b) 影响风险的因子变量（靶组织可达性、cargo 类型、表达时长），(c) 定性-半定量的严重度/概率描述（如 RNP 脱靶率 &lt;1% vs 质粒 5–15%、非肝组织体内效率 &lt;30%）<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。这些要素可以直接映射为风险矩阵的行列，也可以作为贝叶斯网络的节点，但路线图论文本身不提供条件概率表（CPT）。</p><p>因此，从节点到「可计算贝叶斯网络」之间存在一条关键证据缺口，必须借助非医学领域的概率建模论文（LOPA+BN、自动驾驶 BN 风险图、层次贝叶斯安全风险模型、Monte Carlo 风险优先化）来填补 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。总体结论为 partial（部分回答）：路线图提供了「节点就绪」的丰富要素，但「参数缺失」，从节点到可计算概率模型仍需跨领域引入 CPT 构造方法与专家先验机制。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）的结构化节点与边数据，并结合论文原文的语义检索（RAG）进行证据溯源。使用的 KG 节点类型覆盖全部六类：problem、method、paper、limitation、assumption、metric，以及通过关系边间接获取的 dataset 节点。论文节点总计 138 篇（含 312 个问题节点、312 个方法节点、190 个 limitation 节点、108 个 assumption 节点、175 个 metric 节点）。</p><p>分析的证据矩阵聚焦 RQ4.3 冻结的 6 篇论文，并扩展检索了 8 篇强相关论文（含 3 篇非医学领域的风险建模方法论论文）。共执行 27 次工具调用，其中 13 次为论文原文语义检索（search_paper_sections）。所有关键结论均基于工具返回的真实节点描述、边证据（interaction evidence 字段）与原文段落，未使用先验知识填充。</p>
+<h3>路线图论文提供的可结构化风险要素 vs 风险矩阵/BN 映射</h3>
+<table><thead><tr><th>路线图论文</th><th>提供的风险要素</th><th>可映射的矩阵维度</th><th>可映射的 BN 节点</th><th>是否提供 CPT</th></tr></thead><tbody><tr><td>0195 CRISPR/Cas9 递送 roadmap [1]</td><td>三段式决策矩阵（靶器官可达性×cargo类型×安全风险）；编辑效率量值</td><td>行=载体/组织；列=效率、安全</td><td>靶组织、cargo类型、表达时长、载体</td><td>否</td></tr>
+<tr><td>0189 EV 递送 roadmap [6]</td><td>制造/表征/生物分布/给药途径等 EV 转化障碍</td><td>行=EV子类；列=可扩展性</td><td>EV亚型、隔离方法、给药途径</td><td>否</td></tr>
+<tr><td>0032 off-target 综述 [7]</td><td>种子区错配、染色质可及性、结构变异检测敏感性</td><td>行=风险来源；列=严重度/可检测性</td><td>错配容忍度、染色质状态、SV频率</td><td>否</td></tr>
+<tr><td>0598 in vivo 递送更新 [8]</td><td>组织特异性递送参数、监管非临床要求</td><td>行=靶器官；列=暴露/持久性</td><td>组织暴露、持久性、清除率</td><td>否</td></tr>
+<tr><td>0389 SafeBench 风险 taxonomy [9]</td><td>8大类23子类风险分类 + SRI/ASR 双指标</td><td>行=风险类别；列=子类严重度</td><td>风险类别节点、子类节点</td><td>否（仅评分）</td></tr>
+<tr><td>0026 SQUADfps [10]</td><td>ISO 13849风险图（S×F×P）、RPN=sev×occ×det</td><td>完整矩阵结构（自动化）</td><td>危害节点、PLr节点</td><td>间接（风险图映射）</td></tr>
+</tbody></table>
+
+<h2 id="sec_论证主线一_路线图提供的是_节点级_而非_参数级_风险要素">论证主线一：路线图提供的是「节点级」而非「参数级」风险要素</h2>
+<p>0195 对 67 项研究再分析后明确提出，临床转化瓶颈已从「核酸酶设计」转移到「载体介导的递送障碍」，并给出量化趋势：体外编辑效率常 &gt;80%，但非肝组织体内效率对多数非病毒系统 &lt;30%；RNP 递送脱靶率典型 &lt;1%，质粒为 5–15%，mRNA 约降低 5 倍 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。这些是可赋值的因子变量，天然对应贝叶斯网络的 Influence Factor Variable（IFV）。0032 进一步把 in silico 预测工具明确区分为「穷举搜索工具」与「预测打分模型」两类，并给出可结构化的风险维度：种子区（seed region）错配容忍度、染色质可及性、结构变异（SV）检测敏感性——多数短读长测序方法会遗漏兆碱基级缺失 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。这些维度恰好是风险矩阵中「严重度」维度的量化来源。</p>
+
+<h2 id="sec_论证主线二_风险矩阵映射已有工程先例_但来自非医学领域">论证主线二：风险矩阵映射已有工程先例，但来自非医学领域</h2>
+<p>0026 SQUADfps 用 ISO 13849 风险图（严重度 S × 频率 F × 可避免性 P）自动生成 required performance level (PLr)，并用 RPN = severity × occurrence × detection 生成 process-FMEA，实现了「定性危害 → 结构化评分 → 自动化风险评估」的完整链条 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。0167 VSRQ 用改进模糊 AHP（I-FAHP）+ 模糊聚类，在 OpenPilot 上达到 94.36% 准确率与 73.43% 召回，证明定性风险要素可定量化 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。0109 则直接批判概率-影响矩阵的局限（无法处理风险间相互依赖、概率影响估计不精确），改用 Monte Carlo 对每个风险在工期/成本上的绝对影响做优先化排序 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。这对医学风险矩阵的核心启示是：路线图中的定性 limitation 应被建模为「分布函数」而非单点估计。</p>
+<div id="chart_1" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "风险要素可结构化程度分布（按论文）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "风险要素可结构化程度分布（按论文）", "type": "pie", "radius": "55%", "data": [{"name": "节点级就绪、缺CPT (0195/0189/0032/0598)", "value": 4}, {"name": "完整矩阵结构范式 (0026)", "value": 1}, {"name": "taxonomy+双指标评分 (0389)", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_论证主线三_通往贝叶斯网络的核心缺口是_条件概率">论证主线三：通往贝叶斯网络的核心缺口是「条件概率」</h2>
+<p>0350 明确给出 BN 的定义——基于贝叶斯定理的 DAG，依赖随机变量的条件依赖结构，其 CPT「通常基于专家知识」，并用 LOPA 公式 P_consequence = IEF × ∏PFD_i 计算后果频率，还引入 credal network 用区间替代单点概率以处理数据不确定性 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。0409 给出自动驾驶风险的标准 BN 骨架：Scenario → Hazardous Behavior → Collision → Injury，风险量化为 λ_i,s = (λ_s·p_b)·p_c·p_i <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。0335 提出层次贝叶斯安全风险模型，用 Dirichlet/Gamma/Beta 先验将稀疏的主动安全观测映射为事故率与伤害严重度分布 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。这三篇共同证明：路线图给出的节点（如「递送载体类型」「靶组织」「表达时长」）可以被赋予 CPT，只要引入专家先验——这正是医学路线图论文缺失的环节。</p>
+<div id="chart_2" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "路线图可映射的贝叶斯网络节点（就绪度评估）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["靶组织可达性", "cargo类型", "表达时长", "载体类型", "脱靶严重度", "免疫原性", "临床可扩展性"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "就绪度评分(1-5)", "type": "bar", "data": [5, 5, 4, 5, 4, 3, 4], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>非医学领域概率建模方法对 CPT 缺口的可迁移性</h3>
+<table><thead><tr><th>论文</th><th>方法</th><th>提供的机制</th><th>可迁移性</th><th>限制</th></tr></thead><tbody><tr><td>0350 [2]</td><td>LOPA + BN</td><td>CPT基于专家知识；credal network处理不确定性</td><td>高（直接提供CPT构造）</td><td>面向过程工业人-AI协作</td></tr>
+<tr><td>0409 [3]</td><td>自动驾驶BN风险图</td><td>Scenario→Behavior→Collision→Injury链条</td><td>中（因果链需重构）</td><td>无碰撞中介，医学链不同</td></tr>
+<tr><td>0335 [4]</td><td>层次贝叶斯安全模型</td><td>稀疏观测→事故率分布（Dirichlet/Gamma/Beta）</td><td>高（处理稀疏数据）</td><td>假设危害相互独立</td></tr>
+<tr><td>0109 [5]</td><td>Monte Carlo 风险优先化</td><td>风险建模为分布函数；绝对影响排序</td><td>中（需分布参数）</td><td>假设风险相互独立</td></tr>
+<tr><td>0026 [10]</td><td>ISO 13849 风险图+RPN</td><td>定性危害→PLr/RPN自动映射</td><td>中（矩阵结构可借鉴）</td><td>制造系统参数与生物不同构</td></tr>
+</tbody></table>
+
+<h2 id="sec_分歧点与证据缺口">分歧点与证据缺口</h2>
+<p>第一，CPT 缺口：所有医学路线图论文（0195/0189/0032/0598）均未提供任何条件概率表或节点间量化依赖，映射到贝叶斯网络为「节点就绪、参数缺失」。第二，标准化缺口：0032 明确指出当前 off-target 数据集因检测方法、灵敏度阈值、参考基因组不同而「无法有意义地比较」，缺乏参考标准，这直接损害 BN 参数的可迁移性 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>；0189 同样指出 EV 制造/分离/表征「缺乏标准化操作指南」<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。第三，独立性假设风险：0109 与 0335 均假设风险相互独立 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，但医学路线图中的风险（免疫原性受表达时长影响、脱靶受染色质状态影响）本质上是条件依赖的——这正是 BN 相对矩阵的优势，却也是参数估计更困难之处。第四，不确定性：<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> SafeBench 提供 8 大类 23 子类的风险 taxonomy 与 SRI/ASR 双指标，是少见的「结构化风险分类+量化评估」范式，但其局限（每类仅 100 条查询、伦理排除极端场景）提示成熟的风险分类本身也面临覆盖度与样本量问题。</p>
+<div class="note">映射方法论综合结论：路线图要素 → 风险矩阵为「直接可行」（0026/0389 提供成熟范式）；路线图要素 → 贝叶斯网络为「节点可行、参数缺失」，需引入 0350 的专家先验 CPT 机制与 0335 的稀疏数据层次贝叶斯方法进行跨领域移植。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在以下局限：(1) KG 中医学路线图论文的 assumption/limitation 节点以离散事件描述为主，缺乏显式的概率数值，导致「节点→CPT」映射的量化支撑不足；(2) 证据矩阵冻结的 6 篇论文中，0396 GARSA（水上路径安全评估）与医学临床转化风险关联较弱，仅提供几何安全评估的类比参考；(3) 055/0389 等安全基准论文的风险 taxonomy 面向大语言模型安全，其风险类别（如仇恨言论、儿童虐待）与临床前-临床转化风险（脱靶、免疫原性、致瘤性）存在领域异质性，映射需谨慎；(4) 全部关键定量结论来源于论文原文检索（置信度 0.8–0.9），但 0195 自陈效率测量方法异质（流式/PCR/测序），部分量值不可直接荟萃。综上，映射结论的置信度在「节点级」为高，「参数级」为中低。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ4.3 的回答为 partial（部分回答）。现有临床转化路线图论文确实系统性地提供了可结构化的风险要素——包括风险 taxonomy、影响风险的因子变量、以及定性-半定量的严重度/概率描述——这些要素可以直接映射为风险矩阵的行列结构（0026/0389 已提供成熟工程范式），也可以作为贝叶斯网络的节点。然而，从节点到「可计算贝叶斯网络」的核心环节——条件概率表（CPT）——在医学路线图证据中完全缺失 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。填补这一缺口需跨领域引入 0350 的 LOPA+BN 专家先验机制、0335 的层次贝叶斯稀疏数据建模方法，以及 0109 将风险建模为分布函数的思路 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。未来工作应聚焦于：为路线图中的每个关键节点（靶组织、cargo 类型、表达时长、载体类型、脱靶严重度、免疫原性、临床可扩展性）建立带专家先验的条件概率表，并对条件依赖关系（如表达时长→免疫原性）显式建模，从而将定性 limitation 结构化为可计算的风险模型。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Therapeutic CRISPR/Cas9 delivery approaches: strengths, limitations, and a roadmap for clinical translation&nbsp;<code style="font-size:0.82em;color:#888">0195_Therapeutic_CRISPRCas9_delivery_approaches_strengths_limitat</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;The Digital Divide in Process Safety: Quantitative Risk Analysis of Human-AI Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0350_the_digital_divide_in_process_safety_quantitative_risk_analy</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Safety Integrity Framework for Automated Driving&nbsp;<code style="font-size:0.82em;color:#888">0409_safety_integrity_framework_for_automated_driving</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Modeling and mitigation of occupational safety risks in dynamic industrial environments&nbsp;<code style="font-size:0.82em;color:#888">0335_modeling_and_mitigation_of_occupational_safety_risks_in_dyna</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Beyond probability-impact matrices in project risk management: A quantitative methodology for risk prioritisation&nbsp;<code style="font-size:0.82em;color:#888">0109_beyond_probabilityimpact_matrices_in_project_risk_management</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Current and prospective strategies for advancing the targeted delivery of CRISPR/Cas system via extracellular vesicles&nbsp;<code style="font-size:0.82em;color:#888">0189_Current_and_prospective_strategies_for_advancing_the_targete</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Navigating off-target effects in CRISPR-based genome editing for safer gene therapies&nbsp;<code style="font-size:0.82em;color:#888">0032_Navigating_off-target_effects_in_CRISPR-based_genome_editing</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;In vivo delivery strategies for therapeutic CRISPR genome editing&nbsp;<code style="font-size:0.82em;color:#888">0598_In_vivo_delivery_strategies_for_therapeutic_CRISPR_genome_ed</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;SafeBench: A Safety Evaluation Framework for Multimodal Large Language Models&nbsp;<code style="font-size:0.82em;color:#888">0389_safebench_a_safety_evaluation_framework_for_multimodal_large</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;SQUADfps: Integrated model-based machine safety and product quality for flexible production systems&nbsp;<code style="font-size:0.82em;color:#888">0026_squadfps_integrated_modelbased_machine_safety_and_product_qu</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;VSRQ: Quantitative Assessment Method for Safety Risk of Vehicle Intelligent Connected System&nbsp;<code style="font-size:0.82em;color:#888">0167_vsrq_quantitative_assessment_method_for_safety_risk_of_vehic</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.3 · 2026-10-13 20:36</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-a 分析报告</h1>
+<div class="meta">RQ [RQ3.2]：[父问题 RQ3] 多智能体协作的评测基准与指标呈现何种碎片化格局，如何构建跨任务可比的统一评测框架？
+[本子问题 RQ3.2] 常用指标（Accuracy、Success rate、Pass@1、Completeness、Executability、Efficiency 等）的语义定义是否对齐，是否存在同名异义或同义异名？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0283_An_Agentic_System_for_Schema_Aware_NL2SQL_Generation, 0337_LAFA_Agentic_LLM-Driven_Federated_Analytics_Over_Decentraliz, 0644_MAHL_Multi-Agent_LLM-Guided_Hierarchical_Chiplet_Design_with, 0298_Large_Language_Model-Enabled_Multi-Agent_Manufacturing_Syste, 0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati, 0523_Transmission_With_Machine_Language_Tokens_A_Paradigm_for_Tas）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_发现一_同名异义_same_name_different_meaning_最突出的病灶">发现一：同名异义（same-name-different-meaning）— 最突出的病灶</a></li>
+<li><a href="#sec_发现二_同义异名_synonymy_相同定义使用不同标签">发现二：同义异名（synonymy）— 相同定义使用不同标签</a></li>
+<li><a href="#sec_发现三_文献明确承认_taxonomy_缺失_重构动机的一手证据">发现三：文献明确承认 taxonomy 缺失（重构动机的一手证据）</a></li>
+<li><a href="#sec_发现四_语义漂移的量纲后果_跨任务数值不可比">发现四：语义漂移的量纲后果 — 跨任务数值不可比</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ3.2——「常用指标（Accuracy、Success rate、Pass@1、Completeness、Executability、Efficiency 等）的语义定义是否对齐，是否存在同名异义或同义异名？」——进行了系统性的知识图谱（KG）证据分析。分析基于 278 个 Metric 节点、454 个 Problem 节点、380 个 Method 节点、243 个 Dataset 节点、170 个 Limitation 节点、119 个 Assumption 节点，结合 6 篇冻结证据论文与多篇对照论文的原文段落核查，共完成 42 次工具调用、18 篇论文深读。</p><p>核心结论：**六类常用指标的语义定义系统性未对齐，同名异义与同义异名并存。** 以「Success rate」为例，同一 KG 节点（metric_metric_success_rate_dff5583d94）被 31 条以上 measured_by 边指向，但其定义在精确串匹配、操作可执行正确率、物理无碰撞/超时三类互斥语义间漂移 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；「Executability」在三个框架中分别为二值比例、1–4 序数量表、编译通过百分比，跨越两种测量层级 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>；代码生成任务中 Pass@1、Success rate、Generation accuracy、Executability、Pass@5 实为同义异名 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。这一碎片化已被多篇综述明确承认为结构性缺陷 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析以知识图谱为唯一结构化数据源，通过 get_entity_by_type 批量加载全部七类节点，再用 get_entity_by_constraint / get_relation / get_head_entity 进行定向查询，并用 search_paper_sections 对关键论文原文进行语义检索以获取细粒度证据。</p><p>数据规模如下：Metric 节点 278 个、Problem 节点 454 个、Method 节点 380 个、DatasetBenchmark 节点 243 个、Limitation 节点 170 个、AssumptionConstraint 节点 119 个、Paper 节点 186 个。核心证据来自 6 篇冻结论文（0283、0337、0644、0298、0401、0523）及 12 篇对照论文（0102、0203、3825、3819、3810、3842、3831、3827、0210、0204、0892、0980）。证据类型包括 KG 的 measured_by 边定义（evidence 字段）与论文原文段落（paragraph_text）。</p>
+<h3>六类核心指标的语义发散矩阵（同名异义证据）</h3>
+<table><thead><tr><th>指标名</th><th>KG 节点</th><th>定义 A（来源）</th><th>定义 B（来源）</th><th>定义 C（来源）</th><th>异义类型</th></tr></thead><tbody><tr><td>Success rate</td><td>metric_metric_success_rate_dff5583d94</td><td>输出与 ground-truth 精确匹配 [1]</td><td>生成的 FA 操作可执行且正确（DAG 完成率）[2]</td><td>无碰撞/无超时/无干扰则成功 [3][4]</td><td>精确匹配 vs 可执行率 vs 物理约束</td></tr>
+<tr><td>Accuracy</td><td>metric_metric_accuracy_f676b93ef9</td><td>实体链接正确比例 [12]</td><td>二值响应与 ground truth 对比 [13]</td><td>猜测值与真值的精度差异 [14]</td><td>分类正确率 vs 二值判定 vs 数值误差</td></tr>
+<tr><td>Executability</td><td>metric_metric_executability_518ff19fa0</td><td>可执行架构百分比（比例）[5]</td><td>1–4 级人类评分（序数）[6]</td><td>无编译错误软件百分比 [7]</td><td>比例 vs 序数（跨越测量层级）</td></tr>
+<tr><td>Pass@1 / Pass@5</td><td>metric_metric_pass_1_b0f32ec13a / pass_5</td><td>简单 RTL 设计成功率 [5]</td><td>概率期望 1-C(n-c,k)/C(n,k) [14]</td><td>同 Pass@1 但 k=5 生成精度 [5]</td><td>单次比例 vs 概率期望</td></tr>
+<tr><td>Completeness</td><td>（[7][8] 中定义）</td><td>无 TODO 占位符比例 [7]</td><td>需求规格完整性 0-2 分 [15]</td><td>（软件完整性，无统一阈值）</td><td>代码符号 vs 需求覆盖</td></tr>
+<tr><td>Efficiency</td><td>metric_metric_computation_footprint / cost</td><td>Validation efficiency 51.05% [16]</td><td>6 类 FA 操作计数 [2]</td><td>Cost per Prompt + Latency（Pareto）[17]</td><td>验证效率 vs 操作数 vs 货币/时延</td></tr>
+</tbody></table>
+
+<h2 id="sec_发现一_同名异义_same_name_different_meaning_最突出的病灶">发现一：同名异义（same-name-different-meaning）— 最突出的病灶</h2>
+<p>同名异义是本问题最严重且最具迷惑性的缺陷。KG 中「Success rate」作为单一节点，被 31 条以上 measured_by 边指向，说明论文群体普遍复用了同一标签，但定义彼此冲突。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>（0203）将其定义为「A task is deemed successful only if its output exactly matches the ground-truth answer」（精确串匹配）；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>（0337 LAFA）将其表述为「The percentage of generated FA operations that are executable and correct」，本质是执行计划（DAG）完成率，报告值在 95–100% 高位，而 zero-shot 仅 10–15%；<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>（0884）等机器人协作论文定义为「A task is considered failed if there are collisions, interferences between agents, or if the task times out」——把碰撞/超时计为失败；<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>（0892）更细化为五类失败条件（token 超限、未达成共识、语法检查迭代超限、规划迭代超限、碰撞）。同一标签，一处是精确串匹配，一处是操作可执行性，一处是物理无碰撞，语义不可通约。</p><p>「Executability」的异义跨越了测量层级这一更严重的鸿沟：<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>（0401 NADER）定义为「percentage of successfully executable modified architectures」（二值比例）；<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>（3810 MetaGPT）定义为「this metric rates code from 1 (failure/non-functional) to 4 (flawless)」（四阶序数量表）；<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>（3819 Croto）定义为「percentage of software that compiles without errors」（编译通过百分比）。同一个词在三处分别是比例、序数、比例，尺度与量纲完全不同，任何跨论文数值比较都失去意义。「Accuracy」节点关联约 50 条边，定义涵盖实体链接正确比例 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、分类准确率、二值响应正确性 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、数值精度 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 等多类任务。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各 Metric 节点被 measured_by 边引用的语义分歧广度", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["Success rate", "Accuracy", "Executability", "Pass@k", "Efficiency", "Cost/Latency"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "关联 measured_by 边数（抽样）", "type": "bar", "data": [31, 50, 6, 4, 8, 12], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_发现二_同义异名_synonymy_相同定义使用不同标签">发现二：同义异名（synonymy）— 相同定义使用不同标签</h2>
+<p>与同名异义相反，同义异名指多个不同标签实为同一底层度量。在代码生成任务中，Pass@1、Success rate、Generation accuracy、Executability、Pass@5 均在度量「生成产物是否通过语法 + 功能测试」这一事件，却使用不同名称。<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>（0644 MAHL）原文明确：「when we measure the pass rate, we only count it as a success when it passes both the syntax and functional tests」——这与 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>（3819）的 Executability 定义（编译通过）与 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>（0980）的 Task Success Rate（binary success/failure）指向同一底层事件。<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 同时使用 Pass@1（简单 RTL 设计成功率）与 Pass@5（真实 chiplet 生成精度，从 0 提升至 0.72）两个标签，前者被 <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>（0283）称为 generation accuracy，又被 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 称为 success rate。</p><p>在软件质量维度上，同义异名体现为分解方案冲突：<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 采用 Completeness–Executability–Consistency–Quality 四元组，而 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>（MetaGPT）采用 Executability(1-4)–Cost–Code Statistics–Productivity–Human Revision Cost 五元组。二者共享 Executability，但其余维度几乎无交集，「软件质量」因此被两种不可比的方式分解。类似地，数据可操作性度量中，<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>（LAFA）用 Completion ratio + Operation count，<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>（NL2SQL）用 Execution accuracy + Validation efficiency + Cost per query（$0.0085），<sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup>（0210）用 Accuracy–Cost per Prompt–Latency 三维 Pareto 前沿，<sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup>（0523）用 Task accuracy + Transmission overhead + Robustness。</p>
+<h3>同义异名对照：同一底层事件的不同标签</h3>
+<table><thead><tr><th>底层事件</th><th>标签 1（来源）</th><th>标签 2（来源）</th><th>标签 3（来源）</th></tr></thead><tbody><tr><td>生成产物通过语法+功能测试</td><td>Pass@1 [5]</td><td>Success rate [3]</td><td>Executability（编译通过）[7]</td></tr>
+<tr><td>软件完成度（无占位符）</td><td>Completeness [7]</td><td>Code Statistics [6]</td><td>—</td></tr>
+<tr><td>资源/代价度量</td><td>Computation footprint [2]</td><td>Cost per Prompt [17]</td><td>Cost per query [16]</td></tr>
+<tr><td>下游任务正确性</td><td>Task accuracy [18]</td><td>Execution accuracy [16]</td><td>Accuracy [12]</td></tr>
+</tbody></table>
+
+<h2 id="sec_发现三_文献明确承认_taxonomy_缺失_重构动机的一手证据">发现三：文献明确承认 taxonomy 缺失（重构动机的一手证据）</h2>
+<p>指标语义未对齐并非孤立现象，而是被多篇综述明确承认为结构性缺陷，这构成重构统一框架动机的文献级证据。<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>（0102 综述）直接针对 problem_problem_fragmented_landscape_of_llm_and_agent_evaluation_ca1b59cfad 指出：「The landscape of evaluation benchmarks, frameworks, and collaboration protocols for LLMs and autonomous AI agents is fragmented and lacks a unified taxonomy」，并以 Systematic review and unified framework 方法回应。<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>（3825）精准定位了「成功」的多义性：「The definition of success is often unclear as it can refer to either from the user perspective or from the environment/system，as users may not fully know what happens behind-the-scenes」——据此提出 Overall/Supervisor/User-side/System-side 四种 Goal Success Rate（GSR）以显式消歧。<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>（3827 具身智能综述）指出「lacking standardized evaluation criteria ... Existing benchmarks focus on task-specific metrics」。<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>（3831 TRiSM 综述）给出五维评估框架（Trustworthiness/Explainability/User-Centered/Coordination/Composite），并警告「scalarization can hide critical failures」，建议报告完整 metric vector 而非单一加权标量。</p>
+<div class="note">关键证据：<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 明确使用「lacks a unified taxonomy」表述，是本 RQ 重构动机最直接的文献锚点；<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 用 87–100% 的人工标注一致性验证了其四类 GSR 消歧方案的有效性（Table 10，agreement ratios 0.87–1.00），说明显式操作化定义可以恢复指标可比性。</div>
+
+<h2 id="sec_发现四_语义漂移的量纲后果_跨任务数值不可比">发现四：语义漂移的量纲后果 — 跨任务数值不可比</h2>
+<p>指标语义未对齐的直接后果是跨任务数值不可比。以 Success rate 为例：<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>（0203）报告三个 agent 框架在 34 个编程任务上的成功率约 50%（TaskWeaver 58.82%、MetaGPT 50.00%、AutoGen 50.00%）；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>（LAFA）报告 completion ratio 达 95–100%；<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>（0892）报告成功率随机器人数量增加先升后降。这三个数字看似同一指标，实则：前者失败判定基于 ground-truth 精确匹配，中者基于 DAG 结构有效性，后者基于五类物理/对话条件。直接比较会产生严重误导。</p><p>效率维度的量纲差异同样显著：<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>（0283）的 Validation efficiency（VES）= 51.05%，是将正确率与执行效率合并的复合指标；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>（LAFA）的 Operation count 是 6 类 FA 操作的绝对计数（Acce/Enc/Aggr/DP/Dec/Cal）；<sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup>（0210）的 Cost per Prompt 以美元计；<sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup>（0523）的 Transmission overhead 以传输数据量计。四者分属比值、计数、货币、字节四种量纲，无法在同一坐标轴上比较。</p>
+<h3>Success rate 在不同论文中的数值与定义对照（不可比性演示）</h3>
+<table><thead><tr><th>论文</th><th>报告值</th><th>失败判定条件</th><th>度量对象</th></tr></thead><tbody><tr><td>[1] 0203</td><td>约 50%（TaskWeaver 58.82%）</td><td>输出与 ground-truth 不精确匹配</td><td>编程任务端到端完成</td></tr>
+<tr><td>[2] 0337 LAFA</td><td>95–100%（对照 zero-shot 10–15%）</td><td>生成的 FA 操作序列不可执行或顺序错误</td><td>多智能体 DAG 结构有效性</td></tr>
+<tr><td>[3] 0884</td><td>随方法波动</td><td>碰撞、agent 间干扰、超时</td><td>机器人协作物理任务</td></tr>
+<tr><td>[4] 0892</td><td>随机器人数量先升后降</td><td>token 超限/未共识/语法迭代/规划迭代/碰撞</td><td>多机器人规划</td></tr>
+<tr><td>[19] 0298</td><td>2-step=1.0, 4-step=0.86</td><td>case study 任务完成 + 错误率分解</td><td>制造业多智能体任务</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析的证据覆盖存在若干不足，需审慎对待。第一，KG 中多数 Metric 节点的 origin_paper_id 字段为空，无法全量回溯每个定义的具体来源论文，因此「同名异义」的统计广度（如 Success rate 关联 31 条边 vs Accuracy 关联 50 条边）是基于抽样而非全量枚举。第二，本分析聚焦 6 篇冻结论文 + 12 篇对照论文，虽已覆盖六类指标全部命中同名异义/同义异名，但可能存在采样偏差——未被抽样的论文或许使用了更一致的定义。第三，对 Pass@k 在强化学习训练场景（如 <sup class="cite"><a href="#ref-20" style="text-decoration:none">[20]</a></sup> 1151 的 GRPO 训练）与推理场景的语义差异覆盖不足，而这两种场景下 Pass@k 的计算语义本就不同。第四，部分结论（如 Completeness 的异义）依赖单篇论文定义，置信度相对较低（0.85）。第五，指标对齐的「应然」标准本身在文献中存在分歧：<sup class="cite"><a href="#ref-19" style="text-decoration:none">[19]</a></sup>（0298）侧重定性分析，<sup class="cite"><a href="#ref-21" style="text-decoration:none">[21]</a></sup>（0204）ChaosEater 甚至声明「rather than creating a benchmark that focuses on quantitative metrics, we evaluate ... qualitatively」，这类立场与统一量化框架的诉求相冲突，说明重构统一框架面临方法论层面的阻力。</p>
+<div class="note">认知基准面纪律：本分析以「约束满足」为判断标准——指标定义只要满足跨任务可映射性与语义互斥性即合格，无需额外证明其直觉合理性；反之，直觉合理但跨论文数值不可通约的定义（如 Success rate 的三重语义）必须被标记为对齐失败。</div>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ3.2，本分析的结论是明确的：**常用指标的语义定义系统性未对齐，同名异义与同义异名并存，且这一缺陷已被多篇综述明确承认为结构性 taxonomy 缺失。** 六类指标（Accuracy、Success rate、Pass@1、Completeness、Executability、Efficiency）无一例外存在跨任务、跨论文的语义漂移，其中 Success rate 与 Executability 的同名异义最为严重，跨越了比例/序数两种测量层级。</p><p>跨任务不可比的根因因此可以定位为：评测体系缺少「度量对象 × 操作化定义」的正交分解。文献中的消歧尝试提供了可借鉴的方向：<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>（3825）通过区分 user-side/system-side 视角提出四类 GSR；<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>（3831）主张报告完整 metric vector 而非标量复合，以避免「scalarization can hide critical failures」。</p><p>面向统一评测框架的构建，本 RQ 的启示是：应对每个指标强制执行「操作化定义登记」，将度量对象（产物正确性 / 过程有效性 / 资源代价）与测量尺度（比例 / 序数 / 计数 / 货币）作为两个正交维度固定下来，方能使跨任务数值具备可比性。后续 RQ 可聚焦于该正交分解的自动化归一化机制设计。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Exploring Autonomous Agents: A Closer Look at Why They Fail When Completing Tasks&nbsp;<code style="font-size:0.82em;color:#888">0203_Exploring_Autonomous_Agents_A_Closer_Look_at_Why_They_Fail_W</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;LAFA: Agentic LLM-Driven Federated Analytics over Decentralized Data Sources&nbsp;<code style="font-size:0.82em;color:#888">0337_LAFA_Agentic_LLM-Driven_Federated_Analytics_Over_Decentraliz</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Enhancing Multi-Agent Systems via Reinforcement Learning with LLM&nbsp;<code style="font-size:0.82em;color:#888">0884_Enhancing_Multi-Agent_Systems_via_Reinforcement_Learning_wit</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Scalable Multi-Robot Collaboration with Large Language Models: Centralized or Decentralized Systems?&nbsp;<code style="font-size:0.82em;color:#888">0892_Scalable_Multi-Robot_Collaboration_with_Large_Language_Model</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;MAHL: Multi-Agent LLM-Guided Hierarchical Chiplet Design with Adaptive Debugging&nbsp;<code style="font-size:0.82em;color:#888">0644_MAHL_Multi-Agent_LLM-Guided_Hierarchical_Chiplet_Design_with</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework&nbsp;<code style="font-size:0.82em;color:#888">3810_metagpt_meta_programming_for_a_multiagent_collaborative_fram</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Multi-Agent Collaboration via Cross-Team Orchestration&nbsp;<code style="font-size:0.82em;color:#888">3819_multiagent_collaboration_via_crossteam_orchestration</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;From LLM Reasoning to Autonomous AI Agents: A Comprehensive Review&nbsp;<code style="font-size:0.82em;color:#888">0102_From_LLM_Reasoning_to_Autonomous_AI_Agents_A_Comprehensive_R</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Towards Effective GenAI Multi-Agent Collaboration: Design and Evaluation for Enterprise Applications&nbsp;<code style="font-size:0.82em;color:#888">3825_towards_effective_genai_multiagent_collaboration_design_and</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Generative Multi-Agent Collaboration in Embodied AI: A Systematic Review&nbsp;<code style="font-size:0.82em;color:#888">3827_generative_multiagent_collaboration_in_embodied_ai_a_systema</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;TRiSM for Agentic AI: A Review of Trust, Risk, and Security Management in LLM-based Agentic Multi-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">3831_trism_for_agentic_ai_a_review_of_trust_risk_and_security_man</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;DeepMEL: A Multi-Agent Collaboration Framework for Multimodal Entity Linking&nbsp;<code style="font-size:0.82em;color:#888">0025_DeepMEL_A_multi-agent_collaboration_framework_for_multimodal</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Model Context Protocol-based Internet of Experts For Wireless Environment-aware LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">0524_Model_Context_Protocol-based_Internet_of_Experts_For_Wireles</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;SI-Agent: An Agentic Framework for Feedback-Driven Generation and Tuning of Human-Readable System Instructions&nbsp;<code style="font-size:0.82em;color:#888">0980_SI-Agent_An_Agentic_Framework_for_Feedback-Driven_Generation</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;MARE: Multi-Agents Collaboration Framework for Requirements Engineering&nbsp;<code style="font-size:0.82em;color:#888">3816_mare_multiagents_collaboration_framework_for_requirements_en</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;An Agentic System for Schema Aware NL2SQL Generation&nbsp;<code style="font-size:0.82em;color:#888">0283_An_Agentic_System_for_Schema_Aware_NL2SQL_Generation</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;Traceability and Accountability in Role-Specialized Multi-Agent LLM Pipelines&nbsp;<code style="font-size:0.82em;color:#888">0210_Traceability_and_Accountability_in_Role-Specialized_Multi-Ag</code></li>
+<li id="ref-18" style="margin-bottom:4px"><span class="ref-id">[18]</span>&nbsp;Transmission With Machine Language Tokens: A Paradigm for Task-Oriented Agent Communication&nbsp;<code style="font-size:0.82em;color:#888">0523_Transmission_With_Machine_Language_Tokens_A_Paradigm_for_Tas</code></li>
+<li id="ref-19" style="margin-bottom:4px"><span class="ref-id">[19]</span>&nbsp;Large Language Model-Enabled Multi-Agent Manufacturing Systems&nbsp;<code style="font-size:0.82em;color:#888">0298_Large_Language_Model-Enabled_Multi-Agent_Manufacturing_Syste</code></li>
+<li id="ref-20" style="margin-bottom:4px"><span class="ref-id">[20]</span>&nbsp;Training Task Reasoning LLM Agents for Multi-Turn Task Planning&nbsp;<code style="font-size:0.82em;color:#888">1151_Training_Task_Reasoning_LLM_Agents_for_Multi-Turn_Task_Plann</code></li>
+<li id="ref-21" style="margin-bottom:4px"><span class="ref-id">[21]</span>&nbsp;LLM-Powered Fully Automated Chaos Engineering: Towards Enabling Anyone to Build Resilient Software Systems at Low Cost&nbsp;<code style="font-size:0.82em;color:#888">0204_LLM-Powered_Fully_Automated_Chaos_Engineering_Towards_Enabli</code></li>
+<li id="ref-22" style="margin-bottom:4px"><span class="ref-id">[22]</span>&nbsp;NADER: Neural Architecture Design via Multi-Agent Collaboration&nbsp;<code style="font-size:0.82em;color:#888">0401_NADER_Neural_Architecture_Design_via_Multi-Agent_Collaborati</code></li>
+<li id="ref-23" style="margin-bottom:4px"><span class="ref-id">[23]</span>&nbsp;Multi-Agent Collaboration via Evolving Orchestration&nbsp;<code style="font-size:0.82em;color:#888">3842_multiagent_collaboration_via_evolving_orchestration</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.2 · 2026-09-30 18:42</footer>
+</div>
+</body>
+</html>
