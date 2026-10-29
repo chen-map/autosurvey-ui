@@ -11,7 +11,7 @@ AutoSurvey 采用 **open-core**：把可复用、可核验、可公开的部分�
 | 成果 | 位置 | 许可证 | 可复用方式 |
 |---|---|---|---|
 | 控制台前端（React/TS） | `src/` | Apache-2.0 | 本地运行、二次开发、界面复用 |
-| 真实运行快照（4 个项目） | `public/showcase/` | CC BY 4.0 | 下载 JSON/PDF，复现页面，做二次分析 |
+| 真实运行快照（6 个项目） | `public/showcase/` | CC BY 4.0 | 下载 JSON/PDF，复现页面，做二次分析 |
 | 37 个分析策略规范 | `open/analysis-skills/` | Apache-2.0 | 作为分析工作流库，注入自有 Agent/流水线 |
 | 五步工作流关键实现摘录 | `open/pipeline/` | Apache-2.0 | 阅读复用：流水线编排、状态机、DOI 锚定、37 技能三层执行框架、证据定位的实现（摘录不可独立运行） |
 | 数据卡与字段说明 | `docs/DATA_CARD.md` | CC BY 4.0 | 数据理解与复用 |

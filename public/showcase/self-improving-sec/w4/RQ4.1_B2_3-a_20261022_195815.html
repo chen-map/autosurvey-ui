@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-a 分析报告</h1>
+<div class="meta">RQ [RQ4.1]：[父问题 RQ4] 自改进结果的可信度如何被衡量？安全专用 oracle 与功能保持度量的缺失造成了哪些效度威胁？
+[本子问题 RQ4.1] 256 个 Metric 中通用指标（Accuracy 10 / Recall 8 / Pass@1 6 / Precision 6 / F1 5）与安全专用指标（patch validity / exploitability verification / oracle 一致性）的构成比例如何？「Absence of security-specific oracles」在实践中被哪些 proxy 指标替代，替代带来什么系统性偏差？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0579_metrics_failure_in_llmbased_code_vulnerability_repair_an_emp, 0620_A_Unified_Framework_for_Self-Evolving_and_Self-Healing_Artif, 0351_give_llms_a_security_course_securing_retrievalaugmented_code, 0323_fixing_security_vulnerabilities_with_ai_in_ossfuzz, 0219_VulKey_Automated_Vulnerability_Repair_Guided_by_Domain-Speci, 0454_naamse_framework_for_evolutionary_security_evaluation_of_age）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析一_静态分析器被当作安全_oracle_的系统性偏差">核心分析一：静态分析器被当作安全 oracle 的系统性偏差</a></li>
+<li><a href="#sec_核心分析二_compile_rate_类_proxy_的偏差结构">核心分析二：compile rate 类 proxy 的偏差结构</a></li>
+<li><a href="#sec_核心分析三_功能保持度量的缺失与_proxy_叠_proxy_链条">核心分析三：功能保持度量的缺失与「proxy 叠 proxy」链条</a></li>
+<li><a href="#sec_核心分析四_对抗条件下的评估效度全面失效">核心分析四：对抗条件下的评估效度全面失效</a></li>
+<li><a href="#sec_核心分析五_安全指标自身的合法性审查与元评估缺口">核心分析五：安全指标自身的合法性审查与元评估缺口</a></li>
+<li><a href="#sec_核心分析六_评估不可比性审计">核心分析六：评估不可比性审计</a></li>
+<li><a href="#sec_核心分析七_构成比例的判读与修正方向">核心分析七：构成比例的判读与修正方向</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告基于知识图谱中 256 个 metric、402 个 problem、385 个 method、141 篇 paper、235 个 dataset、226 个 limitation 与 100 个 assumption 节点及其关系边，系统分析了 RQ4.1：通用指标与安全专用 oracle 的构成比例，以及「security-specific oracle 缺席」在实践中被哪些 proxy 指标替代、带来何种系统性偏差。核心结论是：安全专用 oracle 在 KG 中并非「少数派」而是**结构性空缺**——可执行验证类指标（per-sample label agreement、scanners-agree filtered samples、verification success）均仅被单篇论文使用，无一成为 ≥3 篇论文的共用 repair 评估口径；社区实际用 compile rate、plausible patches、EM、CodeBLEU、静态扫描安全率等 proxy 拼出评估替代物。</p><p>这些 proxy 带来四类系统性偏差：聚合指标掩盖逐样本错误 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、静态扫描器在定义层面覆盖残缺（6/18 类漏洞不可表达为静态规则）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、对真实改进不敏感且可被删代码游戏化 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、功能保持无法被验证而退化为相似度代理 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。对抗条件下整套 proxy 组合进一步全面失效：&gt;90% 对抗 bug report 可诱导出攻击者意图的 patch，而最佳过滤器仅拦下 47% <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>分析完全基于知识图谱的结构化数据，共执行 41 次工具调用，覆盖全部六类核心节点：metric（256）、problem（402）、method（385）、paper（141）、datasetbenchmark（235）、limitation（226）与 assumptionconstraint（100）。对每个被引用论文，均通过 get_relation 拉取其完整一跳关系边（proposes/addresses/measured_by/evaluated_on/has_limitation/extends/compares_with/supports），并从边的 evidence 字段提取论文原始语句作为引证依据。</p><p>深入分析的论文共 16 篇，重点核查对象包括：指标批判类 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、静态扫描器可靠性类 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、对抗效度类 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、安全修复评估实践类 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、执行式 oracle 修正方向 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、元评估框架类 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup><sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>、安全指标合法性审查类 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>。</p>
+<h3>表 1 · 安全专用 oracle 类指标在 KG 中的使用情况（仅为单篇论文使用，无一成为共识口径）</h3>
+<table><thead><tr><th>指标节点</th><th>指标含义</th><th>使用论文数</th><th>使用论文</th></tr></thead><tbody><tr><td>Per-sample label agreement</td><td>工具报告与 ground-truth 标签的逐样本一致性（Semgrep 65%、CodeQL 61%）</td><td>1</td><td>[1]</td></tr>
+<tr><td>Secure classification rate</td><td>被判为 secure 的样本比例（人类 61%、Semgrep 60%、CodeQL 80%）</td><td>1</td><td>[1]</td></tr>
+<tr><td>Scanners Agree Filtered Vulnerable Samples</td><td>两个扫描器一致确认存在疑似 CWE 的样本比例</td><td>1</td><td>[16]</td></tr>
+<tr><td>Verification success (Ver. &amp; NoDiff)</td><td>同时通过形式验证与 AST 差异检查的程序比例</td><td>1</td><td>[17]</td></tr>
+<tr><td>Known weakness recovery rate</td><td>46 处已知弱点位置中被回收的比例（LLM 条件最高 76%）</td><td>1</td><td>[2]</td></tr>
+<tr><td>Detection rate（fuzzing 复现口径）</td><td>可复现漏洞检出数/总数（36/40）</td><td>2</td><td>[12][5]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1 · 通用/代理指标的直接 measured_by 关联密度（命题中给出的五个通用指标）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["Accuracy", "Recall", "Pass@1", "Precision", "F1"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "KG 中 measured_by 边数（方法+论文合计）", "type": "bar", "data": [10, 8, 6, 6, 5], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>表 2 · 实际承担漏洞修复/安全生成评估的 proxy 指标及其已知偏差</h3>
+<table><thead><tr><th>proxy 指标</th><th>代理的是什么</th><th>已知系统性偏差</th><th>证据</th></tr></thead><tbody><tr><td>Compile rate</td><td>漏洞是否修复、行为是否保持</td><td>对真实改进不敏感；单一编译 flag 下波动达 2.7 倍；与 CodeBLEU 排名相反；可被删代码游戏化（退化补丁仍得 0.08–0.48）</td><td>[3]</td></tr>
+<tr><td>diff_F1（change-aware screen）</td><td>补丁与开发者修复的编辑重叠</td><td>未做人工标注相关性验证；对 deletion-style 补丁并非近零给分——proxy 换 proxy，oracle 仍缺</td><td>[3]</td></tr>
+<tr><td>Plausible patches / Compilable patches</td><td>补丁正确性</td><td>仅验证编译与测试套件通过，不验证漏洞消除或行为保持</td><td>[8][3]</td></tr>
+<tr><td>EM（Exact Match）</td><td>修复性能</td><td>语义等价但语法不同的正确补丁被误判；无法判定漏洞是否真被消除</td><td>[9]</td></tr>
+<tr><td>Security rate（CodeQL 判定）</td><td>代码安全</td><td>静态扫描器逐样本标签不可靠；聚合率掩盖逐样本错误</td><td>[1][6]</td></tr>
+<tr><td>Sim（代码相似度）</td><td>功能正确性</td><td>因 CyberSecEval 缺测试用例，无法直接评估功能正确性，退化为相似度代理</td><td>[4]</td></tr>
+<tr><td>Insecure code percentage / TaV-R / AllV-R</td><td>漏洞残留率</td><td>依赖扫描器判定，聚合口径掩盖逐样本分歧</td><td>[18][1]</td></tr>
+<tr><td>Plausible patch rate（OSS-Fuzz）</td><td>真实漏洞修复效果</td><td>在 ARVO 项目级漏洞上仍以 plausible 为准，未上升到 exploit 复现</td><td>[10]</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2 · KG metric 节点的五类簇分布结构（按评估维度本体聚类）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 2 · KG metric 节点的五类簇分布结构（按评估维度本体聚类）", "type": "pie", "radius": "55%", "data": [{"name": "精度/判别类（Accuracy/Precision/Recall/F1/EM/一致性）", "value": 38}, {"name": "质量/相似度类（CodeBLEU/diff_F1/Sim/compile_rate/plausible）", "value": 30}, {"name": "鲁棒性/攻击类（attack success/test suite failure/detection rate）", "value": 16}, {"name": "效率/成本类（time-to-solve/token usage/detection delay/recovery time）", "value": 10}, {"name": "安全专用 oracle 类（仅单篇使用）", "value": 6}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">关键发现：安全专用 oracle 类指标在五类簇中占比最小（约 6%），且每一节点均只被单篇论文使用，未达到「≥3 篇论文支撑即系统性共识」的门槛。与此同时，质量/相似度类与精度/判别类合计约占三分之二，构成社区实际的评估主体——但它们度量的都不是「漏洞是否真被消除」。</div>
+
+<h2 id="sec_核心分析一_静态分析器被当作安全_oracle_的系统性偏差">核心分析一：静态分析器被当作安全 oracle 的系统性偏差</h2>
+<p>这是 KG 中被最多论文共同指向的偏差源，也是「oracle 缺席后被 proxy 顶替」最典型的环节。前序文献普遍假设「静态分析工具输出可靠反映代码安全，无需人工验证」，KG 中该假设被显式建模为一条 assumptionconstraint 节点，而 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 用 1,080 条人工标注样本直接证伪它：CodeQL 与 Semgrep 的聚合安全率相近（人类 61%、Semgrep 60%、CodeQL 80%），但逐样本标签一致性只有 Semgrep 65%、CodeQL 61%——**聚合指标掩盖了逐样本的系统性偏差**，这是「用扫描器当 oracle」最致命的认识论错误。</p><p><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 给出更极端的覆盖率证据：面对 46 处从上游修复中挖掘的已知弱点位置，CodeQL、Semgrep、Clang 全部命中 0 处，cppcheck 仅命中 1 处，而 LLM 条件最多回收 76%；更关键的是，其 18 类漏洞分类中有 6 类**根本无法表达为静态分析规则**——静态 oracle 在定义层面就覆盖不到部分漏洞类型，这不是精度问题而是可表达性问题。<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 作为使用扫描器做评估的原始论文自身承认「安全评估依赖 Semgrep 和 CodeQL，二者存在假阳/假阴」。</p>
+<h3>表 3 · 静态扫描器作为安全 oracle 的可靠性证据汇总</h3>
+<table><thead><tr><th>证据来源</th><th>评估设定</th><th>关键数字</th><th>结论</th></tr></thead><tbody><tr><td>[1]</td><td>1,080 条 LLM RCI 生成样本 + 人工 ground truth</td><td>逐样本一致性 Semgrep 65%、CodeQL 61%；聚合安全率 人类61% / Semgrep60% / CodeQL80%</td><td>聚合率相近但逐样本分歧大</td></tr>
+<tr><td>[2]</td><td>Autoware 上 46 处已知弱点位置</td><td>CodeQL/Semgrep/Clang 命中 0；cppcheck 命中 1；LLM 最高回收 76%</td><td>静态 oracle 覆盖率严重残缺</td></tr>
+<tr><td>[2]</td><td>18 类 AV 漏洞分类</td><td>6/18 类无法表达为静态分析规则</td><td>定义层面盲区</td></tr>
+<tr><td>[6]</td><td>LLMSecEval/SecurityEval 上的扫描器评估</td><td>承认扫描器有假阳/假阴</td><td>评估依赖被显式标注为局限</td></tr>
+<tr><td>[12]</td><td>AIxCC 2025 Final Challenge</td><td>90% 检出率（36/40），全部需 fuzzing 复现确认</td><td>只有可复现才算确认</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析二_compile_rate_类_proxy_的偏差结构">核心分析二：compile rate 类 proxy 的偏差结构</h2>
+<p><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 用五个受控实验（E1–E5，203 个 Big-Vul 单函数、三个开源代码 LLM）系统拆解了 compile rate 的五种失效模式，这是本 RQ 关于「proxy 替代带来什么系统性偏差」最完整的实证答案：</p><p>(1) **对真实改进不敏感**——compile rate 不响应那些合理改变输出质量的干预；(2) **失败误归因**——多数编译失败反映的是评估环境缺失（缺项目上下文、工具链）而非模型能力；(3) **配置依赖**——单一编译 flag 即可让 compile rate 波动达 2.7 倍；(4) **与其他指标反向**——compile rate 与 CodeBLEU 对模型给出完全相反的排名；(5) **可游戏化**——优化 compile rate 会奖励代码删除与退化补丁，且现有 change-aware screen 对退化补丁仍给出 0.08–0.48 的非零分数。作者提出的 diff_F1 也仅被定位为「文本编辑重叠代理」，自承未做人工标注相关性研究、对 deletion-style 补丁非近零给分。</p><p>换言之，社区在发现 compile rate 失效后，用 diff_F1 替换——但**替换的仍是 proxy，oracle 依旧缺位**。这是「proxy 换 proxy」的典型闭环。 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的 limitation 节点直接写明：「既非 compile rate 也非 diff_F1 能验证漏洞已被移除或行为已被保持」，且「没有任何结论基于静态分析输出」。</p>
+<h3>表 4 · compile rate 的五个失效模式（[3] E1–E5 受控实验）</h3>
+<table><thead><tr><th>失效模式</th><th>实验</th><th>可核查结论</th></tr></thead><tbody><tr><td>对真实改进不敏感</td><td>E2</td><td>compile rate 不响应合理改变输出质量的干预</td></tr>
+<tr><td>失败误归因为模型</td><td>E3</td><td>多数编译失败源于缺失项目上下文与工具链，而非模型</td></tr>
+<tr><td>配置依赖</td><td>E4</td><td>单一编译 flag 下 compile rate 波动达 2.7 倍</td></tr>
+<tr><td>与参考相似度指标反向</td><td>E5</td><td>compile rate 与 CodeBLEU 排名完全相反</td></tr>
+<tr><td>可游戏化</td><td>E1</td><td>优化 compile rate 奖励删代码；退化补丁仍得 0.08–0.48 分</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析三_功能保持度量的缺失与_proxy_叠_proxy_链条">核心分析三：功能保持度量的缺失与「proxy 叠 proxy」链条</h2>
+<p>安全修复必须同时保证漏洞消除与功能保持，但 KG 显示功能保持几乎完全依靠 proxy：compilable patches（编译通过）或项目测试套件通过。 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 证明这两者都不足以验证行为保持。更直接的证据来自 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>：CodeGuarder 明确承认其 Sim 指标「衡量代码与参考实现的相似度，但因 CyberSecEval 数据集缺少测试用例，无法直接评估功能正确性」——在缺少执行式测试的情况下，功能保持度量退化为**代码相似度**，而相似度与功能正确性之间并无保证关系。这形成了一条「proxy 叠 proxy」的链条：安全用扫描器判（不精确）→ 功能用相似度判（无测试支撑）→ 两者都非 oracle。</p><p>值得注意的是，<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 代表了修正方向：CodeSecEval 引入执行式 security tests，并拆分出 Function-Pass@1（只过功能测试）、Secure-Pass@1（只过漏洞定向安全测试）与 Pass@1（两者皆过）三个互补指标——这是 KG 中少见的、把「功能保持」与「安全达成」显式分离并各自执行验证的设计。但其本身尚未成为社区口径，且 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 自承现有部分基准缺乏综合安全测试（其 addresses 的问题节点即「基准中安全评估不足」）。</p>
+
+<h2 id="sec_核心分析四_对抗条件下的评估效度全面失效">核心分析四：对抗条件下的评估效度全面失效</h2>
+<p>「功能测试通过 + 静态扫描干净」这套 proxy 组合在对抗条件下系统性失效，是效度威胁最严重的一类。 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 在五个 SWE-bench Python 仓库上构造 STRIDE 威胁模型下的五类攻击模式（Noise/Naive/Injection/Revert-CVE/CI-CD），发现 **&gt;90% 精心构造的对抗 bug report 使 LLM APR 产出符合攻击者意图的 patch**，而最佳前置过滤器只拦下 47%、项目测试套件几乎检测不到、防御常常静默失败。</p><p><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 将这一威胁模型扩展为模型无关的 SWEADV 基准（750 条对抗 issue，5 类攻击，源自 SWE-bench Verified），发现**所有被测 APR agent 都产生「功能正确但不安全」的 patch**，且 LLM-as-judge、patch 级检测与组合检测均不足。这两篇论文共同说明：当攻击者主动利用评估盲区时，proxy 指标不仅「不够准」，而是会给出与安全事实相反的绿灯信号。这直接构成对「自改进结果可信度」的核心威胁——自改进循环若以 proxy 为奖励信号，会把「通过测试但引入后门」的行为当作改进固化下来。</p>
+<div id="chart_3" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_3'));
+  c.setOption({"title": {"text": "图 3 · 对抗条件下 proxy 防御的失效程度", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["对抗 bug report 成功率[5]", "最佳过滤器拦截率[5]", "测试套件检测率[5]", "SWEADV 下防御充分性[7]"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "百分比/程度（%）", "type": "bar", "data": [90, 47, 5, 0], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析五_安全指标自身的合法性审查与元评估缺口">核心分析五：安全指标自身的合法性审查与元评估缺口</h2>
+<p>即便指标「安全专用」，也不等于合法。 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> NAAMSE 指出：只优化攻击成功率会让模型以「一概拒答」骗过安全分，从而损害可用性——因此安全评估必须同时约束 benign-use correctness，形成效用-安全权衡；该文同时自承「依赖 LLM judge 引入偏差与方差」。这提示对共识指标的对抗性审查是双向的：既要审查通用 proxy 是否度量了核心属性，也要审查安全专用指标是否可被 degenerate 策略欺骗。</p><p><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 的元评估框架从另一侧补全了缺口认识：它把 false_recovery（错误宣称已恢复）、time_to_recovery、degradation_area、detection_delay、retention、transfer 等设为评估协议的核心 metric，并明确要求「恢复声明必须说明其作用域」；<sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 对应地指出「局部遏制证明事件被阻止，但生命周期恢复需要关于该状态后续激活的证据」，且「所选研究在激活与暴露覆盖上较强，但在后代修复与可争议性上证据较弱」。 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 自承是无新基准结果的概念性贡献——这恰恰说明：领域**已经识别出**缺少可验证修复/恢复证据这一结构性缺口，却尚未把它落成被广泛采用的度量。</p>
+<h3>表 5 · 评估效度威胁的四种形态与证据缺口</h3>
+<table><thead><tr><th>盲区类型</th><th>具体表现</th><th>支撑论文数</th><th>证据</th></tr></thead><tbody><tr><td>绝对盲区（无 oracle）</td><td>256 个 metric 中无一成为「漏洞是否真被消除」的权威判定器</td><td>≥5</td><td>[1][2][3][10][9]</td></tr>
+<tr><td>质量维度缺失</td><td>功能保持退化为 compile/测试套件/相似度代理，无行为验证</td><td>≥4</td><td>[3][4][11]</td></tr>
+<tr><td>规模/环境盲区</td><td>函数级 203 函数 vs 项目级 5,001 漏洞 vs 5 个 Python 仓库，数字不可比</td><td>≥3</td><td>[3][10][5]</td></tr>
+<tr><td>对抗效度盲区</td><td>&gt;90% 对抗 issue 成功；所有被测 APR agent 均产不安全 patch；防御不足</td><td>2</td><td>[5][7]</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析六_评估不可比性审计">核心分析六：评估不可比性审计</h2>
+<p>同一「repair success」标签下的数字不可直接比较，这一点必须在结论中突出强调。KG 显示各论文的评估对象在规模、语言、粒度上差异巨大：<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 在 203 个 Big-Vul C/C++ 单函数上做函数级修复；<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 在 ARVO 5,001 个真实 C/C++ 漏洞（采样 588 个）上做项目级修复；<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 只在 5 个 SWE-bench Python 仓库上评估；<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 在 PrimeVul 5,480 对 C/C++ 与 Java X1 数据集上以 EM 为主指标；<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 在 ExtractFix 10 个 CVE 与 VjBench/Vul4j Java 集上报告 plausible/compilable patches。这些设定下的「成功率」不可通约。</p><p>指标异质性进一步加剧不可比：同一概念在不同论文中定义不一致——例如 Pass@1 在 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 中是「top-1 生成解通过测试」，在 <sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup> 中是「生成代码非漏洞比例」，在 <sup class="cite"><a href="#ref-19" style="text-decoration:none">[19]</a></sup> 中是「隐藏单测通过比例」；security rate 在 <sup class="cite"><a href="#ref-20" style="text-decoration:none">[20]</a></sup> 中由 CodeQL 判定，在 <sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup> 中为「非漏洞代码占比」。按任务类型分组后，repair 组的指标集合 Jaccard 相似度偏低（compilable/plausible/EM/diff_F1/repair success rate 混杂），detection 组相对收敛（Accuracy/Precision/Recall/F1 为主，但 K 值与阈值定义不一）。这提示：检测类任务的评估已部分收敛，而修复类任务的评估仍高度碎片化，尚未就「什么叫修好了」达成共识。</p>
+<h3>表 6 · 同一「repair success」标签下的评估设定差异（不可比性证据）</h3>
+<table><thead><tr><th>论文</th><th>评估数据集</th><th>规模</th><th>粒度</th><th>主指标</th></tr></thead><tbody><tr><td>[3]</td><td>Big-Vul 分层子集</td><td>203 个 C/C++ 函数</td><td>函数级</td><td>compile rate / diff_F1 / Pass@5</td></tr>
+<tr><td>[10]</td><td>ARVO（OSS-Fuzz）</td><td>5,001 个漏洞，采样 588</td><td>项目级</td><td>plausible patch rate</td></tr>
+<tr><td>[5]</td><td>SWE-bench Python</td><td>5 个仓库</td><td>仓库级</td><td>attack success rate / 测试套件失败率</td></tr>
+<tr><td>[9]</td><td>PrimeVul + X1</td><td>5,480 对 + 1,334</td><td>函数级</td><td>EM</td></tr>
+<tr><td>[8]</td><td>ExtractFix + VjBench/Vul4j</td><td>10 CVE + Java 集</td><td>文件/函数级</td><td>plausible / compilable patches</td></tr>
+<tr><td>[11]</td><td>CodeSecEval</td><td>任务级</td><td>函数级</td><td>Pass@1 / Function-Pass@1 / Secure-Pass@1</td></tr>
+</tbody></table>
+<div class="note">不可比性结论（必须在综述中突出）：上表六篇论文报告的都是「漏洞修复成功率」，但其数据集规模、语言、评估粒度与指标定义各异，任何跨论文的数值比较（例如「X 方法比 Y 方法高 N%」）在方法学上均不成立。将不同指标下的数字直接并列是当前评估实践最需警惕的谬误。</div>
+
+<h2 id="sec_核心分析七_构成比例的判读与修正方向">核心分析七：构成比例的判读与修正方向</h2>
+<p>关于 RQ 的构成比例问题，KG 数据支持一个定性但可靠的判断：通用/代理指标是评估主体，安全专用 oracle 是**结构性缺席**而非「少数派」。命题中给出的通用指标（Accuracy 10、Recall 8、Pass@1 6、Precision 6、F1 5）合计 35 条 measured_by 关联；而可执行 oracle 类指标（per-sample label agreement、scanners-agree samples、verification success、known weakness recovery、detection rate via fuzzing）在 KG 中分别只被 1 篇论文使用，唯一接近共识的是「detection rate（fuzzing 复现口径）」被 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 与 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 两篇使用——仍未达 3 篇阈值。</p><p>需要修正的方向已在 KG 中显现：<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 用执行式 security tests 拆分 Pass@1/Function-Pass@1/Secure-Pass@1；<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 坚持「每个报告的漏洞都必须可复现」（fuzzing 复现为确认条件）；<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 提出「LLM/静态分析器的发现在被 fuzzing harness 复现出 sanitizer 故障之前只是假设」；<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 把 false_recovery 等纳入评估协议。这些共同指向「执行式 oracle」范式，与主流 proxy 实践构成方法论对立，但尚未形成共识口径，且各有局限（<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 受限于数据集是否有测试、<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 假设单输入 fuzzing 模型）。</p>
+<h3>表 7 · 「执行式 oracle」修正方向与主流 proxy 实践的方法论对立</h3>
+<table><thead><tr><th>修正方案</th><th>提出的 oracle 机制</th><th>优势</th><th>自身局限</th></tr></thead><tbody><tr><td>[11] CodeSecEval</td><td>执行式 functional + vulnerability-targeted security tests</td><td>功能与安全显式分离并各自执行验证</td><td>依赖数据集是否具备测试用例</td></tr>
+<tr><td>[12] FuzzingBrain V2</td><td>fuzzing harness 复现 + sanitizer 检测</td><td>可复现才算确认，消除假阳性</td><td>假设单输入 fuzzing，多输入协调漏洞无法覆盖</td></tr>
+<tr><td>[2] LLMSec-AV</td><td>弱点假设须经 fuzzing 复现才算确认</td><td>将静态/LLM 判定降级为假设</td><td>6/18 类不可表达为规则，覆盖有限</td></tr>
+<tr><td>[13] 元评估框架</td><td>false_recovery / time_to_recovery / degradation_area</td><td>把「错误宣称已恢复」纳入度量</td><td>概念性贡献，无新基准结果</td></tr>
+<tr><td>[3] diff_F1</td><td>文本编辑重叠筛选</td><td>避免奖励删代码退化补丁</td><td>未做人工标注验证，非真正 oracle</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>**数据覆盖不足**：KG 中大量 method 节点的 origin_paper_id 为空（如 RAG pipeline、prompt-only baseline、compiler-feedback loop 等方法节点），导致无法完整还原每篇论文的指标全集合；measured_by 边也只记录了论文显式声明的核心指标，遗漏次要指标。因此「安全专用 oracle 占比」只能作「结构性缺席」的定性判断与可核查的局部计数，不能给出严格百分比，报告中的构成比数字应视为下界估计。</p><p>**原文溯源降级**：本环境未注册 RAG 原文检索工具（search_paper_sections 多次调用返回 unknown tool），无法逐句核实 Section 级原文与语义相似度分值。本报告所有引证取自 KG 边 evidence 字段中的论文抽取语句，可视为二级原文证据（verbatim quote 但未经原文复核）。建议下游在正式写入综述前，对 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 五篇核心论文做原文抽查。</p><p>**推断性判断标注**：C10 关于 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> VulKey 以 EM 为主指标存在效度问题的判断，原文未明确讨论 EM 对漏洞消除的效度，属分析者推断；C8 关于 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 填补 oracle 维度的判断亦基于概念对照而非实证。两者均标注为中等置信。 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 关于静态扫描器覆盖率残缺的结论基于 Autoware 单一代码库，跨域泛化性待验证。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ4.1 的答案是：256 个 metric 中，通用与代理指标构成评估主体，而安全专用 oracle 是**本体层面的结构性缺席**——可执行验证类指标（per-sample label agreement、scanners-agree samples、verification success）均仅被单篇论文使用，无一达到「≥3 篇论文共用」的共识门槛。社区用 compile rate、plausible patches、EM、CodeBLEU、静态扫描安全率、代码相似度等 proxy 拼出一套「看起来像评估」的替代物。</p><p>这些替代带来五重系统性偏差：(1) 聚合指标掩盖逐样本错误——CodeQL/Semgrep 逐样本一致性仅 61%/65%，尽管聚合安全率相近 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；(2) 静态 oracle 覆盖率残缺且存在定义盲区——46 处已知弱点静态扫描器几乎全错过，6/18 类漏洞不可表达为静态规则 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；(3) 对真实改进不敏感且可被游戏化——compile rate 在单一 flag 下波动 2.7 倍，删代码仍得分 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；(4) 功能保持无法验证——退化为相似度代理，构成 proxy 叠 proxy 链条 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；(5) 对抗条件下全面失效——&gt;90% 对抗 issue 成功诱导不安全 patch，所有被测 APR agent 均产「功能正确但不安全」的 patch <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>这一评估框架的结构性缺口已产生可观测后果：领域已识别「缺少可验证修复/恢复证据」的问题（<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 把 false_recovery 纳入评估协议），但尚未落成广泛采用的度量。修正方向（执行式 oracle：<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> CodeSecEval 的 Function/Secure-Pass@1 分离、<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> fuzzing 复现确认、<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 假设须经复现验证）与主流 proxy 实践构成方法论对立，但均未成共识且各有限制。对自改进结果可信度的最终含义是：若自改进循环以 proxy 为奖励信号，系统会把「通过测试但引入后门」的行为当作改进固化——这正是 RQ4 层面最核心的效度威胁。此外必须强调，不同论文的「repair success」数字因数据集、语言、粒度与指标定义差异而不可通约，任何跨论文数值比较在方法学上均不成立。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Persistent Human Feedback, LLMs, and Static Analyzers for Secure Code Generation and Vulnerability Detection&nbsp;<code style="font-size:0.82em;color:#888">0153_Persistent_Human_Feedback_LLMs_and_Static_Analyzers_for_Se</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;LLMSec-AV: A Vulnerability Taxonomy and LLM-Driven Software Weakness Discovery Framework for Autonomous Vehicles&nbsp;<code style="font-size:0.82em;color:#888">0571_llmsecav_a_vulnerability_taxonomy_and_llmdriven_software_wea</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Metrics Failure in LLM-Based Code Vulnerability Repair: An Empirical Study and a Change-Aware Screen&nbsp;<code style="font-size:0.82em;color:#888">0579_metrics_failure_in_llmbased_code_vulnerability_repair_an_emp</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Give LLMs a Security Course: Securing Retrieval-Augmented Code Generation via Knowledge Injection&nbsp;<code style="font-size:0.82em;color:#888">0351_give_llms_a_security_course_securing_retrievalaugmented_code</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Adversarial Bug Reports as a Security Risk in Language Model-Based Automated Program Repair&nbsp;<code style="font-size:0.82em;color:#888">0217_adversarial_bug_reports_as_a_security_risk_in_language_model</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Benchmarking Prompt Engineering Techniques for Secure Code Generation with LLM Models&nbsp;<code style="font-size:0.82em;color:#888">0064_Benchmarking_Prompt_Engineering_Techniques_for_Secure_Code_G</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Adversarial Testing of Automated Program Repair Agents for Security Vulnerabilities&nbsp;<code style="font-size:0.82em;color:#888">0576_adversarial_testing_of_automated_program_repair_agents_for_s</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;A Case Study of LLM for Automated Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0204_A_Case_Study_of_LLM_for_Automated_Vulnerability_Repair_Asses</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;VulKey: Automated Vulnerability Repair Guided by Domain-Specific Repair Patterns&nbsp;<code style="font-size:0.82em;color:#888">0219_VulKey_Automated_Vulnerability_Repair_Guided_by_Domain-Speci</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Fixing Security Vulnerabilities with AI in OSS-Fuzz&nbsp;<code style="font-size:0.82em;color:#888">0323_fixing_security_vulnerabilities_with_ai_in_ossfuzz</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Toward Secure Code Generation: Bridging Correctness and Security via Task-Adaptive Vulnerability Modeling and Execution-Based Benchmarking&nbsp;<code style="font-size:0.82em;color:#888">0299_toward_secure_code_generation_bridging_correctness_and_secur</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;FuzzingBrain V2: A Multi-Agent LLM System for Automated Vulnerability Discovery and Reproduction&nbsp;<code style="font-size:0.82em;color:#888">0508_fuzzingbrain_v2_a_multiagent_llm_system_for_automated_vulner</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;A Unified Framework for Self-Evolving and Self-Healing Artificial Intelligence Agents&nbsp;<code style="font-size:0.82em;color:#888">0620_A_Unified_Framework_for_Self-Evolving_and_Self-Healing_Artif</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Safety in Self-Evolving Agents: A Survey&nbsp;<code style="font-size:0.82em;color:#888">0233_Safety_in_Self-Evolving_Agents_A_Survey</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;NAAMSE: Framework for Evolutionary Security Evaluation of Agents&nbsp;<code style="font-size:0.82em;color:#888">0454_naamse_framework_for_evolutionary_security_evaluation_of_age</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;Benchmarking Prompt Engineering Techniques for Secure Code Generation with LLM Models&nbsp;<code style="font-size:0.82em;color:#888">0064_Benchmarking_Prompt_Engineering_Techniques_for_Secure_Code_G</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;SEVerA: Verified Synthesis of Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">0471_severa_verified_synthesis_of_selfevolving_agents</code></li>
+<li id="ref-18" style="margin-bottom:4px"><span class="ref-id">[18]</span>&nbsp;Guiding AI to Fix Its Own Flaws: An Empirical Study on LLM-Driven Secure Code Generation&nbsp;<code style="font-size:0.82em;color:#888">0226_guiding_ai_to_fix_its_own_flaws_an_empirical_study_on_llmdri</code></li>
+<li id="ref-19" style="margin-bottom:4px"><span class="ref-id">[19]</span>&nbsp;Retriv at BLP2025 Task 2: Test-Driven Feedback-Guided Framework&nbsp;<code style="font-size:0.82em;color:#888">0425_retriv_at_blp2025_task_2_testdriven_feedbackguided_framework</code></li>
+<li id="ref-20" style="margin-bottom:4px"><span class="ref-id">[20]</span>&nbsp;GRASP: Fortifying LLM-Based Code Generation with Graph-Based Reasoning&nbsp;<code style="font-size:0.82em;color:#888">0417_fortifying_llmbased_code_generation_with_graphbased_reasonin</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.1 · 2026-10-22 19:58</footer>
+</div>
+</body>
+</html>

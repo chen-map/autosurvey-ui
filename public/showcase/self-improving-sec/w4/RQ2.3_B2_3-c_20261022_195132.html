@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-c 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-c 分析报告</h1>
+<div class="meta">RQ [RQ2.3]：[父问题 RQ2] 四类安全反馈信号在驱动自改进时各自的有效性如何，其证据强度与冲突点在哪里？
+[本子问题 RQ2.3] 攻防经验信号（Attack success rate / ASR、渗透轨迹、经验回放）驱动自改进时，其有效性结论与漏洞侧、修复侧结论是否可比？跨环境迁移后攻击成功率衰减的证据是否存在？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0045_An_Empirical_Evaluation_of_LLM-Based_Approaches_for_Code_Vul, 0466_attriguard_defeating_indirect_prompt_injection_in_llm_agents, 0536_vexaiot_autonomous_iot_vulnerability_exploitation_using_ai_a, 0519_membrane_a_selfevolving_contrastive_safety_memory_for_llm_ag, 0585_selfreflection_finetuning_enhancing_agent_security_against_p, 0217_adversarial_bug_reports_as_a_security_risk_in_language_model）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析一_度量语义决定的不可比性">核心分析一：度量语义决定的不可比性</a></li>
+<li><a href="#sec_核心分析二_跨环境迁移衰减_结构性预期而非量化证据">核心分析二：跨环境迁移衰减——结构性预期而非量化证据</a></li>
+<li><a href="#sec_核心分析三_谱系回归与自我服务比较检测">核心分析三：谱系回归与自我服务比较检测</a></li>
+<li><a href="#sec_核心分析四_证据冲突与不确定性">核心分析四：证据冲突与不确定性</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ2.3——攻防经验信号（ASR、渗透轨迹、经验回放）驱动自改进的有效性结论与漏洞侧/修复侧是否可比、跨环境迁移后攻击成功率衰减是否有证据——对 6 篇冻结证据矩阵论文执行了基线选择偏差的结构性公平性审计。核心结论：攻防经验侧驱动的防御（MEMBRANE <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、SRFT <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、AttriGuard <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>）在受控基准上报告了显著有效性，但这些有效性建立在特定模型、单一语言/受控 testbed 之上，与漏洞/修复侧以 F1/EM/plausible-patch 为主的静态离线结论因度量语义与评估范式不同而不可直接横向比较。</p><p>跨环境迁移衰减在知识图谱中仅以 limitation 边形式呈现为结构性预期（如 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 仅受控 IoT testbed、<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 仅 5 个 Python 仓库、<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 仅纯英文文本），没有任何一篇给出源-目标环境 ASR 的显式衰减量。在结构化层面还发现一处范式冲突：EvoBreak <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> contradicts MEMBRANE <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，暗示经验型防御的 ASR 有效性在组合式对抗下可能被高估。受语义检索工具不可用的约束，内部基线表无法原文核验，故本报告结论定位为限定域内的强证据，而非跨任务普适结论。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析全部基于知识图谱（KG）结构化数据，共执行 20 次工具调用，覆盖 paper、method、problem、dataset、metric、limitation 六类节点及 addresses/proposes/extends/contradicts/compares_with/evaluated_on/measured_by/has_limitation 八类边。重点审计 6 篇冻结证据矩阵论文：0045 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、0466 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、0519 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、0536 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、0585 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、0217 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，并回溯其谱系扩展论文（EvoBreak <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、SED <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、AGrail <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、ALIBI、SWEADV、Zombie Agents 等）。</p><p>KG 中与审计直接相关的 compares_with 边极度稀疏，仅检索到 3 条（0045→ProveRAG、0585→TRACE、0585→SED）；contradicts 边仅 1 条（EvoBreak <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>→MEMBRANE <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>）。关键量化证据来自节点 description 与边 evidence 字段，如 VEXAIoT 的 95.0% ASR（260 次执行）、0045 的 F1 谱系 0.85/0.80/0.77/0.67、0217 的 &gt;90% 攻破率与 47% 最强过滤拦截率。</p>
+<h3>证据矩阵六篇论文的公平性审计总览</h3>
+<table><thead><tr><th>论文</th><th>核心度量/指标</th><th>评估环境/数据集</th><th>迁移/泛化限制（KG 记录）</th><th>公平性判定</th></tr></thead><tbody><tr><td>MEMBRANE [1]</td><td>F1 / ASR / FRR</td><td>HarmBench + AgentHarm</td><td>主表固定 LLM；仅纯英文文本基准，跨语言/多模态留作未来工作</td><td>moderate_issues</td></tr>
+<tr><td>SRFT [2]</td><td>安全性 / 轨迹对比（含 ASR 型攻击）</td><td>未在 KG 编码数据集</td><td>对齐方法依赖静态轨迹，泛化到自适应攻击受限</td><td>minor_issues</td></tr>
+<tr><td>AttriGuard [3]</td><td>ASR / 良性效用 / 受攻效用</td><td>AgentDojo(92任务+882攻击) + ASB(400攻击)</td><td>更强衰减 λ=3 下良性效用下降（安全-效用权衡）</td><td>minor_issues</td></tr>
+<tr><td>VEXAIoT [4]</td><td>Attack success rate</td><td>IoTGoat + Metasploitable2</td><td>仅受控环境，非真实异构 IoT 部署</td><td>major_issues</td></tr>
+<tr><td>对抗缺陷报告 [5]</td><td>Attack success rate / detection rate</td><td>5 个 SWE-bench Python 仓库</td><td>评估仅限五个 Python 仓库</td><td>major_issues</td></tr>
+<tr><td>Empirical Eval (RAG/SFT/Dual) [7]</td><td>F1 / Precision / Recall / Accuracy</td><td>BigVul+GlassHouse 单一平衡数据集</td><td>数据集规模与泛化性需进一步扩展</td><td>minor_issues</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "漏洞/修复侧静态检测 F1 得分对比（0045 [7]）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["RAG", "SFT", "Dual-Agent", "Base Model"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "平均 F1 得分", "type": "bar", "data": [0.85, 0.8, 0.77, 0.67], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析一_度量语义决定的不可比性">核心分析一：度量语义决定的不可比性</h2>
+<p>攻防经验侧与漏洞/修复侧的有效性结论建立在不同的度量语义之上，这是不可比性的根本来源。攻防侧的核心度量是动态、序贯、在线适应型的成功率：VEXAIoT <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 以 Attack success rate 度量多步交互中累积的攻破概率（95.0% 于 260 次执行），AttriGuard <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 以 ASR 度量注入攻击成功诱发非预期工具调用的比率，MEMBRANE <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 同时使用 ASR 与 False Refusal Rate 刻画攻防权衡。</p><p>相比之下，漏洞/修复侧由静态、离线、单样本标注型指标主导：0045 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 以 F1/Precision/Recall 比较 RAG(0.85)、SFT(0.80)、Dual-Agent(0.77) 与 Base(0.67)，反映的是一次性判别的正确性。二者不存在公共量纲——前者度量“多次交互的累积攻破概率”，后者度量“单次判别/生成正确性”，因此 ASR 数值与 F1 数值无法直接横向比较。更微妙的是，<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 中的“经验信号”实为 RAG 检索增强的静态知识，而 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>/<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 中的“经验”是从交互轨迹提炼、可在线更新的记忆/策略，二者均冠名“经验”但机制迥异，进一步削弱了跨侧的可比性。</p>
+
+<h2 id="sec_核心分析二_跨环境迁移衰减_结构性预期而非量化证据">核心分析二：跨环境迁移衰减——结构性预期而非量化证据</h2>
+<p>针对 RQ 的第二个关键追问“跨环境迁移后攻击成功率衰减的证据是否存在”，KG 给出的答案是：存在结构性预期，但缺乏直接量化。多条 limitation 边明确指向迁移脆弱性：VEXAIoT <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 明确“评估仅限受控环境（IoTGoat/Metasploitable2）而非真实异构 IoT 部署”；对抗缺陷报告 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 将“评估限于五个 SWE-bench Python 仓库”列为 limitation；MEMBRANE <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 声明“仅纯英文文本基准，跨语言、多模态、嵌套智能体部署留作未来工作”；AttriGuard <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 揭示“更强衰减（λ=3）下良性效用与受攻效用均下降”的安全-效用权衡。</p><p>这些 limitation 共同构成一个可预期的模式：受控/单一环境下测得的 ASR 有效性，在迁移到异构真实环境时大概率会衰减。但没有任何一篇论文报告“源环境 ASR vs. 目标环境 ASR”的显式差值，因此对“衰减多少”的问题，现有证据只能回答为“预期会衰减且已被作者自承，但缺乏直接量化”。值得注意的是，这一模式在 ≥3 篇论文中出现（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>），构成领域级的“受控环境评估文化”特征。</p>
+<h3>跨环境迁移评估的证据强度对照</h3>
+<table><thead><tr><th>论文</th><th>源评估环境</th><th>作者自承的泛化边界</th><th>显式 ASR 衰减量</th></tr></thead><tbody><tr><td>VEXAIoT [4]</td><td>IoTGoat / Metasploitable2 受控 VM</td><td>非真实异构 IoT 部署</td><td>未报告</td></tr>
+<tr><td>对抗缺陷报告 [5]</td><td>5 个 Python 仓库（SWE-bench）</td><td>评估范围受限</td><td>未报告</td></tr>
+<tr><td>MEMBRANE [1]</td><td>HarmBench / AgentHarm 纯英文文本</td><td>跨语言/多模态/嵌套智能体未覆盖</td><td>未报告</td></tr>
+<tr><td>AttriGuard [3]</td><td>AgentDojo + ASB</td><td>强衰减下效用下降（权衡）</td><td>部分（λ 敏感性）</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析三_谱系回归与自我服务比较检测">核心分析三：谱系回归与自我服务比较检测</h2>
+<p>依据框架的必选步骤，本审计执行了 extends 链谱系分析与 contradicts 边交叉检查。谱系方面，MEMBRANE <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> extends AGrail <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，而 KG 显示已有两篇论文扩展 MEMBRANE（0567 多智能体框架、SED <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>）。这意味着若新的经验型防御仅对比更早的 AGrail <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 而回避更强的后继（如 SED <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>），将构成谱系回归。然而由于 KG 的 compares_with 边稀疏（MEMBRANE 无任何 compares_with 出边）且语义检索工具不可用，无法核实其实际基线表，故该风险置信度标记为 low。</p><p>自我服务比较方面，唯一触及证据矩阵的 contradicts 边为 EvoBreak <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>→MEMBRANE <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。EvoBreak 证明个体良性经验可组合为持久安全风险，直接挑战 MEMBRANE“成对正负经验记忆可可靠防御”的核心前提。但这一矛盾方向是“新的攻击论文否定旧防御”，而非“防御论文选择被自己否定的方法作基线”，因此不构成自我服务比较；其真正价值在于揭示经验回放型防御的 ASR 有效性可能存在被高估的系统性风险。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "六篇论文公平性判定分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "六篇论文公平性判定分布", "type": "pie", "radius": "55%", "data": [{"name": "major_issues", "value": 2}, {"name": "moderate_issues", "value": 1}, {"name": "minor_issues", "value": 3}, {"name": "fair", "value": 0}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">关键提示：KG 中 compares_with 边极稀疏（仅 0045→ProveRAG、0585→TRACE、0585→SED 三条），攻防侧的内部基线（是否与 GCG/AutoDAN、AGrail <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、MAPTA 对比）未被编码为结构化边。因此本报告的“内部基线公平性”判定受限于结构化数据层，无法确认各论文是否选择了弱基线或未调优基线——这类核查本应由语义检索工具读取原文 Experimental Setup 章节完成，但该工具在本次环境不可用。</div>
+
+<h2 id="sec_核心分析四_证据冲突与不确定性">核心分析四：证据冲突与不确定性</h2>
+<p>综合来看，攻防经验信号驱动自改进的有效性结论存在三层不确定性。第一层是可比性：攻防侧 ASR 与漏洞/修复侧 F1/EM 之间不存在公共量纲，任何声称“某方法有效性优于另一侧”的表述都不成立。第二层是冲突：EvoBreak <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 与 MEMBRANE <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的 contradicts 关系（置信度 0.72）提示，经验型防御在静态基准上的 ASR 优势，可能在自适应的组合式经验攻击下被显著削弱。第三层是证据缺口：跨环境迁移衰减只有结构性预期而无量化 Δ，且内部基线公平性无法核验。</p><p>因此，对 RQ2.3 的诚实回答是部分可答（partial）：攻防经验信号的有效性在受控域内是可信的强证据；与漏洞/修复侧不可比是明确的结论；但跨环境衰减的量化幅度仍为开放问题。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本报告存在若干需要明示的局限。首先，语义检索工具 search_paper_sections 在本次环境中持续返回“Unknown tool”错误，导致无法读取论文原文的 Experimental Setup、Baseline 表格与超参调优声明，因此对超参调优检验、硬件条件检验（hardware_parity）、以及时效性检验中的“基线发表年份”无法精确核验，这些字段在结构化层多为 unspecified/unclear。</p><p>其次，KG 的攻击侧 compares_with 边严重缺失，0217 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、0536 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、0466 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、0519 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的内部基线比较未被建模为边，无法执行严格的弱基线检测。再次，部分 limitation 边（如 0585 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的泛化限制）未在 KG 中编码，只能从论文描述推断。最后，跨环境迁移衰减缺乏显式量化数据是文献本身的性质，而非工具缺陷，但它直接限制了本 RQ 的可答深度。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>1) 可比性结论：攻防经验信号（ASR/渗透轨迹/经验回放）驱动的自改进有效性，与漏洞侧/修复侧结论不可直接比较——二者在度量语义（动态序贯 ASR vs. 静态 F1/EM）、评估范式与环境假设上均不同，数值无公共量纲。</p><p>2) 有效性结论：在受控基准内，攻防经验型防御报告了可信的显著有效性（VEXAIoT <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 95.0% ASR、MEMBRANE <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 六类越狱最高 F1、AttriGuard <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 归因防御、SRFT <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 自我反思微调），但其证据强度被“受控环境 + 特定模型 + 稀疏可比基线”三重约束，应作为限定域内的强证据。</p><p>3) 跨环境迁移衰减结论：存在明确的结构性预期（多篇作者自承仅受控 testbed/单一仓库/单语言），但无任何论文给出显式衰减量，该问题在现有证据下只能部分回答。</p><p>4) 结构性风险：EvoBreak <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 对 MEMBRANE <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的范式否定、以及 AGrail→MEMBRANE→SED 谱系中潜在的后继回避，提示经验型防御的有效性可能被高估，需在更强的组合式与跨环境基准上重新验证。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;MEMBRANE: A Self-Evolving Contrastive Safety Memory for LLM Agent Defense&nbsp;<code style="font-size:0.82em;color:#888">0519_membrane_a_selfevolving_contrastive_safety_memory_for_llm_ag</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Self-Reflection Fine-Tuning: Enhancing Agent Security Against Prompt Injection&nbsp;<code style="font-size:0.82em;color:#888">0585_selfreflection_finetuning_enhancing_agent_security_against_p</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;AttriGuard: Defeating Indirect Prompt Injection in LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">0466_attriguard_defeating_indirect_prompt_injection_in_llm_agents</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;VEXAIoT: Autonomous IoT Vulnerability Exploitation Using AI Agents&nbsp;<code style="font-size:0.82em;color:#888">0536_vexaiot_autonomous_iot_vulnerability_exploitation_using_ai_a</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Adversarial Bug Reports as a Security Risk in Language Model-Based Automated Program Repair&nbsp;<code style="font-size:0.82em;color:#888">0217_adversarial_bug_reports_as_a_security_risk_in_language_model</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Benign Alone, Harmful Together: Exploiting Experience Composition in Self-Evolving LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">0549_benign_alone_harmful_together_exploiting_experience_composit</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;An Empirical Evaluation of LLM-Based Approaches for Code Vulnerability Detection: RAG, SFT, and Dual-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">0045_An_Empirical_Evaluation_of_LLM-Based_Approaches_for_Code_Vul</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Self-Evolving Defense: Continual Security Policy Learning for LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">0582_selfevolving_defense_continual_security_policy_learning_for</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;AGrail: A Lifelong Agent Guardrail with Effective and Adaptive Safety Detection&nbsp;<code style="font-size:0.82em;color:#888">0342_agrail_a_lifelong_agent_guardrail_with_effective_and_adaptiv</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.3 · 2026-10-22 19:51</footer>
+</div>
+</body>
+</html>

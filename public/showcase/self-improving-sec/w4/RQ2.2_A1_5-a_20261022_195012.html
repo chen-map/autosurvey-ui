@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.5-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.5-a 分析报告</h1>
+<div class="meta">RQ [RQ2.2]：[父问题 RQ2] 四类安全反馈信号在驱动自改进时各自的有效性如何，其证据强度与冲突点在哪里？
+[本子问题 RQ2.2] 程序运行反馈（崩溃复现、测试执行结果、动态分析/sanitizer 信号）与测试覆盖率信号（code coverage）分别贡献多少可测改进？为何覆盖率为 256 个 Metric 中支持度靠后的信号（仅 3 篇），其作为自改进驱动是否被系统性低估？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0315_autosafecoder_a_multiagent_framework_for_securing_llm_code_g, 0380_may_the_feedback_be_with_you_unlocking_the_power_of_feedback, 0164_deepSURF_Detecting_Memory_Safety_Vulnerabilities_in_Rust_Thr, 0481_program_analysis_guided_llm_agent_for_proofofconcept_generat, 0288_covrl_fuzzing_javascript_engines_with_coverageguided_reinfor）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_主线一_程序运行反馈_证据链宽而实_但多为间接贡献">主线一：程序运行反馈——证据链宽而实，但多为间接贡献</a></li>
+<li><a href="#sec_主线二_覆盖率信号_篇目少_但单位证据强度不低">主线二：覆盖率信号——篇目少，但单位证据强度不低</a></li>
+<li><a href="#sec_主线三_覆盖率为何被系统性低估_成因诊断">主线三：覆盖率为何被系统性低估——成因诊断</a></li>
+<li><a href="#sec_分歧点与证据冲突">分歧点与证据冲突</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告围绕 RQ2.2 展开：程序运行反馈（崩溃复现、测试执行结果、动态分析/sanitizer 信号）与测试覆盖率信号（code coverage）分别贡献多少可测改进，以及覆盖率作为自改进驱动是否被系统性低估。核心结论是：两类信号的可测贡献呈现鲜明不对称——程序运行反馈作为自改进驱动的直接有效性被大量工作反复验证，证据链宽而实（如 AutoSafeCoder 静态分析反馈四轮内修复 53% 漏洞 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，VRpilot 把编译器/sanitizer/测试套件三类执行信号作为 patch 验证反馈底座 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>）；而覆盖率信号在 KG 的 256 个 Metric 中仅有 3 篇论文以 code coverage 度量支持，处于支持度靠后位置。</p><p>本文判断覆盖率确实被系统性低估，但根源不在其弱，而在评估体系偏好离散「正确/可复现」指标、覆盖率需长链路兑现且度量命名碎片化（code/branch/edge/instruction coverage 分立），使其支持度被统计性压低。CovRL 用 TF-IDF 覆盖图 + PPO 发现 48 个真实 bug（含 11 个 CVE）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、FUEL 以覆盖率驱动多种反馈发现漏洞 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，单位证据强度并不低。最大的证据缺口在于缺少统一 benchmark 上两类信号的 head-to-head 消融，故本 RQ 判定为「部分回答」。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于父问题 RQ2 冻结证据矩阵中的核心论文（AutoSafeCoder <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、FUEL <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、deepSURF <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、PAGENT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、CovRL <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>），并沿知识图谱的一跳/二跳关系扩展到其上下游谱系（LLAMA <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、LLM4FUZZ <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、ELFUZZ <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、语义混合 fuzzing <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、SAFuzz <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、VRpilot <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、end-to-end secure code <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 等），共精读约 15 篇论文的节点与关系数据。工具侧共加载 KG 的 metric、problem、limitation、assumption、method、dataset 等多类节点，其中 metric 总量 256 个、problem 402 个、method 385 个、limitation 226 个、assumption 100 个（均为 KG 全量计数，本次检索为分页取样）。核心信号的支持度通过 measured_by 边的反向追溯精确还原，覆盖率家族（code/branch/edge/instruction）分别定位到具体论文。</p>
+<h3>两类自改进反馈信号的证据分布对比</h3>
+<table><thead><tr><th>信号类别</th><th>代表度量指标</th><th>KG 中 supporting 论文</th><th>关键量化结果</th><th>证据强度</th></tr></thead><tbody><tr><td>程序运行反馈（崩溃/测试执行）</td><td>fix rate [1]、poc success rate [5]、number of memory bugs [6]</td><td>0315 [1], 0204 [2], 0481 [5], 0164 [6]</td><td>AutoSafeCoder 四轮修复 53% 漏洞、降 13% 漏洞率 [1]；deepSURF 检出 42 内存 bug（12 新）[6]</td><td>高（宽谱系）</td></tr>
+<tr><td>动态分析/sanitizer 信号</td><td>poc success rate [5]、number of bugs [4]</td><td>0481 [5], 0164 [6], 0204 [2]</td><td>PAGENT 以 sanitizer crash（non-zero exit）为 PoC 成功率基准 [5]</td><td>高</td></tr>
+<tr><td>测试覆盖率（code coverage）</td><td>code coverage</td><td>0288 [3], 0380 [4], 0389 [7]</td><td>CovRL 发现 48 真实 bug（39 新、11 CVE）[3]</td><td>中（篇目少但单位强度高）</td></tr>
+<tr><td>覆盖率家族（branch/edge/instruction）</td><td>branch/edge/instruction coverage</td><td>0389 [7], 0376 [9], 0287 [8]</td><td>ELFUZZ 以 edge coverage 度量输入生成效果 [9]</td><td>中（命名碎片化）</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各反馈信号在 KG 中 supporting 论文数（以 measured_by 边计）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["code coverage", "branch coverage", "edge coverage", "instruction coverage", "程序执行反馈（crash/test 汇总）", "sanitizer/PoC 成功率"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "论文数", "type": "bar", "data": [3, 1, 1, 1, 5, 2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_主线一_程序运行反馈_证据链宽而实_但多为间接贡献">主线一：程序运行反馈——证据链宽而实，但多为间接贡献</h2>
+<p>程序执行反馈的有效性有多条量化证据支撑。AutoSafeCoder <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的 Static Analyzer Agent 在最多四轮迭代内修复了 53% 的漏洞，相较 LLM 基线实现 13% 漏洞下降；但其 Fuzzing Agent（崩溃检测通道）仅处理了 65 个样本，并受不兼容依赖与权限管理问题困扰，说明崩溃反馈通道存在、但贡献信号被工程实现稀释。VRpilot <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 系统性地把编译器报错、sanitizer、测试套件三类执行信号作为 patch 迭代反馈，并成为后续 RAVEN、MemRepair、EvoRepair、KEAREPAIR、EviRepair 等 15+ 篇工作共同继承的「patch 验证反馈」范式底座 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，这本身就是该信号强有效性的社群级背书。PAGENT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 用 sanitizer 插桩二进制的崩溃信息（non-zero exit code）作为精修反馈，其 PoC 成功率直接以「触发 crash」度量。deepSURF <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 则以 AFL++ + ASan 检出 42 个内存破坏 bug（含 12 个此前未知）。</p><p>值得注意的是，程序执行反馈的高支持度部分源于「易测量性」：crash/test 是天然离散、易在 benchmark 报告的终局指标，因而被更频繁地当作评价口径，这构成下述覆盖率被低估的对照背景。</p>
+
+<h2 id="sec_主线二_覆盖率信号_篇目少_但单位证据强度不低">主线二：覆盖率信号——篇目少，但单位证据强度不低</h2>
+<p>覆盖率作为自改进驱动的最高强度单点证据来自 CovRL <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>：它通过 TF-IDF 加权覆盖图配合 PPO 微调，把覆盖率反馈注入 LLM 变异器，在四个 JS 引擎上均超越 SOTA，并发现 48 个真实 bug（39 个新、11 个 CVE）<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。它所对标的问题节点正是「现有 LLM fuzzing 仅黑盒式使用覆盖率引导」。FUEL <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 把多种执行反馈转化为分析摘要驱动生成，并以 code coverage、valid test ratio、number of bugs 三指标度量，其对标的问题即「多数 LLM fuzzer 不利用语义丰富的执行反馈，导致覆盖率下降与漏检」<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>；LLAMA <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 作为 FUEL 的扩展把反馈驱动多目标变异移植到智能合约 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p><p>关键发现是：覆盖率信号家族的实际覆盖比「code coverage 3 篇」更广。branch coverage 由 LLAMA 使用 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，edge coverage 由 ELFUZZ 使用 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>，instruction coverage 由 LLM4FUZZ 使用 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>，它们都是同一信号家族的不同切片。因此「仅 3 篇」部分是度量命名碎片化所致，而非真正的稀少。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "覆盖率信号家族在 KG 中的切片构成（按 supporting 论文计）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "覆盖率信号家族在 KG 中的切片构成（按 supporting 论文计）", "type": "pie", "radius": "55%", "data": [{"name": "code coverage", "value": 3}, {"name": "branch coverage", "value": 1}, {"name": "edge coverage", "value": 1}, {"name": "instruction coverage", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_主线三_覆盖率为何被系统性低估_成因诊断">主线三：覆盖率为何被系统性低估——成因诊断</h2>
+<p>其一，评估仪器偏好（技术难度/资源壁垒）。覆盖率是连续、需长期 campaign、以五个 run 平均（CovRL 的度量方式 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>）才能稳定量化的指标，与 benchmark 追求短平快、离散 pass/fail 的取向冲突。FUEL 自述每轮迭代 24.09 秒延迟、总成本约 $40.89 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，折射出「全覆盖-反馈闭环」的高资源门槛。</p><p>其二，认知盲区。覆盖率「长链路兑现」的因果链（覆盖↑→路径暴露↑→bug↑）在多轮 LLM 迭代的评测框架中被截断，社区更愿意直接以「修复率/漏洞率」等终局指标报告，把覆盖率降格为过程指标。</p><p>其三，反向证据强化低估论证。语义混合 fuzzing 论文 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 明确指出「多数 LLM 辅助 fuzzer 过度依赖 code coverage 作为唯一反馈，忽视高层语义多样性」，并提出语义新颖度反馈加以扩展 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>；SAFuzz <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 进一步以自适应策略证明纯覆盖率不足 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>。这类「覆盖率不够」的批评与「覆盖率被低估」并不矛盾——它说明覆盖率是必要但非充分的基础信号，其作为基线驱动的价值被低估（被轻视），而非被高估。</p>
+<h3>盲区候选识别（密度≤1篇）与成因分类</h3>
+<table><thead><tr><th>空白单元格</th><th>现有篇数</th><th>真空白判定</th><th>成因类型</th><th>理由</th></tr></thead><tbody><tr><td>程序执行反馈 vs 覆盖率反馈 head-to-head 消融</td><td>0</td><td>真空白</td><td>技术难度</td><td>两类信号在不同目标域度量、缺统一 benchmark，覆盖率需长 campaign 才稳定，统一消融成本高</td></tr>
+<tr><td>覆盖率在 LLM 多轮自改进中的因果链量化</td><td>1</td><td>真空白</td><td>认知盲区</td><td>覆盖率长链路兑现（覆盖→路径→bug）在多轮评测框架中被截断，社区偏好终局指标</td></tr>
+<tr><td>覆盖率信号的跨语言/跨域泛化</td><td>0</td><td>真空白</td><td>资源壁垒</td><td>CovRL 仅 JS 引擎 [3]、FUEL 仅 DL 框架 [4]、LLAMA 仅智能合约 [7]，均单一目标域</td></tr>
+</tbody></table>
+<div class="note">假空白排除说明：本次分析未将「覆盖率与执行反馈任何结合」判为假空白，因为语义混合 fuzzing <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、SAFuzz <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、CovRL <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 均实际结合了二者，仅缺少受控消融对比。真空白判定的核心依据是：相关概念在文献中被明确提及（如 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 指出覆盖率作为唯一反馈的不足），但缺乏专门的研究设计去量化二者的相对贡献。</div>
+
+<h2 id="sec_分歧点与证据冲突">分歧点与证据冲突</h2>
+<p>最大分歧在归因：程序执行反馈的高篇目支持度，究竟真实反映其效果优于覆盖率，还是反映「易测量性偏差」（crash/test 是天然离散、易报告，覆盖率需专门 instrument）。这一冲突由 CovRL 与 FUEL 的结果侧面激化——两者都以覆盖率驱动却取得了与执行反馈类工作相当甚至更优的 bug 发现成果 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>，暗示覆盖率的效果可能被篇目统计所掩盖。另一冲突点是「覆盖率是否充分」：语义混合 fuzzing <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 与 SAFuzz <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 主张纯覆盖率不足，需要扩充语义信号，而 CovRL <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 则证明覆盖率作为核心驱动已经很强。这一冲突的实质是「必要但非充分」——覆盖率是基础底座，但不排除需要叠加其他信号。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>第一，核心证据缺口：不存在任何在统一 benchmark 上对「程序执行反馈 vs 覆盖率反馈」做 head-to-head 消融的研究，导致无法直接量化两类信号各自的可测改进贡献差。第二，覆盖率信号「仅 3 篇」的统计受度量命名碎片化（code/branch/edge/instruction coverage 分立）影响，叠加 KG 收录完整性问题（<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 等扩展论文未被计入 code coverage 边），「3 篇」应视为下界而非精确值。第三，多数量化结论（53% 修复率 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、48 bug/11 CVE <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、42 内存 bug <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）来自不同语言、不同目标（Python 安全生成 vs JS 引擎 vs Rust crate），跨任务可比性弱，不宜直接横向比较绝对值。第四，上游 A1.1-a 矩阵报告与 A1.4-c 风险报告在当前环境不可访问，密度统计与危害评级均基于 KG 边重建并标记为独立估计，未能链接到 A1.4-c 的风险等级做跨 skill 一致性校验。第五，归因性结论（易测量性偏差、系统性低估机制）属中等置信推断，缺乏直接的元评估研究支撑。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对本 RQ2.2 给出一致判定：「部分回答」。程序运行反馈（崩溃复现、测试执行、sanitizer 信号）贡献可测改进的直接证据较强，其有效性被 AutoSafeCoder <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、VRpilot <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、PAGENT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、deepSURF <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 等多篇工作从不同角度反复验证。覆盖率作为自改进驱动的证据强度同样不低——CovRL <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 发现 48 个真实 bug、11 个 CVE，FUEL <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 以覆盖率驱动多种反馈，均证明覆盖率的强驱动力。</p><p>关于「覆盖率是否被系统性低估」：判断成立。其支持度靠后（code coverage 仅 3 篇）主要由三个机制造成——评估体系偏好离散终局指标、覆盖率需长 campaign 且度量命名碎片化、其跨语言跨域验证稀缺。覆盖率的价值是「必要但非充分」的基础底座，被低估而非被高估。未来的关键研究机会在于：建立统一 benchmark 对程序执行反馈与覆盖率反馈做受控消融，并量化覆盖率在 LLM 多轮自改进中的因果兑现链路。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;AutoSafeCoder: A Multi-Agent Framework for Securing LLM Code Generation through Static Analysis and Fuzz Testing&nbsp;<code style="font-size:0.82em;color:#888">0315_autosafecoder_a_multiagent_framework_for_securing_llm_code_g</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;A Case Study of LLM for Automated Vulnerability Repair: Assessing Impact of Reasoning and Patch Validation Feedback (VRpilot)&nbsp;<code style="font-size:0.82em;color:#888">0204_A_Case_Study_of_LLM_for_Automated_Vulnerability_Repair_Asses</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;CovRL: Fuzzing JavaScript Engines with Coverage-Guided Reinforcement Learning for LLM-based Mutation&nbsp;<code style="font-size:0.82em;color:#888">0288_covrl_fuzzing_javascript_engines_with_coverageguided_reinfor</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;May the Feedback Be with You! Breaking the Seal of Feedback-Driven Deep Learning Framework Fuzzing via Large Language Models (FUEL)&nbsp;<code style="font-size:0.82em;color:#888">0380_may_the_feedback_be_with_you_unlocking_the_power_of_feedback</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Program Analysis Guided LLM Agent for Proof-of-Concept Generation (PAGENT)&nbsp;<code style="font-size:0.82em;color:#888">0481_program_analysis_guided_llm_agent_for_proofofconcept_generat</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;deepSURF: Detecting Memory Safety Vulnerabilities in Rust Through Fuzzing LLM-Augmented Harnesses&nbsp;<code style="font-size:0.82em;color:#888">0164_deepSURF_Detecting_Memory_Safety_Vulnerabilities_in_Rust_Thr</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;LLAMA: Multi-Feedback Smart Contract Fuzzing Framework with LLM&nbsp;<code style="font-size:0.82em;color:#888">0389_llama_multifeedback_smart_contract_fuzzing_framework_with_ll</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;LLM4FUZZ: Guided Fuzzing of Smart Contracts with Large Language Models&nbsp;<code style="font-size:0.82em;color:#888">0287_llm4fuzz_guided_fuzzing_of_smart_contracts_with_large_langua</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;ELFUZZ: Efficient Input Generation via LLM-Driven Synthesis over Fuzzer Space&nbsp;<code style="font-size:0.82em;color:#888">0376_elfuzz_efficient_input_generation_via_llmdriven_synthesis_ov</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Hybrid Fuzzing with LLM-Guided Input Mutation and Semantic Feedback&nbsp;<code style="font-size:0.82em;color:#888">0424_hybrid_fuzzing_with_llmguided_input_mutation_and_semantic_fe</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;SAFuzz: Semantic-Guided Adaptive Fuzzing for LLM-Generated Code&nbsp;<code style="font-size:0.82em;color:#888">0458_safuzz_semanticguided_adaptive_fuzzing_for_llmgenerated_code</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;How Well Do Large Language Models Serve as End-to-End Secure Code Agents?&nbsp;<code style="font-size:0.82em;color:#888">0309_how_well_do_large_language_models_serve_as_endtoend_secure_c</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.2 · 2026-10-22 19:50</footer>
+</div>
+</body>
+</html>

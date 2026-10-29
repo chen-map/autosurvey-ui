@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.4-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.4-b 分析报告</h1>
+<div class="meta">RQ [RQ2.1]：[父问题 RQ2] 四类安全反馈信号在驱动自改进时各自的有效性如何，其证据强度与冲突点在哪里？
+[本子问题 RQ2.1] 漏洞检测结果（静态分析告警、CWE 判定、检测器置信度）作为反馈信号时，其 Precision / Recall / F1 水平如何转化为自改进增益？在「Absence of explicit security specifications」条件下，告警噪声如何影响闭环稳定性？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0571_llmsecav_a_vulnerability_taxonomy_and_llmdriven_software_wea, 0518_zeroapt_a_closedloop_adversarial_framework_for_llmdriven_aut, 0421_paravul_a_parallel_large_language_model_and_retrievalaugment, 0493_adaptive_and_aiaugmented_security_testing_a_systematic_surve, 0451_agenticscr_an_autonomous_agentic_secure_code_review_for_imma, 0458_safuzz_semanticguided_adaptive_fuzzing_for_llmgenerated_code）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_证据主线一_检测器_P_R_F1_差异直接决定反馈价值上限">证据主线一：检测器 P/R/F1 差异直接决定反馈价值上限</a></li>
+<li><a href="#sec_证据主线二_噪声进入闭环后破坏稳定性并诱发错误修复">证据主线二：噪声进入闭环后破坏稳定性并诱发错误修复</a></li>
+<li><a href="#sec_证据主线三_缓解噪声靠多信号融合与语义判据_而非信任静态规则">证据主线三：缓解噪声靠多信号融合与语义判据，而非信任静态规则</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ2.1——「漏洞检测结果作为反馈信号时，其 Precision/Recall/F1 水平如何转化为自改进增益；在缺少显式安全规格条件下，告警噪声如何影响闭环稳定性」——基于知识图谱 assumption/problem/method/paper/metric/limitation 六类节点及其关系边进行系统分析。核心结论是：漏洞检测反馈的自改进增益高度依赖检测器信噪比。当检测器经 RAG/LLM 语义增强时（F1 可达 0.85）反馈信号携带强可执行性；而直接以传统静态分析器（CodeQL/Semgrep/Bandit/cppcheck）作为反馈源时，其聚合 precision 虚高而逐样本一致率仅 61–65%，会把大量噪声注入闭环。</p><p>在缺少显式安全规格的条件下，噪声是闭环稳定性的首要破坏源：LLM 自审准确率仅 43.6–74.6%、对抗性输入可使 &gt;90% 补丁偏离目标、Bandit 反馈闭环中同类漏洞（CWE-94）在 44 样本中复发 25 次。缓解路径集中于多信号融合与语义判据压噪（多工具融合、语义漏洞预测器、检测+验证子代理），而非信任静态规则原始告警。需注意：语料中缺少「告警噪声比例 vs 闭环收敛」的显式敏感性消融曲线，故该问题为部分回答（partial）。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>分析仅依赖知识图谱结构化数据与关系边，未使用外部先验。查询覆盖六类节点：assumption（假设/约束）、problem（研究问题，库内 402 个）、method（方法，385 个）、paper（论文，141 篇）、metric（指标，256 个）、limitation（局限，226 个）。围绕本 RQ 冻结的六篇证据论文（0571、0518、0421、0493、0451、0458）以及 KG 中与之通过 addresses/proposes/extends/supports/requires/evaluated_on/measured_by 相连的高相关论文（0153、0309、0315、0409、0438、0217、0045、0470、0233、0147、0518 等）逐跳展开关系查询。共执行约 30 次工具调用，精读 15 篇以上论文的节点关系与证据字段。</p>
+<h3>关键约束与敏感性等级（来自 KG assumption 节点）</h3>
+<table><thead><tr><th>约束/假设</th><th>约束含义</th><th>敏感性等级</th><th>对闭环的影响</th></tr></thead><tbody><tr><td>Static analyzers as evaluation proxy [1]</td><td>默认静态分析器输出可靠表征代码安全</td><td>high（高敏感）</td><td>逐样本 precision 崩塌会直接注入噪声</td></tr>
+<tr><td>CWE identifier and name provided by upstream tools [2]</td><td>修复依赖上游工具给出 CWE 标签</td><td>high（高敏感）</td><td>标签缺失/错误则模式匹配失效</td></tr>
+<tr><td>Buggy region marked by //bug_start &amp; //bug_end [2]</td><td>缺陷区域已被显式标注（=显式安全规格）</td><td>high（高敏感）</td><td>正是 RQ 所指『规格缺失』盲区</td></tr>
+<tr><td>Iteration limit for static analysis = 4 [3]</td><td>静态分析反馈闭环最多 4 次迭代</td><td>active（活跃）</td><td>硬上限致噪声下无法收敛</td></tr>
+<tr><td>Fuzzing mutation limit = 150 [4]</td><td>模糊测试变异循环 150 次</td><td>method_specific（方法特定）</td><td>资源/成本边界</td></tr>
+</tbody></table>
+<h3>检测器 P/R/F1 水平与逐样本可靠性对比（核心定量证据）</h3>
+<table><thead><tr><th>检测方案</th><th>指标口径</th><th>数值</th><th>来源论文</th><th>对反馈增益的含义</th></tr></thead><tbody><tr><td>RAG 增强检测</td><td>平均 F1</td><td>0.85</td><td>[5]</td><td>高 F1，反馈信号可执行性强</td></tr>
+<tr><td>SFT 检测</td><td>平均 F1</td><td>0.80</td><td>[5]</td><td>较高，可用反馈</td></tr>
+<tr><td>双智能体检测</td><td>平均 F1</td><td>0.77</td><td>[5]</td><td>中等</td></tr>
+<tr><td>基线 LLM</td><td>平均 F1</td><td>0.67</td><td>[5]</td><td>偏低，反馈价值有限</td></tr>
+<tr><td>Semgrep</td><td>per-sample 一致率</td><td>65%</td><td>[1]</td><td>逐样本不可靠</td></tr>
+<tr><td>CodeQL</td><td>per-sample 一致率</td><td>61%</td><td>[1]</td><td>逐样本不可靠</td></tr>
+<tr><td>CodeQL</td><td>聚合 secure 分类率</td><td>80%（人类仅 61%）</td><td>[1]</td><td>precision 虚高、误导闭环</td></tr>
+<tr><td>Semgrep</td><td>聚合 secure 分类率</td><td>60%</td><td>[1]</td><td>接近人类但样例级背离</td></tr>
+<tr><td>CodeQL/Semgrep</td><td>46 个已知弱点命中</td><td>0/46</td><td>[2]</td><td>recall 崩塌</td></tr>
+<tr><td>LLM 分析（taxonomy）</td><td>已知弱点恢复率</td><td>最高 76%</td><td>[2]</td><td>显著优于静态规则</td></tr>
+<tr><td>cppcheck</td><td>单次告警量</td><td>1,301 条</td><td>[2]</td><td>噪声洪流，需大量人工分诊</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "不同检测方案的 F1 / 一致率水平对比", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["RAG", "SFT", "双智能体", "基线LLM", "Semgrep一致率", "CodeQL一致率"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "得分（F1 或 一致率，0–1）", "type": "bar", "data": [0.85, 0.8, 0.77, 0.67, 0.65, 0.61], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_证据主线一_检测器_P_R_F1_差异直接决定反馈价值上限">证据主线一：检测器 P/R/F1 差异直接决定反馈价值上限</h2>
+<p>KG 中 0045 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的对比边显示：RAG=0.85、SFT=0.80、双智能体=0.77、基线=0.67，检索增强检测高出基线约 18 个 F1 点，说明高 F1 检测器携带更强可执行反馈信号。相反，0153 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 用 1,080 条人工标注 LLM 样本构建 ground truth 后发现 Semgrep/CodeQL 逐样本一致率仅 65%/61%，尽管 CodeQL 聚合 secure 分类率达 80%——precision 的『聚合假象』掩盖了样例级崩塌。0571 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 进一步证明 CodeQL/Semgrep 在 Autoware 46 个已知弱点上命中 0/46，而 LLM 分析最多恢复 76%，cppcheck 单次产生 1,301 条告警。三方证据形成一致链条：传统静态分析器 recall 极低、precision 虚高且逐样本不可靠，其输出作为反馈会把噪声直接灌入闭环。</p>
+
+<h2 id="sec_证据主线二_噪声进入闭环后破坏稳定性并诱发错误修复">证据主线二：噪声进入闭环后破坏稳定性并诱发错误修复</h2>
+<p>0309 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 报告 LLM 自审漏洞准确率仅 LLM 43.6%、LLM 74.6%，假阳性率 LLM 达 4.3%，且对自产代码修复更差（成功修复上限约 60%，SecurityEval 上平均 76.2% 代码不安全）。0315 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的 AutoSafeCoder 用 Bandit 静态反馈闭环，却把反馈限制在 4 次迭代，CWE-94 在 44 个漏洞样本中复发 25 次，暴露『噪声反馈下迭代不收敛、同类漏洞复发』的闭环失稳。0217 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 从对抗视角佐证：在无显式规格条件下 &gt;90% 精心构造的缺陷报告诱导出攻击者意图补丁，最强过滤器仅挡 47%，说明规格缺失时闭环极易被噪声劫持。0518 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的 CLOSED-LOOP 安全框架亦承认硬约束过滤在近零防御压力下会过剪枝，属于同一稳定性的另一面。</p>
+
+<h2 id="sec_证据主线三_缓解噪声靠多信号融合与语义判据_而非信任静态规则">证据主线三：缓解噪声靠多信号融合与语义判据，而非信任静态规则</h2>
+<p>0438 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 融合 GCC+KLEE+CodeQL 三路信号并把修复循环限制在 3 次；0409 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 用 Bandit 检测—LLM 修复—Bandit 复扫的检测-修复-验证闭环；0458 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 SAFuzz 用 LLM 语义漏洞预测器（以 ROC-AUC、precision、bug detection recall、speedup 度量）做自适应时间分配，先过滤非漏洞目标以降低噪信比；0451 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 的 AgenticSCR 用检测子代理+验证子代理+安全语义记忆处理『噪声大、缺上下文的静态告警』，并以定位(L)、类型正确(T)、相关性(R)等指标评测。共同逻辑是：用外部/语义信号压噪，而非信任静态规则原始告警。0493 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 的综述亦指出 SAST 工具缺乏从扫描历史/人工分诊/运行时证据学习的能力，产生需大量人工分诊的告警洪流。</p>
+<h3>场景化适用建议矩阵（含失效触发条件）</h3>
+<table><thead><tr><th>适用条件</th><th>推荐方法</th><th>应避免</th><th>失效触发条件</th></tr></thead><tbody><tr><td>检测器有 RAG/LLM 语义增强且 F1≥0.8 [5][11][4]</td><td>RAG/SFT 检测反馈 + 语义验证子代理</td><td>裸静态规则直接作为反馈</td><td>检测降为传统静态工具，per-sample 一致率跌破约 65% [1]</td></tr>
+<tr><td>存在显式安全规格/缺陷区域标注 [2]</td><td>多工具融合迭代修复 [9][10]</td><td>无规格下的开放式自修复</td><td>规格缺失时对抗/噪声输入诱导错误补丁（&gt;90%）[7]</td></tr>
+<tr><td>噪声静态告警量大 [2]</td><td>语义预测器自适应过滤+限迭代 [4][3]</td><td>过度信赖静态规则召回</td><td>告警暴增（cppcheck 1301 条）且迭代硬上限致同类漏洞复发 [3]</td></tr>
+</tbody></table>
+<div class="note">约束盲区警告：KG 中『Static analyzers as evaluation proxy』<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 与『Buggy region marked by //bug_start &amp; //bug_end』<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 两项高敏感假设均标志着领域盲区——静态分析器被默认可信，但其逐样本一致率仅 61–65% <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；而缺陷区域标注（即显式安全规格）一旦缺失，反馈定位即失效，却无任何论文做过『噪声比例 vs 闭环收敛』的显式敏感性曲线。此类未被消融测试的高敏感约束是本范式最危险之处。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，最关键的『告警噪声比例如何定量影响闭环稳定性』缺乏直接的敏感性消融数据（sensitivity_data: absent），无法从原文图表提取具体拐点阈值，相关判定只能由间接证据（迭代上限、漏洞复发、对抗成功率）推断。其二，检测器定义不一致导致数值不可直接横比——0045 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的 F1=0.85 来自 LLM/RAG 增强检测，0153/0571 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的崩塌来自传统静态工具，二者口径不同。其三，闭环论文多以固定迭代上限（4 次、3 次、回合制）作隐式约束，复发可能部分归因于硬上限而非纯噪声效应，难以完全分离。其四，多数结论限于 Python 单语言或单一代码库（Autoware/SWE-bench），泛化性未验证。整体置信度约 0.78。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ2.1 的答案是：漏洞检测反馈的自改进增益受制于检测器信噪比。高 precision/高 F1 的检索增强检测器（F1≈0.85）能有效驱动自改进，而传统静态分析器因逐样本一致率仅 61–65%、已知弱点命中 0/46，其聚合 precision 是危险假象。在缺少显式安全规格的条件下，告警噪声成为闭环稳定性的首要破坏源——表现为 LLM 自审低准确率、同类漏洞反复复发（CWE-94 复发 25/44）与对抗输入下 &gt;90% 的错误补丁。有效缓解路径是多信号融合与语义判据压噪（多工具融合、语义漏洞预测器、检测+验证子代理）。当前范式的核心盲区在于：『静态分析器可作可信反馈代理』与『缺陷区域已显式标注』两项高敏感假设从未被噪声-收敛敏感性实验检验，这是最需要补做的消融研究。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Persistent Human Feedback, LLMs, and Static Analyzers for Secure Code Generation and Vulnerability Detection&nbsp;<code style="font-size:0.82em;color:#888">0153_Persistent_Human_Feedback_LLMs_and_Static_Analyzers_for_Se</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;LLMSec-AV: A Vulnerability Taxonomy and LLM-driven Software Weakness Analysis for Automated Vehicles&nbsp;<code style="font-size:0.82em;color:#888">0571_llmsecav_a_vulnerability_taxonomy_and_llmdriven_software_wea</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;AutoSafeCoder: A Multi-Agent Framework for Securing LLM Code Generation&nbsp;<code style="font-size:0.82em;color:#888">0315_autosafecoder_a_multiagent_framework_for_securing_llm_code_g</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;SAFUZZ: Semantic-Guided Adaptive Fuzzing for LLM-Generated Code&nbsp;<code style="font-size:0.82em;color:#888">0458_safuzz_semanticguided_adaptive_fuzzing_for_llmgenerated_code</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;An Empirical Evaluation of LLM-Based Approaches for Code Vulnerability Detection: RAG, SFT, and Dual-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">0045_An_Empirical_Evaluation_of_LLM-Based_Approaches_for_Code_Vul</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;How Well Do Large Language Models Serve as End-to-End Secure Code Agents?&nbsp;<code style="font-size:0.82em;color:#888">0309_how_well_do_large_language_models_serve_as_endtoend_secure_c</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Adversarial Bug Reports as a Security Risk in Language Model-Based Automated Program Repair&nbsp;<code style="font-size:0.82em;color:#888">0217_adversarial_bug_reports_as_a_security_risk_in_language_model</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;ZERO-APT: A Closed-Loop Adversarial Framework for LLM-Driven Automated Penetration Testing&nbsp;<code style="font-size:0.82em;color:#888">0518_zeroapt_a_closedloop_adversarial_framework_for_llmdriven_aut</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Improving LLM-Assisted Secure Code Generation Through Retrieval-Augmented Multi-Tool Self-Repair&nbsp;<code style="font-size:0.82em;color:#888">0438_improving_llmassisted_secure_code_generation_through_retriev</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;SecureFixAgent: A Hybrid LLM Agent for Automated Python Static Analysis-Driven Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0409_securefixagent_a_hybrid_llm_agent_for_automated_python_stati</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;AgenticSCR: An Autonomous Agentic Secure Code Review for Immature Vulnerabilities&nbsp;<code style="font-size:0.82em;color:#888">0451_agenticscr_an_autonomous_agentic_secure_code_review_for_imma</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Adaptive and AI-Augmented Security Testing: A Systematic Survey&nbsp;<code style="font-size:0.82em;color:#888">0493_adaptive_and_aiaugmented_security_testing_a_systematic_surve</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ2.1 · 2026-10-22 19:48</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-b 分析报告</h1>
+<div class="meta">RQ [RQ3.1]：[父问题 RQ3] 自改进方法在跨 CWE 类型、跨编程语言、跨仓库规模上的泛化能力，实测边界落在哪里？
+[本子问题 RQ3.1] 评估基准的分布偏斜有多严重（HumanEval 6 / SecurityEval 5 均为函数级 Python，而仓库级与多语言基准 Vul4j / PatchEval / SEC-Bench 各仅 3）？这种基准选择如何限制自改进结论的外推半径？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0315_autosafecoder_a_multiagent_framework_for_securing_llm_code_g, 0241_Automated_Vulnerability_Patching_in_Legacy_Code_Using_LLMs_a, 0226_guiding_ai_to_fix_its_own_flaws_an_empirical_study_on_llmdri, 0309_how_well_do_large_language_models_serve_as_endtoend_secure_c, 0471_severa_verified_synthesis_of_selfevolving_agents, 0153_Persistent_Human_Feedback_LLMs_and_Static_Analyzers_for_Se）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_主线一_生成侧被_SecurityEval_锁定为事实标准">主线一：生成侧被 SecurityEval 锁定为事实标准</a></li>
+<li><a href="#sec_主线二_仓库级_多语言基准仅服务修复谱系的少数自进化论文">主线二：仓库级/多语言基准仅服务修复谱系的少数自进化论文</a></li>
+<li><a href="#sec_主线三_基准偏斜与窄覆盖在_KG_中显式编码_部分作者自承">主线三：基准偏斜与窄覆盖在 KG 中显式编码，部分作者自承</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告对 RQ3.1（评估基准分布偏斜有多严重、如何限制自改进结论的外推半径）进行了系统性数据集谱系审查。结论：分布偏斜在知识图谱中被系统性证实，且比提问中的计数（HumanEval 6 / SecurityEval 5 对 Vul4j / PatchEval / SEC-Bench 各 3）所暗示的更严重——实质是一种「语言—粒度—任务三重锁定」。安全代码生成侧被函数级、单语（Python）、合成 CWE 提示的 SecurityEval 一系基准锁定 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；仓库级、多语言数据集（Vul4j / PatchEval / SEC-Bench）仅服务于极少数「漏洞修复（AVR）」谱系的自我改进论文 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，与生成侧几乎不共享。</p><p>由此，自改进在「函数级 Python 安全生成」上的增益不能自动外推到「仓库级、跨语言、真实部署」场景。生成侧结论还叠加了标签噪声：静态分析器（CodeQL/Semgrep）与人工标注每样本一致率仅约 61–65% <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。此外一支自我改进智能体工作（SEVERA）干脆绕开 CWE/安全代码，改在形式验证与客服任务上评估，暴露基准高度碎片化 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱（KG）的结构化节点与边，共使用 20 轮工具调用、覆盖全部六类节点：dataset（235 个数据集/基准节点）、paper（141 篇论文）、problem（402 个问题节点）、method（385 个方法节点）、metric（256 个指标节点）、limitation（226 个局限节点）、assumption（100 个假设节点）。核心证据来自 evaluated_on 边（数据集使用）、problem 节点（基准偏斜/窄覆盖）、limitation 节点（Python-only、静态扫描器依赖、单项目范围）及边 evidence 字段中的直接引文。审计的数据集包括：SecurityEval、HumanEval、LLMSecEval、CyberSecEval、SecCodePLT、Vul4j、PatchEval、SEC-Bench、Multi-SWE-bench、Defects4J、SWE-bench、ExtractFix、VjBench、VulRepair dataset、DafnyBench 等。</p>
+<h3>核心数据集谱系与偏差审查</h3>
+<table><thead><tr><th>数据集</th><th>语言/粒度</th><th>来源类型</th><th>标签来源</th><th>使用论文</th><th>主要偏差</th></tr></thead><tbody><tr><td>SecurityEval</td><td>Python / 函数级</td><td>由 CWE 场景派生的合成提示</td><td>静态分析器(CodeQL/Semgrep)</td><td>0064, 0226, 0309, 0315 [1][2][3]</td><td>函数级分布偏移；标签噪声高</td></tr>
+<tr><td>HumanEval</td><td>Python / 函数级</td><td>手写竞赛编程题</td><td>单元测试(pass@k)</td><td>0315 [3]</td><td>仅测功能正确性，非安全评估</td></tr>
+<tr><td>LLMSecEval</td><td>Python / 函数级</td><td>由 CWE 场景派生的提示</td><td>静态分析器</td><td>0064 [1]</td><td>单语；合成提示</td></tr>
+<tr><td>CyberSecEval</td><td>Python / 函数级</td><td>合成基准</td><td>工具/规则</td><td>0226 [2]</td><td>单语；合成</td></tr>
+<tr><td>Vul4j</td><td>Java / 项目级</td><td>真实 CVE(79 条)</td><td>CVE 标签 + 测试</td><td>0204 [8], 0516 [4]</td><td>仅 Java；单点使用</td></tr>
+<tr><td>PatchEval</td><td>Go/Python/JS</td><td>真实漏洞(230 条子集)</td><td>隐藏测试</td><td>0505 [5], 0516 [4], 0589 [6]</td><td>样本正负比未披露</td></tr>
+<tr><td>SEC-Bench</td><td>C / 仓库级</td><td>真实 CVE + OSS-Fuzz(200+100)</td><td>Sanitizer + 测试</td><td>0505 [5], 0516 [4], 0589 [6]</td><td>仅 C；正负比未披露</td></tr>
+<tr><td>Multi-SWE-bench</td><td>C++ 子集 / 仓库级</td><td>真实 issue 解决</td><td>隐藏测试</td><td>0505 [5]</td><td>仅用 C++ 子集</td></tr>
+<tr><td>Defects4J / SWE-bench</td><td>Java/Python / 仓库级</td><td>维护良好的开源项目</td><td>测试</td><td>0241 [9]</td><td>偏现代仓库，高估 legacy</td></tr>
+<tr><td>DafnyBench / HumanEvalDafny</td><td>Dafny / 形式验证</td><td>合成验证题</td><td>形式验证</td><td>0471 [7]</td><td>完全非 CWE/安全代码</td></tr>
+<tr><td>τ²-bench / GSM-Symbolic</td><td>客服/数学 / 任务级</td><td>合成场景</td><td>策略合规/答案比对</td><td>0471 [7]</td><td>与安全漏洞修复无关</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "证据矩阵内各基准使用论文数（按语言/粒度分布）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["SecurityEval", "HumanEval", "LLMSecEval", "CyberSecEval", "Vul4j", "PatchEval", "SEC-Bench", "Multi-SWE-bench", "Defects4J/SWE-bench"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "使用论文数", "type": "bar", "data": [5, 6, 1, 1, 3, 3, 3, 1, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "评估基准按语言—粒度分类占比", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "评估基准按语言—粒度分类占比", "type": "pie", "radius": "55%", "data": [{"name": "函数级 Python（SecurityEval/HumanEval/LLMSecEval/CyberSecEval/SecCodePLT）", "value": 5}, {"name": "仓库级多语言修复（Vul4j/PatchEval/SEC-Bench/Multi-SWE-bench）", "value": 4}, {"name": "仓库级通用修复（Defects4J/SWE-bench/VulRepair）", "value": 3}, {"name": "形式验证/非安全任务（DafnyBench/τ²-bench 等）", "value": 2}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_主线一_生成侧被_SecurityEval_锁定为事实标准">主线一：生成侧被 SecurityEval 锁定为事实标准</h2>
+<p>KG 显示 SecurityEval（约 121–130 条提示、69–75 个 CWE，[datasetbenchmark_datasetbenchmark_securityeval_3915d1eec9]）是证据矩阵的核心枢纽。0064 在 LLMSecEval+SecurityEval 上测试提示工程对 LLM 模型安全性的影响 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；0226 用 SecurityEval+SecCodePLT+CyberSecEval 研究自生成漏洞提示与反馈修复 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；0309 报告 SecurityEval 上平均 76.2% 生成代码不安全，并在 Limitation 中明写「评估限于 Python，结论可能不外推」<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；0315 在 SecurityEval 上报告相对 LLM 降低 13% 漏洞、静态分析器在 4 轮内修复 53% 漏洞 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。同时 HumanEval 仅用于功能正确性（pass@k），不构成安全评估依据 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。SecurityEval 的血缘是「由 CWE 场景派生的提示集」，本质是合成、面向单函数的提示，这把生成侧牢固锁定在函数粒度与单语 Python。</p>
+
+<h2 id="sec_主线二_仓库级_多语言基准仅服务修复谱系的少数自进化论文">主线二：仓库级/多语言基准仅服务修复谱系的少数自进化论文</h2>
+<p>Vul4j（79 Java CVE）、PatchEval（1000 条 Go/Python/JS，常只用 230 条 Docker 子集，EviRepair 具体用到 Go 83/Python 70/JS 77）、SEC-Bench（200 C CVE + 100 OSS-Fuzz）确实被 EvoRepair <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、MemRepair <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、EviRepair <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 使用，但这些都属于「修复（AVR）」谱系，与生成侧基准几乎不共享。RQ3.1 的「多语言/仓库级各仅 3」正说明它们只服务修复侧极少数的自进化工作——EvoRepair 的「经验自进化」、MemRepair 的「分层记忆」、EviRepair 的「证据驱动多智能体」——其结论无法覆盖生成侧自改进方法。0204 的 VRpilot 虽跨 C+Java（ExtractFix、VjBench、Vul4j），但以单文件局部化为前提 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。</p>
+
+<h2 id="sec_主线三_基准偏斜与窄覆盖在_KG_中显式编码_部分作者自承">主线三：基准偏斜与窄覆盖在 KG 中显式编码，部分作者自承</h2>
+<p>0241 把「Defects4J/SWE-bench 从维护良好的开源项目抽取、可能高估 legacy 系统性能」列为一等问题节点 problem_benchmark_bias_toward_modern_repositories，并指出不存在专为 legacy 代码（稀疏测试、缺文档）设计的基准 problem_lack_of_legacy_specific_benchmarks <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。0153 承载 problem_narrow_benchmark_coverage（「基准集中于 Python 生成与 C/C++ 检测，CWE 分布分歧」）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。更关键的是，修复侧作者自己也承认局限：0589 明写「评估仅覆盖 PatchEval 与 SEC-bench，可能无法反映漏洞、语言、仓库、部署环境的全部多样性」<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；0217 承认仅用 5 个 SWE-bench Python 仓库 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。这些不是推断，而是 KG 中带 0.85–0.95 置信度的显式节点与边。</p>
+<h3>偏差类型与对结论可信度的影响评估</h3>
+<table><thead><tr><th>偏差类型</th><th>涉及数据集</th><th>严重程度</th><th>对自改进结论的影响</th></tr></thead><tbody><tr><td>分布偏移（函数级 vs 仓库级）</td><td>SecurityEval, HumanEval</td><td>High</td><td>降低13%漏洞等结论无法外推到仓库级 [3]</td></tr>
+<tr><td>语言锁定（单语 Python）</td><td>SecurityEval, LLMSecEval, CyberSecEval</td><td>High</td><td>跨语言泛化声明缺乏基准支撑 [1][3]</td></tr>
+<tr><td>标签噪声（静态分析器代理）</td><td>SecurityEval 等</td><td>High</td><td>一致率仅61–65%，指标被稀释 [2]</td></tr>
+<tr><td>偏现代仓库/legacy 缺失</td><td>Defects4J, SWE-bench</td><td>High</td><td>高估 legacy 环境性能 [9]</td></tr>
+<tr><td>单点依赖</td><td>Vul4j, PatchEval, SEC-Bench</td><td>Medium</td><td>每类仅少数修复论文覆盖 [4][5][6]</td></tr>
+<tr><td>基准碎片化（跨任务不可比）</td><td>DafnyBench, τ²-bench</td><td>Medium</td><td>自改进跨任务结论无对齐基础 [7]</td></tr>
+<tr><td>标签来源未披露（正负比/时间跨度）</td><td>PatchEval, SEC-Bench, Vul4j</td><td>Medium</td><td>精度/召回扭曲无法量化</td></tr>
+</tbody></table>
+<div class="note">关键发现：生成侧被「函数级—单语 Python—合成 CWE 提示」三重锁定，仓库级多语言修复基准仅服务少数修复论文，另有自改进工作（SEVERA <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>）完全绕开安全代码评估——三者叠加形成「语言—粒度—任务三重锁定 + 基准碎片化」，显著收窄了自改进方法结论的外推半径。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在若干证据缺口与不确定性。其一，RAG 原文检索工具（search_paper_sections）在本环境不可用（调用返回 Unknown tool），故所有引用均来自 KG 结构化字段与边 evidence 字段的直接引文，无法逐段核对原文章节标题与相似度分值。其二，KG 的 evaluated_on 边同时包含 Paper 与 Method 头节点，使「使用篇数」的精确计数存在噪声，本报告以边 evidence 中明确的论文归属为准做保守计数。其三，PatchEval / SEC-Bench / Vul4j 的样本正负比与创建年份在 KG 描述中未披露，只能标注 provenance 部分未知，因此「极端正负不平衡对精度/召回扭曲」的量化结论无法完成，相关判断置信度受限。其四，0471（SEVERA）的形式验证/客服任务基准虽补充了基准碎片化的证据，但其与安全代码生成的关联属于间接推断。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ3.1 的分布偏斜已被 KG 数据系统性证实，并呈现为比单纯计数更深刻的「语言—粒度—任务三重锁定」。函数级、单语 Python 的合成 CWE 基准（以 SecurityEval 为核心 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>）主导生成侧评估；仓库级多语言基准（Vul4j / PatchEval / SEC-Bench）仅被极少数修复谱系自进化论文使用 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，与生成侧几无交集；标签来自静态分析器，与人工标注仅约 61–65% 一致 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。这使自改进在「函数级 Python 安全生成」上的增益（如降低 13% 漏洞 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>）无法外推到仓库级、跨语言、真实部署场景，外推半径被显著收窄。修复侧自进化工作虽在仓库级基准上给出了跨语言信号，但其作者亦自承基准多样性不足 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。因此，领域评估结论的可信度在跨粒度与跨语言方向上应至少标记为 moderate 降级，亟需建立 legacy 专用、多语言、正负比透明的基准体系。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Benchmarking Prompt Engineering Techniques for Secure Code Generation with LLM Models&nbsp;<code style="font-size:0.82em;color:#888">0064_Benchmarking_Prompt_Engineering_Techniques_for_Secure_Code_G</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Guiding AI to Fix Its Own Flaws: An Empirical Study on LLM-Driven Secure Code Generation&nbsp;<code style="font-size:0.82em;color:#888">0226_guiding_ai_to_fix_its_own_flaws_an_empirical_study_on_llmdri</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;How Well Do Large Language Models Serve as End-to-End Secure Code Agents for Python?&nbsp;<code style="font-size:0.82em;color:#888">0309_how_well_do_large_language_models_serve_as_endtoend_secure_c</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;EvoRepair: Enhancing Vulnerability Repair Agents Through Experience-Based Self-Evolution&nbsp;<code style="font-size:0.82em;color:#888">0516_evorepair_enhancing_vulnerability_repair_agents_through_expe</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;MemRepair: Hierarchical Memory for Agentic Repository-Level Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0505_memrepair_hierarchical_memory_for_agentic_repositorylevel_vu</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;EviRepair: Evidence-Driven Agents for Reliable Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0589_evirepair_evidencedriven_agents_for_reliable_vulnerability_r</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;SEVERA: Verified Synthesis of Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">0471_severa_verified_synthesis_of_selfevolving_agents</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;A Case Study of LLM for Automated Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0204_A_Case_Study_of_LLM_for_Automated_Vulnerability_Repair_Asses</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Automated Vulnerability Patching in Legacy Code Using LLMs and Multi-AI Agents&nbsp;<code style="font-size:0.82em;color:#888">0241_Automated_Vulnerability_Patching_in_Legacy_Code_Using_LLMs_a</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;Adversarial Bug Reports as a Security Risk in Language Model-Based Automated Program Repair&nbsp;<code style="font-size:0.82em;color:#888">0217_adversarial_bug_reports_as_a_security_risk_in_language_model</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.1 · 2026-10-22 19:52</footer>
+</div>
+</body>
+</html>

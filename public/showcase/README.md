@@ -1,6 +1,6 @@
 # 真实运行快照（只读）
 
-生成时间：2026-10-29 10:44
+生成时间：2026-10-29 21:45
 
 本目录是 AutoSurvey 在真实项目上跑完整流程后的静态数据副本，用于 GitHub Pages 公开展示。
 页面通过读取这些 JSON / PDF 渲染，不需要后端服务。
@@ -29,3 +29,5 @@
 - `smallholder-agri`：面向小农的农业人工智能：从技术供给到采纳机制（84 篇论文 / 13 个 Sub-RQ / 117 条 claims）
 - `crispr-safety`：CRISPR 递送与编辑安全性：面向临床转化的风险建模（139 篇论文 / 15 个 Sub-RQ / 117 条 claims）
 - `agent-evolution`：Agent 进化轨迹：机制与路径（276 篇论文 / 13 个 Sub-RQ / 118 条 claims）
+- `llm-judge-robustness`：LLM Judge 失效分析：多模态与大规模引用场景（116 篇论文 / 8 个 Sub-RQ / 45 条 claims）
+- `self-improving-sec`：网络与软件安全中的大模型与智能体自改进方法（284 篇论文 / 15 个 Sub-RQ / 120 条 claims）

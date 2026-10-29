@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-b 分析报告</h1>
+<div class="meta">RQ [RQ4.2]：[父问题 RQ4] 自改进结果的可信度如何被衡量？安全专用 oracle 与功能保持度量的缺失造成了哪些效度威胁？
+[本子问题 RQ4.2] 功能保持（Functionality Preservation）仅以孤立约束节点形式存在、未上升为 Metric 节点，这对&quot;补丁类自改进&quot;结论构成什么威胁？现有工作用什么替代手段（回归测试、行为等价、人工评审）测量功能保持，覆盖率如何？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0477_ruleforge_automated_generation_and_validation_for_web_vulner, 0560_mazerunner_nonlinear_task_and_clue_orchestration_for_llmdriv）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心事实_功能保持是孤立约束而非度量">核心事实：功能保持是孤立约束而非度量</a></li>
+<li><a href="#sec_替代手段一_测试套件通过代理及其覆盖缺口">替代手段一：测试套件通过代理及其覆盖缺口</a></li>
+<li><a href="#sec_替代手段二_EM_与修复率完全绕过功能保持">替代手段二：EM 与修复率完全绕过功能保持</a></li>
+<li><a href="#sec_替代手段三_人工评审与_LLM_评审的兜底及其不可扩展性">替代手段三：人工评审与 LLM 评审的兜底及其不可扩展性</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告回答 RQ4.2：功能保持（Functionality Preservation）在知识图谱中仅以一条孤立的 AssumptionConstraint 节点形式存在、未上升为 Metric 节点，这对&quot;补丁类自改进&quot;结论构成何种效度威胁，以及现有工作用什么替代手段测量功能保持、覆盖率如何。</p><p>核心发现是结构性的：功能保持概念（assumptionconstraint_functionality_preservation_0e2027b22b）已具备准形式化的伪公式定义——&quot;对测试集 T 中所有 t，若 P(t)=Pass 则 P'(t)=Pass&quot;——但三向反向图查询（requires / relaxes / targets）与 measured_by 均返回空，且全部 256 个 Metric 节点中没有任何一个以功能保持、回归或行为等价命名。这意味着整个 KG 把&quot;补丁不得破坏既有功能&quot;当作一个默认成立的前提而非可测量、可证伪的指标。现有工作实际用三类代理测量它：测试套件通过/plausible patch <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、编译通过率 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、以及完全绕过行为保持的精确匹配 EM 与修复率 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。多篇论文从不同角度证伪了&quot;测试通过 = 功能保持&quot;的外推 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，人工评审虽为兜底却不可规模化 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，LLM 评审准确率仅 68%–79% 尚不足以替代 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。本 RQ 判定为 partial：威胁链条清晰，但替代手段覆盖率缺乏量化证据。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析基于 KG 结构化数据，共执行 24 次工具调用，覆盖全部六类节点（problem / method / paper / dataset / metric / limitation / assumption）。主要数据规模如下：KG 中 metric 节点 256 个、problem 节点 402 个、limitation 节点 226 个、assumption 节点 100 个。针对性查询了功能保持 assumption 节点的全部关系边（三向反向查询均为空），并沿边追溯精读了 8 篇关键论文的节点与关系：Self-Evolving Coding Agents <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、Safety in Self-Evolving Agents 综述 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、A Case Study of LLM for AVR（VRpilot）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、Adversarial Bug Reports <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、FAULTLINE <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、PoVSmith <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、RuleForge <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、MazeRunner <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>（后两篇为本子问题冻结的证据矩阵论文）。</p><p>需要说明的是，RAG 原文检索工具（search_paper_sections）在本次会话中不可用，细粒度证据改由节点 description 字段与关系边 evidence 字段提取，因此未能补齐部分论文的精确原文段落与覆盖率百分比数字。</p>
+
+<h2 id="sec_核心事实_功能保持是孤立约束而非度量">核心事实：功能保持是孤立约束而非度量</h2>
+<p>功能保持在本 KG 中是一个&quot;有定义、无测量&quot;的节点。它拥有一个接近数学形式的描述（∀t∈T, P(t)=Pass ⇒ P'(t)=Pass），但其节点在图谱中完全孤立：没有任何 Method 通过 requires 或 relaxes 边引用它，没有任何 Problem 通过 targets 边指向它，也没有任何 measured_by 边把它与某个 Metric 关联。与此同时，对全部 Metric 节点做名称过滤，唯一含&quot;fun&quot;子串的度量是 Functional correctness rate（metric_functional_correctness_rate_21f75744cb），它本身也仅由单篇论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>（SecureVibeBench）关联，并非专门度量回归。这一结构事实直接回答了 RQ 的第一个问题：功能保持从未被上升为可测量、可报告的指标，它只是一个被默认成立的前提。</p>
+<h3>功能保持的度量化状态与替代测量手段</h3>
+<table><thead><tr><th>类型</th><th>节点/指标</th><th>测量内容</th><th>是否直接测功能保持</th><th>关联论文</th></tr></thead><tbody><tr><td>约束（非度量）</td><td>Functionality Preservation</td><td>∀t∈T, P(t)=Pass ⇒ P'(t)=Pass（伪公式描述）</td><td>概念定义，无任何边</td><td>—（孤立节点）</td></tr>
+<tr><td>代理指标</td><td>Plausible patches</td><td>compiles and pass the test suite</td><td>间接，取决于 T 完备性</td><td>[2] VRpilot / [11] OSS-Fuzz</td></tr>
+<tr><td>代理指标</td><td>Pass@1</td><td>pass all tests (functional and security)</td><td>间接</td><td>[4] Self-Evolving Coding Agents</td></tr>
+<tr><td>代理指标</td><td>Functional correctness rate</td><td>solutions passing functional test cases</td><td>间接</td><td>[1] SecureVibeBench</td></tr>
+<tr><td>弱代理指标</td><td>Compilable patches</td><td>编译成功比例</td><td>几乎无约束力（只看能编译）</td><td>[2] VRpilot</td></tr>
+<tr><td>绕过型指标</td><td>EM (Exact Match)</td><td>与 ground-truth 补丁表面匹配</td><td>完全绕过行为保持</td><td>[3] VulKey / [2]</td></tr>
+<tr><td>绕过型指标</td><td>Repair success rate</td><td>修复成功率</td><td>完全绕过行为保持</td><td>[12] TEE repair / [13]</td></tr>
+<tr><td>测试判别力指标</td><td>Test suite failure rate</td><td>补丁被项目测试集检出的比例</td><td>仅反映测试守门能力</td><td>[6] Adversarial Bug Reports</td></tr>
+<tr><td>人工兜底</td><td>Multi-Stage Validation Pipeline</td><td>自动测试 + 人类专家平衡</td><td>人工功能/质量评审</td><td>[7] RuleForge</td></tr>
+</tbody></table>
+
+<h2 id="sec_替代手段一_测试套件通过代理及其覆盖缺口">替代手段一：测试套件通过代理及其覆盖缺口</h2>
+<p>KG 中承担功能保持测量职责的主流手段是&quot;测试套件通过&quot;：plausible patch 被明确定义为&quot;compiles and pass the test suite&quot;<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>，Pass@1 定义为&quot;pass all tests (functional and security)&quot;<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。这正是功能保持伪公式的直接操作化——但它们只验证被选中的行为，无法覆盖回归风险的主战场。<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的 problem_incomplete_feedback_for_patch_quality 给出了本 RQ 最关键的直接反驳：&quot;A passing test checks only selected behavior and functional success need not establish patch quality or security&quot;。其配套限制进一步指出：Tests、compilers、reviewers 只直接评估产物（artifact），而仅间接监督被保留的更新（retained update），且&quot;一个有效补丁可能产出过度泛化的记忆、不必要的技能或伤害后续任务的规则&quot;。这构成对功能保持假设边界的逻辑证伪：覆盖率缺陷使&quot;P(t)=Pass ⇒ P'(t)=Pass&quot;无法外推到真实功能保持。</p><p>从测试侧看，<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 记录了项目自带 test suite 判别力的不足——测试套件仅检测到少数攻击、防御常常静默失效，最佳过滤器仅拦截 47% 的对抗 issue。这说明即便项目已有测试，其作为功能/安全守门的有效性也显著不足。编译类指标（Compilable patches <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>）则更弱，只验证&quot;能编译&quot;，对行为保持几乎没有约束力。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "替代测量手段对功能保持的覆盖强度（示意评级，0–5，基于结构化证据的定性赋值）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["测试套件通过/plausible patch", "Pass@1 全测试", "Functional correctness rate", "编译通过率", "EM 精确匹配", "人工多阶段评审"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "覆盖强度评级", "type": "bar", "data": [3, 3, 3, 1, 0, 4], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">上图为基于节点描述与关系边的定性评级，非原文报告的量化覆盖率。评级依据：测试套件类只覆盖被选中行为故为中等；EM 完全绕过行为保持故为 0；人工评审覆盖最完整但不可扩展。KG 中不存在名为&quot;回归测试&quot;或&quot;行为等价&quot;的独立 Metric 节点，因此无法给出精确覆盖率百分比——这一量化缺口是本 RQ 判为 partial 的直接原因。</div>
+
+<h2 id="sec_替代手段二_EM_与修复率完全绕过功能保持">替代手段二：EM 与修复率完全绕过功能保持</h2>
+<p>第二类替代手段不仅覆盖不足，而是完全绕过了功能保持。EM（Exact Match）衡量生成补丁与 ground-truth 补丁的表面一致性 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>，它既不能确认语义等价，也无法识别行为回归：一个语义正确但语法不同的补丁会在 EM 下被判失败，反之一个通过测试但过度泛化的补丁可能在只报告修复率时被判成功。Repair success rate 类指标 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 同样只报告&quot;修复了多少&quot;，不报告&quot;修复是否引入回归&quot;。因此，凡以 EM 或 repair success rate 作为主要结论依据的补丁类自改进论文，其&quot;改进&quot;结论在功能保持维度上是未经检验的。</p>
+
+<h2 id="sec_替代手段三_人工评审与_LLM_评审的兜底及其不可扩展性">替代手段三：人工评审与 LLM 评审的兜底及其不可扩展性</h2>
+<p>在缺乏自动化功能保持度量的情况下，人工评审成为唯一相对可信的兜底，但代价是不可规模化。<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> RuleForge 的多阶段验证流水线明确&quot;balancing automated testing with human expertise to minimize false positives while maintaining high detection rates&quot;，但其 human review bottleneck 限制承认&quot;处理量被人为限制以防止压垮执行最终验证的人类评审员&quot;——即人工功能/质量评审构成吞吐瓶颈，覆盖率随规模骤降。（注：<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 生成的是检测规则而非代码补丁，其&quot;功能保持&quot;体现为对良性流量低误报，FP 下降 67%、无 IP 匹配规则下降 71%、AUROC 0.75，并非代码回归保持，与补丁类自改进存在任务类型错位。）</p><p>用 LLM 替代人工评审亦不充分：<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的 LLM 验证准确率仅 68%–79%，被明确认为&quot;不足以盲目信任&quot;而仍需人工复核。此外 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> FAULTLINE 从定义侧精确点出效度威胁：理想 PoV 测试须&quot;有漏洞时失败、修复后通过&quot;，而&quot;确保修复后通过本身就是一个效度威胁&quot;——这直接命中功能保持公式右侧条件 P'(t)=Pass。</p>
+<h3>关键效度威胁证据链</h3>
+<table><thead><tr><th>威胁论点</th><th>证据论文</th><th>关键证据</th><th>强度</th></tr></thead><tbody><tr><td>测试通过≠补丁质量/安全</td><td>[4]</td><td>A passing test checks only selected behavior; functional success need not establish patch quality or security</td><td>强蕴含</td></tr>
+<tr><td>只监督产物而非保留更新</td><td>[4]</td><td>Tests/compilers/reviewers assess artifact directly but supervise retained update only indirectly</td><td>强</td></tr>
+<tr><td>有效补丁可能过度泛化伤害后续任务</td><td>[4]</td><td>A valid patch can yield overgeneralized memory/skill/harness rule harming later tasks</td><td>强</td></tr>
+<tr><td>PoV 测试&quot;修复后通过&quot;本身是效度威胁</td><td>[5]</td><td>An ideal PoV test must fail when vulnerable and pass when fixed; ensuring the latter is a threat to validity</td><td>强</td></tr>
+<tr><td>项目测试集判别力不足</td><td>[6]</td><td>best filter blocked only 47%; test suites detected few attacks; defenses failed silently</td><td>中-强</td></tr>
+<tr><td>人工评审吞吐瓶颈</td><td>[7]</td><td>volume intentionally limited to prevent overwhelming human reviewers</td><td>中</td></tr>
+<tr><td>LLM 评审准确率不足</td><td>[8]</td><td>LLM-based validation achieves only 68%–79% accuracy, manual validation needed</td><td>中-强</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本研究存在四点不确定性。其一，两篇冻结的证据矩阵论文与&quot;补丁类自改进&quot;存在任务类型错位：<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> RuleForge 生成检测规则、<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> MazeRunner 是渗透测试编排框架，均不对代码打补丁，无法为功能保持度量提供正面实例，其&quot;功能保持&quot;含义须分别理解为低误报（规则）与隐式运维约束（渗透测试）。其二，功能保持定义版本唯一且无冲突，缺乏多版本对照，推演效力只能定为定性逻辑——KG 中的&quot;形式化&quot;仅是描述性伪公式，未被任何方法作为可执行 oracle 使用。其三，RAG 原文检索工具本次不可用，无法核验部分论文更细的验证细节与精确覆盖率数字。其四，行为等价/回归测试在 KG 中没有独立 Metric 节点，故&quot;替代手段覆盖率如何&quot;只能作结构性回答（覆盖取决于测试集 T 的完备性），无法从结构化数据给出量化百分比。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>功能保持在本 KG 中仅以孤立 AssumptionConstraint 节点存在、未被上升为 Metric，这对&quot;补丁类自改进&quot;结论构成一个系统性的结构性效度威胁：所有以&quot;补丁通过测试&quot;为成功判据的自改进论文，其&quot;改进&quot;结论都建立在一个未被任何工作实际量化验证的假设之上。现有工作以三类代理替代测量：测试套件通过/plausible patch（覆盖取决于 T 完备性，只验证被选中行为）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、编译通过率（几乎无行为约束力）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、以及完全绕过行为保持的 EM 与修复率 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。多篇论文从测试覆盖、产物与更新之别、PoV 测试效度等角度证伪了&quot;测试通过=功能保持&quot;的外推 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，人工评审虽为兜底却因吞吐瓶颈而不可扩展 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，LLM 评审准确率 68%–79% 亦不足以替代 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。因此，覆盖率问题在结构化数据层面无法量化回答——这既反映了证据缺口，也恰恰印证了 RQ 的核心判断：功能保持的度量在主流工作中处于缺失状态。本 RQ 判定为 partial。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;SecureVibeBench: Benchmarking Secure Vibe Coding of AI Agents&nbsp;<code style="font-size:0.82em;color:#888">0410_securevibebench_benchmarking_secure_vibe_coding_of_ai_agents</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;A Case Study of LLM for Automated Vulnerability Repair Assessment (VRpilot)&nbsp;<code style="font-size:0.82em;color:#888">0204_A_Case_Study_of_LLM_for_Automated_Vulnerability_Repair_Asses</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;VulKey: Automated Vulnerability Repair Guided by Domain-Specific Knowledge&nbsp;<code style="font-size:0.82em;color:#888">0219_VulKey_Automated_Vulnerability_Repair_Guided_by_Domain-Speci</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Self-Evolving Coding Agents&nbsp;<code style="font-size:0.82em;color:#888">0552_selfevolving_coding_agents</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;FAULTLINE: Automated Proof-of-Vulnerability Generation Using LLMs&nbsp;<code style="font-size:0.82em;color:#888">0391_faultline_automated_proofofvulnerability_generation_using_ll</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Adversarial Bug Reports as a Security Risk in Language Model-based APR&nbsp;<code style="font-size:0.82em;color:#888">0217_adversarial_bug_reports_as_a_security_risk_in_language_model</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;RuleForge: Automated Generation and Validation for Web Vulnerability Detection at Scale&nbsp;<code style="font-size:0.82em;color:#888">0477_ruleforge_automated_generation_and_validation_for_web_vulner</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Generating Proof-of-Vulnerability Tests to Help Enhance the Security of Complex Software (PoVSmith)&nbsp;<code style="font-size:0.82em;color:#888">0497_generating_proofofvulnerability_tests_to_help_enhance_the_se</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Safety in Self-Evolving Agents: A Survey (SAVER framework)&nbsp;<code style="font-size:0.82em;color:#888">0233_Safety_in_Self-Evolving_Agents_A_Survey</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;MazeRunner: Nonlinear Task and Clue Orchestration for LLM-driven Black-Box Automated Penetration Testing&nbsp;<code style="font-size:0.82em;color:#888">0560_mazerunner_nonlinear_task_and_clue_orchestration_for_llmdriv</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Fixing Security Vulnerabilities with AI in OSS-Fuzz&nbsp;<code style="font-size:0.82em;color:#888">0323_fixing_security_vulnerabilities_with_ai_in_ossfuzz</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Automated Repair of TEE Partitioning Issues via DSL-Guided Analysis&nbsp;<code style="font-size:0.82em;color:#888">0221_automated_repair_of_tee_partitioning_issues_via_dslguided_an</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;How Well Do Large Language Models Serve as End-to-End Secure Code Agents&nbsp;<code style="font-size:0.82em;color:#888">0309_how_well_do_large_language_models_serve_as_endtoend_secure_c</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.2 · 2026-10-22 19:59</footer>
+</div>
+</body>
+</html>

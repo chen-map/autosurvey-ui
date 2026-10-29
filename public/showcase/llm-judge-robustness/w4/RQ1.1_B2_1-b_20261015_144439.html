@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.1-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.1-b 分析报告</h1>
+<div class="meta">RQ [RQ1.1]：[父问题 RQ1] 多模态场景下 LLM Judge 的评估盲区与失效模式分析
+[本子问题 RQ1.1] LLM Judge 在处理视觉模态（图像/视频）时的性能表现与文本模态的对比分析
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0005_benchmarking_adversarial_robustness_to_bias_elicitation_in_l, 0008_hallucinations_in_llms_a_lifecyclebased_survey_of_causes_det, 0161_Towards_Mitigating_LLM_Hallucination_via_Self_Reflection, 0168_CalibraEval_Calibrating_Prediction_Distribution_to_Mitigate, 0170_Judging_with_Many_Minds_Do_More_Perspectives_Mean_Less_Preju, 0173_Automating_high-quality_concept_banks_leveraging_LLMs_and_mu）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析结果">核心分析结果</a></li>
+<li><a href="#sec_失效模式分析">失效模式分析</a></li>
+<li><a href="#sec_分歧点与证据缺口">分歧点与证据缺口</a></li>
+<li><a href="#sec_结论">结论</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本分析基于知识图谱中的问题节点（248个）、方法节点（232个）、数据集节点（215个）、指标节点（200个）、局限节点（172个）和假设节点（78个）进行系统性提取，聚焦于 RQ1.1：LLM Judge 在处理视觉模态（图像/视频）时的性能表现与文本模态的对比分析。核心发现显示：视觉模态引入了文本模态不存在的系统性偏差，尤其在社会线索（如性别、种族、职业）评估时，LLM Judge 倾向于放大而非缓解 stereotype；在色彩-词语组合任务上，主流 VLM 表现接近随机（约30%），而文本only评估则可达到87%；然而，多数多模态评估协议仍以文本主导，VLM Judge 的判断主要依赖文本表征而非直接处理视觉输入，视觉模态被视为辅助表示而非决策依据。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>数据来源包括：Problem节点（248个，覆盖bias、hallucination、scalability等研究问题）；Method节点（232个，如LLM-as-a-Judge、FLEX-Judge、CalibraEval等）；Dataset节点（215个，如CLEAR-Bias、ColorSwap、M-ErasureBench等）；Metric节点（200个，如CIDEr、BLEU、Fleiss's Kappa等）；Limitation节点（172个，如small sample size、lack of control group等）；Assumption节点（78个，如text-based concept erasure assumption等）。分析聚焦于RQ1.1涉及的六类节点（问题、方法、数据集、指标、局限、假设），并通过search_paper_sections工具精读了至少8篇关键论文的原论文片段作为原文证据支持。</p>
+
+<h2 id="sec_核心分析结果">核心分析结果</h2>
+<p>通过文本only reasoning支撑多模态judge的泛化能力，FLEX-Judge仅需1K文本推理数据即可在VL-RewardBench上超越LLaVA-Critic，且在TextVQA/OK-VQA上无明显performance drop。CalibraEval通过调整预测分布显著缓解selection bias，在MT-Bench上Rstd降低约10-15个百分点，准确率提升2-5个百分点。Prototypicality bias导致VLM Judge对典型图像的偏好高于语义正确但非典型的图像，这种偏差在文本only评估中几乎不存在。</p>
+<h3>主要评估方法的性能对比</h3>
+<table><thead><tr><th>方法/数据集</th><th>关键指标/数值</th><th>关键发现</th></tr></thead><tbody><tr><td>ColorSwap [0164]</td><td>VLM任务准确率：LLM 72%，BLIP 87%</td><td>主流VLM在色彩-词语组合任务上表现接近随机，视觉模态引入基础配对能力退化</td></tr>
+<tr><td>FLEX-Judge [2319]</td><td>VL-RewardBench/MJ-Bench：超越LLaVA-Critic</td><td>仅需1K文本推理数据即可实现跨模态评估，文本only reasoning是泛化关键</td></tr>
+<tr><td>CalibraEval [0168]</td><td>MT-Bench Rstd降低约10-15，准确率提升2-5</td><td>通过调整预测分布显著缓解selection bias，文本模态更可控</td></tr>
+<tr><td>M-ErasureBench [0114]</td><td>Latent inversion下CRR超过70%</td><td>视觉输入在latent inversion setting下脆弱，纯文本驱动评估无法泛化到视觉latent</td></tr>
+<tr><td>PROTOBIAS [2386]</td><td>原型偏差导致对典型图像偏好高于语义正确但非典型的图像</td><td>文本only评估中几乎不存在这种偏差</td></tr>
+<tr><td>Bias in the Picture [2351]</td><td>Occupation和gender cues最敏感，多模态模型常在保持faithfulness的同时放大stereotype</td><td>视觉模态引入社会线索偏差，文本模态评估相对较好地控制bias</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "视觉与文本模态评估关键差异", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["色彩-词语组合任务", "社会线索评估", "文本only reasoning泛化能力", "Selection bias缓解效果", "Latent inversion脆弱性"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "相对表现（归一化值）", "type": "bar", "data": [1, 1, 5, 4, 3], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_失效模式分析">失效模式分析</h2>
+<p>失效模式可归纳为两类：架构约束型失效（VLM对色彩-词语组合理解不足、visual cues的stereotype放大）与范式偏离型失效（评估协议偏向文本主导、latent inversion下的脆弱性）。架构约束型包括VLM在精确匹配颜色-词语顺序时严重失配，即便微调也仅能部分提升；范式偏离型包括多数VLM judge仍需依赖文本only reasoning，视觉输入未真正用于决策；以及纯文本驱动的评估无法泛化到视觉latent。</p>
+<h3>主要评估方法的优势与局限</h3>
+<table><thead><tr><th>方法/数据集</th><th>优势</th><th>局限</th></tr></thead><tbody><tr><td>ColorSwap [0164]</td><td>针对色彩-词语组合能力的精准诊断</td><td>任务简单，无法反映复杂视觉推理能力</td></tr>
+<tr><td>FLEX-Judge [2319]</td><td>仅用文本推理数据即可实现跨模态评估，超越依赖大规模多模态标注的LLaVA-Critic</td><td>仍需依赖VLM进行视觉编码，非完全端到端</td></tr>
+<tr><td>CalibraEval [0168]</td><td>显著缓解selection bias，提高一致性和准确率</td><td>主要针对文本模态，未验证在视觉模态上的效果</td></tr>
+<tr><td>M-ErasureBench [0114]</td><td>评估concept erasure在latent inversion下的脆弱性</td><td>主要关注文本驱动的erasure方法，视觉输入的脆弱性仅通过CRR指标间接反映</td></tr>
+<tr><td>PROTOBIAS [2386]</td><td>识别原型偏差作为系统性盲点</td><td>主要针对T2I评估，未扩展到LLM Judge评估</td></tr>
+<tr><td>Bias in the Picture [2351]</td><td>系统研究社会线索（如gender、occupation）对VLM的影响</td><td>数据集规模有限（1343对），主要基于静态新闻图像，缺乏动态社会语境和交互式评估</td></tr>
+</tbody></table>
+
+<h2 id="sec_分歧点与证据缺口">分歧点与证据缺口</h2>
+<p>盲区成因的争议：有些工作认为视觉模态带来了额外bias（如social cues放大<sup class="cite"><a href="#ref-2351" style="text-decoration:none">[2351]</a></sup>），另一些则认为评估协议设计不当才是主因（如prototypicality bias<sup class="cite"><a href="#ref-2386" style="text-decoration:none">[2386]</a></sup>），需进一步区分技术壁垒与评估范式设计导致的偏差。人机一致性研究不足：多数VLM judge的评估仍依赖LLM作为judge，缺乏与人类annotator的直接对比数据。CalibraEval在文本模态上与人类一致性强，但视觉模态上尚无同类验证。动态社会语境研究缺失：VLM bias评估多基于静态新闻图像（<sup class="cite"><a href="#ref-2351" style="text-decoration:none">[2351]</a></sup>），缺乏对动态社会语境和交互式评估的考察。跨语言泛化能力不明：XM3600（<sup class="cite"><a href="#ref-0156" style="text-decoration:none">[0156]</a></sup>）强调多语言图像captioning评估，但未见其与文本模态LLM judge的对比，无法回答&quot;视觉模态是否引入语言偏向&quot;的问题。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>视觉模态的评估盲区并非单一技术壁垒，而是评估范式设计、架构约束和社会线索共同作用的结果。文本模态（尤其是文本only reasoning）是支撑多模态LLM Judge的统一桥梁，利用少量高质量文本推理数据可以训练出在多个模态上泛化良好的judge，甚至超越依赖大规模多模态标注的LLaVA-Critic<sup class="cite"><a href="#ref-2319" style="text-decoration:none">[2319]</a></sup>。然而，当前多模态评估基准中，视觉信息利用率不足，视觉状态转换与文本状态的生成之间缺乏跨模态对齐机制，导致评估盲区无法完全通过视觉理解缓解<sup class="cite"><a href="#ref-0157" style="text-decoration:none">[0157]</a></sup>。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>缺乏与人类annotator在视觉模态上的直接对比数据，跨语言视觉模态评估与文本模态LLM judge的对比数据不足，动态社会语境和交互式评估研究缺失。CalibraEval在文本模态上与人类一致性强，但视觉模态上尚无同类验证。ProtoBias主要针对T2I评估，未扩展到LLM Judge评估。M-ErasureBench主要关注文本驱动的erasure方法，视觉输入的脆弱性仅通过CRR指标间接反映。Bias in the Picture数据集规模有限（1343对），主要基于静态新闻图像，缺乏动态社会语境和交互式评估。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Benchmarking Adversarial Robustness to Bias Elicitation in Large Language Models&nbsp;<code style="font-size:0.82em;color:#888">0005_benchmarking_adversarial_robustness_to_bias_elicitation_in_l</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Towards Mitigating Hallucination in Large Language Models via Self-Reflection&nbsp;<code style="font-size:0.82em;color:#888">0161_Towards_Mitigating_LLM_Hallucination_via_Self_Reflection</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;CalibraEval: Calibrating Prediction Distribution to Mitigate Selection Bias in LLMs-as-Judges&nbsp;<code style="font-size:0.82em;color:#888">0168_CalibraEval_Calibrating_Prediction_Distribution_to_Mitigate</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Judging with Many Minds: Do More Perspectives Mean Less Prejudice?&nbsp;<code style="font-size:0.82em;color:#888">0170_Judging_with_Many_Minds_Do_More_Perspectives_Mean_Less_Preju</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Automating high-quality concept banks: leveraging LLMs and multimodal evaluation metrics&nbsp;<code style="font-size:0.82em;color:#888">0173_Automating_high_quality_concept_banks_leveraging_LLMs_and_mu</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;M-ErasureBench: A Comprehensive Multimodal Evaluation Benchmark for Concept Erasure in Diffusion Models&nbsp;<code style="font-size:0.82em;color:#888">0114_M-ErasureBench_A_Comprehensive_Multimodal_Evaluation_Benchma</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Understanding ME? Multimodal Evaluation for Fine-grained Visual Commonsense&nbsp;<code style="font-size:0.82em;color:#888">0157_Understanding_ME_Multimodal_Evaluation_for_Fine-grained_Visu</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;ColorSwap: A Color and Word Order Dataset for Multimodal Evaluation&nbsp;<code style="font-size:0.82em;color:#888">0164_ColorSwap_A_Color_and_Word_Order_Dataset_for_Multimodal_Eval</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena&nbsp;<code style="font-size:0.82em;color:#888">2217_judging_llmasajudge_with_mtbench_and_chatbot_arena</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;A Multitask, Multilingual, Multimodal Evaluation of ChatGPT on Reasoning, Hallucination, and Interactivity&nbsp;<code style="font-size:0.82em;color:#888">2215_a_multitask_multilingual_multimodal_evaluation_of_chatgpt_on</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Directional Hallucinations: Ideological Drift in News-Grounded LLM Question Answering&nbsp;<code style="font-size:0.82em;color:#888">0182_directional_hallucinations_ideological_drift_in_newsgrounded</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Bias in the Picture: Benchmarking VLMs with Social-Cue News Images and LLM-as-Judge Assessment&nbsp;<code style="font-size:0.82em;color:#888">2351_bias_in_the_picture_benchmarking_vlms_with_socialcue_news_im</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Prototypicality Bias Reveals Blindspots in Multimodal Evaluation Metrics&nbsp;<code style="font-size:0.82em;color:#888">2386_prototypicality_bias_reveals_blindspots_in_multimodal_evalua</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;FLEX-Judge: Text-Only Reasoning Unleashes Zero-Shot Multimodal Evaluators&nbsp;<code style="font-size:0.82em;color:#888">2319_flexjudge_textonly_reasoning_unleashes_zeroshot_multimodal_e</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Crossmodal-3600: A Massively Multilingual Multimodal Evaluation Dataset&nbsp;<code style="font-size:0.82em;color:#888">0156_Crossmodal-3600_A_Massively_Multilingual_Multimodal_Evaluati</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.1 · 2026-10-15 14:44</footer>
+</div>
+</body>
+</html>

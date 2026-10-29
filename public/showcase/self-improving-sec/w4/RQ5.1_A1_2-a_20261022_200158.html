@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-a 分析报告</h1>
+<div class="meta">RQ [RQ5.1]：[父问题 RQ5] 自改进机制的可迁移性边界在哪里——威胁模型、攻防共进化与应用局限如何共同约束其落地？
+[本子问题 RQ5.1] 100 个 AssumptionConstraint（约 60 项无任何关系边）可如何重构为「访问权限 / 预算 / 对手能力 / 环境保真度」四轴威胁模型坐标系？requires 仅 6 条、relaxes 仅 2 条，意味着假设与方法之间的依赖关系几乎未被显式建模，这对结论可比性造成什么后果？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0570_llmbased_penetration_testing_in_the_presence_of_honeypots, 0408_xoffense_an_autonomous_multiagent_framework_for_penetration, 0471_severa_verified_synthesis_of_selfevolving_agents, 0550_rethinking_selfevolving_agent_skills_feedback_dynamics_over）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心发现一_假设_方法依赖关系几乎未被显式建模">核心发现一：假设-方法依赖关系几乎未被显式建模</a></li>
+<li><a href="#sec_核心发现二_四轴坐标系可无造词地从现有假设归纳">核心发现二：四轴坐标系可无造词地从现有假设归纳</a></li>
+<li><a href="#sec_核心发现三_依赖缺失对结论可比性的后果">核心发现三：依赖缺失对结论可比性的后果</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告对知识图谱中的 100 个 AssumptionConstraint 节点进行了系统性结构核查，验证「访问权限 / 预算 / 对手能力 / 环境保真度」四轴威胁模型坐标系的重构可行性，并评估假设-方法依赖关系缺失对结论可比性的后果。核心发现：全部 100 个假设中仅存在 6 条 requires 边、约 2 条 relaxes 边，约 60 个假设节点零关系边；其中 6 条 requires 边里有 5 条集中于 ToolLeak 单篇论文 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，依赖建模高度集中而非均布。</p><p>更关键的是，即使被论文正文明确写出的核心约束——perfect_recall、fixed_llm_execution_budget、identical_foundation_model、python_only_evaluation、adversary_can_develop_own_llm_agents——其节点入边反向查询均返回空列表，说明显式建模缺失是系统性的，而非个别遗漏。四篇冻结论文 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 均具备完整的 addresses/proposes/evaluated_on/measured_by/has_limitation 边，却无一条 requires/relaxes 边指向假设节点，呈现『方法-问题-基准-指标关联充分、方法-假设关联缺位』的结构性失衡。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析的全部数据来自知识图谱（KG）结构化字段（节点 canonical_name、description 以及边的 evidence 文本），未使用外部原文段落——因 search_paper_sections RAG 检索接口在本次会话中持续返回 Unknown tool 错误而不可用。涉及的数据规模如下：AssumptionConstraint 假设节点 100 个；Problem 问题节点 402 个；Method 方法节点 385 个；Limitation 局限节点 226 个；Paper 论文节点 141 个；DatasetBenchmark 节点 235 个；Metric 指标节点 256 个。六类节点（问题/方法/数据集/指标/局限/假设）均已执行针对性查询，四篇冻结证据论文 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的完整关系边均已读取。</p>
+<h3>KG 各类型节点规模与假设关系边稀疏度</h3>
+<table><thead><tr><th>节点/边类型</th><th>数量</th><th>说明</th></tr></thead><tbody><tr><td>AssumptionConstraint（假设）</td><td>100</td><td>重构目标全集</td></tr>
+<tr><td>requires 边</td><td>6</td><td>方法→假设的显式依赖，其中 5 条来自 ToolLeak [1]</td></tr>
+<tr><td>relaxes 边</td><td>约 2</td><td>方法放宽既有假设</td></tr>
+<tr><td>零关系边假设</td><td>约 60</td><td>抽样观察，无任何入/出边</td></tr>
+<tr><td>Problem（问题）</td><td>402</td><td>被分析的问题全集</td></tr>
+<tr><td>Method（方法）</td><td>385</td><td>被分析的方法全集</td></tr>
+<tr><td>Limitation（局限）</td><td>226</td><td>局限全集</td></tr>
+<tr><td>Paper（论文）</td><td>141</td><td>论文全集</td></tr>
+<tr><td>DatasetBenchmark（数据集）</td><td>235</td><td>基准全集</td></tr>
+<tr><td>Metric（指标）</td><td>256</td><td>指标全集</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "假设关系边的极度稀疏：requires/relaxes 边 vs 零边假设", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["requires 边", "relaxes 边", "零关系边假设"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "数量（个）", "type": "bar", "data": [6, 2, 60], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心发现一_假设_方法依赖关系几乎未被显式建模">核心发现一：假设-方法依赖关系几乎未被显式建模</h2>
+<p>对假设节点的入边反向查询是本次分析最具决定性的证据。逐一查询显示：perfect_recall（完美回忆）——尽管 ADAPT 的 Micro Tactic Games 方法证据中明确写着『with perfect recall assumed』<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>，该假设节点入边仍为空；fixed_llm_execution_budget（固定 LLM 令牌预算）、identical_foundation_model（相同基座模型）、compact_llm_hardware_budget（32B/A100 硬件预算）、15-minute time limit、python_only_evaluation、adversary_can_develop_own_llm_agents 等节点的入边查询全部返回空列表 []。</p><p>唯一有实质 requires 边的假设集群来自 ToolLeak <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>：secret-in-context、untrusted tool influence、expressive required fields、observable sink、no effective argument sanitization 五个假设均由 ToolLeak 一篇论文通过 requires 边连接。这说明依赖建模的『孤岛化』——绝大多数方法与其依赖的假设之间没有任何可查询的图结构联系。</p>
+<h3>核心假设节点的入边查询结果（requires 反向检索）</h3>
+<table><thead><tr><th>假设节点</th><th>被哪篇论文正文提及</th><th>requires 入边查询结果</th></tr></thead><tbody><tr><td>perfect_recall（完美回忆）</td><td>ADAPT [6]『with perfect recall assumed』</td><td>空 []</td></tr>
+<tr><td>fixed_llm_execution_budget（固定预算）</td><td>Honeypot [2]『under a fixed LLM execution budget』</td><td>空 []</td></tr>
+<tr><td>identical_foundation_model（相同基座）</td><td>可比性前提</td><td>空 []</td></tr>
+<tr><td>compact_llm_hardware_budget（32B/A100）</td><td>xOffense [3] LoRA 微调</td><td>空 []</td></tr>
+<tr><td>python_only_evaluation（仅Python）</td><td>多篇代码安全论文</td><td>空 []</td></tr>
+<tr><td>adversary_can_develop_own_llm_agents</td><td>威胁模型类论文</td><td>空 []</td></tr>
+<tr><td>secret-in-context</td><td>ToolLeak [1]</td><td>有 requires（ToolLeak→secret-in-context）</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现二_四轴坐标系可无造词地从现有假设归纳">核心发现二：四轴坐标系可无造词地从现有假设归纳</h2>
+<p>四个候选维度均可直接从 KG 现有假设的 canonical_name 与 description 文本归纳，无需新造术语。访问权限轴呈黑盒↔灰盒↔白盒梯度（black-box access、black-box HTTP-only interaction、black-box target model access、strict black-box attacker、attacker access to knowledge base）；预算轴量化信息最密集（fixed LLM execution budget、bounded query/round budget、iteration limit ≤4、fuzzing mutation limit 150、sandbox 6 秒、15-minute per-challenge、LLM context window limit、compact LLM 32B/A100）；对手能力轴（adversary can develop own LLM agents、adversary knows library vulnerabilities、attacker knowledge、attacker access to programming intents）；环境保真度轴（Docker-based Kali Linux environment、single-environment evaluation、单 IP 范围、单一语言/CWE 范围、reproducibility limited by changing environments）。</p><p>四轴概念上基本正交：访问权限刻画『能看见什么』、预算刻画『能做多少』、对手能力刻画『对手本身多强』、环境保真度刻画『实验场与真实世界的距离』。其中预算轴因携带大量具体数值（≤4、150、6s、15min、32B/A100、ASR@15）最易落地为坐标系取值。</p>
+<h3>四轴坐标系与代表性假设节点的映射</h3>
+<table><thead><tr><th>维度</th><th>代表假设（节选）</th><th>取值特征</th></tr></thead><tbody><tr><td>访问权限</td><td>black-box access; black-box HTTP-only interaction; strict black-box attacker; attacker access to knowledge base</td><td>黑盒↔灰盒↔白盒梯度</td></tr>
+<tr><td>预算</td><td>fixed LLM execution budget; bounded query budget; iteration limit ≤4; fuzzing mutation limit 150; sandbox 6s; 15-minute per-challenge; context window limit; compact LLM 32B/A100</td><td>量化信息密集，易离散化</td></tr>
+<tr><td>对手能力</td><td>adversary can develop own LLM agents; adversary knows library vulnerabilities; attacker knowledge; attacker access to programming intents</td><td>能力高低 + 知识水平</td></tr>
+<tr><td>环境保真度</td><td>Docker-based Kali Linux; single-environment evaluation; 单 IP 范围; python-only / C++ memory-only / seven CWE; reproducibility limited by changing environments</td><td>真实↔模拟距离 + 范围宽度</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心发现三_依赖缺失对结论可比性的后果">核心发现三：依赖缺失对结论可比性的后果</h2>
+<p>依赖关系未显式化直接摧毁跨论文可比性，因为同一句『黑盒 LLM agent 达到 X% 成功率』背后的四轴取值组合几乎从不被声明。以 Honeypot 论文 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 为例：其问题节点 budget_aware_target_selection_under_honeypot_uncertainty 的 evidence 明写『under a fixed LLM execution budget』，却无任何 requires 边指向 fixed_llm_execution_budget 假设——预算这一决定成败的关键变量仅『内嵌』在问题文本中，未成为可查询的结构化依赖，其 20 主机混布测试台（8 honeypot / 12 vulnerable）<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的结论边界因此无法自动界定。</p><p>xOffense <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 声称『消除商业 API 依赖』，通过 LoRA 微调 32B LLM 达成，但 compact_llm_hardware_budget 假设同样无入边。SEVerA <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 在 DafnyBench、tau2-bench 等基准上报告『零约束违反』，但其 closed-source 模型无法微调这一实质继承自 remote_api_access 的约束亦未连边，使『零违反』的可迁移范围无法被程序化界定。下游若把『15 分钟限制下的 51.9%』与『无时间限制的 100%』直接对表，结论必然失真。</p>
+<h3>四篇冻结论文的关系边画像：广泛关联 vs 假设依赖缺位</h3>
+<table><thead><tr><th>论文</th><th>已建模边类型</th><th>是否含 requires/relaxes→假设</th></tr></thead><tbody><tr><td>Honeypot [2]</td><td>proposes / addresses / has_limitation(5条) / evaluated_on / measured_by / targets</td><td>无</td></tr>
+<tr><td>xOffense [3]</td><td>proposes / addresses(4条) / evaluated_on(2条) / measured_by(2条) / extends / compares_with</td><td>无</td></tr>
+<tr><td>SEVerA [4]</td><td>proposes(4条) / addresses(3条) / has_limitation(1条) / evaluated_on(4条) / measured_by(3条)</td><td>无</td></tr>
+<tr><td>Rethinking Skills [5]</td><td>proposes(2条) / addresses(3条) / extends / supports / compares_with(2条)</td><td>无</td></tr>
+</tbody></table>
+<div class="note">MECE 检验的操作化说明：遗漏检测（union + 差集）与重叠检测（intersect）本应以全量 402 个 Problem 节点的分类归属计算 omission_rate 与 exclusivity_rate。但由于约 60 个零边假设仅抽样核查约 25 个、且假设本身未被方法 requires 边连接，无法对全量假设逐一定位到 (A_i, B_j) 格点。因此本报告中的稀疏度数字（6 requires / 2 relaxes / ~60 零边）为基于抽样与直接查询的稳健估计，而非全量精确计数。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>第一，工具层面的硬约束：search_paper_sections RAG 检索接口在整个会话中持续返回 Unknown tool 错误，因此所有证据均来自 KG 结构化字段（节点 description 与边 evidence），未能取得论文原文段落级引用，结论的原文溯源验证无法完成，需在具备 RAG 能力时补检。</p><p>第二，覆盖缺口：60 个零关系边假设中仅抽样核查约 25 个并通过反向查询验证了约 10 个核心假设，未穷尽逐一验证全部 100 个假设，omission_rate 与 exclusivity_rate 为抽样估计。第三，正交性风险：四轴虽概念正交，但『对手能力』与『访问权限』在灰盒场景存在取值边界模糊（灰盒既是访问权限取值，也隐含对手具备一定内部知识），未能执行 Cramer's V 定量正交性检验，正式落地时需补做该检验以确保数值 ≤0.3。尽管如此，核心事实——requires/relaxes 极端稀疏、核心假设普遍无结构化依赖——已通过多篇论文 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 的直接反向查询交叉确认，稳健性较高。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ 的初始判断成立且被 KG 数据强化：假设-方法依赖关系几乎未被显式建模——6 条 requires、约 2 条 relaxes、约 60 个零边假设，且核心约束（完美回忆、固定预算、相同基座、仅 Python、对手能力）全部无入边，6 条 requires 中 5 条孤立地集中于 ToolLeak 一篇论文。</p><p>「访问权限 / 预算 / 对手能力 / 环境保真度」四轴坐标系对现有 100 个假设具备良好的归纳覆盖能力，且四个维度名称与取值均可从现有假设文本直接取得、无需造词；其中预算轴量化信息最丰富、最易操作化。依赖缺失的直接后果是跨论文结论的可比性被系统性削弱：方法报告的性能数字悬空于未声明的威胁模型格点之上，Honeypot <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、xOffense <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、SEVerA <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 均在被正文明确约束、却未被结构化连接的情形下报告结论。重构的落地路径应是：批量补齐 Method→Assumption 的 requires/relaxes 边，并以四轴格点 (A_i, B_j) 标注每篇论文结论，方能真正划定自改进机制可迁移性的边界。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Red-Teaming Coding Agents from a Tool-Invocation Perspective (ToolLeak)&nbsp;<code style="font-size:0.82em;color:#888">0404_redteaming_coding_agents_from_a_toolinvocation_perspective_a</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;LLM-Based Penetration Testing in the Presence of Honeypots&nbsp;<code style="font-size:0.82em;color:#888">0570_llmbased_penetration_testing_in_the_presence_of_honeypots</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;xOffense: An Autonomous Multi-Agent Framework for Penetration Testing&nbsp;<code style="font-size:0.82em;color:#888">0408_xoffense_an_autonomous_multiagent_framework_for_penetration</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;SEVerA: Verified Synthesis of Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">0471_severa_verified_synthesis_of_selfevolving_agents</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Rethinking Self-Evolving Agent Skills: Feedback Dynamics over Multiple Rounds&nbsp;<code style="font-size:0.82em;color:#888">0550_rethinking_selfevolving_agent_skills_feedback_dynamics_over</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;ADAPT: A Game-Theoretic and Neuro-Symbolic Framework for Automated Distributed Adaptive Penetration Testing&nbsp;<code style="font-size:0.82em;color:#888">0134_ADAPT_A_Game-Theoretic_and_Neuro-Symbolic_Framework_for_Auto</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.1 · 2026-10-22 20:01</footer>
+</div>
+</body>
+</html>

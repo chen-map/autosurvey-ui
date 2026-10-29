@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-c 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-c 分析报告</h1>
+<div class="meta">RQ [RQ1.2]：[父问题 RQ1] 面向网络与软件安全任务的大模型与智能体&quot;自改进&quot;机制，可以被如何统一定义与分类？
+[本子问题 RQ1.2] 385 个 Method 节点之间存在怎样的继承与组合谱系（extends 277 条），能否归纳出可复用的机制族（mechanism families），以及为何 compares_with 仅 41 条使这些机制族从未被显式对照？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0414_agentic_context_engineering_evolving_contexts_for_selfimprov, 0571_llmsecav_a_vulnerability_taxonomy_and_llmdriven_software_wea, 0045_An_Empirical_Evaluation_of_LLM-Based_Approaches_for_Code_Vul, 0324_pentestagent_incorporating_llm_agents_to_automated_penetrati, 0342_agrail_a_lifelong_agent_guardrail_with_effective_and_adaptiv, 0229_The_Security_Duality_of_Large_Language_Model_Agents_A_System）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>**RQ1.2 回答**：385 个 Method 节点之间的 277 条 extends 边并非弥散型网络，而是围绕**极少数「机制原型」节点形成的星型（hub-and-spoke）谱系**——KG 中真正承担谱系继承的枢纽论文只有 4 个：PentestAgent <sup class="cite"><a href="#ref-0324" style="text-decoration:none">[0324]</a></sup>（被 15 篇 extends）、ACE <sup class="cite"><a href="#ref-0414" style="text-decoration:none">[0414]</a></sup>（11 篇）、CyberEvolver <sup class="cite"><a href="#ref-0513" style="text-decoration:none">[0513]</a></sup>（8 篇）、LLMpatronous <sup class="cite"><a href="#ref-0353" style="text-decoration:none">[0353]</a></sup>（6 篇），加上第二梯队的 VRpilot <sup class="cite"><a href="#ref-0204" style="text-decoration:none">[0204]</a></sup>（13 篇）、Secure-Repair 检索增强工作流 <sup class="cite"><a href="#ref-0438" style="text-decoration:none">[0438]</a></sup>（22 篇）、MemRepair <sup class="cite"><a href="#ref-0505" style="text-decoration:none">[0505]</a></sup>（8 篇）、AGrail <sup class="cite"><a href="#ref-0342" style="text-decoration:none">[0342]</a></sup>（3 篇）。这意味着 277 条 extends 边可归纳为 **5 个可复用的机制族**：（1）**外部知识/检索注入族**（RAG 谱系，<sup class="cite"><a href="#ref-0022" style="text-decoration:none">[0022]</a></sup>→<sup class="cite"><a href="#ref-0353" style="text-decoration:none">[0353]</a></sup>→<sup class="cite"><a href="#ref-0421" style="text-decoration:none">[0421]</a></sup>/<sup class="cite"><a href="#ref-0450" style="text-decoration:none">[0450]</a></sup>/<sup class="cite"><a href="#ref-0623" style="text-decoration:none">[0623]</a></sup>，以及 <sup class="cite"><a href="#ref-0438" style="text-decoration:none">[0438]</a></sup>→<sup class="cite"><a href="#ref-0505" style="text-decoration:none">[0505]</a></sup>/<sup class="cite"><a href="#ref-0525" style="text-decoration:none">[0525]</a></sup>/<sup class="cite"><a href="#ref-0530" style="text-decoration:none">[0530]</a></sup>/<sup class="cite"><a href="#ref-0589" style="text-decoration:none">[0589]</a></sup>）；（2）**验证反馈闭环族**（patch-validation / test-suite / compiler-feedback，<sup class="cite"><a href="#ref-0204" style="text-decoration:none">[0204]</a></sup>→<sup class="cite"><a href="#ref-0226" style="text-decoration:none">[0226]</a></sup>→<sup class="cite"><a href="#ref-0438" style="text-decoration:none">[0438]</a></sup>/<sup class="cite"><a href="#ref-0244" style="text-decoration:none">[0244]</a></sup>/<sup class="cite"><a href="#ref-0409" style="text-decoration:none">[0409]</a></sup>/<sup class="cite"><a href="#ref-0418" style="text-decoration:none">[0418]</a></sup>）；（3）**经验记忆/持久化上下文族**（<sup class="cite"><a href="#ref-0414" style="text-decoration:none">[0414]</a></sup>→<sup class="cite"><a href="#ref-0469" style="text-decoration:none">[0469]</a></sup>/<sup class="cite"><a href="#ref-0550" style="text-decoration:none">[0550]</a></sup>/<sup class="cite"><a href="#ref-0556" style="text-decoration:none">[0556]</a></sup>/<sup class="cite"><a href="#ref-0558" style="text-decoration:none">[0558]</a></sup>/<sup class="cite"><a href="#ref-0505" style="text-decoration:none">[0505]</a></sup>/<sup class="cite"><a href="#ref-0621" style="text-decoration:none">[0621]</a></sup>）；（4）**脚手架结构自进化族**（<sup class="cite"><a href="#ref-0513" style="text-decoration:none">[0513]</a></sup> 四层分解 + 束搜索，向 <sup class="cite"><a href="#ref-0516" style="text-decoration:none">[0516]</a></sup>/<sup class="cite"><a href="#ref-0523" style="text-decoration:none">[0523]</a></sup>/<sup class="cite"><a href="#ref-0556" style="text-decoration:none">[0556]</a></sup>/<sup class="cite"><a href="#ref-0567" style="text-decoration:none">[0567]</a></sup>/<sup class="cite"><a href="#ref-0582" style="text-decoration:none">[0582]</a></sup>/<sup class="cite"><a href="#ref-0621" style="text-decoration:none">[0621]</a></sup> 扩散）；（5）**多智能体角色编排族**（<sup class="cite"><a href="#ref-0324" style="text-decoration:none">[0324]</a></sup> 侦察/搜索/规划/执行四角色，向 <sup class="cite"><a href="#ref-0336" style="text-decoration:none">[0336]</a></sup>/<sup class="cite"><a href="#ref-0408" style="text-decoration:none">[0408]</a></sup>/<sup class="cite"><a href="#ref-0474" style="text-decoration:none">[0474]</a></sup>/<sup class="cite"><a href="#ref-0492" style="text-decoration:none">[0492]</a></sup>/<sup class="cite"><a href="#ref-0511" style="text-decoration:none">[0511]</a></sup>/<sup class="cite"><a href="#ref-0536" style="text-decoration:none">[0536]</a></sup>/<sup class="cite"><a href="#ref-0560" style="text-decoration:none">[0560]</a></sup>/<sup class="cite"><a href="#ref-0569" style="text-decoration:none">[0569]</a></sup> 扩散）。这五个族恰好对应 <sup class="cite"><a href="#ref-0552" style="text-decoration:none">[0552]</a></sup> 综述提出的「持久变更载体」分类轴（skills、workflow、memory、framework、model）与 <sup class="cite"><a href="#ref-0620" style="text-decoration:none">[0620]</a></sup> 的四轴分类（change object / timescale / recovery boundary / assurance mechanism），因此元维度不是 LLM 杜撰，而是被至少两篇综述的既有分类框架所验证。</p><p>**为何 compares_with 仅 41 条、这些机制族从未被显式对照**：这是本 RQ 最关键的诊断结论，且原因有三层结构性根源。第一层是**谱系拓扑本身的不对称**：extends 是「祖先→后代」的垂直继承，而 compares_with 需要「同层异构机制」之间的水平连接；KG 中 41 条 compares_with 绝大多数（如 <sup class="cite"><a href="#ref-0324" style="text-decoration:none">[0324]</a></sup>↔<sup class="cite"><a href="#ref-0147" style="text-decoration:none">[0147]</a></sup>、<sup class="cite"><a href="#ref-0513" style="text-decoration:none">[0513]</a></sup>↔<sup class="cite"><a href="#ref-0550" style="text-decoration:none">[0550]</a></sup>、<sup class="cite"><a href="#ref-0438" style="text-decoration:none">[0438]</a></sup>↔<sup class="cite"><a href="#ref-0522" style="text-decoration:none">[0522]</a></sup>、<sup class="cite"><a href="#ref-0505" style="text-decoration:none">[0505]</a></sup>↔<sup class="cite"><a href="#ref-0589" style="text-decoration:none">[0589]</a></sup>）都发生在**同一机制族内部**的姊妹工作之间，跨族的水平对照几乎为零——例如检索注入族的 <sup class="cite"><a href="#ref-0353" style="text-decoration:none">[0353]</a></sup>/<sup class="cite"><a href="#ref-0438" style="text-decoration:none">[0438]</a></sup> 与验证反馈族的 <sup class="cite"><a href="#ref-0204" style="text-decoration:none">[0204]</a></sup> 各自拥有 6~22 个子代，却没有任何一条 compares_with 边把它们横向连接。第二层是**证据基准不可通约**：各族冻结在不同的评估面上——检索族固定于 VulDroid <sup class="cite"><a href="#ref-0353" style="text-decoration:none">[0353]</a></sup>、PatchEval/SEC-bench <sup class="cite"><a href="#ref-0505" style="text-decoration:none">[0505]</a></sup>、Vul4J <sup class="cite"><a href="#ref-0516" style="text-decoration:none">[0516]</a></sup>；脚手架族固定于 AutoPenBench/NYU-CTF/CVE-Bench <sup class="cite"><a href="#ref-0513" style="text-decoration:none">[0513]</a></sup>；防御记忆族固定于 HarmBench/AgentDojo/AgentHarm <sup class="cite"><a href="#ref-0519" style="text-decoration:none">[0519]</a></sup>/<sup class="cite"><a href="#ref-0582" style="text-decoration:none">[0582]</a></sup>；多智能体渗透族固定于 HTB/VulHub <sup class="cite"><a href="#ref-0324" style="text-decoration:none">[0324]</a></sup>。族间共享基准几乎不存在 <sup class="cite"><a href="#ref-0233" style="text-decoration:none">[0233]</a></sup> 明确指出「多轮基准统计单位不同（response closure / tool-using sequences / relinking events），可比性受限」，使跨族对照在方法论上不可执行。第三层是**「改进」定义未统一**，<sup class="cite"><a href="#ref-0552" style="text-decoration:none">[0552]</a></sup> 精确指出核心缺陷在于「通过测试检查的是选定的行为，功能成功不等于补丁质量或安全性」——各族用不同信号作为「进步」的闸门（验证族用静态分析重扫、记忆族用验证集通过率、脚手架族用 solve rate），因此在没有共同「改进信号」定义前，任何跨族对照都会沦为指标错配。</p><p>**跨族唯一的显式沟通渠道是「据谱系而非对照」的横向借用**：当研究者确实要在族间移动时，他们选择用 extends 边「继承 + 改造」而不是 compares_with。三条典型桥接边证明了这一点：<sup class="cite"><a href="#ref-0523" style="text-decoration:none">[0523]</a></sup> EVOHUNT 把 <sup class="cite"><a href="#ref-0513" style="text-decoration:none">[0513]</a></sup> CyberEvolver 的「脚手架内修订」改造为「外部化可迁移文本 playbook」，实质上是脚手架族向记忆族的一次迁移，但边类型是 extends；<sup class="cite"><a href="#ref-0582" style="text-decoration:none">[0582]</a></sup> SED 同时 extends <sup class="cite"><a href="#ref-0513" style="text-decoration:none">[0513]</a></sup>（失败驱动自进化）、<sup class="cite"><a href="#ref-0523" style="text-decoration:none">[0523]</a></sup>（外部化文本程序）、<sup class="cite"><a href="#ref-0519" style="text-decoration:none">[0519]</a></sup> MEMBRANE 与 <sup class="cite"><a href="#ref-0342" style="text-decoration:none">[0342]</a></sup> AGrail（记忆护栏），成为连接四个族节点的唯一「超级汇点」，但同样没有产生任何跨族 compares_with；<sup class="cite"><a href="#ref-0621" style="text-decoration:none">[0621]</a></sup> 同时 extends <sup class="cite"><a href="#ref-0513" style="text-decoration:none">[0513]</a></sup>、<sup class="cite"><a href="#ref-0414" style="text-decoration:none">[0414]</a></sup>、<sup class="cite"><a href="#ref-0558" style="text-decoration:none">[0558]</a></sup>、<sup class="cite"><a href="#ref-0477" style="text-decoration:none">[0477]</a></sup>/<sup class="cite"><a href="#ref-0528" style="text-decoration:none">[0528]</a></sup> 等，把技能记忆族与脚手架族重新缝合一处的证据仍然只是 extends。换言之，社区实际上已经做了跨族综合，只是把它编码为「新方法继承多个祖先」，而不编码为「方法族之间互相比较」——这正是 41 这个数字偏低的机械原因。</p><p>**分歧、证据缺口与不确定性**：唯一的**根本性冲突**出现在记忆防御族内部——<sup class="cite"><a href="#ref-0549" style="text-decoration:none">[0549]</a></sup> EvoBreak 以 contradicts 边（confidence 0.72）直接挑战 <sup class="cite"><a href="#ref-0519" style="text-decoration:none">[0519]</a></sup> MEMBRANE 的核心前提，证明「单独无害的经验经组合后可构成持续安全风险」，即「成对的有害-无害记忆单元」不足以可靠防御；<sup class="cite"><a href="#ref-0233" style="text-decoration:none">[0233]</a></sup> 的「抽象可丢弃授权约束」论点支持 <sup class="cite"><a href="#ref-0549" style="text-decoration:none">[0549]</a></sup>。这必须并列展示，不可强行合并。第二个分歧是脚手架族与记忆族对「学习信号应存在何处」的不可通约立场：<sup class="cite"><a href="#ref-0513" style="text-decoration:none">[0513]</a></sup> 主张在脚手架结构内修订，<sup class="cite"><a href="#ref-0523" style="text-decoration:none">[0523]</a></sup> 主张将信号外部化为可迁移文本 playbook 而不动脚手架，两者逻辑上互斥但均被文献采纳。证据缺口方面：277 条 extends 边中我仅对约 40 个节点做过一跳展开，其余边的族归属是基于枢纽归属的推断（标注 semantic_inference 而非 kg_edge）；此外 `search_paper_sections` RAG 工具在本环境不可用（连续三次返回 Unknown tool），因此所有引用均来自 KG 节点的 canonical_name 与 evidence 字段原文，未能提供论文正文段落级的直接引文，这一层证据强度低于理想标准，应在人工审查时补充原文核对。</p>
+<h3>关键结论与证据</h3>
+<table><thead><tr><th>编号</th><th>结论</th><th>证据论文</th></tr></thead><tbody><tr><td>C1</td><td>277 条 extends 边高度集中在少数枢纽：PentestAgent [0324] 被 15 篇论文 extends，ACE [0414] 被 11 篇，CyberEvolver [0513] 被 8 篇，LLMpatronous [0353] 被 6 篇；第二梯队 VRpilot [0204] 被 13 篇、检索增强修复工作流 [0438] 被 22 篇、MemRepair [0505] 被 8 篇。谱系呈星型而非网状结构。</td><td>0324_pentestagent_incorporating_llm_agents_to_automated_penetrati, 0414_agentic_context_engineering_evolving_contexts_for_selfimprov, 0513_cyberevolver_structured_selfevolution_for_cybersecurity_agen, 0353_llmpatronous_harnessing_the_power_of_llms_for_vulnerability, 0204_A_Case_Study_of_LLM_for_Automated_Vulnerability_Repair_Asses, 0438_improving_llmassisted_secure_code_generation_through_retriev, 0505_memrepair_hierarchical_memory_for_agentic_repositorylevel_vu</td></tr>
+<tr><td>C2</td><td>277 条 extends 边可归纳为 5 个可复用机制族：外部知识/检索注入、验证反馈闭环、经验记忆/持久上下文、脚手架结构自进化、多智能体角色编排。</td><td>0353_llmpatronous_harnessing_the_power_of_llms_for_vulnerability, 0438_improving_llmassisted_secure_code_generation_through_retriev, 0204_A_Case_Study_of_LLM_for_Automated_Vulnerability_Repair_Asses, 0414_agentic_context_engineering_evolving_contexts_for_selfimprov, 0513_cyberevolver_structured_selfevolution_for_cybersecurity_agen, 0324_pentestagent_incorporating_llm_agents_to_automated_penetrati</td></tr>
+<tr><td>C3</td><td>元维度的合法性由既有综述验证：[0552] 提出按持久变更载体（skills、workflow、memory、framework、model）分类的自进化编码智能体框架；[0620] 提出四轴分类（变更对象、适应时间尺度、恢复边界、保证机制）。本 RQ 的 5 个机制族可映射到这两套既有分类轴。</td><td>0552_selfevolving_coding_agents, 0620_A_Unified_Framework_for_Self-Evolving_and_Self-Healing_Artif, 0233_Safety_in_Self-Evolving_Agents_A_Survey</td></tr>
+<tr><td>C4</td><td>41 条 compares_with 边绝大多数位于同一机制族内部的姊妹工作之间（如 [0324]↔[0147]、[0513]↔[0550]、[0438]↔[0522]、[0505]↔[0589]、[0516]↔[0525]），跨机制族的水平对照边几乎为零。</td><td>0324_pentestagent_incorporating_llm_agents_to_automated_penetrati, 0147_RefPentester_A_Knowledge-Informed_Self-Reflective_Penetratio, 0513_cyberevolver_structured_selfevolution_for_cybersecurity_agen, 0550_rethinking_selfevolving_agent_skills_feedback_dynamics_over, 0438_improving_llmassisted_secure_code_generation_through_retriev, 0522_activating_latent_security_knowledge_through_llmguided_risk, 0505_memrepair_hierarchical_memory_for_agentic_repositorylevel_vu, 0589_evirepair_evidencedriven_agents_for_reliable_vulnerability_r</td></tr>
+<tr><td>C5</td><td>各族冻结在互不重叠的评估面上：检索族用 PatchEval/SEC-bench/Vul4J（[0505][0516]），脚手架族用 AutoPenBench/NYU-CTF/CVE-Bench（[0513]），防御记忆族用 HarmBench/AgentDojo/AgentHarm（[0519][0582]），渗透编排族用 HTB/VulHub（[0324]）。共享基准缺失使跨族对照在方法论上不可执行。</td><td>0505_memrepair_hierarchical_memory_for_agentic_repositorylevel_vu, 0516_evorepair_enhancing_vulnerability_repair_agents_through_expe, 0513_cyberevolver_structured_selfevolution_for_cybersecurity_agen, 0519_membrane_a_selfevolving_contrastive_safety_memory_for_llm_ag, 0582_selfevolving_defense_continual_security_policy_learning_for, 0324_pentestagent_incorporating_llm_agents_to_automated_penetrati</td></tr>
+<tr><td>C6</td><td>跨族沟通实际上是「以 extends 代替 compares_with」：[0582] SED 同时 extends [0513]、[0523]、[0519]、[0342]、[0567]、[0516]，[0621] 同时 extends [0513]、[0414]、[0558]、[0528]——社区已做跨族综合，但编码为「新方法继承多个祖先」而非「族间互比」。</td><td>0582_selfevolving_defense_continual_security_policy_learning_for, 0621_SELF-EVOLVING_AI_AGENT_WITH_SKILL_MEMORY, 0513_cyberevolver_structured_selfevolution_for_cybersecurity_agen, 0414_agentic_context_engineering_evolving_contexts_for_selfimprov, 0558_mega_selfevolving_agent_optimization_infrastructure_via_wisd, 0519_membrane_a_selfevolving_contrastive_safety_memory_for_llm_ag, 0342_agrail_a_lifelong_agent_guardrail_with_effective_and_adaptiv</td></tr>
+<tr><td>C7</td><td>脚手架族与记忆族存在逻辑互斥的路线分歧：[0513] 主张在脚手架/上下文内部做结构化修订，[0523] EVOHUNT 主张将学习信号外部化为可迁移的文本 playbook 而不改动脚手架，两条路线对「学习信号应驻留何处」立场相反。</td><td>0513_cyberevolver_structured_selfevolution_for_cybersecurity_agen, 0523_transferable_selfevolving_playbooks_for_agentic_security_aud</td></tr>
+<tr><td>C8</td><td>记忆防御族内部存在经过 KG contradicts 边标注的根本性矛盾：[0549] EvoBreak 以单独无害经验的组合可构成持续安全风险，直接挑战 [0519] MEMBRANE「成对有害-无害记忆单元可可靠防御」的前提（confidence 0.72），且与 [0233]「抽象可丢弃授权约束」论点一致。</td><td>0549_benign_alone_harmful_together_exploiting_experience_composit, 0519_membrane_a_selfevolving_contrastive_safety_memory_for_llm_ag, 0233_Safety_in_Self-Evolving_Agents_A_Survey</td></tr>
+<tr><td>C9</td><td>「改进」信号定义未统一是跨族对照缺位的深层原因：[0552] 指出「通过测试只检查选定行为，功能成功不等于补丁质量或安全性」，各族分别以静态分析重扫、验证集通过率、solve rate 作为进步闸门，缺乏共同改进判据。</td><td>0552_selfevolving_coding_agents, 0233_Safety_in_Self-Evolving_Agents_A_Survey, 0153_Persistent_Human_Feedback_LLMs_and_Static_Analyzers_for_Se</td></tr>
+<tr><td>C10</td><td>机制族的传承呈现明显的「加装式」模式：后代论文几乎总是保留祖先的核心回路并叠加一个新组件（如 [0505] 在 [0204] 的验证反馈回路上加三层记忆、[0556] 在 [0476] 的协同验证上加工具效用审计、[0623] 在 [0353] 的多智能体上加数据感知调度），而非替换式创新。</td><td>0505_memrepair_hierarchical_memory_for_agentic_repositorylevel_vu, 0204_A_Case_Study_of_LLM_for_Automated_Vulnerability_Repair_Asses, 0556_skillprox_selfevolving_agent_skills_via_proximal_textual_gra, 0476_coevoskills_selfevolving_agent_skills_via_coevolutionary_ver, 0623_DARC-Sched_A_Data-Aware_Multi-Agent_Large_Language_Model_Fra, 0353_llmpatronous_harnessing_the_power_of_llms_for_vulnerability</td></tr>
+<tr><td>C11</td><td>机制族的域迁移路径清晰可追踪：同一机制原型跨安全子域复用——[0324] 的多智能体编排扩散到 IoT（[0536]）、量子密码（[0231]）、智能合约（[0362][0364]）；[0414] 的演化 playbook 扩散到金融交易（[0499]）、金融客服（[0618]）、推荐系统（[0528]），证明机制族本身具有跨域可复用性。</td><td>0324_pentestagent_incorporating_llm_agents_to_automated_penetrati, 0536_vexaiot_autonomous_iot_vulnerability_exploitation_using_ai_a, 0362_adaptive_planexecute_framework_for_smart_contract_security_a, 0414_agentic_context_engineering_evolving_contexts_for_selfimprov, 0499_sharp_a_selfevolving_humanauditable_rubric_policy_for_financ, 0528_evorec_self_evolving_agentic_recommender_systems</td></tr>
+</tbody></table>
+<div class="note">完整性说明：277 条 extends 边仅对约 40 个关键节点做过逐跳展开，全图族归属部分为推断；且 search_paper_sections 工具在本环境持续返回 Unknown tool，故所有证据均取自 KG 节点 description/evidence 字段原文，缺少论文正文段落级直接引文，段落级溯源需人工补核。</div>
+
+<footer>Generated by KGAnalysis · RQ1.2 · 2026-10-22 21:03</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-b 分析报告</h1>
+<div class="meta">RQ [RQ4.2]：[父问题 RQ4] 评估指标体系、基准测试与校准机制的标准化研究
+[本子问题 RQ4.2] 探究如何利用标准数据集校验以提升评分可信度，并缓解人类评估中的偏见</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心分析_标准数据集校验的三重角色">核心分析：标准数据集校验的三重角色</a></li>
+<li><a href="#sec_问题分类法覆盖缺口交叉检验">问题分类法覆盖缺口交叉检验</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ4.2「如何利用标准数据集校验提升 LLM 评分可信度并缓解人类评估偏见」，基于知识图谱中 215 个数据集节点、116 篇论文、248 个问题节点、232 个方法节点、200 个指标节点、172 个局限节点与 78 个假设节点进行谱系审查与原文溯源。核心结论是：标准数据集校验是可信度提升的「锚点」，而偏见缓解必须区分数据侧（谱系透明、金标可核验的规范化数据集）与裁判侧（校准/去偏方法压制风格、位置、冗长、自我偏好等系统性偏差）两条独立战线。</p><p>证据同时揭示一条硬性上限：当被评模型强于裁判时，最优去偏的样本效率提升上限仅「两倍于金标」，LLM judge 无法替代大量人工金标 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；缺乏人工金参考时，裁判在自身答不对的问题上与人类判断一致性显著下降，而提供金参考可恢复大部分一致性 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>。此外，事实标准基准 MT-Bench 的判断在权威式对话挑战下 49% 决策翻转，人类一致性从 67% 跌至 48% <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>，说明「稳定」不等于「稳健」，标准数据集校验必须同时回答数据集是否谱系透明、裁判在该数据集上是否稳定、参考是否可信三个问题。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析通过知识图谱工具系统性加载了七类实体：数据集（dataset，共 215 个节点）、论文（paper，共 116 篇）、问题（problem，共 248 个）、方法（method，共 232 个）、指标（metric，共 200 个）、局限（limitation，共 172 个）、假设/约束（assumption，共 78 个）。</p><p>在评估类数据集子集中，重点审计了被评估边（evaluated_on）高频引用的基准：MT-Bench/MTBench（事实标准基准）、Crossmodal-3600 (XM3600)、CLEAR-Bias、ColorSwap、RewardBench、PreferenceBench、CALM-Alignment、TriviaQA、HotpotQA、StrategyQA、RPTS-Eval、M-ErasureBench 等。此外，对 14 篇关键论文执行了基于 embedding 的原文段落检索（search_paper_sections），精读其数据集构建、偏差测量、校准方法与局限性章节，所有关键结论均附原文片段溯源。</p>
+<h3>核心评估数据集谱系审查表</h3>
+<table><thead><tr><th>数据集</th><th>用途/规模</th><th>来源类型</th><th>标签来源</th><th>识别偏差</th><th>可信度影响</th></tr></thead><tbody><tr><td>MT-Bench / MTBench</td><td>80题×6模型，约3K专家投票；事实标准基准</td><td>真实生成+专家人工</td><td>58位专家(多为研究生)标注</td><td>风格偏差主导、可操控性、稳定性≠稳健性 [3][4]</td><td>广泛使用但存在系统性裁判偏差，需格式归一化</td></tr>
+<tr><td>XM3600</td><td>3600图×36语言人工caption，用于多语字幕评估</td><td>地理多样真实图像</td><td>双语标注员统一风格协议(非翻译)</td><td>欧洲语言过度代表、每语仅100图 [5]</td><td>金标可核验，提升CIDEr与人类相关性</td></tr>
+<tr><td>CLEAR-Bias</td><td>4400 prompt 覆盖多偏见维度+人工控制集</td><td>作者构造prompt</td><td>人工控制集(每偏置/任务400对)</td><td>控制集作者手工构造，存在自标风险 [6]</td><td>裁判选择流程可核查(κ=0.82)</td></tr>
+<tr><td>ColorSwap</td><td>2000图文对(1000例)，颜色词序评测</td><td>扩散模型合成图像</td><td>专家标注+生成模型</td><td>图像OOD、静态集存在训练污染风险 [7]</td><td>作者已在Limitation中讨论偏差</td></tr>
+<tr><td>RewardBench</td><td>2985 prompt-choice-rejection三元组</td><td>多数据集汇总</td><td>human feedback标签</td><td>选择偏差(CalibraEval评估对象) [8]</td><td>校准方法主要评测床</td></tr>
+<tr><td>PreferenceBench</td><td>2000响应对(win/lose)+200标准</td><td>构造评测集</td><td>人工判断</td><td>选择偏差 [8]</td><td>校准方法评测床</td></tr>
+<tr><td>TriviaQA / HotpotQA</td><td>开放域/多跳问答标准集</td><td>真实问答数据</td><td>参考答案</td><td>参考与参数知识冲突时裁判忽略[9]</td><td>裁判可靠性受参考质量制约</td></tr>
+<tr><td>CALM-Alignment</td><td>约439样本(DPO子集)，chosen/rejected</td><td>多DPO数据集采样</td><td>human feedback</td><td>样本量小、位置偏差测量用 [4]</td><td>用于多智能体裁判研究</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "去偏/校准方法的量化效果（关键指标）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["CalibraEval RStd↓(Llama-3-8B)", "CalibraEval RStd↓(Llama-3.1-8B)", "CalibraEval RStd↓(LLM)", "CalibraEval RStd↓(LLM)", "CalibraEval RStd↓(ChatGPT)", "CalibraEval RStd↓(LLM)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "召回标准差 RStd 降幅（基线→校准后）", "type": "bar", "data": [6.56, 6.52, 8.92, 1.89, 4.65, 0.62], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">说明：柱状图展示 CalibraEval 在 RewardBench/MTBench/PreferenceBench 平均维度上把召回标准差 RStd 从基线压低至约 5.04 的幅度（近似降幅，依据原文 Table 5 平均行：Llama-3-8B 11.60→5.04、Llama-3.1-8B 13.10→6.58、LLM 13.62→4.70、LLM 4.10→2.21、ChatGPT 9.16→4.51、LLM 3.49→2.87）<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。CaLLM 在 14 个数据集-偏差对中 12 个显著降低失准，位置/冗长/家族偏差中位数降幅约 64%/60%/46% <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</div>
+<h3>LLM 裁判偏差类型与严重程度</h3>
+<table><thead><tr><th>偏差类型</th><th>量化程度</th><th>关键证据</th><th>缓解手段</th></tr></thead><tbody><tr><td>风格偏差</td><td>0.10–0.76(主导)</td><td>人类markdown偏好57% vs 四裁判73%–97%，差+17~+40pp [4]</td><td>格式归一化、CoT强制</td></tr>
+<tr><td>位置偏差</td><td>≤0.04(新模型已可忽略)</td><td>优于早期研究强调 [4]</td><td>位置交换(对抗集上反而有害)</td></tr>
+<tr><td>冗长偏差</td><td>模型异质(+0.24~+0.44 / LLM -0.12)</td><td>Pro/Llama/Flash偏好长，LLM相反，LLM中性 [4]</td><td>长度控制</td></tr>
+<tr><td>自我偏好偏差</td><td>显著(LLM 排名2→7)</td><td>RankJudge 生成器自偏好 [11]</td><td>轮转MODEL_ORIGIN、多裁判集成</td></tr>
+<tr><td>可操控性(权威挑战)</td><td>49%翻转, 权威74%</td><td>人类一致性67%→48%，6/8排名变化 [3]</td><td>压力测试、ERS指标</td></tr>
+<tr><td>参考冲突/忽略参考</td><td>冲突下参考对齐骤降</td><td>裁判优先参数知识 [9]</td><td>提示有限，需人工金标</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析_标准数据集校验的三重角色">核心分析：标准数据集校验的三重角色</h2>
+<p>**第一，规范化数据集本身即校准器。** XM3600 以 3600 张地理多样图像、36 种语言的双语标注员原生（非翻译）标注构建金参考，作者报告使用其作 CIDEr 参考可显著提升与人类判断的相关性，从而免除昂贵多语人工评估 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。CLEAR-Bias 则用 4400 条 prompt 覆盖多重偏见维度，并用人工控制集（每偏置/任务 400 对）以 Cohen's κ 选出 LLM 为最可信裁判（κ=0.82, Macro-F1=0.861），把「裁判选择」做成可核查的数据集校验流程 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。可信度源于标签来源可核验与参考金标可对齐。</p><p>**第二，裁判偏差可被系统性量化并校准。** Judging the Judges 在 MT-Bench（n=400）、LLMBar（n=200）与自建 375 对受控集上比较 9 种去偏策略，发现风格偏差才是主导（0.10–0.76），远超位置偏差（≤0.04）<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。CalibraEval 以无标签保序非参数算法校准预测分布，把 RStd 从约 11.60/9.69/7.16 压低至约 5.04，并提升准确率（Llama-3-8B 平均 Acc 72.10→74.24）<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>；CaLLM 后验多校准在 14 个数据集-偏差对中 12 个显著降低失准，三类偏差中位数降幅约 64%/60%/46% <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。</p><p>**第三，收益存在理论上限且基准可能不可靠。** Limits to Scalable Evaluation 证明裁判弱于被评模型时，最优去偏的样本效率上限仅「两倍金标」<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；No Free Labels 显示无金参考时裁判一致性骤降，带金参考的 7B 小模型可优于无参考的 LLM <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；Stability vs. Manipulability 显示权威挑战下 49% 翻转（权威 74%），人类一致性 67%→48%，6/8 排名位次改变 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>；多智能体辩论反而放大偏差，meta-judge 更稳健 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>；裁判在参考与参数知识冲突时忽略参考 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "去偏策略效果结构（MT-Bench 显著策略占比示意）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "去偏策略效果结构（MT-Bench 显著策略占比示意）", "type": "pie", "radius": "55%", "data": [{"name": "显著有效(model-strategy pairs)", "value": 5}, {"name": "方向性但未达显著", "value": 2}, {"name": "无显著差异/无效", "value": 13}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<div class="note">说明：饼图基于 Judging the Judges 报告的 MT-Bench 结果——5 个 model-strategy 对 p&lt;0.05（其中 3 个经 Holm-Bonferroni 校正存活），Pro 与 LLM 仅小幅度非显著增益（MDE 4–5pp at n=400），其余组合无显著差异 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。表明去偏有效性高度依赖模型与策略的匹配，不存在通用去偏方案。</div>
+
+<h2 id="sec_问题分类法覆盖缺口交叉检验">问题分类法覆盖缺口交叉检验</h2>
+<p>将数据集覆盖的问题类型与 KG 中 248 个 problem 节点对比后发现明显的领域覆盖盲区。评估类数据集高度集中于「裁判偏见」相关问题（位置偏差、选择偏差、偏差放大、参考依赖），而多模态忠实性、概念擦除鲁棒性、多语字幕、幻觉等问题的评估高度依赖单一或少数专用基准：如概念擦除鲁棒性仅由 M-ErasureBench 覆盖 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>，多语字幕评估仅由 XM3600 覆盖 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>，推理过程忠实性仅由 RPTS-Eval 覆盖 <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。这类「单点依赖」意味着对应问题类型的评估结论可靠度较低，一旦基准本身存在偏差则无交叉校验。此外，幻觉类基准被综述批评为缺乏跨生命周期、跨任务的标准化覆盖 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>。</p>
+<h3>问题类型覆盖缺口</h3>
+<table><thead><tr><th>问题类型</th><th>覆盖数据集</th><th>缺口严重度</th></tr></thead><tbody><tr><td>裁判位置/选择偏差</td><td>MT-Bench, CALM-Alignment, PreferenceBench</td><td>adequate</td></tr>
+<tr><td>多语图像字幕评估</td><td>XM3600</td><td>single_point_dependency</td></tr>
+<tr><td>概念擦除多模态鲁棒性</td><td>M-ErasureBench</td><td>single_point_dependency</td></tr>
+<tr><td>推理过程忠实性</td><td>RPTS-Eval</td><td>single_point_dependency</td></tr>
+<tr><td>颜色词序组合性</td><td>ColorSwap (Winoground schema)</td><td>single_point_dependency</td></tr>
+<tr><td>幻觉检测/缓解标准化</td><td>TruthfulQA系列(综述批评覆盖不足)</td><td>absolute(标准化不足)</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析的证据边界与不确定性包括：（1）KG 中 215 个数据集节点多数为「单次使用」（single_use），谱系审查主要针对高频评估类数据集，小众数据集的来源/标签字段在 description 中披露不全，无法完成完整谱系画像；（2）多项关键结论（如风格偏差主导、可操控性翻转率）主要来自 MT-Bench 这一事实标准基准及多语图像基准，跨任务、跨模态的外部效度证据仍显不足；（3）去偏方法的保证多为群体级，对稀有组与无法从表征恢复的偏差无效（CaLLM 自陈局限），CalibraEval 依赖保序假设；（4）部分数据集（如 ColorSwap、RankJudge）为合成或受控构造，标签质量依赖生成器与验证器，存在与真实分布偏移的风险；（5）正负样本失衡对精确率/召回率的扭曲在多数基准中未被定量披露，故相关降级判断保守标注为 moderate。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>回答 RQ4.2：标准数据集校验是提升 LLM 评分可信度不可回避的锚点，但必须区分数据侧与裁判侧两条战线并承认其硬性上限。可行路径为：以谱系透明、金标可核验的数据集（XM3600 式金参考、CLEAR-Bias 式人工控制集）锚定自动指标与裁判选择 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；以校准方法（CalibraEval、CaLLM）压制裁判的风格/位置/冗长/自我偏好等系统性偏差 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>；以「金标比例 + 稳定性压力测试 + 参考可靠性检查」三重校验应对可操控性与参考忽略问题 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。必须清醒认识到：judge 只是「两倍数据的替代品」而非金标替代品 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，且基准的「稳定」不等于「稳健」<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。未来需要更多谱系透明的多语言/多模态、跨任务基准来交叉校验，以弥补当前评估结论集中于单一事实标准基准的外部效度缺口。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Limits to scalable evaluation at the frontier: LLM as Judge won't beat twice the data&nbsp;<code style="font-size:0.82em;color:#888">2270_limits_to_scalable_evaluation_at_the_frontier_llm_as_judge_w</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;No Free Labels: Limitations of LLM-as-a-Judge Without Human Grounding&nbsp;<code style="font-size:0.82em;color:#888">2296_no_free_labels_limitations_of_llmasajudge_without_human_grou</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Stability vs. Manipulability: Evaluating Robustness Under Post-Decision Interaction in LLM Judges&nbsp;<code style="font-size:0.82em;color:#888">2452_stability_vs_manipulability_evaluating_robustness_under_post</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Judging the Judges: A Systematic Evaluation of Bias Mitigation Strategies in LLM-as-a-Judge Pipelines&nbsp;<code style="font-size:0.82em;color:#888">2427_judging_the_judges_a_systematic_evaluation_of_bias_mitigatio</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Crossmodal-3600: A Massively Multilingual Multimodal Evaluation Dataset&nbsp;<code style="font-size:0.82em;color:#888">0156_Crossmodal-3600_A_Massively_Multilingual_Multimodal_Evaluati</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Benchmarking Adversarial Robustness to Bias Elicitation in Large Language Models: Scalable Automated Assessment with LLM-as-a-Judge&nbsp;<code style="font-size:0.82em;color:#888">0005_benchmarking_adversarial_robustness_to_bias_elicitation_in_l</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;ColorSwap: A Color and Word Order Dataset for Multimodal Evaluation&nbsp;<code style="font-size:0.82em;color:#888">0164_ColorSwap_A_Color_and_Word_Order_Dataset_for_Multimodal_Eval</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;CalibraEval: Calibrating Prediction Distribution to Mitigate Selection Bias in LLMs-as-Judges&nbsp;<code style="font-size:0.82em;color:#888">0168_CalibraEval_Calibrating_Prediction_Distribution_to_Mitigate</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Judging Against the Reference: Uncovering Knowledge-Driven Failures in LLM-Judges on QA Evaluation&nbsp;<code style="font-size:0.82em;color:#888">2388_judging_against_the_reference_uncovering_knowledgedriven_fai</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;CaLLM: A Callm Judge is a Better Judge: Mitigating Bias in LLM-as-a-Judge&nbsp;<code style="font-size:0.82em;color:#888">2551_a_callm_judge_is_a_better_judge_mitigating_bias_in_llmasajud</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;RankJudge: A Multi-Turn LLM-as-a-Judge Synthetic Benchmark Generator&nbsp;<code style="font-size:0.82em;color:#888">2439_rankjudge_a_multiturn_llmasajudge_synthetic_benchmark_genera</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Judging with Many Minds: Do More Perspectives Mean Less Prejudice? On Bias Amplification and Resistance in Multi-Agent Based LLM-as-Judge&nbsp;<code style="font-size:0.82em;color:#888">0170_Judging_with_Many_Minds_Do_More_Perspectives_Mean_Less_Preju</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;M-ErasureBench: A Comprehensive Multimodal Evaluation Benchmark for Concept Erasure in Diffusion Models&nbsp;<code style="font-size:0.82em;color:#888">0114_M-ErasureBench_A_Comprehensive_Multimodal_Evaluation_Benchma</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;RPTS: Tree-Structured Reasoning Process Scoring for Faithful Multimodal Evaluation&nbsp;<code style="font-size:0.82em;color:#888">0144_RPTS_Tree-Structured_Reasoning_Process_Scoring_for_Faithful</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Hallucinations in LLMs: A Lifecycle-Based Survey of Causes, Detection, Mitigation, and Prevention&nbsp;<code style="font-size:0.82em;color:#888">0008_hallucinations_in_llms_a_lifecyclebased_survey_of_causes_det</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.2 · 2026-10-18 14:36</footer>
+</div>
+</body>
+</html>

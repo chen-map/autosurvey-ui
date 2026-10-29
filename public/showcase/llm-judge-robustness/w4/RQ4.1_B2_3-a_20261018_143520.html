@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.3-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.3-a 分析报告</h1>
+<div class="meta">RQ [RQ4.1]：[父问题 RQ4] 评估指标体系、基准测试与校准机制的标准化研究
+[本子问题 RQ4.1] 当前主流评估指标（如 Accuracy, Pearson correlation, Agreement rate）在衡量 LLM Judge 有效性时的局限性及适用场景
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0005_benchmarking_adversarial_robustness_to_bias_elicitation_in_l, 0008_hallucinations_in_llms_a_lifecyclebased_survey_of_causes_det, 0114_M-ErasureBench_A_Comprehensive_Multimodal_Evaluation_Benchma, 0146_Unveiling_ethnic_tourism_imaginaries_A_multimodal_evaluation, 0151_On_Exposure_Bias_Hallucination_and_Domain_Shift_in_Neural_M, 0156_Crossmodal-3600_A_Massively_Multilingual_Multimodal_Evaluati）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_分析框架与评估维度本体">分析框架与评估维度本体</a></li>
+<li><a href="#sec_核心失效模式一_单一一致性数字掩盖结构化失败">核心失效模式一：单一一致性数字掩盖结构化失败</a></li>
+<li><a href="#sec_核心失效模式二_Agreement_rate_依赖参照质量与_judge_能力">核心失效模式二：Agreement rate 依赖参照质量与 judge 能力</a></li>
+<li><a href="#sec_核心失效模式三_Accuracy_BLEU_在细粒度_分布外与不平衡数据上失效">核心失效模式三：Accuracy/BLEU 在细粒度、分布外与不平衡数据上失效</a></li>
+<li><a href="#sec_有缺陷的共识指标审查">有缺陷的共识指标审查</a></li>
+<li><a href="#sec_适用场景判定">适用场景判定</a></li>
+<li><a href="#sec_评估盲区与指标异质性_元层面观察">评估盲区与指标异质性（元层面观察）</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ4.1「当前主流评估指标（Accuracy、Pearson correlation、Agreement rate）在衡量 LLM Judge 有效性时的局限性及适用场景」进行系统性元评估分析。核心结论是：三者本质上都是「一致度/相关性」的单一聚合数字，衡量的是「LLM 判断与某人类参照在边际分布上是否接近」，而非判断本身是否可靠、校准、抗偏、可泛化，因此只能作为 Judge 有效性的「必要非充分」下界证据。</p><p>证据主线显示三类系统性失效：（1）单一一致性数字掩盖结构化失败——<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 证明 VLM judge 可正确排序却无法给出可靠绝对分（ChartQA ρ=0.507 但区间宽 3.08），且对低质量回答系统性高估（GT=1 平均 +1.73）、对高质量回答低估（GT=5 平均 −0.74）；（2）Agreement rate 的合法性高度依赖人类参照质量与 judge 自身能力——<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 显示无正确参照时一致性大幅下降，而 Cohen's κ 高值也可能建立在共享系统性盲点之上 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；（3）Accuracy/BLEU 类指标在细粒度、分布外与不平衡数据上失效——<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 显示 VCR 高 accuracy 不代表理解（细粒度子问题掉约 20%），<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 显示 BLEU 与幻觉率不完美相关。适用场景由此明确：Agreement rate 适合低成本判断题粗筛（须报人类-人类基线），Pearson/Spearman 适合排序能力相对比较，Accuracy 适合有明确 ground truth 的分类判断；三者均不适合绝对打分、跨任务比较、参照有偏场景。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析基于知识图谱（KG）的结构化数据与论文原文语义检索两类来源。KG 层面加载了 7 类节点：metric（评估指标，总量 200，展示 30）、paper（论文，116 篇）、problem（研究问题，248 个）、method（方法，232 个）、dataset（数据集/基准，215 个）、limitation（局限性，172 个）、assumption（假设/约束，78 个）。</p><p>操作层面共执行约 44 次工具调用：通过 get_entity_by_type 批量加载全部 7 类节点；通过 get_relation 精读 6 篇冻结论文（0005、0008、0114、0146、0151、0156）及多篇关键扩展论文（0199、2217、0168、2386、2429）的出向关系；通过 get_head_entity 反向查询 Pearson、Cohen's kappa、Spearman、CIDEr、BLEU、Macro-F1、Fleiss's kappa、Agreement rate 等核心指标的使用方法（measured_by 入边），据此计算使用频次；通过 search_paper_sections 对 14 篇以上关键论文的相关段落（Evaluation/Results/Conclusions/Ablation）进行原文精读，获取量化数字与直接引证。冻结证据矩阵 6 篇论文全部覆盖，另补充检索到 0199、2217、2429、2462、2296、2270、2386、0157、0168 等 9 篇高相关扩展论文。</p>
+
+<h2 id="sec_分析框架与评估维度本体">分析框架与评估维度本体</h2>
+<p>以 KG 中 metric 节点为基础，结合 has_limitation/measured_by 边关系与实际使用频次，可将本领域评估维度归纳为五大类：一致性/相关类（Agreement rate、Pearson、Spearman、Kendall、Cohen's kappa、Fleiss's kappa、ICC）、准确率类（Accuracy、Macro-F1、Exact Match、F1）、生成质量类（BLEU、CIDEr、ROUGE-L）、校准/不确定性类（Coverage、Interval Width、MAE、Bias）以及任务专用离散类（CRR、pairwise accuracy）。RQ4.1 聚焦的前三者在 KG 中均有明确节点与多篇论文的 measured_by 边支撑，是社区最广泛使用的共识维度。</p><p>需特别标注定义不一致：不同论文的 F1/Accuracy 所依赖的 task 与 label 定义差异显著（如 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的 Macro-F1 服务于 judge 分类、<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 的 Accuracy 为与人类判断的匹配率、<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 的 BLEU 有 lowercased/tokenized 与 cased/detokenized 两种变体），不得视为同一指标合并。下表列出核心指标的使用情况与已知局限。</p>
+<h3>核心一致性/相关指标的使用图谱与已知局限</h3>
+<table><thead><tr><th>指标</th><th>KG 节点</th><th>主要使用论文</th><th>使用特征</th><th>已知局限 / 证据</th></tr></thead><tbody><tr><td>Agreement rate</td><td>metric_agreement_rate</td><td>[2] MT-Bench；[7] Survey</td><td>LLM-as-Judge 奠基指标、判断题/成对判断匹配率</td><td>忽略偶然一致；报告值须附人类-人类基线 [2]；依赖参照质量 [8]</td></tr>
+<tr><td>Pearson correlation</td><td>metric_pearson_correlation</td><td>[3] XM3600；[6] VLM校准；[4] FLEX-Judge</td><td>衡量线性相关、排序能力</td><td>对参照分布高度敏感 [3]；不能保证绝对打分校准，ranking-scoring 解耦 [6]；理论上界 squared ρ≤0.5 [5]</td></tr>
+<tr><td>Spearman / Kendall correlation</td><td>metric_spearman / kendall</td><td>[3] XM3600；[7] Survey</td><td>秩相关、排序比较</td><td>同上，秩相关不反映绝对分数与方向性偏差 [6]</td></tr>
+<tr><td>Cohen's kappa</td><td>metric_cohen_s_kappa</td><td>[1] CLEAR-Bias；[13] PROTOBIAS</td><td>chance-corrected 一致度、judge 选择</td><td>高 κ 可在共享系统性盲点下达成 [1]；对不平衡类别敏感</td></tr>
+<tr><td>Accuracy (task-specific)</td><td>metric_accuracy</td><td>[12] CalibraEval；[9] ME；[6] VLM</td><td>与人类/Judge 判断匹配率、分类正确率</td><td>细粒度与 OOD 场景失效 [9][10]；掩盖「对但理由错」</td></tr>
+<tr><td>CIDEr</td><td>metric_cider</td><td>[3] XM3600</td><td>图像描述共识度量</td><td>机器翻译参照集上相关严重下降，须改用人工 gold 参照 [3]</td></tr>
+<tr><td>BLEU</td><td>metric_bleu</td><td>[10] Exposure Bias</td><td>NMT 生成质量</td><td>与幻觉率不完美相关，无法反映 OOD 幻觉 33–35% [10]</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心失效模式一_单一一致性数字掩盖结构化失败">核心失效模式一：单一一致性数字掩盖结构化失败</h2>
+<p>最强有力的证据来自对 VLM-as-Judge 校准的系统研究 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。该文提出「ranking-scoring 解耦」（ranking-scoring decoupling）：judge 可以正确地对回答排序，却无法给出可靠的绝对分，且该失败模式「不被标准评估指标捕捉」。具体地，ChartQA 上 Pearson ρ=0.507（14 个数据集中最高）却对应最宽的 conformal 预测区间 3.08（在 1–5 量表上），而 WIT 上 ρ 仅 0.164 但区间较窄 2.38。这意味着一个整体的 Pearson 相关数字会把「强排序、弱校准」与「弱排序、较可信」两类截然不同的 judge 混为一谈。</p><p>更严重的是方向性结构误差被聚合指标抹平：<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 的 mean signed error 表显示所有 judge 对 GT=1 的回答系统性高估（LLaVA-Critic +1.73、Phi-4 +1.98、Gemini +0.89），对 GT=5 的回答系统性低估（分别为 −0.74、−1.04、−0.87），整体偏差却接近零或很小（+0.38、+0.08、−0.05）。一个「整体 bias≈0」或「高 Pearson」的结论会完全掩盖这种「压向中段」的系统性失真。这表明 Agreement/相关类指标只能作为「边际接近」的证据，不能替代校准诊断。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "分档质量下 VLM Judge 的 mean signed error（judge − human）[6]", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["GT=1 (低质量)", "GT=2", "GT=3", "GT=4", "GT=5 (高质量)"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "LLaVA-Critic 平均偏差", "type": "bar", "data": [1.73, 1.21, 0.79, 0.1, -0.74], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心失效模式二_Agreement_rate_依赖参照质量与_judge_能力">核心失效模式二：Agreement rate 依赖参照质量与 judge 能力</h2>
+<p>Agreement rate 的合法性远不如其表面数值所示。<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 通过控制参照类型（None / Self / Human / Wrong / Random）系统证明：LLM Judge 与人类的一致性「强烈依赖 judge 自己能否答对该问题以及所提供参照是否正确」；无正确参照时，对 judge 无法答对的问题一致性大幅下降；而提供人类正确参照可恢复大部分一致性，甚至相对较小的 7B 模型（LLM 2.5）在有正确参照时优于无参照的更大模型（LLM）。这说明「agreement 高低」在很大程度上测量的是参照质量与任务难度，而不是 judge 独立判断的有效性。</p><p>chance-corrected 指标也无法免疫这一问题。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 在 judge 选择中使用 Cohen's κ（&gt;0.8 视为强一致），但其混淆矩阵分析发现「所有候选 judge 都把 counter-stereotyped 回答系统性误分类为 stereotyped」——高 κ 建立在共享的系统性盲点之上，而非无偏判断。此外 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> 指出跨 judge κ=0.51，意味着「四分之一的评估结果取决于选了哪个 judge」，单次评估翻转率达 14%，单次 pointwise 分数在 10 分制上 95% 误差带达 ±1.2 分；单个 agreement 数字无法承载这样的噪声预算。</p>
+<h3>Agreement rate 一致性的条件依赖性（来自 [8] 与 [15]）</h3>
+<table><thead><tr><th>条件</th><th>一致性表现</th><th>含义</th></tr></thead><tbody><tr><td>人类正确参照 + judge 能答对问题 [8]</td><td>一致性高</td><td>参照质量恢复大部分一致性</td></tr>
+<tr><td>无参照 / judge 无法答对问题 [8]</td><td>一致性大幅下降</td><td>agreement 反映的是能力与难度，非独立判断</td></tr>
+<tr><td>7B 模型(LLM)有正确参照 vs LLM 无参照 [8]</td><td>小而强的参照模型优于大模型</td><td>参照 &gt; 模型规模</td></tr>
+<tr><td>跨 judge 一致性 [15]</td><td>κ=0.51</td><td>约四分之一结果取决于选哪个 judge</td></tr>
+<tr><td>单次评估翻转率 [15]</td><td>14%</td><td>重跑即变结论，需多次试验 + 置信区间</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心失效模式三_Accuracy_BLEU_在细粒度_分布外与不平衡数据上失效">核心失效模式三：Accuracy/BLEU 在细粒度、分布外与不平衡数据上失效</h2>
+<p>准确率类指标的核心问题在于「高分不等于真理解」。<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 在 ME 基准上证明：模型在 VCR 上获得高 Q2A accuracy 并不代表真正理解，在细粒度子问题上普遍掉约 20% accuracy，且存在预测不一致（prediction inconsistency），accuracy 掩盖了「对但理由错（right answers for wrong reasons）」——一个正确答案可能来自对数据偏差与浅层启发式的利用而非真正的多模态理解。</p><p>BLEU 类生成质量指标同样存在盲区。<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 用 NMT 领域偏移证明 BLEU 与幻觉率「不完美相关」：label smoothing 版 BLEU 更高（+1）但幻觉比例相近，且 OOD 测试集幻觉高达 33–35%（域内仅 1–2%），而 BLEU 无法反映这类灾难性幻觉。CIDEr 作为图像描述共识指标也非普适：<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 明确指出 CIDEr 在机器翻译参照集上与人类判断相关「严重下降」，改用人工 gold 参照后 Pearson/Spearman/Kendall 相关才恢复高位——说明相关指标对参照分布高度敏感，指标本身没变，变的是参照质量。</p>
+<h3>Accuracy/BLEU/CIDEr 的量化失效证据</h3>
+<table><thead><tr><th>指标</th><th>场景</th><th>关键数字</th><th>来源</th></tr></thead><tbody><tr><td>Q2A Accuracy (ME)</td><td>VCR 细粒度子问题</td><td>accuracy 普遍下降约 20%</td><td>[9]</td></tr>
+<tr><td>BLEU</td><td>NMT 域偏移</td><td>OOD 幻觉 33–35% vs 域内 1–2%；BLEU 未反映</td><td>[10]</td></tr>
+<tr><td>BLEU</td><td>label smoothing 对比</td><td>BLEU +1 但幻觉比例相近（不完美相关）</td><td>[10]</td></tr>
+<tr><td>CIDEr (Pearson)</td><td>机器翻译参照集</td><td>相关严重下降，改用人工 gold 参照后恢复高位</td><td>[3]</td></tr>
+<tr><td>PROTOBIAS pairwise accuracy</td><td>T2I 对比测试</td><td>CLIPScore κ≈0.001；LLM κ≈0；人类 κ 0.65–0.71</td><td>[13]</td></tr>
+</tbody></table>
+
+<h2 id="sec_有缺陷的共识指标审查">有缺陷的共识指标审查</h2>
+<p>依据分析约束，对高覆盖率共识指标进行合法性审查，识别出以下「有缺陷的共识标准」。这些指标被广泛采用，但其与问题核心属性之间存在已被原文证实的结构性缺口。</p>
+<h3>有缺陷的共识指标清单</h3>
+<table><thead><tr><th>指标</th><th>共识程度</th><th>已知局限</th><th>批评证据论文</th></tr></thead><tbody><tr><td>Pearson correlation</td><td>跨模态/校准多类使用</td><td>不反映绝对打分校准；反映参照质量；理论上界 squared ρ≤0.5</td><td>[6][5][3]</td></tr>
+<tr><td>Agreement rate</td><td>LLM-as-Judge 奠基指标</td><td>忽略偶然一致；依赖参照与 judge 能力；无人类基线时不可解释</td><td>[2][8]</td></tr>
+<tr><td>Cohen's kappa</td><td>judge 选择标准</td><td>高值可在共享系统性盲点下达成；类别不平衡敏感</td><td>[1]</td></tr>
+<tr><td>Accuracy (judge match)</td><td>分类式判断主流</td><td>细粒度/OOD 场景失效；掩盖对但理由错</td><td>[9][10]</td></tr>
+<tr><td>BLEU</td><td>NMT 标准指标</td><td>与幻觉率不完美相关；无法反映 OOD 幻觉</td><td>[10]</td></tr>
+</tbody></table>
+
+<h2 id="sec_适用场景判定">适用场景判定</h2>
+<p>综合上述证据，可将三类主流指标的适用边界明确化（作为 RQ4.1 的直接答复）。Agreement rate：适合快速、低成本地对判断题/成对比较做粗筛，但报告时必须同时给出人类-人类基线作为上界，否则数值不可解释 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。Pearson/Spearman/Kendall 相关：适合对「排序能力」做相对比较与模型选型，但不足以证明绝对打分的可靠性 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。Accuracy：适合存在明确 ground truth 的分类式判断，但在细粒度、分布外、类别不平衡场景需配合分层诊断 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。三者共同的失效边界：绝对打分、跨任务比较、评测集/参照本身有偏或人类参照不完美——在这些场景下必须辅以校准类指标（Coverage/Interval Width/MAE）与诊断性基准（如 PROTOBIAS <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、ME <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>）才能判断 Judge 有效性。</p>
+
+<h2 id="sec_评估盲区与指标异质性_元层面观察">评估盲区与指标异质性（元层面观察）</h2>
+<p>从元评估视角看，本领域的结构性盲区不在于「缺少某个指标」，而在于「一致性/相关类指标被当作有效性的充分证据」。KG 与原文一致揭示三类系统性缺口：其一，绝对打分校准盲区——大多数评测只报告相关系数而不报告不确定区间，直至 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 用 conformal prediction 才把「宽区间 = 不可信打分」显性化；其二，方向性/公平性盲区——单一聚合数字掩盖了分档、跨子群体（跨语言、跨任务类型）的结构偏差，<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 的 mean signed error 与 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的跨语言相关差异是直接证据；其三，参照依赖盲区——<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 均证明「指标表现」实为「参照质量」的函数，而评测实践普遍假设参照无偏。指标异质性方面，不同任务组（NMT 用 BLEU、图像描述用 CIDEr、judge 评测用 Agreement/κ/Accuracy）之间共享指标极少，说明社区尚未就「何为 Judge 有效性」达成统一度量，这本身是领域诊断信号。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>本分析存在以下覆盖与置信度问题。第一，证据来源分层：冻结证据矩阵 6 篇中，直接精读 Pearson/Agreement 局限原文的集中在 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>（相关对参照敏感）、<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>（κ 的系统性盲点）与调查综述 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>；而最精细的批评性论述（ranking-scoring 解耦、chance-correction 缺陷、跨 judge 噪声预算、理论上界）主要来自冻结集之外的扩展检索论文 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup><sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>，这些应视为扩展证据而非冻结矩阵内证据，下游引用时需标注。第二，学科异质性：<sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 为定性符号学多模态内容分析，无定量 metric（仅报 &gt;90% 编码者间信度），说明 accuracy/correlation 局限性讨论主要适用于 LLM/VLM 生成评测，对纯人文定性评估不适用，本报告的结论不能无条件外推到该类研究。第三，量化数字有限：多数局限以定性或间接方式呈现，仅 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 提供了可直接引用的具体数值，部分盲区判断（如「方向性盲区被系统性忽视」）依赖有限样本，置信度应视为中等。第四，KG metric 节点总量 200、仅展示前 30，无法保证已穷尽全部低频指标的定义不一致情形。</p>
+<div class="note">关键提醒：本报告不得将不同论文中「同名不同定义」的指标数值直接比较（如 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> Macro-F1 与 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> Accuracy 的任务定义不同；<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> BLEU 存在两套 tokenization 配置）。凡跨论文比较相关/一致度数值时，须核对参照集、量表与任务标签的一致性，否则构成指标异质性误读。</div>
+
+<h2 id="sec_结论">结论</h2>
+<p>针对 RQ4.1：Accuracy、Pearson correlation 与 Agreement rate 均是「一致性/相关性」的单一聚合数字，衡量的是 LLM Judge 判断与某人类参照在边际分布上是否接近，而非判断本身是否可靠、校准、抗偏、可泛化，因此只构成 Judge 有效性的「必要非充分」下界证据。</p><p>其局限可归纳为三条主线：（1）单一数字掩盖结构化失败——ranking-scoring 解耦与方向性结构误差被聚合指标抹平 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>；（2）合法性依赖参照质量与 judge 能力——agreement 高低实为参照质量与任务难度的函数，κ 高值可建立在共享盲点之上 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup><sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>；（3）在细粒度、分布外、不平衡场景失效——高 accuracy 不代表真理解、BLEU 与幻觉率不完美相关、相关指标随参照分布剧烈波动 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>。其适用场景为：Agreement rate 用于低成本判断题粗筛（须附人类-人类基线）、相关指标用于排序能力相对比较、Accuracy 用于有明确 ground truth 的分类判断；三者共同不适用于绝对打分、跨任务比较、参照有偏场景。</p><p>最重要的领域诊断是：指标异质性与单一一致性数字的过度信任，暴露出社区尚未就「何为 LLM Judge 有效性」达成统一、多维的度量共识。要提升评估可信度，需从「报告一个一致度数字」转向「一致性 + 校准区间 + 分层诊断 + 人类基线」的多维报告范式 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup><sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup><sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Benchmarking Adversarial Robustness to Bias Elicitation in Large Language Models: Scalable Automated Assessment with LLM-as-a-Judge&nbsp;<code style="font-size:0.82em;color:#888">0005_benchmarking_adversarial_robustness_to_bias_elicitation_in_l</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena&nbsp;<code style="font-size:0.82em;color:#888">2217_judging_llmasajudge_with_mtbench_and_chatbot_arena</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;Crossmodal-3600: A Massively Multilingual Multimodal Evaluation Dataset&nbsp;<code style="font-size:0.82em;color:#888">0156_Crossmodal-3600_A_Massively_Multilingual_Multimodal_Evaluati</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;FLEX-Judge: Text-Only Reasoning Unleashes Zero-Shot Multimodal Evaluators&nbsp;<code style="font-size:0.82em;color:#888">2319_flexjudge_textonly_reasoning_unleashes_zeroshot_multimodal_e</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Limits to scalable evaluation at the frontier: LLM as Judge won't beat twice the data&nbsp;<code style="font-size:0.82em;color:#888">2270_limits_to_scalable_evaluation_at_the_frontier_llm_as_judge_w</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;VLM Judges Can Rank but Cannot Score: Task-Dependent Uncertainty in Multimodal Evaluation&nbsp;<code style="font-size:0.82em;color:#888">2429_vlm_judges_can_rank_but_cannot_score_taskdependent_uncertain</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;A Survey on LLM-as-a-Judge&nbsp;<code style="font-size:0.82em;color:#888">0199_A_Survey_on_LLM-as-a-Judge</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;No Free Labels: Limitations of LLM-as-a-Judge Without Human Ground-Truth&nbsp;<code style="font-size:0.82em;color:#888">2296_no_free_labels_limitations_of_llmasajudge_without_human_grou</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Understanding ME? Multimodal Evaluation for Fine-grained Visual Commonsense&nbsp;<code style="font-size:0.82em;color:#888">0157_Understanding_ME_Multimodal_Evaluation_for_Fine-grained_Visu</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;On Exposure Bias, Hallucination and Domain Shift in Neural Machine Translation&nbsp;<code style="font-size:0.82em;color:#888">0151_On_Exposure_Bias_Hallucination_and_Domain_Shift_in_Neural_M</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Hallucinations in LLMs: A Lifecycle-Based Survey of Causes, Detection, Mitigation, and Prevention&nbsp;<code style="font-size:0.82em;color:#888">0008_hallucinations_in_llms_a_lifecyclebased_survey_of_causes_det</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;CalibraEval: Calibrating Prediction Distribution to Mitigate Selection Bias in LLMs-as-Judges&nbsp;<code style="font-size:0.82em;color:#888">0168_CalibraEval_Calibrating_Prediction_Distribution_to_Mitigate</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Prototypicality Bias Reveals Blindspots in Multimodal Evaluation Metrics&nbsp;<code style="font-size:0.82em;color:#888">2386_prototypicality_bias_reveals_blindspots_in_multimodal_evalua</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Unveiling ethnic tourism imaginaries: A multimodal evaluation&nbsp;<code style="font-size:0.82em;color:#888">0146_Unveiling_ethnic_tourism_imaginaries_A_multimodal_evaluation</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;The Coin Flip Judge? Reliability and Bias in LLM-as-a-Judge Evaluation&nbsp;<code style="font-size:0.82em;color:#888">2462_the_coin_flip_judge_reliability_and_bias_in_llmasajudge_eval</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ4.1 · 2026-10-18 14:35</footer>
+</div>
+</body>
+</html>

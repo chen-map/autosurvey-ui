@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2.4-b 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>B2.4-b 分析报告</h1>
+<div class="meta">RQ [RQ3.3]：[父问题 RQ3] 自改进方法在跨 CWE 类型、跨编程语言、跨仓库规模上的泛化能力，实测边界落在哪里？
+[本子问题 RQ3.3] 跨语言迁移、跨 CWE 族泛化、真实仓库规模部署的自改进证据是否存在？在 head benchmark 之外的分布外（out-of-distribution）表现，现有 141 篇中由哪些工作实际报告？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0356_aegisllm_scaling_agentic_systems_for_selfreflective_defense）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_一_约束识别_从_assumption_节点出发的关键约束清单">一、约束识别：从 assumption 节点出发的关键约束清单</a></li>
+<li><a href="#sec_二_跨语言迁移证据_存在但极薄">二、跨语言迁移证据：存在但极薄</a></li>
+<li><a href="#sec_三_跨_CWE_族泛化_以_残余困难_而非_有效区间_形式出现">三、跨 CWE 族泛化：以「残余困难」而非「有效区间」形式出现</a></li>
+<li><a href="#sec_四_真实仓库规模部署_稀缺证据与自认偏置">四、真实仓库规模部署：稀缺证据与自认偏置</a></li>
+<li><a href="#sec_五_跨方法边界对比与失效风险">五、跨方法边界对比与失效风险</a></li>
+<li><a href="#sec_六_场景化适用建议">六、场景化适用建议</a></li>
+<li><a href="#sec_七_约束盲区与未测试的高敏感约束">七、约束盲区与未测试的高敏感约束</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ3.3（自改进方法在跨语言迁移、跨 CWE 族泛化、真实仓库规模部署上的分布外/OOD 证据）对知识图谱（KG）进行了系统性挖掘。核心结论：在 141 篇论文中，明确报告上述三类 OOD 证据的仅约 7–9 篇，且集中在自动化漏洞修复（AVR）方向；这些证据几乎全部以「补充实验」而非「主实验」形式出现，无一篇给出系统性的 OOD 敏感度曲线或失效临界点。跨 head benchmark 之外的分布外表现，在 KG 中大多只能得到定性描述或单点数值。</p><p>跨语言方面，仅 RAVEN <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、EvoRepair <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、MemRepair <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 三篇真正做了跨语言/多语言测试；跨 CWE 方面，仅 RAVEN 以「未见漏洞类型泛化」为设计目标，而 Multi-LLMSecCodeEval <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 与 SecCodePLT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 则从反面揭示了「残余 CWE 困难」与「评测工具覆盖度即隐性 CWE 边界」；仓库规模方面，MemRepair <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 与 VulnResolver <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 以 SEC-bench 提供了稀缺的真实仓库级证据，但 0438 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 与 Legacy APR 综述 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 均自认存在「竞赛短程序」「现代仓库」等分布偏置。综合判定：本子问题的答案状态为 partial——证据存在但稀疏，真实 OOD 部署的定量边界仍是领域空白。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>分析基于知识图谱（KG）的结构化数据，共执行约 40 次工具调用，覆盖全部六类节点：</p><p>- 节点类型查询：problem（402 个）、method（385 个）、dataset（235 个）、metric（256 个）、limitation（226 个）、assumption（100 个）、paper（141 篇）；</p><p>- 关系挖掘：通过 get_relation / get_head_entity / get_tail_entity 检索 proposes、addresses、evaluated_on、measured_by、has_limitation、extends、compares_with、targets 等边，重点追踪每条边的 evidence 字段作为原文证据；</p><p>- 定向深读：系统扫描与 RQ3.3 主题相关的约 23 篇关键论文的关系子图（见 references），并对其 evaluated_on 与 has_limitation 边做逐一核对。</p><p>需说明：本执行环境中 search_paper_sections 工具不可用（返回 Unknown tool），因此原定的语义段落检索改由 KG 节点的 description 与关系边 evidence 字段替代，证据粒度较原文段落为粗。KG 中全部 assumption 节点的 requires/relaxes 边均为空，此为约束敏感度分析的关键结构限制。</p>
+<div class="note">结构限制提示：KG 中 100 个 assumption 节点全部为「无连边」的记录性条目（requires/relaxes 查询均返回空）。因此本报告无法从约束依赖关系构建「高敏感约束 → 方法 → 证据论文」的链式剖面，凡涉及拐点数值的字段一律标注 sensitivity_data: absent，未以其他论文数据推定。</div>
+
+<h2 id="sec_一_约束识别_从_assumption_节点出发的关键约束清单">一、约束识别：从 assumption 节点出发的关键约束清单</h2>
+<p>按照「KG 优先」策略，先检索全部 assumption 节点，识别与 RQ3.3 直接相关的语言/CWE/规模/环境真实度约束。结果发现：assumption 层虽包含「Python-only evaluation」「CWE identifier and name provided by upstream tools」等高影响约束，但均未挂接任何方法依赖边。我们转而通过 has_limitation 边下钻，间接定位到承载这些约束的方法与论文，并将约束变量归纳如下表。值得注意的是，最危险的「基准内性能可代表基准外性能」这一前提，在 KG 中没有对应的 assumption 节点，属于「隐性假设」——这正是约束盲区的典型体现。</p>
+<h3>表 1：约束变量与 KG 证据状态</h3>
+<table><thead><tr><th>约束变量</th><th>类型</th><th>度量口径</th><th>KG 来源</th><th>关联方法/论文</th><th>是否有敏感度数据</th></tr></thead><tbody><tr><td>Python-only evaluation</td><td>语言约束</td><td>编程语言种类</td><td>assumption 节点（无连边）</td><td>Prompt engineering [9]、End-to-End Secure Code [10]</td><td>absent</td></tr>
+<tr><td>CWE identifier provided by upstream tools</td><td>输入假设</td><td>CWE 标注可用性</td><td>assumption 节点（无连边）</td><td>VulKey、VulnResolver [6]（以减少手工标注为目标）</td><td>absent</td></tr>
+<tr><td>跨 CWE 族覆盖度</td><td>CWE 覆盖</td><td>CWE 类数</td><td>dataset/limitation 节点</td><td>SecCodePLT [5] 27→21 类、SecuCoGen [11] 21 类</td><td>仅覆盖计数，无拐点</td></tr>
+<tr><td>仓库/项目规模</td><td>scale</td><td>issue 数 / 项目数 / 程序长度（口径不一）</td><td>dataset 节点</td><td>SEC-bench [3][6]、0438 短程序 [7]</td><td>absent</td></tr>
+<tr><td>评测环境真实度（合成 vs 真实 / 竞赛 vs 工业 / 现代 vs 遗留）</td><td>环境分布</td><td>定性</td><td>problem/limitation 节点</td><td>0438 [7]、Legacy APR [8]、Multi-LLMSecCodeEval [4]</td><td>定性</td></tr>
+<tr><td>基准内→基准外代理假设（隐性）</td><td>评测代理</td><td>定性</td><td>无对应节点（隐性假设）</td><td>0153 [12]、0309 [10]、0470 [4]、0241 [8]</td><td>absent</td></tr>
+</tbody></table>
+
+<h2 id="sec_二_跨语言迁移证据_存在但极薄">二、跨语言迁移证据：存在但极薄</h2>
+<p>真正做了跨语言测试的仅三篇。RAVEN <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确以 Vul4j（Java，随机 23 个 CVE 子集）作为「out-of-distribution」泛化检验，并声称其 agentic RAG 设计旨在摆脱「单语言评估」这一既有缺陷（其问题节点 problem_single_language_evaluation 直接指出「既有评估常局限于单一编程语言」）。EvoRepair <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 在 SEC-bench（C，200 实例/29 项目）、PatchEval（JS/Python/Go，230 实例子集）、Vul4j（Java，79 CVE，且自称与前者「语言与 CVE 构成正交」）三套数据上验证经验迁移，是现有最强的跨语言迁移证据。MemRepair <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 在 SEC-bench（C/C++）与 PatchEval（Go/Python/JS）双栈评估。</p><p>相反，大量证据矩阵内工作是单语种：SecureFixAgent <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 仅 Python，End-to-End Secure Code <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 仅 Python（其 limitation_python_only_scope 明确承认「结论可能无法泛化到其他语言」），而 GRASP <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 也仅 Python。需特别指出，矩阵指定优先查询的 AegisLLM <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> 完全不在代码-CWE 轴上——其评估基准为 WMDP、MMLU、MT-Bench、TOFU、StrongREJECT，聚焦 LLM 越狱与信息泄露防御，与本 RQ 的语言/CWE 轴正交，这是证据矩阵与子问题之间的一处映射错配。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图 1：各论文覆盖的编程语言数量（按 KG evaluated_on 边统计）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["EvoRepair [2]", "MemRepair [3]", "RAVEN [1]", "VRpilot [16]", "SYNTHFIX [17]", "SecureFixAgent [13]", "End-to-End [10]", "GRASP [14]"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "语言数量（评估数据集语言）", "type": "bar", "data": [3, 3, 2, 2, 2, 1, 1, 1], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>表 2：跨语言证据的分布外（OOD）检验强度对比</h3>
+<table><thead><tr><th>论文</th><th>测试语言/数据集</th><th>是否标注为 OOD/迁移检验</th><th>证据片段</th><th>拐点数据</th></tr></thead><tbody><tr><td>RAVEN [1]</td><td>Java（Vul4j，23 CVE 子集）</td><td>是（明确 out-of-distribution）</td><td>generalization on out-of-distribution data via 23 randomly selected CVEs</td><td>absent</td></tr>
+<tr><td>EvoRepair [2]</td><td>C（SEC-bench）+ JS/Python/Go（PatchEval）+ Java（Vul4j）</td><td>是（经验迁移，正交语言/CVE）</td><td>orthogonal to PATCHEVAL and SEC-bench in language and CVE composition</td><td>absent</td></tr>
+<tr><td>MemRepair [3]</td><td>C/C++（SEC-bench）+ Go/Python/JS（PatchEval）+ C++（Multi-SWE-bench）</td><td>部分（多语言覆盖，非严格迁移）</td><td>real-world vulnerabilities in Go, Python, and JavaScript</td><td>absent</td></tr>
+<tr><td>VRpilot [16]</td><td>C（ExtractFix）+ Java（VjBench/Vul4j）</td><td>否（数据集内评估）</td><td>repair vulnerabilities in C and Java code</td><td>absent</td></tr>
+<tr><td>SecureFixAgent [13]</td><td>Python（SecurityEval/PySecDB 等）</td><td>否</td><td>automated Python static analysis and repair</td><td>absent</td></tr>
+</tbody></table>
+
+<h2 id="sec_三_跨_CWE_族泛化_以_残余困难_而非_有效区间_形式出现">三、跨 CWE 族泛化：以「残余困难」而非「有效区间」形式出现</h2>
+<p>真正触及「未见漏洞类型」的只有 RAVEN <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>，其问题节点明确指出「既有 AVR 框架大多局限于内存相关、可局部修复的漏洞，对未见漏洞类型的泛化未被充分探索」。反面证据更为有力：Multi-LLMSecCodeEval <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 的局限性直接写明「即便使用多模型集成，某些 CWE 依然具有挑战」，并同时指出 LLM「无法从合成基准泛化到真实世界项目」；SecuCoGen <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 仅覆盖 21 个漏洞类型且自认样本仅 180 条，单语言泛化未被探索；SecCodePLT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 名义覆盖 27 类 CWE，却因 CodeQL 不支持而直接剔除 6 类，实际仅评估 21 类/1,071 样本——这一剔除本身即说明「评测工具的覆盖度构成跨 CWE 评估的隐性边界」。此外，Persistent Human Feedback <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 以「窄基准覆盖」问题为立论基础，指出代码生成集中于 Python、漏洞检测集中于 C/C++，且两域 CWE 分布彼此分歧。</p>
+<h3>表 3：跨 CWE 覆盖度与「未见类型泛化」相关证据</h3>
+<table><thead><tr><th>论文</th><th>名义 CWE 覆盖</th><th>实际可评测覆盖</th><th>关于未见/残余 CWE 的结论</th><th>证据类型</th></tr></thead><tbody><tr><td>RAVEN [1]</td><td>未限定（检索自披露 CVE）</td><td>—</td><td>既有 AVR 对未见漏洞类型泛化「探索不足」；以 RAG 提升泛化</td><td>定性（设计目标）</td></tr>
+<tr><td>SecCodePLT [5]</td><td>27 类</td><td>21 类 / 1,071 样本（剔除 6 类 CodeQL 不支持）</td><td>覆盖度受评测工具能力上限约束</td><td>覆盖计数</td></tr>
+<tr><td>SecuCoGen [11]</td><td>21 类</td><td>180 样本</td><td>现有模型即便提供漏洞信息仍难修复</td><td>覆盖计数</td></tr>
+<tr><td>Multi-LLMSecCodeEval [4]</td><td>多类（CodeQL 判定）</td><td>—</td><td>集成后某些 CWE 依然困难；合成→真实不泛化</td><td>定性</td></tr>
+<tr><td>CoV-Eval [18]</td><td>18 类</td><td>18 类（多语言）</td><td>跨 18 类但仍是基准内评估，非基准外迁移</td><td>覆盖计数</td></tr>
+</tbody></table>
+
+<h2 id="sec_四_真实仓库规模部署_稀缺证据与自认偏置">四、真实仓库规模部署：稀缺证据与自认偏置</h2>
+<p>MemRepair <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、VulnResolver <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、RAVEN <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 都以 SEC-bench（200 issue / 29 个 C 项目、仓库级端到端）为设置，是当前较稀缺的真实仓库规模代表；其中 MemRepair 还额外使用 Multi-SWE-bench 的 C++ 子集。VulnResolver 更进一步，用 SEC-bench-lite（80 issue）评估有效性、用 SEC-bench-full（200 issue）评估泛化（RQ3），是少数显式区分「有效性」与「泛化」的工作。</p><p>然而，规模证据的可迁移性被多处自认偏置削弱：0438 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 明确承认其评估仅限于「竞赛风格的短 C/C++ 程序（3,242 个）」，可能「高估大型工业代码库上的表现」，且其分析通道仅编译、CodeQL、KLEE 三条，覆盖本就不完全；Legacy APR 综述 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 则直指 Defects4J/SWE-bench 均取自「活跃维护、文档完善」的项目，其修复成功率「无法迁移到遗留环境」，且「尚不存在针对遗留代码难点（稀疏测试、缺文档、旧工具链）的专用基准」。此外，「规模」这一变量在各论文中口径不一（issue 数 vs 项目数 vs 程序长度），导致跨论文的边界对比无法直接对齐。</p>
+<h3>表 4：仓库规模与真实度证据矩阵</h3>
+<table><thead><tr><th>论文</th><th>规模/真实度设置</th><th>自认偏置或缺口</th><th>证据来源</th></tr></thead><tbody><tr><td>MemRepair [3]</td><td>SEC-bench（C/C++ 仓库级）、PatchEval、Multi-SWE-bench(C++)</td><td>局部化精度低于部分基线；补丁偏冗长（NLA 17.03 vs 10.48）</td><td>evaluated_on / has_limitation 边</td></tr>
+<tr><td>VulnResolver [6]</td><td>SEC-bench-lite(80) 有效 + SEC-bench-full(200) 泛化</td><td>仅 C 语言单栈；无跨语言规模证据</td><td>evaluated_on 边</td></tr>
+<tr><td>RAVEN [1]</td><td>SEC-bench、Vul4j(23 CVE OOD)</td><td>OOD 仅为同任务换语言，强度弱</td><td>evaluated_on 边</td></tr>
+<tr><td>0438 [7]</td><td>3,242 个竞赛风格短 C/C++ 程序</td><td>可能高估工业代码库表现；仅三条分析通道</td><td>limitation_single_problem_distribution</td></tr>
+<tr><td>Legacy APR 综述 [8]</td><td>讨论 Defects4J / SWE-bench / VulRepair 语料</td><td>基准偏向现代仓库；遗留代码无专用基准</td><td>problem/limitation 节点</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图 2：约 23 篇关键论文中 RQ3.3 三类 OOD 证据的分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图 2：约 23 篇关键论文中 RQ3.3 三类 OOD 证据的分布", "type": "pie", "radius": "55%", "data": [{"name": "提供跨语言证据", "value": 3}, {"name": "提供跨 CWE/未见类型证据", "value": 2}, {"name": "提供真实仓库规模证据", "value": 3}, {"name": "仅基准内评估（无 OOD 证据）", "value": 12}, {"name": "不在代码-CWE 轴（矩阵错配）", "value": 3}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_五_跨方法边界对比与失效风险">五、跨方法边界对比与失效风险</h2>
+<p>在语言维度上，EvoRepair <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的有效跨度最宽（C + JS/Python/Go + Java 三栈，且含正交语言验证），SecureFixAgent <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 与 End-to-End Secure Code <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 最窄（仅 Python）；边界突破者均为「增加语言覆盖 + 检索/经验迁移」这一类设计，包括 EvoRepair、MemRepair <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、RAVEN <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。在 CWE 维度上，SecCodePLT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 名义覆盖最广（27 类）但实际仅 21 类可评测，RAVEN 是唯一以未见类型泛化为设计目标的突破者。在仓库规模维度上，MemRepair <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 与 VulnResolver <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 覆盖最宽（SEC-bench 级），0438 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 最窄（竞赛短程序）。</p><p>必须强调：三类变量上的失效临界点（拐点）无一被报告。各论文的语言/CWE/规模定义虽大体一致（按语言种类、CWE 类数、issue/项目数），但性能-变量曲线的具体拐点数值均缺失，跨方法比较只能停留在「覆盖范围」层面，无法给出「何时应切换方法」的定量阈值。此外，RAVEN 将「同任务换语言」标注为 OOD，与真正的训练/部署分布迁移在强度上无法等同，这一口径差异在横比时需谨慎。</p>
+<h3>表 5：跨方法边界对比（语言 / CWE / 规模）</h3>
+<table><thead><tr><th>变量</th><th>最宽方法</th><th>最窄方法</th><th>边界突破者（relaxes 类设计）</th><th>是否报告拐点</th></tr></thead><tbody><tr><td>编程语言</td><td>EvoRepair [2]（C+JS/Python/Go+Java）</td><td>SecureFixAgent [13] / End-to-End [10]（仅 Python）</td><td>EvoRepair、MemRepair [3]、RAVEN [1]</td><td>否</td></tr>
+<tr><td>CWE 覆盖度</td><td>SecCodePLT [5]（名义 27/实际 21）</td><td>SecuCoGen [11]（21 类/180 样本）</td><td>RAVEN [1]</td><td>否</td></tr>
+<tr><td>仓库/项目规模</td><td>MemRepair [3] / VulnResolver [6]（SEC-bench 级）</td><td>0438 [7]（竞赛短程序）</td><td>MemRepair、VulnResolver</td><td>否</td></tr>
+</tbody></table>
+
+<h2 id="sec_六_场景化适用建议">六、场景化适用建议</h2>
+<p>基于有效区间证据（而非拐点，因拐点缺失），给出如下条件化建议。每一条均同时声明适用条件与失效触发，未声明失效条件的推荐不成立。</p>
+<h3>表 6：适用场景矩阵（含失效触发条件）</h3>
+<table><thead><tr><th>适用条件</th><th>推荐方法</th><th>应避免</th><th>失效触发条件</th></tr></thead><tbody><tr><td>单一 Python 安全代码生成/修复</td><td>SecureFixAgent [13]、End-to-End [10]</td><td>将其跨语言结论外推至 C/Java/JS</td><td>目标语言非 Python 即无证据支撑</td></tr>
+<tr><td>跨 C/JS/Python/Go/Java 多语言修复并关注迁移</td><td>EvoRepair [2]、MemRepair [3]、RAVEN [1]</td><td>单语种 VRpilot [16]/SecureFixAgent [13]</td><td>跨语言迁移后无报告的失效拐点，性能可能骤降无预警</td></tr>
+<tr><td>真实仓库规模（跨文件依赖）端到端修复</td><td>MemRepair [3]、VulnResolver [6]</td><td>基于 0438 [7] 短程序结论外推</td><td>项目规模/跨文件依赖超出 SEC-bench 量级时无证据</td></tr>
+<tr><td>遗留代码（缺测试/缺文档/旧工具链）</td><td>暂无经验证方法（0241 [8] 指出无遗留专用基准）</td><td>依赖 Defects4J/SWE-bench 结论的方法</td><td>进入遗留环境即失效，成功率不可迁移</td></tr>
+<tr><td>关注未见/稀有 CWE 类型</td><td>RAVEN [1]（以未见泛化为目标），警惕 0470 [4] 的残余 CWE 困难</td><td>直接外推基准内平均指标</td><td>目标 CWE 不在训练/检索覆盖内时性能不可预期</td></tr>
+</tbody></table>
+
+<h2 id="sec_七_约束盲区与未测试的高敏感约束">七、约束盲区与未测试的高敏感约束</h2>
+<p>KG 中全部 assumption 节点无连边，这一结构缺口本身即揭示了三个领域级约束盲区：</p><p>1. 「Python-only evaluation」——该高影响约束无任何方法报告跨语言的消融/敏感度曲线，一旦迁移到 C/Java/JS，有效性是否保持尚无量化证据（仅 RAVEN/EvoRepair 提供定性或单点迁移，无失效阈值）。</p><p>2. 「CWE identifier provided by upstream tools」——多数方法默认上游工具已正确给出 CWE 标签，但无实验测试「CWE 标签错误/缺失」时的性能衰减；而 VulnResolver <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 明确指出依赖手工 CWE 标注本身就是方法痛点，此约束一旦违反将系统性削弱整类方法。</p><p>3. 「基准内→基准外代理假设」（隐性）——「基准内性能可代表真实仓库性能」是全部证据矩阵论文的隐含前提，但 0153 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、0309 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、0470 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、0241 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 从不同角度均指出该前提被违反（静态分析代理不可靠、合成→真实不泛化、现代仓库偏置）。这是领域最需要消融研究、却几乎没有系统性 OOD 敏感度报告的盲区。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>（1）**工具限制**：本环境 search_paper_sections 语义检索工具不可用（返回 Unknown tool），原定的原文段落精读改由 KG 节点 description 与关系边 evidence 字段替代，证据粒度为摘要级而非段落级，score 值来自 KG 边置信度而非语义相似度，精度略低。</p><p>（2）**KG 结构缺口**：全部 100 个 assumption 节点无 requires/relaxes 边，无法构建含拐点的「约束敏感度剖面」，相关字段一律标注 sensitivity_data: absent，未以其他论文数据反推。这是本次分析最关键的置信度限制。</p><p>（3）**覆盖范围**：141 篇中仅系统扫描与 RQ3.3 直接相关的约 23 篇，未做穷尽枚举；对方法-数据集对的枚举可能遗漏边缘证据。</p><p>（4）**口径不一致**：「规模」在 KG 中缺乏统一定义（issue 数 vs 项目数 vs 程序长度），跨论文边界对比不可直接成立；「CWE 覆盖」存在「名义覆盖」与「实际可评测覆盖」两种口径，横比需谨慎。</p><p>（5）**矩阵错配**：证据矩阵指定的 AegisLLM <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> 并不贡献本 RQ 证据，说明证据矩阵与该子问题的映射本身存在覆盖偏差，提示下游应复核矩阵选文。</p><p>综合置信度约 0.78：OOD 证据「存在性」判断为高置信（有明确边证据支撑），但「定量边界与拐点」判断为低置信（原文与 KG 均缺失），已如实标注 absent 而非估算填补。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ3.3 的答案是 partial 而非 answered：**跨语言迁移、跨 CWE 族泛化、真实仓库规模部署三类分布外证据确实存在，但稀疏（约 7–9 篇）、以补充实验或定性描述的形式存在，且几乎没有任何一篇报告失效临界点。** 最强的跨语言证据来自 EvoRepair <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>（C + JS/Python/Go + Java 三栈、正交语言/CVE 验证）与 RAVEN <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>（明确的 Vul4j OOD 检验），最稀缺的仓库规模证据来自 MemRepair <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 与 VulnResolver <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>（SEC-bench 级），跨 CWE 泛化则几乎由 RAVEN 单篇承担设计目标、并由 Multi-LLMSecCodeEval <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 与 SecCodePLT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 的反面证据（残余 CWE 困难、CodeQL 剔除 6 类）加以约束。</p><p>更重要的元结论是：该领域当前面临的核心盲区不是「某个方法不够鲁棒」，而是「约束本身从未被系统性测试」——Python-only、上游 CWE 标注可用、基准内→基准外代理这三个前提，均无对应的消融/敏感度研究，构成本领域最需要补课的地方。下一阶段的证据缺口明确指向：跨语言的性能-变量曲线、未见 CWE 族的失效阈值、以及遗留代码/大规模工业代码库的专用基准。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;RAVEN: Agentic RAG for Automated Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0525_raven_agentic_rag_for_automated_vulnerability_repair</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;EvoRepair: Enhancing Vulnerability Repair Agents through Experience&nbsp;<code style="font-size:0.82em;color:#888">0516_evorepair_enhancing_vulnerability_repair_agents_through_expe</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;MemRepair: Hierarchical Memory for Agentic Repository-Level Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0505_memrepair_hierarchical_memory_for_agentic_repositorylevel_vu</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;Does Teaming Up LLMs Improve Secure Code Generation? A Comprehensive Study (Multi-LLMSecCodeEval)&nbsp;<code style="font-size:0.82em;color:#888">0470_does_teamingup_llms_improve_secure_code_generation_a_compreh</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Guiding AI to Fix Its Own Flaws: An Empirical Study on LLM-Driven Secure Code Generation&nbsp;<code style="font-size:0.82em;color:#888">0226_guiding_ai_to_fix_its_own_flaws_an_empirical_study_on_llmdri</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;VulnResolver: A Hybrid Agent Framework for LLM-Based Automated Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0446_vulnresolver_a_hybrid_agent_framework_for_llmbased_automated</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Improving LLM-Assisted Secure Code Generation through Retrieval-Augmented-Generation and Multi-Tool Feedback&nbsp;<code style="font-size:0.82em;color:#888">0438_improving_llmassisted_secure_code_generation_through_retriev</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Automated Vulnerability Patching in Legacy Code Using LLMs and Multi-AI Agents&nbsp;<code style="font-size:0.82em;color:#888">0241_Automated_Vulnerability_Patching_in_Legacy_Code_Using_LLMs_a</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Benchmarking Prompt Engineering Techniques for Secure Code Generation with LLM Models&nbsp;<code style="font-size:0.82em;color:#888">0064_Benchmarking_Prompt_Engineering_Techniques_for_Secure_Code_G</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;How Well Do Large Language Models Serve as End-to-End Secure Code Agents?&nbsp;<code style="font-size:0.82em;color:#888">0309_how_well_do_large_language_models_serve_as_endtoend_secure_c</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;Enhancing Large Language Models for Secure Code Generation: A Dataset-driven Study (SecuCoGen)&nbsp;<code style="font-size:0.82em;color:#888">0283_enhancing_large_language_models_for_secure_code_generation_a</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Persistent Human Feedback, LLMs, and Static Analyzers for Secure Code Generation and Vulnerability Detection&nbsp;<code style="font-size:0.82em;color:#888">0153_Persistent_Human_Feedback_LLMs_and_Static_Analyzers_for_Se</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;SecureFixAgent: A Hybrid LLM Agent for Automated Python Static Analysis and Repair&nbsp;<code style="font-size:0.82em;color:#888">0409_securefixagent_a_hybrid_llm_agent_for_automated_python_stati</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;GRASP: Fortifying LLM-Based Code Generation with Graph-Based Reasoning on Secure Coding Practices&nbsp;<code style="font-size:0.82em;color:#888">0417_fortifying_llmbased_code_generation_with_graphbased_reasonin</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;AegisLLM: Scaling Agentic Systems for Self-Reflective Defense in LLM Security&nbsp;<code style="font-size:0.82em;color:#888">0356_aegisllm_scaling_agentic_systems_for_selfreflective_defense</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;A Case Study of LLM for Automated Vulnerability Repair (VRpilot)&nbsp;<code style="font-size:0.82em;color:#888">0204_A_Case_Study_of_LLM_for_Automated_Vulnerability_Repair_Asses</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;SYNTHFIX: Adaptive Neuro-Symbolic Code Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0244_SynthFix_Adaptive_Neuro-Symbolic_Code_Vulnerability_Repair</code></li>
+<li id="ref-18" style="margin-bottom:4px"><span class="ref-id">[18]</span>&nbsp;Can You Really Trust Code Copilots? Evaluating Large Language Models (CoV-Eval)&nbsp;<code style="font-size:0.82em;color:#888">0360_can_you_really_trust_code_copilots_evaluating_large_language</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.3 · 2026-10-22 19:56</footer>
+</div>
+</body>
+</html>

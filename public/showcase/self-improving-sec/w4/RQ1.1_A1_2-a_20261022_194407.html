@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.2-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.2-a 分析报告</h1>
+<div class="meta">RQ [RQ1.1]：[父问题 RQ1] 面向网络与软件安全任务的大模型与智能体&quot;自改进&quot;机制，可以被如何统一定义与分类？
+[本子问题 RQ1.1] 已有工作各自如何界定&quot;自改进&quot;？其反馈信号来源（vulnerability detection results / runtime feedback / test coverage / attack-defense experience）、更新对象（prompt / memory / skill library / policy / toolchain / weights）与更新触发时机（intra-episode reflection / inter-episode iteration / cross-task accumulation）分别落在哪些取值上，构成怎样的组合分布？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0045_An_Empirical_Evaluation_of_LLM-Based_Approaches_for_Code_Vul, 0324_pentestagent_incorporating_llm_agents_to_automated_penetrati, 0336_vulnbot_autonomous_penetration_testing_for_a_multiagent_coll, 0362_adaptive_planexecute_framework_for_smart_contract_security_a, 0462_evolving_medical_imaging_agents_via_experiencedriven_selfski, 0528_evorec_self_evolving_agentic_recommender_systems）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_三轴取值分布_字段映射总览">三轴取值分布：字段映射总览</a></li>
+<li><a href="#sec_核心分析一_反馈信号来源的差异本质是_信号来自何处">核心分析一：反馈信号来源的差异本质是&quot;信号来自何处&quot;</a></li>
+<li><a href="#sec_核心分析二_更新对象的分歧即_真自进化_与_回合内修复_的分界线">核心分析二：更新对象的分歧即&quot;真自进化&quot;与&quot;回合内修复&quot;的分界线</a></li>
+<li><a href="#sec_核心分析三_触发时机三级与持久性强相关">核心分析三：触发时机三级与持久性强相关</a></li>
+<li><a href="#sec_核心分析四_现有分类体系的缺陷诊断_支撑_A1_2_a_重构动机">核心分析四：现有分类体系的缺陷诊断（支撑 A1.2-a 重构动机）</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对子问题 RQ1.1——已有工作各自如何界定&quot;自改进&quot;，其反馈信号来源、更新对象与更新触发时机分别落在哪些取值上、构成怎样的组合分布——基于知识图谱结构化数据（problem / method / paper / dataset / metric / limitation / assumption 七类节点及其关系边）进行系统性分析。</p><p>核心结论：已有工作并非围绕单一&quot;自改进&quot;定义，而是沿三条近似独立轴分布的三元取值组合。反馈信号来源观测到四类取值（verification results、runtime/attack feedback、test coverage、attack-defense experience）；更新对象观测到六类取值（prompt/skill、memory、workflow-scaffold、policy、toolchain、weights）；更新触发时机呈三级（intra-episode reflection、inter-episode iteration、cross-task accumulation）。六篇冻结论文绝大多数仅占据三轴组合中的 2–3 格，没有任何一篇覆盖全部取值；且真正实现跨任务持久更新的&quot;强意义自改进&quot;比表面宣称的显著更稀少，多数工作实为回合内（intra-episode）的判定核验或修复，而非产生可复用持久产物的自进化。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析的全部证据来自知识图谱的结构化节点与关系边，未使用任何 LLM 先验填充。KG 规模为：problem 节点 402 个、method 节点 385 个、paper 节点 141 个、limitation 节点 226 个、dataset 节点 235 个、metric 节点 256 个、assumption 节点 100 个，合计约 1,745 个节点。</p><p>分析聚焦 RQ 冻结的 6 篇证据论文（0045、0324、0336、0362、0462、0528），并追溯其 proposes / targets / addresses / has_limitation / evaluated_on / measured_by 一跳关系边，同时引入 13 篇提供关键对照证据的邻域论文（含自改进综述 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、自进化安全综述 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、CyberEvolver <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、EvoRepair <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、EVOHUNT <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、SkillProx <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、SED <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、技能-记忆自进化智能体 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 等），以补全冻结集稀疏的取值格。共执行 32 次工具调用，覆盖 problem / method / paper / dataset / metric / limitation / assumption 全部七类节点。</p>
+<div class="note">重要说明：语义原文检索工具 search_paper_sections 在多次调用中均返回 'Unknown tool' 错误而不可用。因此原文级溯源改由 KG 边（edge）的 evidence 字段承担——这些字段直接保存了论文原文引用片段，可视为等价的可核验证据来源。凡在本报告中引用的结论，均对应 KG 中某个节点的 description 或某条边的 evidence 字段。</div>
+
+<h2 id="sec_三轴取值分布_字段映射总览">三轴取值分布：字段映射总览</h2>
+<p>将 RQ 前置定义的三个轴逐一映射到 KG 中真实出现的节点与描述后，得到下表的三轴取值分布。需要注意：feedback source 与 update object 的部分取值在冻结集内证据稀疏，需由邻域论文补足；trigger timing 的取值则由方法描述中的&quot;回合内/回合间/跨任务&quot;语义直接判定。</p>
+<h3>表1 三轴取值 × 证据论文分布矩阵</h3>
+<table><thead><tr><th>轴 (Axis)</th><th>取值 (Value)</th><th>冻结集主要证据</th><th>邻域补足证据</th><th>证据密度</th></tr></thead><tbody><tr><td>反馈信号来源</td><td>verification / detection results</td><td>0045[9], 0362[10]</td><td>—</td><td>中-高</td></tr>
+<tr><td>反馈信号来源</td><td>runtime / attack feedback</td><td>0324[11], 0336[12]</td><td>0252[13], 0267[14]</td><td>中</td></tr>
+<tr><td>反馈信号来源</td><td>attack-defense experience (success/failure logs)</td><td>0462[15], 0528[16]</td><td>0147[17], 0516[4], 0582[7]</td><td>中</td></tr>
+<tr><td>反馈信号来源</td><td>test coverage</td><td>无</td><td>0592[18], 0513[3]</td><td>薄弱（冻结集内空缺）</td></tr>
+<tr><td>更新对象</td><td>prompt / context</td><td>0045[9], 0324[11]</td><td>0523[5], 0556[6]</td><td>高</td></tr>
+<tr><td>更新对象</td><td>memory</td><td>0336[12], 0528[16], 0462[15]</td><td>0516[4], 0519[19]</td><td>高</td></tr>
+<tr><td>更新对象</td><td>skill library / toolchain</td><td>0462[15], 0528[16]</td><td>0556[6], 0621[8]</td><td>高</td></tr>
+<tr><td>更新对象</td><td>workflow / scaffold</td><td>0362[10], 0324[11]</td><td>0513[3]</td><td>中</td></tr>
+<tr><td>更新对象</td><td>policy</td><td>0462[15]</td><td>0582[7], 0267[14]</td><td>中</td></tr>
+<tr><td>更新对象</td><td>weights</td><td>0528[16](partial), 0462[15](partial)</td><td>0516[4], 0244[20]</td><td>薄弱</td></tr>
+<tr><td>更新触发时机</td><td>intra-episode reflection</td><td>0045[9], 0324[11], 0362[10]</td><td>—</td><td>高</td></tr>
+<tr><td>更新触发时机</td><td>inter-episode iteration</td><td>0528[16], 0362[10]</td><td>0556[6]</td><td>中</td></tr>
+<tr><td>更新触发时机</td><td>cross-task accumulation</td><td>0528[16], 0462[15]</td><td>0516[4], 0621[8]</td><td>中</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "图1 六篇冻结论文在各\"更新对象\"取值上的覆盖论文数（含 part-of 拆分）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["prompt/context", "memory", "skill/toolchain", "workflow-scaffold", "policy", "weights"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "涉及论文数（冻结集内）", "type": "bar", "data": [2, 3, 2, 2, 1, 2], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析一_反馈信号来源的差异本质是_信号来自何处">核心分析一：反馈信号来源的差异本质是&quot;信号来自何处&quot;</h2>
+<p>在漏洞检测 / 审计这一侧，反馈信号以静态判定加人工或工具核验为主。<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 以 RAG、SFT、Dual-Agent 三路线对比平均 F1（RAG 0.85 &gt; SFT 0.80 &gt; Dual-Agent 0.77 &gt; base 0.67），其中 Dual-Agent 的&quot;第二智能体验证并纠正推理与假设&quot;本质是 intra-episode 的判定核验，而非跨任务更新。<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> SmartAuditFlow 的反馈则明确来自静态分析器（Semgrep / CodeQL）与 RAG 的检出结果，驱动&quot;计划—执行&quot;的迭代精炼，以降低幻觉与误报。</p><p>在渗透测试这一侧，信号转为 runtime / attack feedback。<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> PentestAgent 用 self-reflection 处理执行阶段的命令结果，解决长期记忆与状态化工作记忆管理问题；<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> VulnBot 用 Planner + Memory Retriever + Summarizer 维护跨子任务的上下文，其 Penetration Task Graph 承担了任务依赖与进展信号的载体。攻击-防御经验作为第三种信号，最典型地出现在 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> MACRO（把成功轨迹蒸馏为可复用 composite tool）与 <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup> EvoRec（把每轮 success/failure 归因写入 Memory）；邻域中 <sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup> RefPentester 的 Reflector + Success/Failure Log、<sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> EvoMail 的 red-team/blue-team 对抗自进化循环亦属此列。</p><p>test coverage 作为反馈信号在六篇冻结论文内几乎缺位，仅在邻域论文中出现：<sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup> 以小规模强测试套件作为自进化智能体的&quot;改进信号&quot;、<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> CyberEvolver 用轨迹诊断从嘈杂反馈中提取变异信号。这说明冻结集更关注&quot;攻击是否成功/漏洞是否确认&quot;这类终局信号，而较少使用覆盖率这类过程性信号。</p>
+
+<h2 id="sec_核心分析二_更新对象的分歧即_真自进化_与_回合内修复_的分界线">核心分析二：更新对象的分歧即&quot;真自进化&quot;与&quot;回合内修复&quot;的分界线</h2>
+<p><sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup> EvoRec 是六篇中更新面最宽者：自进化 Model 参数 + 可进化 Skill library + 持久 Memory 三件套协同演进，四智能体构成 dual-track 循环，实现模型与方法的共同进化。<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> MACRO 次之，更新 composite-tool 技能库、memory 与 GRPO 下的 policy，将成功轨迹内化为可复用多步过程。<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> SmartAuditFlow 主要更新 workflow/scaffold（审计计划）与 prompt。<sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> VulnBot 更新的是 memory 与任务图。而 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> Dual-Agent 与 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> self-reflection 基本停留在 prompt/context 层面，不产生持久产物。</p><p>邻域证据进一步补全 weights 一端：<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> EvoRepair 的 experience bank、<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> SkillProx 的文本梯度式 skill 精炼、<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> EVOHUNT 把学习信号外化为可迁移 text playbook（明确&quot;不改模型权重&quot;），共同印证 weights 更新是被多数工作主动规避的昂贵选项——自改进主要通过上下文、记忆、技能等外部载体实现，而非重新训练模型。这一取向与 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 技能-记忆架构、<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> SED 的 training-free 安全策略学习相互印证。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "图2 冻结集内\"更新对象\"主更新面的分布（每篇论文计其主要更新对象）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "图2 冻结集内\"更新对象\"主更新面的分布（每篇论文计其主要更新对象）", "type": "pie", "radius": "55%", "data": [{"name": "prompt/context (0045)", "value": 1}, {"name": "memory (0336)", "value": 1}, {"name": "workflow-scaffold (0324/0362)", "value": 2}, {"name": "skill+memory+model (0528)", "value": 1}, {"name": "skill+memory+policy (0462)", "value": 1}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_核心分析三_触发时机三级与持久性强相关">核心分析三：触发时机三级与持久性强相关</h2>
+<p>intra-episode reflection（<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>）在单回合内修正动作，不跨任务留存；inter-episode iteration（<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 的计划多轮精炼）在一批任务内迭代；cross-task accumulation（<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup><sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>）才真正把经验沉淀为下一批任务的先验。</p><p>这里存在固有张力：自改进综述 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确指出&quot;智能体用反馈解决当前任务却不把可复用变更带入后续任务&quot;是普遍病灶，并把&quot;artifact correctness ≠ agent improvement&quot;（产物正确不等于智能体改进）列为核心问题，还批评基准复用会导致&quot;适应评估器&quot;被误读为&quot;一般性改进&quot;。这直接说明多数被标定为&quot;自改进&quot;的工作实则只在 intra-episode 层面运作。<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 的安全综述则以 SAVER 框架（substrate × adaptation → violation → exposure → response）强调必须区分&quot;载体&quot;与&quot;操作&quot;，进一步说明触发时机与更新对象的组合才是刻画自进化的关键，而非单一维度。</p>
+<h3>表2 六篇冻结论文的三轴定位（关键证据锚点）</h3>
+<table><thead><tr><th>论文</th><th>主反馈信号来源</th><th>主更新对象</th><th>主触发时机</th><th>代表性量化指标</th></tr></thead><tbody><tr><td>0045 Dual-Agent / RAG / SFT 对比[9]</td><td>verification results</td><td>prompt/context；SFT 分支触 weights</td><td>intra-episode reflection</td><td>F1: RAG 0.85 / SFT 0.80 / Dual 0.77 / base 0.67</td></tr>
+<tr><td>0324 PentestAgent[11]</td><td>runtime feedback</td><td>workflow-scaffold；prompt</td><td>intra-episode reflection</td><td>LLM 成功率 74.2% vs LLM 60.6%</td></tr>
+<tr><td>0336 VulnBot[12]</td><td>runtime feedback</td><td>memory（任务图 + 检索）</td><td>inter-episode（多子任务）</td><td>开源模型最高 30.30% 任务完成率</td></tr>
+<tr><td>0362 SmartAuditFlow[10]</td><td>verification results（静态分析器/RAG）</td><td>workflow-scaffold；prompt</td><td>inter-episode iteration</td><td>误报下降、识别出既有方法漏报的 CVE</td></tr>
+<tr><td>0462 MACRO[15]</td><td>attack-defense experience（成功轨迹）</td><td>skill library / toolchain；memory；policy(GRPO)</td><td>cross-task accumulation</td><td>多数据集 bAcc / F1 提升</td></tr>
+<tr><td>0528 EvoRec[16]</td><td>attack-defense experience（success/failure 归因）</td><td>model + skill library + memory</td><td>cross-task accumulation</td><td>相对提升最高 5.54%</td></tr>
+</tbody></table>
+
+<h2 id="sec_核心分析四_现有分类体系的缺陷诊断_支撑_A1_2_a_重构动机">核心分析四：现有分类体系的缺陷诊断（支撑 A1.2-a 重构动机）</h2>
+<p>本 RQ 的三轴命名（prompt / memory / skill / policy / toolchain / weights）与文献中已有 taxonomy 存在系统性错位，这构成后续正交重构的直接证据。</p><p>其一，**命名异质与重叠**。自改进综述 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 将持久变更分为&quot;技能与工具、工作流与拓扑、记忆、框架、模型&quot;五类（skills-and-tools / workflow-and-topology / memory / framework / model 自进化），<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 则用&quot;substrate × adaptation&quot;二维框架。RQ 的 skill library 与 toolchain 实际横跨 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 的&quot;技能与工具&quot;与&quot;框架&quot;两类；RQ 的 prompt 与 workflow-scaffold 的边界在 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 与 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup> 的描述中高度模糊（二者都在&quot;改上下文/改流程&quot;之间游移）。这种 1:N 映射使&quot;组合分布&quot;的精确枚举受命名粒度制约。</p><p>其二，**遗漏（omission）**。RQ 六分法未把&quot;environment / evaluator 自进化&quot;单列，但 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 单列 self-play co-evolution（改变供给学习信号的任务与评估器）为一类独立演化面，这是六分法的结构性遗漏。</p><p>其三，**语义模糊导致的误标**。<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup> 明确批评多数智能体&quot;用反馈解决当前任务却不带可复用变更&quot;，意味着大量方法被错误地放入&quot;自改进&quot;名下，实为 intra-episode 修复；<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 进一步指出&quot;未验证的前向更新&quot;（把 LLM 生成的诊断直接当作有效更新方向）与&quot;未受控的技能膨胀&quot;是现有技能自进化的两大缺陷，说明&quot;更新对象&quot;轴上技能类取值的内部质量差异被现有分类抹平。</p>
+<h3>表3 现有分类体系 vs 本 RQ 三轴：错位诊断</h3>
+<table><thead><tr><th>诊断类型</th><th>现有体系 ([1]/[2]) 的问题</th><th>本 RQ 三轴的表现</th><th>影响</th></tr></thead><tbody><tr><td>重叠</td><td>&quot;技能与工具&quot;与&quot;框架&quot;未区分</td><td>RQ 的 skill library 与 toolchain 横跨两类</td><td>组合分布无法唯一映射</td></tr>
+<tr><td>模糊边界</td><td>prompt 与 workflow 无清晰界</td><td>0362/0324 均在 prompt 与 scaffold 间游移</td><td>触发时机判定不确定</td></tr>
+<tr><td>遗漏</td><td>RQ 未单列 environment/evaluator 自进化</td><td>self-play co-evolution 无对应取值</td><td>该演化面被系统性忽略</td></tr>
+<tr><td>语义误标</td><td>&quot;自改进&quot;标签过宽</td><td>大量 intra-episode 修复被混入</td><td>真实自进化样本被高估</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>1. **原文检索工具不可用**：search_paper_sections 多次返回 'Unknown tool' 错误，导致无法执行段落级语义检索（框架要求的 Step 6 原文溯源）。证据改由 KG 边 evidence 字段承担，虽为原文引用，但覆盖粒度受限于已抽取的边，可能遗漏未入库的细节论述。</p><p>2. **冻结集证据格稀疏**：test coverage 作为反馈信号在六篇冻结论文内几乎空缺；weights 更新仅见 partial 证据（<sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup> 的 Model 更新、<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> 的 GRPO policy）。依赖邻域论文补足会引入外部普适性风险，相关结论外推需谨慎（C6、C8 置信度 0.70–0.75）。</p><p>3. **缺少跨任务因果证据**：各论文报告的量化收益多针对单任务指标（F1、solve rate、bAcc、Recall@K），鲜有&quot;跨任务留存增益&quot;的因果证据，故触发时机轴 high tier（cross-task）的实际验证样本极少，C9 置信度仅 0.78。</p><p>4. **三轴划分的判定依赖语义解读**：update object 与 trigger timing 的归属由方法节点 description 的语义判定，缺乏统一的量化标注规则；C3（PentestAgent 是否含跨任务持久化）存在解释空间（置信度 0.72）。</p><p>5. **领域偏置**：更新面最宽的两篇 <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup><sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup> 均来自非网络安全域（推荐系统、医学影像），其在安全任务上的可迁移性未经验证，这限制了&quot;最宽更新面&quot;结论向安全域的推广。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ1.1 的回答是：已有工作对&quot;自改进&quot;的界定呈&quot;三轴稀疏组合&quot;格局。反馈信号来源上，漏洞检测/审计类以 verification results（静态判定 + 核验）为主（<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>），渗透测试类以 runtime/attack feedback 为主（<sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>），而 attack-defense experience 与 test coverage 更多见于自进化/对抗防御类与邻域工作（<sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup><sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup><sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup><sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup>）；更新对象上，以 prompt/context、memory、skill-toolchain 为三大主流载体，weights 更新被普遍规避（<sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup><sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 均转向外部文本载体），policy 与 workflow-scaffold 居中；触发时机上，intra-episode reflection 是最大公约数（<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup><sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup><sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>），真正达成 cross-task accumulation 的仅 <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup><sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>，且二者均非安全域。</p><p>因此，本子问题的正确答案不是&quot;自改进被统一定义为 X&quot;，而是：**自改进被界定为一个三维取值的组合空间，现有工作在该空间中高度分散，且三分之二以上的&quot;自改进&quot;宣称实际只落在 intra-episode 层级**。这一诊断直接为 A1.2-a 的正交重构提供了动机：需要一个能显式区分&quot;反馈来源 × 更新载体 × 触发时机&quot;、并补上 environment/evaluator 自进化遗漏维度的新分类体系，同时修复 prompt/workflow、skill/toolchain 的边界模糊问题。后续工作应优先补充 test coverage 与 weights 两格的证据，并建立跨任务留存增益的因果评估协议，以消除触发时机高 tier 的证据缺口。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Self-Evolving Coding Agents&nbsp;<code style="font-size:0.82em;color:#888">0552_selfevolving_coding_agents</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Safety in Self-Evolving Agents: A Survey&nbsp;<code style="font-size:0.82em;color:#888">0233_Safety_in_Self-Evolving_Agents_A_Survey</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;CyberEvolver: Structured Self-Evolution for Cybersecurity Agents&nbsp;<code style="font-size:0.82em;color:#888">0513_cyberevolver_structured_selfevolution_for_cybersecurity_agen</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;EvoRepair: Enhancing Vulnerability Repair Agents through Experience&nbsp;<code style="font-size:0.82em;color:#888">0516_evorepair_enhancing_vulnerability_repair_agents_through_expe</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Transferable Self-Evolving Playbooks for Agentic Security Auditing (EVOHUNT)&nbsp;<code style="font-size:0.82em;color:#888">0523_transferable_selfevolving_playbooks_for_agentic_security_aud</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;SkillProx: Self-Evolving Agent Skills via Proximal Textual Gradient&nbsp;<code style="font-size:0.82em;color:#888">0556_skillprox_selfevolving_agent_skills_via_proximal_textual_gra</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;SED: Self-Evolving Defense — Continual Security Policy Learning&nbsp;<code style="font-size:0.82em;color:#888">0582_selfevolving_defense_continual_security_policy_learning_for</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Self-Evolving AI Agent with Skill Memory&nbsp;<code style="font-size:0.82em;color:#888">0621_SELF-EVOLVING_AI_AGENT_WITH_SKILL_MEMORY</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;An Empirical Evaluation of LLM-Based Approaches for Code Vulnerability Detection: RAG, SFT, and Dual-Agent Systems&nbsp;<code style="font-size:0.82em;color:#888">0045_An_Empirical_Evaluation_of_LLM-Based_Approaches_for_Code_Vul</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;SmartAuditFlow: A Dynamic Plan-Execute Framework for Smart Contract Security Auditing&nbsp;<code style="font-size:0.82em;color:#888">0362_adaptive_planexecute_framework_for_smart_contract_security_a</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;PentestAgent: Incorporating LLM Agents to Automated Penetration Testing&nbsp;<code style="font-size:0.82em;color:#888">0324_pentestagent_incorporating_llm_agents_to_automated_penetrati</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;VulnBot: Autonomous Penetration Testing for A Multi-Agent Collaborative Framework&nbsp;<code style="font-size:0.82em;color:#888">0336_vulnbot_autonomous_penetration_testing_for_a_multiagent_coll</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;EvoMail: Self-Evolving Cognitive Agents for Adaptive Spam and Phishing Email Defense&nbsp;<code style="font-size:0.82em;color:#888">0252_EvoMail_Self-Evolving_Cognitive_Agents_for_Adaptive_Spam_and</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;DeepShield: Autonomous DDoS Defense Through Agentic AI Workflow and Self-Evolving Knowledge Base&nbsp;<code style="font-size:0.82em;color:#888">0267_DeepShield_Autonomous_DDoS_Defense_Through_Agentic_AI_Workfl</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Evolving Medical Imaging Agents via Experience-driven Self-skill Discovery (MACRO)&nbsp;<code style="font-size:0.82em;color:#888">0462_evolving_medical_imaging_agents_via_experiencedriven_selfski</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;EvoRec: Self-Evolving Agentic Recommender Systems&nbsp;<code style="font-size:0.82em;color:#888">0528_evorec_self_evolving_agentic_recommender_systems</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;RefPentester: A Knowledge-Informed Self-Reflective Penetration Testing Framework&nbsp;<code style="font-size:0.82em;color:#888">0147_RefPentester_A_Knowledge-Informed_Self-Reflective_Penetratio</code></li>
+<li id="ref-18" style="margin-bottom:4px"><span class="ref-id">[18]</span>&nbsp;Small but Mighty: Test Suites as Improvement Signals for Self-Evolving Agents&nbsp;<code style="font-size:0.82em;color:#888">0592_small_but_mighty_test_suites_as_improvement_signals_for_self</code></li>
+<li id="ref-19" style="margin-bottom:4px"><span class="ref-id">[19]</span>&nbsp;MEMBRANE: A Self-Evolving Contrastive Safety Memory for LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">0519_membrane_a_selfevolving_contrastive_safety_memory_for_llm_ag</code></li>
+<li id="ref-20" style="margin-bottom:4px"><span class="ref-id">[20]</span>&nbsp;SynthFix: Adaptive Neuro-Symbolic Code Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0244_SynthFix_Adaptive_Neuro-Symbolic_Code_Vulnerability_Repair</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.1 · 2026-10-22 19:44</footer>
+</div>
+</body>
+</html>

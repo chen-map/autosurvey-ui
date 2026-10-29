@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.1-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.1-a 分析报告</h1>
+<div class="meta">RQ [RQ3.2]：[父问题 RQ3] 自改进方法在跨 CWE 类型、跨编程语言、跨仓库规模上的泛化能力，实测边界落在哪里？
+[本子问题 RQ3.2] 现有工作显式声明了哪些泛化收窄假设（Isolated-function evaluation、C/C++ memory-related vulnerability scope、High and Critical severity only、Identical foundation model）？这些约束节点中多少带有关系边、多少完全孤立，意味着结论的可迁移性从未被作者正面讨论？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0343_rapidpen_fully_automated_iptoshell_penetration_testing_with）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_核心发现_假设层的完全孤立化">核心发现：假设层的完全孤立化</a></li>
+<li><a href="#sec_假设的两种替代表述路径">假设的两种替代表述路径</a></li>
+<li><a href="#sec_对抗性证据_谁在事实上做了迁移测量">对抗性证据：谁在事实上做了迁移测量</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ3.2——现有工作显式声明了哪些泛化收窄假设（Isolated-function evaluation、C/C++ memory-related vulnerability scope、High and Critical severity only、Identical foundation model），这些约束节点中多少带有关系边、多少完全孤立，是否意味着结论的可迁移性从未被作者正面讨论——对知识图谱执行了系统性结构分析。核心发现是一个鲜明的『非对称结构』：四类命名假设在 KG 中以 `assumptionconstraint_*` 节点形式存在，且全部为完全孤立节点——一跳关系边为 0、origin_paper_id 为空。抽样验证的 16 个此类节点无一例外零边，说明假设层整体被结构化地孤立化而非个别现象。</p><p>然而 RQ 假设需要一处重要修正：作者并非『从未触及』这些约束的内容，而是换了两条不指向『假设-迁移』关系的替代表述路径——其一为『改写成我方法要解决的研究问题』（Problem 家族带 addresses/targets 边，如 RAVEN、EvoRepair、EVOHUNT），其二为『退守为局限性自陈』（Limitation 家族带 has_limitation 边，如 SecureVibeBench、EVOHUNT）。因此精确结论是：可迁移性从未以『假设被放宽→结论如何衰减』的迁移律形式被正面讨论；作者只在两个替代位置上零散触及，故『从未讨论』应弱化为『从未以假设-迁移界律形式讨论，但已零散做过迁移测量』。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱的多类型节点与关系边，共执行 39 次工具调用，覆盖全部 7 类节点（problem、method、paper、dataset、metric、limitation、assumption）。具体数据规模如下：Problem 节点总量 402（展示 30 条样本）、Method 节点 385、Assumption 节点 100（展示 30 条样本，逐一验证 16 个的边状态）、Limitation 节点 226（展示 30 条样本）、Dataset 节点 235。深度读取了 16 篇关键论文的完整一跳关系，包括 RapidPen<sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、Metrics Failure<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、SecureVibeBench<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、RAVEN<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、EVOHUNT<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、EvoRepair<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、Security Arena<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、ACE<sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup> 等。分析路径为：对四类命名假设节点做双向边查询（全部返回空）→ 通过模糊实体链接找到其内容孪生的 Problem/Limitation 节点 → 验证孪生节点确实携带关系边，从而建立『假设层孤立 vs 内容层带边』的对照。</p>
+<div class="note">重要方法论说明：本环境中 `search_paper_sections` 原文检索工具不可用（返回 Unknown tool）。因此所有结论建立在 KG 结构化节点与关系边之上，未能核对论文正文方法章节中可能存在的正向迁移叙述。这一缺口已在『分析局限性』章节显式声明。</div>
+
+<h2 id="sec_核心发现_假设层的完全孤立化">核心发现：假设层的完全孤立化</h2>
+<p>对四类 RQ3.2 命名假设节点的双向关系边查询全部返回空列表，且其 origin_paper_id 字段均为空字符串。进一步抽样验证了 16 个 `assumptionconstraint_*` 节点（包括 perfect_recall、cwe_identifier_upstream、default_tool_configuration、remote_api_access、adversary_can_develop_own_llm_agents 等），无一例外零边。这与 Method/Problem/Limitation 层的密集边形成强烈反差：例如 ProverAG<sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup> 方法节点携带 8 条出边（targets、relaxes、evaluated_on、measured_by 等），RAVEN<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 论文节点携带 18 条出边。</p><p>这揭示了一个关键的结构性事实：假设节点在 KG 中是『被贴上标签却从不被任何方法/论文/问题引用』的悬空实体。没有任何一条 requires 或 relaxes 边把某个方法与它依赖或放宽的假设连接起来——这意味着『方法依赖哪些泛化假设、放宽后是否能迁移』这一因果链在结构化知识中根本不存在。</p>
+<h3>四类命名假设的边状态与内容孪生节点对照</h3>
+<table><thead><tr><th>命名假设</th><th>假设节点边数</th><th>origin_paper_id</th><th>内容孪生节点（带边）</th><th>孪生边类型</th><th>关联论文</th></tr></thead><tbody><tr><td>Isolated-function evaluation</td><td>0</td><td>空</td><td>misattribution_of_failures_to_the_model / unrealistic_secure_coding_evaluation</td><td>addresses</td><td>[2] / [3]</td></tr>
+<tr><td>C/C++ memory-related scope</td><td>0</td><td>空</td><td>narrow_vulnerability_and_language_coverage / limited_generalization_to_unseen_vulnerability_types</td><td>has_limitation / addresses</td><td>[3] / [5]</td></tr>
+<tr><td>High/Critical severity only</td><td>0</td><td>空</td><td>benchmark_scope</td><td>has_limitation</td><td>[6]</td></tr>
+<tr><td>Identical foundation model</td><td>0</td><td>空</td><td>single_llm_used / single_programming_language_scope / transfer_of_audit_procedures_across_models_and_harnesses</td><td>has_limitation / has_limitation / addresses</td><td>[11] / [12] / [6]</td></tr>
+</tbody></table>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各类节点平均关系边数对比（假设层孤立 vs 其他层密集）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["assumptionconstraint_*", "problem_*", "limitation_*", "method_*"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "抽样节点平均边数", "type": "bar", "data": [0, 2.5, 1.8, 8], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_假设的两种替代表述路径">假设的两种替代表述路径</h2>
+<p>作者虽未以『假设-迁移』形式讨论这些约束，但通过两条替代路径触及了它们的实质内容。</p><p>**路径一：改写为『待解问题』以支撑通用性主张。** 同一内容在 Problem 家族中以带边节点出现，被论文以 addresses/targets 边声明为『本方法已解决』，从而把收窄约束转化为通用性正面主张而非迁移警告。RAVEN<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 以 addresses 边关联 limited_generalization_to_unseen_vulnerability_types（『现有 AVR 框架大多局限于内存相关、可本地修复的漏洞』），并声称跨漏洞类型、跨未见 CWE、跨语言（Java 与 C）泛化，还在 Vul4j 上以 23 个随机 CVE 做 OOD 评估。EvoRepair<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 则以跨语言基准（PATCHEVAL 的 JS/Python/Go、SEC-bench 的 C、Vul4j 的 Java 且『语言与 CVE 组成正交，用以验证经验迁移能力』）直接检验跨语言、跨 CVE 迁移。EVOHUNT<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 以 addresses 边关联 transfer_of_audit_procedures_across_models_and_harnesses，用 Codex/LLM 与 OpenCode/GLM5.1 双环境验证跨模型迁移。</p><p>**路径二：退守为『局限性自陈』。** 同一约束在 Limitation 家族中以带 has_limitation 入边的节点出现，但表述是自我否定的止损声明。SecureVibeBench<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 的 narrow_vulnerability_and_language_coverage（『聚焦 OSS-Fuzz 与 ARVO 的内存相关 C/C++ 漏洞，可能对其他漏洞类型与编程语言产生偏置』）正是 C/C++ scope 约束的软化身；EVOHUNT<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 的 benchmark_scope（『聚焦源码可得仓库、high/critical 通告、CVSS 合格可达性』）正是 severity 约束的软化身。关键在于这些局限从不反过来约束『假设被放宽后结论仍成立』——作者写法止于『我们只在这些条件下测过』，从不写『因此换 CWE/语言/仓库规模/基础模型时，收益预计如何衰减』。</p>
+<h3>四类泛化维度在 KG 中的证据密度与冷热分区</h3>
+<table><thead><tr><th>泛化维度</th><th>证据证据（带边节点数）</th><th>代表性论文与关键结论</th><th>分区</th><th>成因分类</th></tr></thead><tbody><tr><td>跨 CWE / 未见漏洞类型</td><td>高（多个 addresses 边）</td><td>RAVEN 跨类型+OOD[5]；EvoRepair 跨 CVE[7]</td><td>hot</td><td>null</td></tr>
+<tr><td>跨基础模型 / 跨 harness</td><td>高（多个 addresses/measured_by 边）</td><td>EVOHUNT 双模型迁移[6]；Security Arena 3×3 矩阵 1.7–2.2×[8]</td><td>hot</td><td>null</td></tr>
+<tr><td>跨编程语言</td><td>中（evaluated_on 边支撑）</td><td>RAVEN Java+C[5]；EvoRepair JS/Python/Go+C+Java[7]</td><td>normal</td><td>null</td></tr>
+<tr><td>跨 severity 等级（High/Critical→中低危）</td><td>极低（仅 1 条隐含 has_limitation）</td><td>仅 EVOHUNT benchmark_scope 隐含提及[6]</td><td>cold</td><td>technical_barrier（低危漏洞缺 PoC 信号）</td></tr>
+<tr><td>跨 repository scale</td><td>近乎为 0（无迁移边、无自变量节点）</td><td>SecureVibeBench 105 仓库/554K LOC 但非迁移问题[3]</td><td>cold</td><td>unknown_blind_spot</td></tr>
+</tbody></table>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "四类命名假设的处理方式分布", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "四类命名假设的处理方式分布", "type": "pie", "radius": "55%", "data": [{"name": "完全孤立（无任何关系边）", "value": 4}, {"name": "以问题/局限孪生节点带边", "value": 4}, {"name": "以假设-迁移律形式正面讨论", "value": 0}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_对抗性证据_谁在事实上做了迁移测量">对抗性证据：谁在事实上做了迁移测量</h2>
+<p>必须记录真实的反向证据：多篇论文实际上做了跨 CWE/语言/模型的迁移测量，因此『从未讨论』的强表述站不住。Security Arena<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 用 3×3 攻击者-防御者矩阵（LLM Opus 4.6、LLM、Gemini 2.5 Pro）实证『汇合三个攻击者 LLM 比最强单攻击者多发现 1.7–2.2 倍唯一成功输入』，从方法论上证明单一基础模型会系统性低估能力边界。EVOHUNT<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup> 直接以两个不同厂商模型栈验证 playbook 迁移。EvoRepair<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 明确以『与 PATCHEVAL、SEC-bench 正交』的 Vul4j 验证跨语言/跨 CVE 经验迁移。RAVEN<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 以 23 个随机 CVE 做 OOD 评估。</p><p>但这些测量都嵌在『我方法有效』的叙事里，而非『我的假设在何种边界上失效』的叙事里。没有一篇论文给出『当 CWE 从 7 类扩展到 N 类、或基础模型从 LLM 换成他者时，报告的收益按什么规律衰减』这样的迁移律。这正是 RQ 想揭示的空白：迁移测量存在，但迁移界律缺席。</p>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，原文检索工具 search_paper_sections 在本环境不可用，全部结论仅基于 KG 结构化边，若论文正文方法章节存在未被结构化的正向迁移叙述，本分析无法捕捉，这是最显著的证据缺口。其二，跨 repository scale 维度几乎找不到任何带边证据（既无假设/问题/局限节点以仓库规模为自变量），该冷区成因只能标为 unknown_blind_spot，置信度较低（0.78）。其三，跨 severity 等级泛化的成因（technical_barrier）是基于『低危漏洞缺少 PoC/可利用性信号』的合理推断，缺乏直接检索证据支撑。其四，孤立假设节点的抽样覆盖为 16 个（占 100 个 assumption 节点的约 16%），虽高度一致但仍属抽样。其五，『identical foundation model』（LLM）的原始出处论文未能在工具结果中精确定位到唯一节点，只能通过其内容孪生（single_llm_used 等）间接论证。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>对 RQ3.2 的精确回答是：四类命名泛化收窄假设在知识图谱中 100% 表现为完全孤立节点（0 条关系边、无源论文绑定），假设层整体被结构化地孤立化。结论的可迁移性从未以『假设被放宽→收益如何衰减』的迁移律形式被作者正面讨论。作者仅在两个替代位置上触及这些约束——或改写为待解问题（进而转化为通用性正面主张，如 RAVEN<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、EvoRepair<sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、EVOHUNT<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>），或退守为局限性自陈（只声明测试范围、不声明迁移律，如 SecureVibeBench<sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、EVOHUNT<sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）。</p><p>因此 RQ 的核心判断在结构层面获得强支持，但需弱化一处：并非『从未讨论』，而是『从未以假设-迁移界律形式讨论』——零散的跨 CWE/语言/模型迁移测量确实存在（尤其 Security Arena<sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 的 1.7–2.2× 多模型结论从方法论上反证了单一模型的风险）。而在四类约束中，跨 repository scale 是最深的认知冷区（近乎无证据，属认知盲区），跨 severity 等级泛化次之（仅 1 条隐含局限、属技术壁垒），这两处是自改进方法泛化边界研究最值得填补的空白。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;RapidPen: Fully Automated IP-to-Shell Penetration Testing with LLM-based Agents&nbsp;<code style="font-size:0.82em;color:#888">0343_rapidpen_fully_automated_iptoshell_penetration_testing_with</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;Metrics Failure in LLM-Based Code Vulnerability Repair: An Empirical Study and a Change-Aware Screen&nbsp;<code style="font-size:0.82em;color:#888">0579_metrics_failure_in_llmbased_code_vulnerability_repair_an_emp</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;SecureVibeBench: Benchmarking Secure Vibe Coding of AI Agents via Reconstructing Vulnerability-Introducing Scenarios&nbsp;<code style="font-size:0.82em;color:#888">0410_securevibebench_benchmarking_secure_vibe_coding_of_ai_agents</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;RAVEN: Agentic RAG for Automated Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0525_raven_agentic_rag_for_automated_vulnerability_repair</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Transferable Self-Evolving Playbooks for Agentic Security Auditing&nbsp;<code style="font-size:0.82em;color:#888">0523_transferable_selfevolving_playbooks_for_agentic_security_aud</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;EvoRepair: Enhancing Vulnerability Repair Agents Through Experience-Based Self-Evolution&nbsp;<code style="font-size:0.82em;color:#888">0516_evorepair_enhancing_vulnerability_repair_agents_through_expe</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Adaptive Adversaries: A Multi-Turn, Multi-LLM Benchmark for LLM Agent Security&nbsp;<code style="font-size:0.82em;color:#888">0543_adaptive_adversaries_a_multiturn_multillm_benchmark_for_llm</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Agentic Context Engineering: Evolving Contexts for Self-Improving LLM Systems&nbsp;<code style="font-size:0.82em;color:#888">0414_agentic_context_engineering_evolving_contexts_for_selfimprov</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;ProveRAG: Provenance-Driven Vulnerability Analysis with Automated Retrieval-Augmented Generation&nbsp;<code style="font-size:0.82em;color:#888">0022_proverag_provenancedriven_vulnerability_analysis_with_automa</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;LLM4Fuzz: Guided Fuzzing of Smart Contracts with Large Language Models&nbsp;<code style="font-size:0.82em;color:#888">0287_llm4fuzz_guided_fuzzing_of_smart_contracts_with_large_langua</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;Enhancing Large Language Models for Secure Code Generation&nbsp;<code style="font-size:0.82em;color:#888">0283_enhancing_large_language_models_for_secure_code_generation_a</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ3.2 · 2026-10-22 19:54</footer>
+</div>
+</body>
+</html>

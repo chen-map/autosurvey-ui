@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-29 10:44",
+  "generatedAt": "2026-10-29 21:45",
   "note": "真实项目运行快照：只读、已脱敏，用于公开演示。",
   "projects": [
     {
@@ -189,6 +189,118 @@
         "rqs": 13,
         "claims": {
           "verified": 118,
+          "needsRevision": 0,
+          "shouldRemove": 0
+        }
+      },
+      "workflows": [
+        {
+          "id": "W1",
+          "name": "语料库构建",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W2",
+          "name": "事实记忆(KG)",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W3",
+          "name": "框架与RQ",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W4",
+          "name": "RQ证据",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W5",
+          "name": "综述写作",
+          "status": "done",
+          "progress": 100
+        }
+      ]
+    },
+    {
+      "id": "llm-judge-robustness",
+      "title": "LLM Judge 失效分析：多模态与大规模引用场景",
+      "fieldTags": [
+        "LLM 评审",
+        "多模态",
+        "鲁棒性"
+      ],
+      "description": "面向 LLM-as-a-Judge 的失效模式：多模态输入、大规模引用与长上下文下的偏差、攻击面与鲁棒化方法。",
+      "status": "completed",
+      "createdAt": "2026-10-14 12:58:46",
+      "updatedAt": "2026-10-18 19:22:56",
+      "demo": true,
+      "stats": {
+        "papers": 116,
+        "kgEdges": 1800,
+        "rqs": 8,
+        "claims": {
+          "verified": 45,
+          "needsRevision": 0,
+          "shouldRemove": 0
+        }
+      },
+      "workflows": [
+        {
+          "id": "W1",
+          "name": "语料库构建",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W2",
+          "name": "事实记忆(KG)",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W3",
+          "name": "框架与RQ",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W4",
+          "name": "RQ证据",
+          "status": "done",
+          "progress": 100
+        },
+        {
+          "id": "W5",
+          "name": "综述写作",
+          "status": "done",
+          "progress": 100
+        }
+      ]
+    },
+    {
+      "id": "self-improving-sec",
+      "title": "网络与软件安全中的大模型与智能体自改进方法",
+      "fieldTags": [
+        "自改进",
+        "网络安全",
+        "软件工程"
+      ],
+      "description": "梳理面向网络与软件安全的自我改进方法：经验积累、技能演化、评测反馈与安全边界。",
+      "status": "completed",
+      "createdAt": "2026-10-19 08:24:31",
+      "updatedAt": "2026-10-22 22:35:47",
+      "demo": true,
+      "stats": {
+        "papers": 284,
+        "kgEdges": 1800,
+        "rqs": 15,
+        "claims": {
+          "verified": 120,
           "needsRevision": 0,
           "shouldRemove": 0
         }

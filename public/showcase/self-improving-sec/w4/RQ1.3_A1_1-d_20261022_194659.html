@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.1-d 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.1-d 分析报告</h1>
+<div class="meta">RQ [RQ1.3]：[父问题 RQ1] 面向网络与软件安全任务的大模型与智能体&quot;自改进&quot;机制，可以被如何统一定义与分类？
+[本子问题 RQ1.3] 自改进闭环的时间尺度呈现怎样的分布？单轮反馈、多轮迭代、跨任务经验累积、跨版本持续进化四档各自有多少实证支撑，被硬编码的迭代预算（iteration limit / bounded round budget / fuzzing mutation limit）如何截断了长程自改进的观测？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0528_evorec_self_evolving_agentic_recommender_systems, 0620_A_Unified_Framework_for_Self-Evolving_and_Self-Healing_Artif, 0516_evorepair_enhancing_vulnerability_repair_agents_through_expe, 0514_ftpilot_automated_faulttolerant_rtl_rewriting_via_vulnerabil, 0505_memrepair_hierarchical_memory_for_agentic_repositorylevel_vu, 0409_securefixagent_a_hybrid_llm_agent_for_automated_python_stati）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_第一档_单轮反馈_证据最扎实的基线闭环">第一档：单轮反馈——证据最扎实的基线闭环</a></li>
+<li><a href="#sec_第二档_多轮迭代_证据最密集_但天花板被预算写死">第二档：多轮迭代——证据最密集，但天花板被预算写死</a></li>
+<li><a href="#sec_第三档_跨任务经验累积_机制成熟_谱系最完整_增益受验证门控">第三档：跨任务经验累积——机制成熟，谱系最完整，增益受验证门控</a></li>
+<li><a href="#sec_第四档_跨版本持续进化_证据最弱_被框架类论文以_概念化_回避">第四档：跨版本持续进化——证据最弱，被框架类论文以「概念化」回避</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告基于知识图谱（KG）结构化数据，对 RQ1.3 进行时间尺度维度分析：自改进闭环在单轮反馈、多轮迭代、跨任务经验累积、跨版本持续进化四档上的实证支撑呈现高度不均衡分布。单轮反馈与多轮迭代两档证据饱和；跨任务经验累积档机制成熟、谱系最完整，但增益经严格验证门控后偏小；跨版本持续进化档证据最弱，仅有仿真纵向研究与短时窗留出评估，无多年真实部署的长程确证。</p><p>核心判断是：被硬编码的迭代预算（iteration limit / round budget / fuzzing mutation limit）系统性地截断了长程自改进的观测窗口。KG 将「静态分析反馈至多四轮」「变异循环固定 150 轮」固化为必需假设而非可调参数，导致任何长程结论都无法区分「机制失效」与「观测窗口不足」。这一结构性缺口正是四档分布失衡的根因。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本次分析共调用 KG 工具 30 次，覆盖全部七类节点：paper（141 篇节点，采样 30 条）、problem（402 个节点，采样 30 条）、method（385 个节点，采样 30 条）、limitation（226 个节点，采样 30 条）、assumption（100 个节点，采样 30 条）、metric（256 个节点，采样 30 条）、dataset/benchmark（235 个节点，采样 30 条）。</p><p>重点精读了证据矩阵冻结的 6 篇论文的全部一跳关系：EvoRec <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、统一自演进/自愈框架 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、EvoRepair <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、FTPilot <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、MemRepair <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、SecureFixAgent <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。此外扩展考察了 18 篇相关论文，包括 0550 反馈动力学受控实验 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、0618 纵向仿真研究 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、0552 自演进编程智能体综述 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、EVOHUNT <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、SkillProx <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、MEMBRANE <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、Zombie Agents <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、AutoSafeCoder <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>、SED <sup class="cite"><a href="#ref-15" style="text-decoration:none">[15]</a></sup>、MEGA <sup class="cite"><a href="#ref-16" style="text-decoration:none">[16]</a></sup>、CyberEvolver <sup class="cite"><a href="#ref-17" style="text-decoration:none">[17]</a></sup>、VRpilot <sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup> 等。数据获取侧重方法→假设、方法→局限、论文→问题、论文→论文（extends/compares_with）四类边，用以重建时间尺度谱系与预算约束。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "四档时间尺度实证支撑强度对比（0-10 评分，基于论文数量与证据类型）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["单轮反馈", "多轮迭代", "跨任务经验累积", "跨版本持续进化"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "实证支撑强度", "type": "bar", "data": [8, 9, 8, 3], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+<h3>四档时间尺度：代表方法、关键证据与预算截断情况</h3>
+<table><thead><tr><th>时间尺度档</th><th>代表方法/论文</th><th>关键量化证据</th><th>迭代预算约束</th><th>证据强度</th></tr></thead><tbody><tr><td>单轮反馈</td><td>VRpilot [18]、SecureFixAgent [6]、FTPilot [4]</td><td>VRpilot 在 C/Java 上分别多产出 14% 与 7.6% 正确补丁；SecureFixAgent 上报 avg_iterations_to_converge</td><td>单轮/近单轮，受 LLM 随机性制约</td><td>饱和</td></tr>
+<tr><td>多轮迭代</td><td>MemRepair [5]、AutoSafeCoder [14]、EvoRepair [3]</td><td>AutoSafeCoder 静态分析反馈至多 4 轮；MemRepair 触发 Regenerate/Relocate 双路径</td><td>硬编码 4 轮；fuzzing 固定 150 轮</td><td>密集但被锁死</td></tr>
+<tr><td>跨任务经验累积</td><td>EvoRepair [3]、MemRepair [5]、EvoRec [1]、SkillProx [11]</td><td>SkillProx 平均精度 +3.0 个百分点；0550 追踪 388 候选/42 运行</td><td>round budget 被固定为控制变量 [7]</td><td>充裕但验证门控</td></tr>
+<tr><td>跨版本持续进化</td><td>0618 纵向仿真 [8]、EVOHUNT [10]、MEMBRANE [12]</td><td>0618：12 个月分流率 38.0%→61.3%（d=3.51）；EVOHUNT 留出 371 条/4 个月</td><td>≤10 分钟端点预算；ASR@15 回合预算</td><td>稀疏（仿真/短窗）</td></tr>
+</tbody></table>
+
+<h2 id="sec_第一档_单轮反馈_证据最扎实的基线闭环">第一档：单轮反馈——证据最扎实的基线闭环</h2>
+<p>几乎所有修复类系统都以「生成—验证—反馈」的单轮或近单轮闭环作为最小自改进单元。VRpilot 用 chain-of-thought 先推理漏洞再生成补丁，并以 compiler/test-suite 错误信息迭代细化，在 C 与 Java 数据集上分别多产出 14% 与 7.6% 正确补丁 <sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup>。SecureFixAgent 的 detect–repair–validate 循环以 Bandit 静态分析重扫为反馈信号，并明确把「平均收敛迭代数（avg_iterations_to_converge）」作为一等评估指标上报，说明单轮反馈已从定性走向可量化 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。</p><p>单轮档的可靠性天花板同样被记录：FTPilot 明确指出 LLM 生成的固有随机性引入模型内方差，影响单次可靠性；其迁移学习目标 pass@k 直接度量「k 次采样中至少一次正确」的概率，本质上是有限轮预算的另一种表述 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>。</p>
+
+<h2 id="sec_第二档_多轮迭代_证据最密集_但天花板被预算写死">第二档：多轮迭代——证据最密集，但天花板被预算写死</h2>
+<p>多轮迭代档是四档中证据最密集的，但也是最直接暴露预算截断的一档。MemRepair 的 feedback-driven refinement loop 在 oracle 验证失败时触发 Regenerate（同位置改写）或 Relocate（重定位），并配 L3 refinement-trajectory 记忆支撑失败到成功的转化 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。</p><p>关键证据恰恰来自对预算截断的自承：AutoSafeCoder 的静态分析反馈循环被硬编码为「至多四次迭代」，其自身局限条目明确记载「四轮可能无法解决所有漏洞」<sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。SecureFixAgent 正是在其基础上改用 Bandit 重扫并显式度量迭代收敛 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>。KG 中同一截断在假设层固化为两个「必需假设」节点——静态分析反馈至多四轮、fuzzing 变异循环固定 150 轮——二者均无 origin_paper 绑定，说明其已退化为跨论文默认配置而非可调研究变量。</p>
+<h3>KG 中硬编码迭代预算清单（假设层节点）</h3>
+<table><thead><tr><th>假设/约束节点</th><th>约束内容</th><th>对应档位</th><th>origin_paper_id</th></tr></thead><tbody><tr><td>iteration_limit_for_static_analysis</td><td>静态分析反馈循环至多 4 次迭代</td><td>多轮迭代</td><td>无（不可溯源）</td></tr>
+<tr><td>fuzzing_mutation_limit</td><td>变异循环固定 150 次迭代</td><td>多轮迭代</td><td>无（不可溯源）</td></tr>
+<tr><td>sandbox_execution_time_limit</td><td>代码执行沙箱限时 6 秒</td><td>单轮反馈</td><td>无（不可溯源）</td></tr>
+<tr><td>time_bounded_evaluation</td><td>每个端点严格时间预算 ≤10 分钟</td><td>多轮/跨任务</td><td>无（不可溯源）</td></tr>
+<tr><td>bounded_round_budget</td><td>战斗按有界回合序列进行，报告 ASR@15</td><td>跨任务/跨版本</td><td>无（不可溯源）</td></tr>
+<tr><td>bounded_query_budget</td><td>目标模型查询次数受每次计费限制</td><td>多轮迭代</td><td>无（不可溯源）</td></tr>
+</tbody></table>
+
+<h2 id="sec_第三档_跨任务经验累积_机制成熟_谱系最完整_增益受验证门控">第三档：跨任务经验累积——机制成熟，谱系最完整，增益受验证门控</h2>
+<p>跨任务经验累积档的核心是把单任务轨迹蒸馏为可复用资产。EvoRepair 从修复轨迹构造 experience bank，用 LLM-as-a-judge 打分并按相似度检索 top-k，明确同时服务「同漏洞内经验累积」与「跨漏洞经验复用」两个问题，并直接 extends MemRepair <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>→<sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>；MemRepair 的 L1 历史修复 / L2 安全模式 / L3 精化轨迹三层记忆结构同理 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>。EvoRec 以四智能体双轨循环维护可演进 Skill 库与持久 Memory <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>。</p><p>该档是四档中演化谱系最完整者：KG 中存在 VRpilot→MemRepair→EvoRepair 的明确 extends 链，以及 EvoRepair 向 SED、MEMBRANE、EVOHUNT、CyberEvolver 的多路分叉。但「累积」高度依赖验证门控：SkillProx 报出闭环诊断演进在「多数而非全部」设置有效，平均精度仅比最强梯度基线提升 3.0 个百分点 <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>；0550 在受控实验中追踪 42 次反馈运行、388 个候选、14 组模型-基准设置，发现演进「稀疏且被验证过滤」——所有入选技能都来自包含失败轨迹的反馈条件 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>。这是该档最重要的量化约束。</p>
+<div id="chart_2" class="chart-container" style="height:340px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_2'));
+  c.setOption({"title": {"text": "四档实证证据类型构成（按论文主证据类型归类，共 18 篇扩展考察论文）", "textStyle": {"fontSize": 14}, "left": "center"}, "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"}, "legend": {"orient": "vertical", "left": "left"}, "series": [{"name": "四档实证证据类型构成（按论文主证据类型归类，共 18 篇扩展考察论文）", "type": "pie", "radius": "55%", "data": [{"name": "单轮反馈实证", "value": 3}, {"name": "多轮迭代实证", "value": 4}, {"name": "跨任务经验累积实证", "value": 5}, {"name": "跨版本持续进化实证", "value": 2}, {"name": "概念框架（无基准）", "value": 4}], "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowOffsetX": 0, "shadowColor": "rgba(0,0,0,0.5)"}}}]});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_第四档_跨版本持续进化_证据最弱_被框架类论文以_概念化_回避">第四档：跨版本持续进化——证据最弱，被框架类论文以「概念化」回避</h2>
+<p>跨版本持续进化档的证据最为稀薄，且几乎全部来自仿真或短时窗研究。唯一的强纵向实证来自 0618：以 18 个月、约 27 万条历史工单回放，报出自演进智能体分流率在 12 个月内从 38.0% 升至 61.3%，而静态基线从 38.0% 降至 31.2%（t(18)=7.45, p&lt;0.001, Cohen's d=3.51），知识库从 400 条增至均值 1,360 条 <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>。但同一论文承认离散事件仿真简化了并发负载、网络延迟与级联失效。</p><p>EVOHUNT 用时间切分基准（813 条 2023-01~2025-12 训练，371 条 2026-01~2026-04 留出）尝试逼近「未来版本」评估，但其局限明言范围窄于真实审计，且把 off-target 发现计入 miss <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>。MEMBRANE 声称在零日攻击流下持续改进 F1 <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>；Zombie Agents 则从反面证明演进的跨会话持久性——payload 经正常演进函数植入记忆后跨会话存活并触发未授权行为 <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>。</p><p>更关键的是，两个统一定义类工作本身即概念贡献：统一自演进/自愈框架提出四轴分类（含「适应时尺度」）与快/慢双环架构，但明确「不声称新基准结果」<sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>；技能记忆架构同样仅作方法陈述而无实验评估。因此该档更多是被框架断言、被仿真支撑、被基准缺口遮蔽，而非被长程实证确证。</p>
+<h3>跨版本持续进化档的全部候选证据及其局限</h3>
+<table><thead><tr><th>论文</th><th>时间跨度/证据类型</th><th>关键指标</th><th>明确局限</th></tr></thead><tbody><tr><td>0618 纵向仿真 [8]</td><td>18 个月工单回放 / 离散事件仿真</td><td>分流率 38.0%→61.3%，d=3.51</td><td>单一 Fortune 50 银行；仿真保真度受限</td></tr>
+<tr><td>EVOHUNT [10]</td><td>时间切分：训练 2023-01~2025-12，留出 2026-01~04</td><td>目标漏洞识别率</td><td>留出窗仅 4 个月；off-target 计为 miss</td></tr>
+<tr><td>MEMBRANE [12]</td><td>零日攻击流持续改进</td><td>HarmBench/AgentHarm 最高 F1</td><td>仅文本英文；主表固定 LLM</td></tr>
+<tr><td>Zombie Agents [13]</td><td>跨会话记忆持久性</td><td>payload 存活与未授权行为诱导</td><td>仅 2 个商业 LLM；防御未在自适应攻击下评估</td></tr>
+</tbody></table>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>其一，工具可用性缺口：本次环境中 search_paper_sections 语义检索工具不可用，导致无法对关键结论做段落级原文片段引证（≥20 字原句），所有证据均来自 KG 结构化节点描述与 evidence 字段，颗粒度低于原文级溯源。</p><p>其二，假设节点溯源断裂：KG 中迭代预算相关的六个假设节点（4 轮迭代上限、150 轮变异上限等）均无 origin_paper_id 绑定，无法追溯到具体论文，因此「谁首先设定该预算」不可考，只能判定其为跨论文默认配置。</p><p>其三，档位边界为分析师推断：没有任何一篇论文按「时间尺度轴」报告分档样本量，0620 虽将「timescale of adaptation」列为分类第一轴之一，但实证层未跟进。四档之间的边界（尤其「多轮迭代」与「跨任务累积」之间）在文献中无统一阈值，本报告的分档为基于机制语义的推断。</p><p>其四，跨版本档置信度最低：现有证据止于仿真（0618）与 4 个月时间切分（EVOHUNT），缺乏多年真实部署数据，故该档结论为低-中置信度，前两档为中-高置信度。</p>
+<div class="note">核心洞见：四档分布的不均衡并非研究兴趣差异，而是观测工具的结构性偏差。当静态分析循环写死为 4 轮、变异循环写死为 150 轮、评估限定在 ≤10 分钟端点预算或 15 回合战斗预算内时，任何「长程自改进失效」的结论都无法区分「机制本身无效」与「观测窗口不够长」。0550 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup> 恰恰把 round budget 作为固定控制变量、只变化反馈构成，等于默认承认该预算尚未被当作研究变量。要真正回答跨版本档的问题，必须先把迭代预算从「必需假设」升格为「可操纵自变量」。</div>
+
+<h2 id="sec_结论">结论</h2>
+<p>自改进闭环的时间尺度在现有实证文献中呈高度不均衡的四档分布：单轮反馈（VRpilot 14%/7.6% 增益 <sup class="cite"><a href="#ref-18" style="text-decoration:none">[18]</a></sup>、SecureFixAgent 迭代收敛度量 <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>）与多轮迭代（MemRepair 双路径精化 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>）两档证据饱和；跨任务经验累积档机制成熟、演化谱系最完整（EvoRepair→MemRepair 链 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup><sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>），但增益经严格验证门控后偏小（SkillProx +3.0pp <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、0550 稀疏演进 <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>）；跨版本持续进化档证据最弱，仅有仿真纵向（0618 分流率 38.0%→61.3% <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>）与 4 个月时间切分（EVOHUNT <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>），且两个统一定义工作本身为概念贡献而无基准结果 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup><sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。</p><p>被硬编码的迭代预算——静态分析 4 轮、变异 150 轮、端点 ≤10 分钟、战斗 15 回合——是这一缺口的技术根因：它们把长程观测窗口截断，使「机制失效」与「窗口不足」不可区分。更根本的认识论缺口由 0552 指出：多数基准测的是编码能力而非「智能体本身的变化」，测试/编译器只间接监督被保留更新，一个有效补丁可能产出过度泛化的记忆 <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>。因此跨版本持续进化档目前是被框架断言与仿真支撑的「待验证假设」，而非长程实证确证的结论；将迭代预算从必需假设升格为可操纵自变量，是该档取得真实证据的前置条件。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;EvoRec: Self-Evolving Agentic Recommender Systems&nbsp;<code style="font-size:0.82em;color:#888">0528_evorec_self_evolving_agentic_recommender_systems</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;A Unified Framework for Self-Evolving and Self-Healing Artificial Intelligence Agents&nbsp;<code style="font-size:0.82em;color:#888">0620_A_Unified_Framework_for_Self-Evolving_and_Self-Healing_Artif</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;EvoRepair: Enhancing Vulnerability Repair Agents through Experience&nbsp;<code style="font-size:0.82em;color:#888">0516_evorepair_enhancing_vulnerability_repair_agents_through_expe</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;FTPilot: Automated Fault-Tolerant RTL Rewriting via Vulnerability Prediction&nbsp;<code style="font-size:0.82em;color:#888">0514_ftpilot_automated_faulttolerant_rtl_rewriting_via_vulnerabil</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;MemRepair: Hierarchical Memory for Agentic Repository-Level Vulnerability Repair&nbsp;<code style="font-size:0.82em;color:#888">0505_memrepair_hierarchical_memory_for_agentic_repositorylevel_vu</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;SecureFixAgent: A Hybrid LLM Agent for Automated Python Static Analysis Repair&nbsp;<code style="font-size:0.82em;color:#888">0409_securefixagent_a_hybrid_llm_agent_for_automated_python_stati</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;Rethinking Self-Evolving Agent Skills: Feedback Dynamics over Multiple Rounds&nbsp;<code style="font-size:0.82em;color:#888">0550_rethinking_selfevolving_agent_skills_feedback_dynamics_over</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Self-Evolving Virtual Agents for Enterprise Financial Helpdesks: A Simulation-Based Longitudinal Study&nbsp;<code style="font-size:0.82em;color:#888">0618_Self-Evolving_Virtual_Agents_for_Enterprise_Financial_Helpde</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Self-Evolving Coding Agents (Survey)&nbsp;<code style="font-size:0.82em;color:#888">0552_selfevolving_coding_agents</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;EVOHUNT: Transferable Self-Evolving Playbooks for Agentic Security Auditing&nbsp;<code style="font-size:0.82em;color:#888">0523_transferable_selfevolving_playbooks_for_agentic_security_aud</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;SkillProx: Self-Evolving Agent Skills via Proximal Textual Gradient Descent&nbsp;<code style="font-size:0.82em;color:#888">0556_skillprox_selfevolving_agent_skills_via_proximal_textual_gra</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;MEMBRANE: A Self-Evolving Contrastive Safety Memory for LLM Agent Defense&nbsp;<code style="font-size:0.82em;color:#888">0519_membrane_a_selfevolving_contrastive_safety_memory_for_llm_ag</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;Zombie Agents: Persistent Control of Self-Evolving LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">0461_zombie_agents_persistent_control_of_selfevolving_llm_agents</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;AutoSafeCoder: A Multi-Agent Framework for Securing LLM Code Generation&nbsp;<code style="font-size:0.82em;color:#888">0315_autosafecoder_a_multiagent_framework_for_securing_llm_code_g</code></li>
+<li id="ref-15" style="margin-bottom:4px"><span class="ref-id">[15]</span>&nbsp;Self-Evolving Defense: Continual Security Policy Learning for LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">0582_selfevolving_defense_continual_security_policy_learning_for</code></li>
+<li id="ref-16" style="margin-bottom:4px"><span class="ref-id">[16]</span>&nbsp;MEGA: Self-Evolving Agent Optimization Infrastructure via Wisdom Graph&nbsp;<code style="font-size:0.82em;color:#888">0558_mega_selfevolving_agent_optimization_infrastructure_via_wisd</code></li>
+<li id="ref-17" style="margin-bottom:4px"><span class="ref-id">[17]</span>&nbsp;CyberEvolver: Structured Self-Evolution for Cybersecurity Agents&nbsp;<code style="font-size:0.82em;color:#888">0513_cyberevolver_structured_selfevolution_for_cybersecurity_agen</code></li>
+<li id="ref-18" style="margin-bottom:4px"><span class="ref-id">[18]</span>&nbsp;VRpilot: A Case Study of LLM for Automated Vulnerability Repair Assessment&nbsp;<code style="font-size:0.82em;color:#888">0204_A_Case_Study_of_LLM_for_Automated_Vulnerability_Repair_Asses</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ1.3 · 2026-10-22 19:46</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A1.6-a 分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Noto Serif SC", Georgia, serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #222;
+    background: #fafafa;
+    padding: 32px 16px;
+  }
+  .paper {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 48px 56px;
+  }
+  h1 { font-size: 1.75em; text-align: center; margin-bottom: 6px; }
+  .meta { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 32px; }
+  h2 { font-size: 1.25em; border-bottom: 2px solid #333; padding-bottom: 4px;
+        margin: 32px 0 12px; }
+  h3 { font-size: 1.05em; margin: 20px 0 8px; color: #444; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.9em; margin: 16px 0;
+  }
+  th {
+    background: #f0f0f0; font-weight: 600;
+    border: 1px solid #ccc; padding: 8px 12px; text-align: left;
+  }
+  td {
+    border: 1px solid #ddd; padding: 7px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+  .chart-container {
+    width: 100%; height: 360px; margin: 20px 0;
+  }
+  .note {
+    background: #fffbe6; border-left: 4px solid #f0b429;
+    padding: 10px 14px; margin: 16px 0; font-size: 0.9em;
+    border-radius: 2px;
+  }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.8em; font-weight: 600; margin: 2px;
+  }
+  .badge-high { background: #ffeaea; color: #c0392b; }
+  .badge-medium { background: #fff3cd; color: #856404; }
+  .badge-low { background: #e8f5e9; color: #2e7d32; }
+  .toc { margin-bottom: 32px; padding: 16px; background: #f8f9fa;
+           border-radius: 4px; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: #1a73e8; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #eee;
+             font-size: 0.85em; color: #888; text-align: center; }
+  .references { margin-top: 32px; padding-top: 16px; border-top: 2px solid #333; }
+  .references ol { margin: 8px 0 0 20px; padding: 0; font-size: 0.88em;
+                    color: #444; line-height: 1.9; }
+  .references ol li { margin-bottom: 2px; }
+  .ref-id { color: #1a73e8; font-weight: 600; }
+  sup.cite { font-size: 0.75em; color: #1a73e8; font-weight: 600;
+              vertical-align: super; line-height: 0; }
+</style>
+</head>
+<body>
+<div class="paper">
+<h1>A1.6-a 分析报告</h1>
+<div class="meta">RQ [RQ5.2]：[父问题 RQ5] 自改进机制的可迁移性边界在哪里——威胁模型、攻防共进化与应用局限如何共同约束其落地？
+[本子问题 RQ5.2] 当攻防双方均由大模型/智能体承担时，双向共进化（co-evolution）目前有哪些形式化或实证尝试（3×3 frontier-defender evaluation、adversary can develop own LLM agents、adversarial bug report attack patterns）？概念主张与实证证据之间的落差有多大？
+
+（证据矩阵为该子问题冻结的论文，可优先用工具查询：0217_adversarial_bug_reports_as_a_security_risk_in_language_model）</div>
+<nav class="toc"><strong>目录</strong><ul><li><a href="#sec_摘要">摘要</a></li>
+<li><a href="#sec_数据来源与规模">数据来源与规模</a></li>
+<li><a href="#sec_双向共进化的四种形态_概念主张与实证证据对照">双向共进化的四种形态：概念主张与实证证据对照</a></li>
+<li><a href="#sec_概念主张与实证证据的落差">概念主张与实证证据的落差</a></li>
+<li><a href="#sec_攻击与防御谱系的独立演化">攻击与防御谱系的独立演化</a></li>
+<li><a href="#sec_分析局限性">分析局限性</a></li>
+<li><a href="#sec_结论">结论</a></li>
+</ul></nav>
+<h2 id="sec_摘要">摘要</h2>
+<p>本报告针对 RQ5.2——当攻防双方均由大模型/智能体承担时，双向共进化（co-evolution）目前有哪些形式化或实证尝试，概念主张与实证证据之间的落差有多大——对知识图谱（KG）中的攻防演化证据进行了系统梳理。核心结论是：KG 中可识别四种双向共进化形态（进化式攻击红队、自进化防御、单系统红/蓝闭环、形式化博弈共进化），但真正意义上“攻防两侧 LLM 智能体在同一闭环中相互适应”的实证几乎不存在，现存证据绝大多数是“一方自适应、另一方固定”的单侧度量。</p><p>一个结构性关键事实是：KG 中根本不存在 bypasses/evades 类型边，因此按严格定义无法构造任何形式上合规的“攻击→绕过→防御”共进化三元组（本报告可构造三元组数=0）。所谓“防御被绕过”只能经 targets/addresses 结构与论文描述间接论证。RQ 提及的“3×3 frontier-defender 评估矩阵”与“adversary can develop own LLM agents”威胁模型，在 KG 中仅表现为一个无任何关联边的孤立 assumption 节点，尚未被操作化为可复现的评估协议——这正是概念主张尚未兑现为实证的缩影。</p>
+
+<h2 id="sec_数据来源与规模">数据来源与规模</h2>
+<p>本分析基于知识图谱结构化数据，共执行约 22 次工具调用，覆盖全部六类节点：paper（141 篇，采样查看 30）、problem（402 个，采样 30）、method（385 个，采样 30）、limitation（226 个，采样 30）、assumption（100 个，采样 30）、dataset（235 个，采样 30）、metric（256 个，采样 30）。通过关系边查询（out/in/both）精读了 14 篇关键论文的完整出/入边，包括对抗性 bug 报告 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、EvoMail 红蓝闭环 <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup>、ADAPT 形式化博弈 <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup>、安全二象性 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup>、自进化智能体安全综述 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup>、JailFuzzer <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>、NAAMSE <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>、PROTEUS <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、SED <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、自进化多代理防御 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、AegisLLM <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、ALIBI <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>、TRACE <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>、SRFT <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。需特别说明：本环境 RAG 原文检索工具（search_paper_sections）不可用，所有结论仅基于 KG 结构化字段与边证据，缺乏原文段落级引证。</p>
+
+<h2 id="sec_双向共进化的四种形态_概念主张与实证证据对照">双向共进化的四种形态：概念主张与实证证据对照</h2>
+<p>KG 呈现的攻防共进化证据可分为四种形态，其形式化/实证成熟度差异显著。攻击侧自进化红队是最成熟的一线，从 JailFuzzer <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>（LLM 变异代理+预言代理）谱系演进为 NAAMSE <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>（遗传式提示变异、反馈驱动适应）再到 PROTEUS <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>（闭环“审计→沙箱→预言”契约，变异代理消费上一轮审计发现），并有 TRACE <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 的策略库从成功轨迹与失败模式扩张。防御侧自进化同样有实证基础：SED <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>（免训练、把失败轨迹蒸馏为增长策略库）、自进化多代理防御 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>（持久规则记忆+反思代理）、AegisLLM <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>（四代理自反思）、SRFT <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>（自反思微调）。但两条线多各自独立发展，防御的自适应通常只在固定攻击样本集上迭代一次，而非与实时反制的攻击者持续对抗。</p>
+<h3>四种双向共进化形态的实证成熟度对照</h3>
+<table><thead><tr><th>形态</th><th>代表工作</th><th>攻防两侧是否均为自适应LLM代理</th><th>关键量化证据</th><th>主要局限</th></tr></thead><tbody><tr><td>进化式攻击红队</td><td>JailFuzzer [6]/NAAMSE [7]/PROTEUS [8]/TRACE [13]</td><td>否（仅攻击侧自适应）</td><td>PROTEUS 跨审计器迁移率 87.7% [8]</td><td>防御侧为固定审计器，未同循环共进化 [8]</td></tr>
+<tr><td>自进化防御</td><td>SED [9]/多代理防御 [10]/AegisLLM [11]/SRFT [14]</td><td>否（仅防御侧自适应）</td><td>以攻击成功率下降为度量 [9]</td><td>通常面对固定攻击集迭代一次，非持续对抗</td></tr>
+<tr><td>单系统红/蓝闭环</td><td>EvoMail [2]</td><td>是（但同一系统耦合组件）</td><td>红队规避战术↔蓝队学习适应 [2]</td><td>垃圾邮件/钓鱼域，非安全关键软件</td></tr>
+<tr><td>形式化博弈共进化</td><td>ADAPT [3]</td><td>否（博弈树/模拟，非LLM实证）</td><td>神经符号在线学习更新策略 [3]</td><td>依赖完美回忆假设、非 LLM-vs-LLM 实验</td></tr>
+</tbody></table>
+
+<h2 id="sec_概念主张与实证证据的落差">概念主张与实证证据的落差</h2>
+<p>落差的首要表现是“框架多、实验少”。形式化/概念主张数量远多于真正的双向实证：ADAPT <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 用宏博弈+微战术博弈建模攻防序列交互，形式化程度最高，但依赖完美回忆假设、在模拟/博弈树上运行、针对医疗网络渗透测试，并非 LLM-vs-LLM 实证闭环；安全二象性综述 <sup class="cite"><a href="#ref-4" style="text-decoration:none">[4]</a></sup> 与自进化智能体安全综述 <sup class="cite"><a href="#ref-5" style="text-decoration:none">[5]</a></sup> 均明确提出“攻防深度耦合”“自进化带来新攻击面”，但自身不做共进化实验。</p><p>落差在“最接近双向”的安全关键代码域尤为鲜明。对抗性 bug 报告 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>（5 类攻击模式 Noise/Naive/Injection/Revert-CVE/CI-CD）报告攻击成功率 &gt;90%、最佳过滤器仅拦截 47%；ALIBI <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup> 进一步做自适应 5 轮细化攻击并评估 D1–D4 缓解。但二者防御侧（pre/post-APR 过滤、提示指令防御、架构隔离、注释清洗）都是被评估的固定对象，不与攻击同步进化，本质是“自适应攻击 vs 静态防御”的单侧链条。此外，PROTEUS <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup> 自己承认“跨更广审计器矩阵的对称验证留作未来工作”，即防御侧未在攻击者进化的同一循环中被迭代共进化。</p>
+<div id="chart_1" class="chart-container" style="height:360px"></div>
+<script>
+(function(){
+  var c = echarts.init(document.getElementById('chart_1'));
+  c.setOption({"title": {"text": "各共进化形态中“双侧同步自适应”达成度（0=单侧，1=双侧闭环，评估值）", "textStyle": {"fontSize": 14}}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": ["进化式攻击红队 [6][7][8][13]", "自进化防御 [9][10][11][14]", "单系统红/蓝闭环 [2]", "形式化博弈 [3]"], "axisLabel": {"rotate": 30, "interval": 0}}, "yAxis": {"type": "value"}, "series": [{"name": "双侧同步自适应达成度", "type": "bar", "data": [0.2, 0.2, 0.7, 0.3], "itemStyle": {"color": "#5470c6"}}], "grid": {"left": "8%", "right": "4%", "bottom": "18%", "top": "15%"}});
+  window.addEventListener('resize', function(){ c.resize(); });
+})();
+</script>
+
+<h2 id="sec_攻击与防御谱系的独立演化">攻击与防御谱系的独立演化</h2>
+<p>一个结构性发现是：攻击与防御的自进化在不同工作中各自独立发展，缺乏共享的实验闭环。攻击谱系为 JailFuzzer <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>→NAAMSE <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>→PROTEUS <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>（均由 extends 边显式连接），防御谱系为 SED <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>/多代理防御 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>/AegisLLM <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>/SRFT <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>。仅 SRFT <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup> 通过 compares_with 边显式与攻击侧 TRACE <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup> 对比——其比较明确指出 SRFT 用微调、SED 用免训练，属方法论对比而非闭环对抗实验。换言之，尽管存在 NAAMSE→PROTEUS、JailFuzzer→NAAMSE 这类“攻击对攻击”的承接关系，KG 中没有任何一条边把“某自适应攻击”与“某自适应防御”在同一上下文中直接对立评测。</p>
+<h3>关键论文及其在共进化谱系中的角色</h3>
+<table><thead><tr><th>论文</th><th>角色</th><th>共进化性质</th><th>关键结论/数字</th></tr></thead><tbody><tr><td>JailFuzzer [6]</td><td>攻击侧起点</td><td>LLM 变异+预言代理</td><td>越狱提示搜索，黑盒</td></tr>
+<tr><td>NAAMSE [7]</td><td>攻击侧进化</td><td>遗传变异+反馈适应</td><td>重构为反馈驱动优化，攻击静态基准脆弱性</td></tr>
+<tr><td>PROTEUS [8]</td><td>攻击侧闭环</td><td>审计→沙箱→预言 mutator</td><td>跨审计器迁移率 87.7%</td></tr>
+<tr><td>TRACE [13]</td><td>攻击侧自进化</td><td>策略库从失败模式扩张</td><td>对抗智能体拒答</td></tr>
+<tr><td>SED [9]</td><td>防御侧自进化</td><td>免训练策略库蒸馏</td><td>静防面对自适应攻击者失守</td></tr>
+<tr><td>自进化多代理防御 [10]</td><td>防御侧自进化</td><td>持久规则记忆+反思代理</td><td>检测后更新记忆</td></tr>
+<tr><td>AegisLLM [11]</td><td>防御侧自反思</td><td>编排/偏转/响应/评估四代理</td><td>安全输出</td></tr>
+<tr><td>SRFT [14]</td><td>防御侧自适应</td><td>自反思微调</td><td>显式对比 TRACE [13]</td></tr>
+<tr><td>EvoMail [2]</td><td>红/蓝闭环</td><td>红队规避↔蓝队适应</td><td>唯一显式闭环，限于垃圾邮件域</td></tr>
+<tr><td>ADAPT [3]</td><td>形式化博弈</td><td>宏博弈+微战术博弈</td><td>完美回忆假设，非LLM实证</td></tr>
+<tr><td>对抗性 bug 报告 [1]</td><td>攻击 vs 静态防御</td><td>5 类攻击模式</td><td>攻击成功率&gt;90%，最佳过滤47%</td></tr>
+<tr><td>ALIBI [12]</td><td>攻击 vs 静态防御</td><td>自适应5轮细化攻击</td><td>评估 D1–D4 缓解</td></tr>
+</tbody></table>
+<div class="note">关键结构性事实：KG 中不存在 bypasses/evades 类型边，故按分析框架 Step 3 的严格约束（需同时满足①bypasses/evades 边 ②攻击年份晚于防御年份），本报告可构造的合规共进化三元组数为 0；“防御被绕过”仅能通过 targets/addresses 结构与论文描述间接论证 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup><sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>。RQ 提及的“3×3 frontier-defender 评估”与“adversary can develop own LLM agents”威胁模型，在 KG 中仅表现为一个无关联边的孤立 assumption 节点，未落地为可复现评估协议。</div>
+
+<h2 id="sec_分析局限性">分析局限性</h2>
+<p>第一，证据粒度受限：RAG 原文检索工具（search_paper_sections）在本环境不可用，所有结论仅基于 KG 结构化字段（description/evidence）与边证据，缺乏论文原文段落级引证，因此对“证据缺口有多大”的判断置信度应视为中/低（pattern_confidence=low）。第二，结构约束导致三元组缺失：KG 无 bypasses/evades 边，无法按严格定义构造攻防共进化三元组，绕过关系依赖间接推断。第三，时间序列不完整：KG 节点普遍缺乏经验证的发表年份字段，无法建立精确的“防御→攻击变异”响应时滞与加速趋势，故演化模式（线性军备竞赛/防御瓶颈/攻击收敛/防御饱和）无法可靠判定。第四，双向闭环实证稀薄：真正攻防两侧同步自适应的实验仅 EvoMail <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 一例且限于非安全关键域，跨域可迁移性存疑。</p>
+
+<h2 id="sec_结论">结论</h2>
+<p>RQ5.2 的答案是：双向共进化的形式化与实证尝试在 KG 中确实存在，但呈现“形式化框架丰富、双侧闭环实证贫乏”的鲜明不对称。攻击侧自进化红队（JailFuzzer <sup class="cite"><a href="#ref-6" style="text-decoration:none">[6]</a></sup>→NAAMSE <sup class="cite"><a href="#ref-7" style="text-decoration:none">[7]</a></sup>→PROTEUS <sup class="cite"><a href="#ref-8" style="text-decoration:none">[8]</a></sup>、TRACE <sup class="cite"><a href="#ref-13" style="text-decoration:none">[13]</a></sup>）与防御侧自进化（SED <sup class="cite"><a href="#ref-9" style="text-decoration:none">[9]</a></sup>、多代理防御 <sup class="cite"><a href="#ref-10" style="text-decoration:none">[10]</a></sup>、AegisLLM <sup class="cite"><a href="#ref-11" style="text-decoration:none">[11]</a></sup>、SRFT <sup class="cite"><a href="#ref-14" style="text-decoration:none">[14]</a></sup>）各自成熟且有量化证据，但二者基本独立发展；唯一显式红/蓝闭环 EvoMail <sup class="cite"><a href="#ref-2" style="text-decoration:none">[2]</a></sup> 限于垃圾邮件域；形式化程度最高的 ADAPT <sup class="cite"><a href="#ref-3" style="text-decoration:none">[3]</a></sup> 是非 LLM 实证的博弈模拟。安全关键代码域的最强证据（对抗性 bug 报告 <sup class="cite"><a href="#ref-1" style="text-decoration:none">[1]</a></sup>、ALIBI <sup class="cite"><a href="#ref-12" style="text-decoration:none">[12]</a></sup>）本质是“自适应攻击 vs 静态防御”的单侧链条。概念主张与实证证据之间的落差显著：3×3 frontier-defender 评估与“adversary can develop own LLM agents”威胁模型在 KG 中仅为孤立 assumption 节点，尚未操作化。因此，就“双向共进化是否已被充分实证”而言，当前答案是否定的——这正是自改进机制可迁移性边界在攻防演化维度的关键约束。</p>
+
+<div class="references"><h2 id="sec_references">参考文献</h2><ol style="list-style:none;padding:0"><li id="ref-1" style="margin-bottom:4px"><span class="ref-id">[1]</span>&nbsp;Adversarial Bug Reports as a Security Risk in Language Model-Based Automated Program Repair&nbsp;<code style="font-size:0.82em;color:#888">0217_adversarial_bug_reports_as_a_security_risk_in_language_model</code></li>
+<li id="ref-2" style="margin-bottom:4px"><span class="ref-id">[2]</span>&nbsp;EvoMail: Self-Evolving Cognitive Agents for Adaptive Spam and Phishing Email Defense&nbsp;<code style="font-size:0.82em;color:#888">0252_EvoMail_Self-Evolving_Cognitive_Agents_for_Adaptive_Spam_and</code></li>
+<li id="ref-3" style="margin-bottom:4px"><span class="ref-id">[3]</span>&nbsp;ADAPT: A Game-Theoretic and Neuro-Symbolic Framework for Automated Distributed Adaptive Penetration Testing&nbsp;<code style="font-size:0.82em;color:#888">0134_ADAPT_A_Game-Theoretic_and_Neuro-Symbolic_Framework_for_Auto</code></li>
+<li id="ref-4" style="margin-bottom:4px"><span class="ref-id">[4]</span>&nbsp;The Security Duality of Large Language Model Agents: A Systematic Review of Self-Security Protection and Cybersecurity Empowerment&nbsp;<code style="font-size:0.82em;color:#888">0229_The_Security_Duality_of_Large_Language_Model_Agents_A_System</code></li>
+<li id="ref-5" style="margin-bottom:4px"><span class="ref-id">[5]</span>&nbsp;Safety in Self-Evolving Agents: A Survey&nbsp;<code style="font-size:0.82em;color:#888">0233_Safety_in_Self-Evolving_Agents_A_Survey</code></li>
+<li id="ref-6" style="margin-bottom:4px"><span class="ref-id">[6]</span>&nbsp;Fuzz-Testing Meets LLM-Based Agents: An Automated and Efficient Framework for Jailbreaking Text-To-Image Generation Models&nbsp;<code style="font-size:0.82em;color:#888">0306_fuzztesting_meets_llmbased_agents_an_automated_and_efficient</code></li>
+<li id="ref-7" style="margin-bottom:4px"><span class="ref-id">[7]</span>&nbsp;NAAMSE: Framework for Evolutionary Security Evaluation of Agents&nbsp;<code style="font-size:0.82em;color:#888">0454_naamse_framework_for_evolutionary_security_evaluation_of_age</code></li>
+<li id="ref-8" style="margin-bottom:4px"><span class="ref-id">[8]</span>&nbsp;Proteus: A Self-Evolving Red Team for Agent Skill Ecosystems&nbsp;<code style="font-size:0.82em;color:#888">0503_proteus_a_selfevolving_red_team_for_agent_skill_ecosystems</code></li>
+<li id="ref-9" style="margin-bottom:4px"><span class="ref-id">[9]</span>&nbsp;Self-Evolving Defense: Continual Security Policy Learning for LLM Agents&nbsp;<code style="font-size:0.82em;color:#888">0582_selfevolving_defense_continual_security_policy_learning_for</code></li>
+<li id="ref-10" style="margin-bottom:4px"><span class="ref-id">[10]</span>&nbsp;A Self-Evolving Multi-Agent Framework Defense Against LLM Jailbreak&nbsp;<code style="font-size:0.82em;color:#888">0567_a_selfevolving_multiagent_framework_defense_against_llm_jail</code></li>
+<li id="ref-11" style="margin-bottom:4px"><span class="ref-id">[11]</span>&nbsp;AegisLLM: Scaling Agentic Systems for Self-Reflective Defense&nbsp;<code style="font-size:0.82em;color:#888">0356_aegisllm_scaling_agentic_systems_for_selfreflective_defense</code></li>
+<li id="ref-12" style="margin-bottom:4px"><span class="ref-id">[12]</span>&nbsp;ALIBI: Adaptive Agentic Attacks on LLM-Based Vulnerability Detection&nbsp;<code style="font-size:0.82em;color:#888">0545_alibi_adaptive_agentic_attacks_on_llmbased_vulnerability_det</code></li>
+<li id="ref-13" style="margin-bottom:4px"><span class="ref-id">[13]</span>&nbsp;TRACE: Task-Aware Adaptive Self-Evolving Agentic Jailbreaking&nbsp;<code style="font-size:0.82em;color:#888">0517_trace_taskaware_adaptive_selfevolving_agentic_jailbreaking</code></li>
+<li id="ref-14" style="margin-bottom:4px"><span class="ref-id">[14]</span>&nbsp;Self-Reflection Fine-Tuning: Enhancing Agent Security Against Prompt Injection&nbsp;<code style="font-size:0.82em;color:#888">0585_selfreflection_finetuning_enhancing_agent_security_against_p</code></li>
+</ol></div>
+
+<footer>Generated by KGAnalysis · RQ5.2 · 2026-10-22 20:03</footer>
+</div>
+</body>
+</html>
