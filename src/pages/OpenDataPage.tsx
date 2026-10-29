@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react';
-import { FileJson, FileText, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Download, FileJson, FileText, ShieldCheck } from 'lucide-react';
 import { loadManifest, showcaseRaw, type ShowcaseManifest } from '@/services/showcase';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
+// 站内已渲染好的对应页面（推荐评委从这里看）
+const VIEWS = [
+  { to: 'rq', label: '证据与结论核查', hint: 'RQ 树 · claims 四维核查 · 原文定位' },
+  { to: 'kg', label: '论文关系图', hint: '六类实体节点 · 支持/矛盾边' },
+  { to: 'corpus', label: '语料与筛选漏斗', hint: 'PRISMA 漏斗 · 论文表' },
+  { to: 'report', label: '大纲与综述报告', hint: '章节树 · PDF 预览' },
+];
+
+// 原始数据下载（与线上接口一一对应的静态文件）
 const FILES = [
   { file: 'rqs.json', label: 'RQ + 证据 + claims' },
   { file: 'kg.json', label: '论文关系图' },
@@ -29,7 +39,8 @@ export function OpenDataPage() {
       <p className="mt-3 max-w-3xl text-[13px] leading-6 text-t2">
         本页公开的是真实项目运行后的<strong className="font-medium text-t1">数据产物</strong>：
         语料与筛选漏斗、论文关系图、研究问题与证据矩阵、逐条结论的原文定位、评审记录和综述 PDF。
-        全部为静态 JSON / PDF，可直接下载或用于二次分析。公开内容不包含后端源码、算法实现、账号、
+        建议先点每张卡的<strong className="font-medium text-t1">「在线查看」</strong>在页面里看渲染结果，
+        需要原始数据或二次分析时再下载对应 JSON / PDF。公开内容不包含后端源码、算法实现、账号、
         服务器路径或密钥。
       </p>
 
@@ -54,19 +65,39 @@ export function OpenDataPage() {
                   <span><b className="font-medium text-t1">{p.stats.rqs}</b> 个 Sub-RQ</span>
                   <span><b className="font-medium text-t1">{p.stats.claims.verified}</b> 条 claims</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {FILES.map((f) => (
-                    <a
-                      key={f.file}
-                      href={showcaseRaw(`showcase/${p.id}/${f.file}`)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[12px] text-t2 transition-colors hover:border-ink hover:text-t1"
-                    >
-                      {f.file.endsWith('.pdf') ? <FileText size={13} /> : <FileJson size={13} />}
-                      {f.label}
-                    </a>
-                  ))}
+                <div>
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-t3">在线查看</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {VIEWS.map((v) => (
+                      <Link
+                        key={v.to}
+                        to={`/projects/${p.id}/${v.to}`}
+                        title={v.hint}
+                        className="inline-flex items-center gap-1.5 rounded-md bg-ink px-2.5 py-1.5 text-[12px] font-medium text-white transition-opacity hover:opacity-85"
+                      >
+                        {v.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-t3">下载数据</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {FILES.map((f) => (
+                      <a
+                        key={f.file}
+                        href={showcaseRaw(`showcase/${p.id}/${f.file}`)}
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                        className="inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1.5 text-[12px] text-t2 transition-colors hover:border-ink hover:text-t1"
+                      >
+                        {f.file.endsWith('.pdf') ? <FileText size={13} /> : <FileJson size={13} />}
+                        {f.label}
+                        <Download size={11} className="opacity-50" />
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </Card>
             ))}
