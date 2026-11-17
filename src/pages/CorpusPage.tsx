@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { X, FileText, Bookmark, Upload } from 'lucide-react';
-import type { PaperRecord, ScreenStage, PrismaLevel } from '@/types/data';
+import type { PaperRecord, ScreenStage } from '@/types/data';
 import { getCorpus, USE_MOCK } from '@/services/api';
 import { useLibrary, fingerprint } from '@/store/library';
 import { Card } from '@/components/ui/Card';
+import { toast } from '@/components/ui/feedback';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -18,9 +20,9 @@ function stageVariantOf(s: ScreenStage): 'neutral' | 'ok' {
 
 export function CorpusPage() {
   const { projectId = '' } = useParams();
+  const qc = useQueryClient();
   const { items: libItems, toggleSave } = useLibrary();
   const savedFps = useMemo(() => new Set(libItems.map((i) => i.fp ?? fingerprint(i.title, i.year))), [libItems]);
-  const [data, setData] = useState<{ papers: PaperRecord[]; funnel: PrismaLevel[]; total: number; page: number; pageSize: number } | null>(null);
   const [query, setQuery] = useState('');
   const [stage, setStage] = useState<'ALL' | ScreenStage | '需人工'>('ALL');
   const [page, setPage] = useState(1);
@@ -49,6 +51,7 @@ export function CorpusPage() {
       } else {
         setUploadTip(`补齐 ${d.matched} 篇（替换占位）+ 新增 ${d.added} 篇${d.failed ? `，${d.failed} 个文件无效` : ''}`);
         setPage(1);
+        qc.invalidateQueries({ queryKey: ['project', projectId, 'corpus'] });
       }
     } catch (e) {
       setUploadTip(`上传失败：${e instanceof Error ? e.message : String(e)}`);
@@ -58,15 +61,14 @@ export function CorpusPage() {
     }
   };
 
-  useEffect(() => {
-    let alive = true;
-    // 后端分页：stage 过滤映射到 status 参数；query 仍在前端当前页内过滤
-    const status = stage === 'ALL' ? '' : stage === '已纳入' ? 'downloaded' : stage === '需人工' ? 'failed' : '';
-    getCorpus(projectId, { page, pageSize: 50, status }).then((d) => alive && setData(d));
-    return () => {
-      alive = false;
-    };
-  }, [projectId, page, stage]);
+  // 后端分页：stage 过滤映射到 status 参数；query 仍在前端当前页内过滤
+  const status = stage === 'ALL' ? '' : stage === '已纳入' ? 'downloaded' : stage === '需人工' ? 'failed' : '';
+  const corpusQ = useQuery({
+    queryKey: ['project', projectId, 'corpus', page, status],
+    queryFn: () => getCorpus(projectId, { page, pageSize: 50, status }),
+    placeholderData: (prev) => prev, // 翻页时保留旧数据，表格不闪
+  });
+  const data = corpusQ.data ?? null;
 
   const shown = useMemo(() => {
     const q = query.toLowerCase();
@@ -180,7 +182,7 @@ export function CorpusPage() {
                               method: 'POST', headers: tk ? { Authorization: `Bearer ${tk}` } : {}, body: fd,
                             });
                             if (res.ok) window.location.reload();
-                            else alert('上传失败：' + (await res.json().catch(() => ({ detail: res.status }))).detail);
+                            else toast('上传失败：' + (await res.json().catch(() => ({ detail: res.status }))).detail);
                           };
                           inp.click();
                         }}
@@ -270,7 +272,7 @@ function RowUploadButton({ projectId, rowId }: { projectId: string; rowId: numbe
             setDone(true);
             window.location.reload();
           } else {
-            alert('上传失败：' + (await res.json().catch(() => ({ detail: res.status }))).detail);
+            toast('上传失败：' + (await res.json().catch(() => ({ detail: res.status }))).detail);
           }
         };
         inp.click();

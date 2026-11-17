@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { Sparkles } from 'lucide-react';
 import { useAuth } from '@/store/auth';
 import { login as apiLogin, register as apiRegister, USE_MOCK } from '@/services/api';
 import { Button } from '@/components/ui/Button';
@@ -19,6 +20,13 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [flash] = useState(() => {
+    try {
+      const v = sessionStorage.getItem('as.flash') ?? '';
+      if (v) sessionStorage.removeItem('as.flash');
+      return v;
+    } catch { return ''; }
+  });
 
   if (user) return <Navigate to="/projects" replace />;
 
@@ -78,14 +86,25 @@ export function LoginPage() {
 
   return (
     <div className="relative grid min-h-screen place-items-center overflow-hidden bg-page">
-      {/* 单色装饰层（无彩色装饰，反幼稚审计第 2 项） */}
-      <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-black/5 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -right-24 h-[28rem] w-[28rem] rounded-full bg-black/5 blur-3xl" />
+      {/* 品牌色装饰层 */}
+      <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-brand/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -right-24 h-[28rem] w-[28rem] rounded-full bg-brand/10 blur-3xl" />
 
       <div className="relative w-[400px] rounded-2xl border border-line/60 bg-card p-9 shadow-s3">
-        <div className="text-center">
-          <div className="text-[26px] font-bold tracking-tight">AutoSurvey</div>
+        <div className="flex flex-col items-center text-center">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand text-white shadow-s2">
+            <Sparkles size={24} strokeWidth={2.2} />
+          </span>
+          <div className="mt-3 text-[24px] font-bold tracking-tight">AutoSurvey</div>
           <div className="mt-1 text-[13px] text-t3">AI 驱动的学术综述流水线控制台</div>
+          <div className="mt-3 flex items-center gap-1 text-[11px] text-t3">
+            {['语料', '知识图谱', '研究问题', '逐段写作'].map((s, i) => (
+              <span key={s} className="flex items-center gap-1">
+                {i > 0 && <span className="text-t3/60">→</span>}
+                <span className="rounded bg-page px-1.5 py-0.5">{s}</span>
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* 登录/注册切换 */}
@@ -170,7 +189,10 @@ export function LoginPage() {
               />
             </div>
           )}
-          {/* 错误内联在控件正下方（表单范式，禁 alert） */}
+          {/* 错误内联在控件正下方（design-db 表单范式，禁 alert） */}
+          {flash && !error && (
+            <p className="rounded-lg border border-[#f0e2c8] bg-[#fdf8ee] px-3 py-2 text-[12px] leading-5 text-[#8a6a1f]">{flash}</p>
+          )}
           {error && <p className="text-[12px] text-danger">{error}</p>}
           <Button type="submit" size="lg" className="w-full" disabled={loading}>
             {loading

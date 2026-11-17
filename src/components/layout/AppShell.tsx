@@ -1,11 +1,12 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutGrid, Settings, Plus, LogOut, Database, Library, Compass, User, Share2 } from 'lucide-react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutGrid, Settings, Plus, LogOut, Database, Library, Compass, User, Share2, Sparkles } from 'lucide-react';
 import { useAuth } from '@/store/auth';
 import { useUi } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { USE_MOCK } from '@/services/api';
+import { HIDE_OPEN_DATA } from '@/lib/runtime';
 
 const navItems = [
   { to: '/projects', label: '全部项目', icon: LayoutGrid },
@@ -14,26 +15,34 @@ const navItems = [
   { to: '/open-data', label: '开放数据', icon: Share2 },
   { to: '/me', label: '个人中心', icon: User },
   { to: '/admin', label: '管理后台', icon: Settings },
-];
+].filter((item) => !(HIDE_OPEN_DATA && item.to === '/open-data'));
 
 export function AppShell() {
+  const location = useLocation();
   const { user, logout } = useAuth();
   const { readOnly, toggleReadOnly } = useUi();
   const navigate = useNavigate();
 
   return (
     <div className="flex min-h-screen">
-      {/* 左侧栏：黑 wordmark + 实底黑主按钮 + 分组导航 */}
+      {/* 左侧栏（xept projects 页范式：黑 wordmark + 实底黑主按钮 + 分组导航） */}
       <aside className="fixed inset-y-0 left-0 flex w-60 flex-col border-r border-line/70 bg-card">
-        <div className="px-5 pt-6">
-          <div className="text-[19px] font-bold leading-6 tracking-tight">AutoSurvey</div>
-          <div className="mt-0.5 text-xs text-t3">综述流水线控制台</div>
-          {USE_MOCK ? (
-            <Badge variant="info" withDot className="mt-3">
+        <div className="flex items-center gap-2.5 px-5 pt-6">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#149352] to-[#0b6231] text-white shadow-s1">
+            <Sparkles size={18} strokeWidth={2.2} />
+          </span>
+          <div className="min-w-0">
+            <div className="text-[17px] font-bold leading-5 tracking-tight">AutoSurvey</div>
+            <div className="text-[11px] leading-4 text-t3">综述流水线控制台</div>
+          </div>
+        </div>
+        {USE_MOCK ? (
+          <div className="px-5 pt-3">
+            <Badge variant="info" withDot>
               PUBLIC SNAPSHOT
             </Badge>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
         {!readOnly && !USE_MOCK && (
           <div className="px-4 pt-5">
@@ -44,7 +53,10 @@ export function AppShell() {
           </div>
         )}
 
-        <nav className="mt-6 flex flex-col gap-0.5 px-3">
+        <nav className="mt-5 flex flex-col gap-0.5 px-3">
+          <div className="px-3 pb-1 text-[10px] font-medium uppercase tracking-[0.08em] text-t3">
+            工作区
+          </div>
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -52,12 +64,16 @@ export function AppShell() {
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-2.5 rounded-lg px-3 py-2 text-[14px] text-t2 transition-colors hover:bg-black/5',
-                  isActive && 'bg-black/5 font-medium text-t1',
+                  isActive && 'bg-brand-weak font-medium text-brand-fg shadow-[inset_2px_0_0_var(--brand)]',
                 )
               }
             >
-              <item.icon size={16} className="text-t2" />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <item.icon size={16} className={isActive ? 'text-brand' : 'text-t2'} />
+                  {item.label}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -74,7 +90,7 @@ export function AppShell() {
                 type="checkbox"
                 checked={readOnly}
                 onChange={toggleReadOnly}
-                className="h-4 w-4 accent-black"
+                className="h-4 w-4 accent-[#0e7a3d]"
               />
             </label>
           )}
@@ -84,7 +100,7 @@ export function AppShell() {
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-ink text-[11px] font-semibold text-white">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-brand text-[11px] font-semibold text-white">
                 {(user ?? '?').slice(0, 2).toUpperCase()}
               </span>
               <span className="text-[13px] text-t1">{user}</span>
@@ -106,7 +122,9 @@ export function AppShell() {
 
       {/* 主内容区 */}
       <main className="ml-60 min-w-0 flex-1">
-        <Outlet />
+        <div key={location.pathname} className="page-enter">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

@@ -7,11 +7,13 @@ import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 
 const TABS = [
-  { to: 'rq', label: 'RQ 与证据' },
   { to: 'pipeline', label: '流水线' },
   { to: 'corpus', label: '语料库' },
   { to: 'kg', label: 'KG 图谱' },
+  { to: 'rq', label: 'RQ 与证据' },
   { to: 'report', label: '报告' },
+  { to: 'paper', label: '论文工作台' },
+  { to: 'skills', label: '技能工坊' },
   { to: 'agent', label: 'Agent 分析' },
 ];
 

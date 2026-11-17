@@ -1,4 +1,4 @@
-// 业务数据类型（API 契约的一部分）
+// 业务数据类型（API 契约的一部分，见 docs/requirements.md 数据需求）
 import type { ProjectStatus } from './index';
 
 export type PhaseStatus = 'pending' | 'running' | 'done' | 'failed' | 'checkpoint' | 'skipped';
@@ -8,6 +8,10 @@ export interface PhaseState {
   name: string;
   status: PhaseStatus;
   durationSec?: number;
+  error?: string; // 阶段异常信息（runner 落盘）
+  errorKind?: string; // config = Key/余额/协议错误（不自动重试）
+  tail?: string[]; // 阶段日志尾部（过滤 DEBUG 后），失败/运行中可直接看原因
+  note?: string; // 自动重试进度等提示
   progress?: { downloaded: number; placeholder: number; total: number }; // W1-P6 下载进度
 }
 
@@ -24,7 +28,9 @@ export interface PipelineRun {
   projectId: string;
   startedAt: string;
   elapsedSec: number;
-  metrics: { papers: number; pairs: number; edges: number };
+  stale?: boolean;          // 上游（W3 矩阵 / W4 结果）在本次完成后有过修改
+  staleNote?: string;
+  metrics: { papers: number; pairs: number; edges: number; note?: string };
   workflows: WorkflowRun[];
   logs: { t: string; phase: string; line: string }[];
 }
@@ -93,6 +99,8 @@ export interface SubRQ {
   needsReeval?: string;      // humanloop 修改后待重评：p4 / p3p4
   humanEditedAt?: string;    // humanloop 修改时间
   humanEditKind?: string;    // text / evidence / both
+  answer?: string;           // W4 子问题答案（answer_claims.json → sub_rq_answers）
+  answerEditedAt?: string;   // 用户手改答案时间
 }
 
 export interface MacroRQ {

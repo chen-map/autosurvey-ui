@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { Play, RotateCcw, FileText, Network, Clock , Pause } from 'lucide-react';
-import type { PipelineRun, PhaseState } from '@/types/data';
-import { getPipeline, startRun, rerunWorkflow, getBuildConfig, updateBuildConfig, getW4Reports, fetchW4ReportHtml, getCorpus, USE_MOCK, type W4Report } from '@/services/api';
+import { Play, RotateCcw, FileText, Network, Clock , Pause, AlertTriangle } from 'lucide-react';
+import type { PhaseState } from '@/types/data';
+import { getPipeline, startRun, rerunWorkflow, getBuildConfig, updateBuildConfig, getW4Reports, fetchW4ReportHtml, getCorpus, getW4Depth, setW4Depth, USE_MOCK, type W4Report, type W4Depth } from '@/services/api';
 import { Card } from '@/components/ui/Card';
+import { confirmDialog } from '@/components/ui/feedback';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
@@ -11,7 +13,7 @@ import { cn } from '@/lib/utils';
 // skipped：可选阶段降级跳过（runner optional 机制）；未知状态一律回退 pending，防 undefined 崩溃
 const statusStyle: Record<string, { dot: string; label: string }> = {
   pending: { dot: 'bg-line', label: '待执行' },
-  running: { dot: 'bg-run animate-pulse', label: '运行中' },
+  running: { dot: 'bg-run animate-pulse-dot', label: '运行中' },
   done: { dot: 'bg-ok', label: '完成' },
   failed: { dot: 'bg-danger', label: '失败' },
   checkpoint: { dot: 'bg-warn-fg', label: 'checkpoint' },
@@ -43,55 +45,76 @@ const WORKFLOW_TABS: { key: 'w1' | 'w2' | 'w3' | 'w4' | 'w5'; label: string; hin
   { key: 'w5', label: 'W5 综述写作', hint: '该项目还没有 W5 运行记录。W5 消费 W3 大纲与 W4 工作记忆，确定性装配 LaTeX 综述全文（survey_paper/）。建议先完成 W4。' },
 ];
 
+async function fetchPipelineOrNull(projectId: string, workflow: 'w1' | 'w2' | 'w3' | 'w4' | 'w5') {
+  try {
+    return await getPipeline(projectId, workflow);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes('run not found') || msg.includes('404')) return null; // 尚未启动
+    throw e;
+  }
+}
+
+function LoadingState({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24" role="status" aria-live="polite">
+      <span className="relative flex h-11 w-11 items-center justify-center">
+        <span className="absolute inset-0 rounded-full border-2 border-line/70" />
+        <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-brand" />
+      </span>
+      <div className="mt-4 text-[14px] font-medium text-t1">{label}</div>
+      {hint && <div className="mt-1.5 max-w-sm text-center text-[12px] leading-5 text-t3">{hint}</div>}
+    </div>
+  );
+}
+
+function StartupSpinner() {
+  return (
+    <span className="relative flex h-9 w-9 items-center justify-center">
+      <span className="absolute inset-0 rounded-full border-2 border-brand/15" />
+      <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-brand" />
+    </span>
+  );
+}
+
 export function PipelinePage() {
   const { projectId = '' } = useParams();
   const [workflow, setWorkflow] = useState<'w1' | 'w2' | 'w3' | 'w4' | 'w5'>('w1');
-  const [run, setRun] = useState<PipelineRun | null>(null);
-  const [notStarted, setNotStarted] = useState(false);
+  const qc = useQueryClient();
   const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState('');
+  const [startElapsed, setStartElapsed] = useState(0);
+  const aliveRef = useRef(true);
   const [logPhase, setLogPhase] = useState('ALL');
-
+  // 服务端状态交给 TanStack Query：SSE 推送失效 + 运行中 5s 兜底轮询
+  const pipelineQ = useQuery({
+    queryKey: ['project', projectId, 'pipeline', workflow],
+    queryFn: () => fetchPipelineOrNull(projectId, workflow),
+    refetchInterval: (q) => (q.state.data?.workflows[0]?.status === 'running' ? 5000 : false),
+  });
+  const run = pipelineQ.data ?? null;
+  const notStarted = pipelineQ.isSuccess && pipelineQ.data === null;
   const [alerts, setAlerts] = useState<{ kind: 'fail' | 'warn'; text: string }[]>([]);
   const prevStatusRef = useRef<Record<string, string>>({});
 
+  // 失败主动提醒：阶段从非失败 → 失败（页面开着就能看到，无需盯着）
   useEffect(() => {
-    let alive = true;
-    const load = () =>
-      getPipeline(projectId, workflow)
-        .then((r) => {
-          if (!alive) return;
-          setRun(r); setNotStarted(false);
-          // 失败主动提醒：轮询发现阶段从非失败 → 失败（页面开着就能看到，无需盯着）
-          const wf = r.workflows.find((w) => w.id === workflow.toUpperCase());
-          if (wf) {
-            const cur: Record<string, string> = {};
-            for (const ph of wf.phases) {
-              cur[ph.id] = ph.status;
-              const prev = prevStatusRef.current[ph.id];
-              if (ph.status === 'failed' && prev && prev !== 'failed' && prev !== 'pending') {
-                const errLine = (ph as unknown as { error?: string }).error ? `：${(ph as unknown as { error: string }).error.slice(0, 80)}` : '';
-                setAlerts((a) => [...a.filter((x) => !x.text.startsWith(ph.id)), {
-                  kind: 'fail', text: `${ph.id} 失败${errLine}——请查看该阶段卡与日志`,
-                }]);
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  try { new Notification('AutoSurvey', { body: `${ph.id} 失败，请回平台查看` }); } catch { /* 忽略 */ }
-                }
-              }
-              prevStatusRef.current[ph.id] = ph.status;
-            }
-          }
-        })
-        // 真实模式：该工作流尚未启动（无状态文件）——必须清掉上一个工作流的 run 残留，
-        // 否则切 tab 后引导卡下面还挂着别的 W 的阶段卡（用户报的"W2 页面显示无关流程"）
-        .catch(() => alive && (setRun(null), setNotStarted(true)));
-    load();
-    // 轮询刷新：运行中页面实时跟进状态；未启动时等 runner 写出首个状态文件
-    const t = setInterval(load, 4000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-  }, [projectId, workflow]);
+    const wf = run?.workflows.find((w) => w.id === workflow.toUpperCase());
+    if (!wf) return;
+    for (const ph of wf.phases) {
+      const prev = prevStatusRef.current[ph.id];
+      if (ph.status === 'failed' && prev && prev !== 'failed' && prev !== 'pending') {
+        const errLine = (ph as unknown as { error?: string }).error ? `：${(ph as unknown as { error: string }).error.slice(0, 80)}` : '';
+        setAlerts((a) => [...a.filter((x) => !x.text.startsWith(ph.id)), {
+          kind: 'fail', text: `${ph.id} 失败${errLine}——请查看该阶段卡与日志`,
+        }]);
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try { new Notification('AutoSurvey', { body: `${ph.id} 失败，请回平台查看` }); } catch { /* 忽略 */ }
+        }
+      }
+      prevStatusRef.current[ph.id] = ph.status;
+    }
+  }, [run, workflow]);
 
   const [w2Limit, setW2Limit] = useState<'all' | '3000'>('all');
   const [corpusN, setCorpusN] = useState(0);
@@ -105,13 +128,41 @@ export function PipelinePage() {
     return () => { alive = false; };
   }, [notStarted, workflow, projectId]);
 
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => { aliveRef.current = false; };
+  }, []);
+  useEffect(() => {
+    if (!starting) { setStartElapsed(0); return; }
+    const t = setInterval(() => setStartElapsed((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [starting]);
+
   const start = async () => {
+    if (starting) return;
     setStarting(true);
+    setStartError('');
     try {
       await startRun(projectId, workflow, workflow === 'w2' && w2Limit === '3000' ? { w2MaxPairs: 3000 } : {});
-      setNotStarted(false); // 轮询会在 runner 写出状态文件后自动接管
+      // 启动接口返回时 runner 可能还没写状态文件：主动轮询接管，用户不需要刷新。
+      for (let i = 0; i < 45; i += 1) {
+        await new Promise((r) => setTimeout(r, 1000));
+        if (!aliveRef.current) return;
+        try {
+          const data = await fetchPipelineOrNull(projectId, workflow);
+          if (!aliveRef.current) return;
+          if (data) {
+            qc.setQueryData(['project', projectId, 'pipeline', workflow], data);
+            void qc.invalidateQueries({ queryKey: ['project', projectId, 'pipeline'] });
+            return;
+          }
+        } catch { /* 瞬时网络错误继续等 */ }
+      }
+      if (aliveRef.current) setStartError('启动请求已提交，但状态文件迟迟未出现。请稍后刷新，或到日志里确认 runner 是否启动。');
+    } catch (e) {
+      if (aliveRef.current) setStartError(e instanceof Error ? e.message : '启动失败');
     } finally {
-      setStarting(false);
+      if (aliveRef.current) setStarting(false);
     }
   };
 
@@ -120,8 +171,10 @@ export function PipelinePage() {
     [run, logPhase],
   );
 
-  if (!run && !notStarted) return <div className="py-16 text-center text-[13px] text-t3">加载中…</div>;
   const tabMeta = WORKFLOW_TABS.find((t) => t.key === workflow)!;
+  if (!run && !notStarted) {
+    return <LoadingState label={`正在加载 ${tabMeta.label}…`} hint="读取阶段状态、进度与日志；切换工作流时首次加载可能需要几秒。" />;
+  }
   const elapsed = run?.elapsedSec ?? 0;
 
   return (
@@ -173,10 +226,26 @@ export function PipelinePage() {
             </div>
           )}
 
-          <Button className="mx-auto mt-4" onClick={start} disabled={starting}>
-            <Play size={14} />
-            {starting ? '启动中…' : `启动 ${tabMeta.key.toUpperCase()}`}
-          </Button>
+          {starting ? (
+            <div className="mt-5 rounded-xl border border-brand/20 bg-brand/[0.04] px-5 py-5" role="status" aria-live="polite">
+              <div className="flex justify-center"><StartupSpinner /></div>
+              <div className="mt-3 text-[13.5px] font-medium text-t1">正在启动 {tabMeta.key.toUpperCase()}…</div>
+              <div className="mt-1 text-[12px] leading-5 text-t3">
+                启动请求已提交，正在等待流水线创建并写入状态。通常需要几秒，页面会自动接管，无需刷新。
+              </div>
+              <div className="mt-2 text-[11px] tabular-nums text-t3">已等待 {startElapsed}s</div>
+            </div>
+          ) : (
+            <Button className="mx-auto mt-4" onClick={() => void start()} disabled={starting}>
+              <Play size={14} />
+              启动 {tabMeta.key.toUpperCase()}
+            </Button>
+          )}
+          {startError && (
+            <div className="mt-3 rounded-lg border border-danger/25 bg-danger/5 px-3 py-2 text-left text-[12px] leading-5 text-danger">
+              {startError}
+            </div>
+          )}
         </Card>
       )}
       {alerts.length > 0 && (
@@ -194,13 +263,24 @@ export function PipelinePage() {
 
       {run && (
         <>
+          {run.stale && (
+            <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-[12.5px] text-amber-800">
+              <AlertTriangle size={15} className="shrink-0" />
+              <span>
+                {run.staleNote || '上游数据在上次完成后有过修改'}——当前展示的是<b>旧数据的结果</b>，请重跑本工作流后再使用。
+              </span>
+            </div>
+          )}
           {/* 规模指标卡 */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Stat icon={FileText} value={String(run.metrics.papers)} label="语料论文" />
-            <Stat icon={Network} value={run.metrics.pairs.toLocaleString()} label="论文对（N²）" />
-            <Stat icon={Network} value={String(run.metrics.edges)} label="KG 关系边" />
+            <Stat icon={FileText} value={String(run.metrics.papers)} label={workflow === 'w2' ? 'KG 论文' : '语料论文（下载）'} />
+            <Stat icon={Network} value={run.metrics.pairs.toLocaleString()} label={workflow === 'w2' ? 'W2 候选对（预评分后）' : '理论论文对 C(n,2)'} />
+            <Stat icon={Network} value={String(run.metrics.edges)} label="KG 总边（全类型）" />
             <Stat icon={Clock} value={`${Math.floor(elapsed / 3600)}h ${Math.floor((elapsed % 3600) / 60)}m`} label="累计耗时" />
           </div>
+          {run.metrics.note && (
+            <p className="mt-1.5 text-[11.5px] leading-5 text-t3">{run.metrics.note}</p>
+          )}
 
           {/* 5W 阶段 */}
           <div className="stagger space-y-4">
@@ -232,7 +312,7 @@ export function PipelinePage() {
                           }]);
                         }
                         // 触发一次立即刷新
-                        getPipeline(projectId, workflow).then((r) => setRun(r)).catch(() => {});
+                        qc.invalidateQueries({ queryKey: ['project', projectId, 'pipeline'] });
                       }} />
                   ))}
                 </div>
@@ -241,6 +321,7 @@ export function PipelinePage() {
           </div>
 
           {/* W4 Agent 分析报告（HTML 小论文，每 RQ 一份） */}
+          {workflow === 'w4' && <W4DepthControl projectId={projectId} />}
           {workflow === 'w4' && <W4ReportsSection projectId={projectId} />}
 
           {/* W2 补充构建：手动上传新论文后提示增量提取 */}
@@ -268,7 +349,7 @@ export function PipelinePage() {
             </div>
             <div className="max-h-72 overflow-y-auto bg-ink p-4 font-mono text-[12.5px] leading-5 text-white/80">
               {logs.map((l, i) => (
-                <div key={i} className="anim-rise" style={{ animationDelay: `${i * 30}ms` }}>
+                <div key={i}>
                   <span className="text-white/40">{l.t}</span>
                   <span className="mx-2 text-white/30">[{l.phase}]</span>
                   {l.line}
@@ -285,7 +366,7 @@ export function PipelinePage() {
 
 const wfKeyOf = (id: string) => id.toLowerCase();
 
-// W1 修改配置重建：打开编辑弹窗（W1 重跑 = 改配置从头构建，
+// W1 修改配置重建：打开编辑弹窗（用户裁决：W1 重跑 = 改配置从头构建，
 // 会作废 W2-W5 产物，需重新运行下游——弹窗内明确警示）
 function W1RebuildButton({ projectId, running }: { projectId: string; running: boolean }) {
   const [open, setOpen] = useState(false);
@@ -566,15 +647,60 @@ function W2SupplementCard({ projectId, w2Failed }: { projectId: string; w2Failed
   );
 }
 
+function W4DepthControl({ projectId }: { projectId: string }) {
+  const [depth, setDepth] = useState<W4Depth>('standard');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  useEffect(() => {
+    let alive = true;
+    getW4Depth(projectId).then((d) => alive && setDepth(d.depth)).catch(() => {});
+    return () => { alive = false; };
+  }, [projectId]);
+  const change = async (v: W4Depth) => {
+    setBusy(true); setMsg('');
+    try {
+      const d = await setW4Depth(projectId, v);
+      setDepth(v);
+      setMsg(d.hint || '已保存');
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : '保存失败');
+    } finally { setBusy(false); }
+  };
+  return (
+    <Card className="p-5">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <span className="rounded bg-ink px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white">W4</span>
+        <h3 className="text-[15px] font-semibold">分析深度</h3>
+        <span className="text-[11.5px] text-t3">控制每个子 RQ 的 Agent 轮次/工具调用门槛——直接影响耗时</span>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <select value={depth} disabled={busy} onChange={(e) => void change(e.target.value as W4Depth)}
+          className="h-8 rounded-lg border border-line bg-card px-2 text-[12px] text-t2 focus:border-ink focus:outline-none">
+          <option value="quick">快（6-9 轮 / 12 次工具，约 1 分钟/RQ）</option>
+          <option value="standard">标准（9-20 轮 / 20 次工具，约 2 分钟/RQ）</option>
+          <option value="deep">深挖（14-40 轮 / 40 次工具，约 3-5 分钟/RQ）</option>
+        </select>
+        <span className="text-[11px] text-t3">下次重跑 W4 生效；已完成的 RQ 会跳过</span>
+        {msg && <span className="text-[11px] text-t2">{msg}</span>}
+      </div>
+    </Card>
+  );
+}
+
 function W4ReportsSection({ projectId }: { projectId: string }) {
   const [reports, setReports] = useState<W4Report[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [htmlCache, setHtmlCache] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let alive = true;
-    getW4Reports(projectId).then((r) => alive && setReports(r));
+    setLoading(true);
+    getW4Reports(projectId)
+      .then((r) => { if (alive) setReports(r); })
+      .catch(() => { if (alive) setReports([]); })
+      .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [projectId]);
 
@@ -588,6 +714,19 @@ function W4ReportsSection({ projectId }: { projectId: string }) {
     } finally { setBusy(''); }
   };
 
+  if (loading) {
+    return (
+      <Card className="p-5">
+        <div className="flex items-center gap-3" role="status" aria-live="polite">
+          <StartupSpinner />
+          <div>
+            <div className="text-[14px] font-medium text-t1">正在读取 W4 分析报告…</div>
+            <div className="mt-0.5 text-[12px] text-t3">加载每 RQ 的 HTML 小论文，稍后自动显示。</div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
   if (!reports.length) return null;
   return (
     <Card className="p-5">
@@ -608,7 +747,9 @@ function W4ReportsSection({ projectId }: { projectId: string }) {
               <Badge variant="info" className="shrink-0 font-mono text-[11px]">{r.skill}</Badge>
               <span className="min-w-0 flex-1 truncate text-[13px] text-t1">{r.rq_text}</span>
               <span className="shrink-0 text-[11px] text-t3">{r.rounds}轮 · {r.duration}s</span>
-              <span className={cn('shrink-0 text-t3 transition-transform', expanded === r.dir && 'rotate-90')}>›</span>
+              {busy === r.dir
+                ? <span className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-line border-t-brand" />
+                : <span className={cn('shrink-0 text-t3 transition-transform', expanded === r.dir && 'rotate-90')}>›</span>}
             </button>
             {expanded === r.dir && (
               <div className="border-t border-line/40 bg-white">
@@ -633,6 +774,7 @@ function W4ReportsSection({ projectId }: { projectId: string }) {
 function PhaseChip({ phase, projectId, workflow, onRetried }: { phase: PhaseState; projectId: string; workflow: string; rerunning?: boolean; onRetried?: () => void }) {
   const st = statusStyle[phase.status] ?? statusStyle.pending;
   const failedLike = phase.status === 'failed' || phase.status === 'checkpoint' || phase.status === 'skipped';
+  const configError = phase.errorKind === 'config';
   const [retrying, setRetrying] = useState(false);
   const [pausing, setPausing] = useState(false);
   const retry = async () => {
@@ -648,7 +790,7 @@ function PhaseChip({ phase, projectId, workflow, onRetried }: { phase: PhaseStat
   };
   return (
     <div className={cn(
-      'group flex items-center justify-between gap-2 rounded-lg border border-line/60 px-3 py-2 transition-colors',
+      'group flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line/60 px-3 py-2 transition-colors',
       phase.status === 'running' && 'border-run/40 bg-info/30',
       failedLike && 'border-warn-fg/30',
     )}>
@@ -661,6 +803,12 @@ function PhaseChip({ phase, projectId, workflow, onRetried }: { phase: PhaseStat
             {phase.durationSec ? ` · ${fmt(phase.durationSec)}` : ''}
           </div>
         </div>
+          {phase.note && (
+            <div className="mt-0.5 flex items-center gap-1 text-[11px] text-info-fg">
+              <RotateCcw size={10} className="shrink-0 animate-spin" style={{ animationDuration: '2s' }} />
+              <span className="min-w-0 truncate" title={phase.note}>{phase.note}</span>
+            </div>
+          )}
       </div>
       {phase.progress && (
         <div className="shrink-0 text-right">
@@ -681,6 +829,7 @@ function PhaseChip({ phase, projectId, workflow, onRetried }: { phase: PhaseStat
         <Button variant="ghost" size="sm" className="shrink-0 px-2"
           title="暂停该阶段（终止进程，已提取产物保留在磁盘，恢复时从断点续传）"
           onClick={async () => {
+            if (!(await confirmDialog({ title: `暂停「${phase.name}」？`, body: '运行中的进程将被终止，已完成的产物保留在磁盘，之后可从断点续传。' }))) return;
             setPausing(true);
             try {
               const API = import.meta.env.VITE_API_BASE ?? '/api';
@@ -695,6 +844,24 @@ function PhaseChip({ phase, projectId, workflow, onRetried }: { phase: PhaseStat
         >
           <Pause size={13} className={pausing ? 'animate-spin' : ''} />
         </Button>
+      )}
+      {configError && (
+        <div className="w-full rounded-md border border-danger/30 bg-danger/5 px-2.5 py-2 text-[11.5px] leading-5 text-t2">
+          <span className="font-medium text-danger">模型配置错误</span>
+          ：Key 无效、余额不足，或 baseUrl / 协议不匹配（401/402/404）。系统已停止本阶段，不会自动重试。
+          <a href="#/profile" className="ml-1 font-medium text-brand underline">去个人中心修复</a>
+        </div>
+      )}
+      {failedLike && ((phase.tail && phase.tail.length > 0) || phase.error) && (
+        <details className="w-full">
+          <summary className="cursor-pointer select-none text-[11px] text-t3 hover:text-t2">
+            {configError ? '配置错误详情（日志）' : '失败原因（来自阶段日志，点开看完整）'}
+          </summary>
+          <pre className="mt-1 max-h-44 overflow-y-auto whitespace-pre-wrap break-all rounded bg-page/70 px-2 py-1.5 font-mono text-[11px] leading-4 text-t2">
+            {phase.error ? `↳ ${phase.error}\n` : ''}
+            {(phase.tail ?? []).join('\n')}
+          </pre>
+        </details>
       )}
     </div>
   );

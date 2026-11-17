@@ -6,6 +6,7 @@ import { rehydrateDirections } from '@/pages/DirectionPage';
 import type { ReactNode } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { FeedbackHost } from '@/components/ui/feedback';
 import { LoginPage } from '@/pages/LoginPage';
 import { ProjectsPage } from '@/pages/ProjectsPage';
 import { NewProjectPage } from '@/pages/NewProjectPage';
@@ -15,6 +16,8 @@ import { CorpusPage } from '@/pages/CorpusPage';
 import { RqPage } from '@/pages/RqPage';
 import { RqDetailPage } from '@/pages/RqDetailPage';
 import { ReportPage } from '@/pages/ReportPage';
+import { PaperEditorPage } from '@/pages/PaperEditorPage';
+import { SkillStudioPage } from '@/pages/SkillStudioPage';
 import { AgentPage } from '@/pages/AgentPage';
 import { KgPage } from '@/pages/KgPage';
 import { KnowledgeBasePage } from '@/pages/KnowledgeBasePage';
@@ -23,6 +26,7 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { OpenDataPage } from '@/pages/OpenDataPage';
+import { HIDE_OPEN_DATA } from '@/lib/runtime';
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -66,10 +70,14 @@ export default function App() {
     // HashRouter：GitHub Pages 无 SPA 回退，哈希路由免 404
     <HashRouter>
       <ErrorBoundary>
+      <FeedbackHost />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot" element={<ForgotPasswordPage />} />
         <Route path="/reset" element={<ResetPasswordPage />} />
+        <Route path="/projects/:projectId/paper"
+          element={<RequireAuth><PaperEditorPage /></RequireAuth>}
+        />
         <Route
           element={
             <RequireAuth>
@@ -81,17 +89,20 @@ export default function App() {
           <Route path="/projects/new" element={<NewProjectPage />} />
           <Route path="/library" element={<KnowledgeBasePage />} />
           <Route path="/direction" element={<DirectionPage />} />
-          <Route path="/open-data" element={<OpenDataPage />} />
+          <Route path="/open-data" element={HIDE_OPEN_DATA ? <Navigate to="/projects" replace /> : <OpenDataPage />} />
           <Route path="/me" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
-          <Route path="/projects/:projectId" element={<ProjectLayout />}>
-            <Route index element={<Navigate to="rq" replace />} />
+          <Route path="/projects/:projectId/paper" element={<PaperEditorPage />} />
+        <Route path="/projects/:projectId" element={<ProjectLayout />}>
+            <Route index element={<Navigate to="pipeline" replace />} />
             <Route path="rq" element={<RqPage />} />
             <Route path="rq/:rqId" element={<RqDetailPage />} />
             <Route path="pipeline" element={<PipelinePage />} />
             <Route path="corpus" element={<CorpusPage />} />
             <Route path="kg" element={<KgPage />} />
             <Route path="report" element={<ReportPage />} />
+            <Route path="paper" element={<PaperEditorPage />} />
+            <Route path="skills" element={<SkillStudioPage />} />
             <Route path="agent" element={<AgentPage />} />
           </Route>
         </Route>

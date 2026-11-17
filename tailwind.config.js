@@ -8,6 +8,7 @@ export default {
         card: 'var(--bg-card)',
         line: 'var(--border)',
         ink: 'var(--ink)',
+        brand: { DEFAULT: 'var(--brand)', strong: 'var(--brand-strong)', weak: 'var(--brand-weak)', fg: 'var(--brand-fg)' },
         t1: 'var(--text-1)',
         t2: 'var(--text-2)',
         t3: 'var(--text-3)',

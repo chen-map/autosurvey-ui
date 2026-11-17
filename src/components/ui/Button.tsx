@@ -7,10 +7,10 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  // 实底黑主按钮（一屏一个 primary）
-  primary: 'bg-ink text-white hover:bg-black/80 disabled:bg-black/25',
-  // 白底 2px 黑边（次按钮）
-  secondary: 'bg-card text-ink border-2 border-ink hover:bg-black/5 disabled:opacity-40',
+  // 实底品牌绿主按钮（一屏一个 primary）
+  primary: 'bg-brand text-white hover:bg-brand-strong disabled:bg-brand/40',
+  // 白底细边次按钮（轻盈版）
+  secondary: 'bg-card text-t1 border border-ink/25 hover:border-ink hover:bg-black/[0.03] disabled:opacity-40',
   ghost: 'text-t1 hover:bg-black/5 disabled:opacity-40',
 };
 

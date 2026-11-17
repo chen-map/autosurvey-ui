@@ -33,3 +33,12 @@ backend/cache/
 # 本地快照导出工具（含服务器访问方式，不随公开仓库发布）
 tools/export_showcase.py
 tools/_export_showcase_server.py
+
+# 临时救援转储与截图（不入库）
+rescue_proj-*.json
+check_evidence.png
+/abstract_backfill.py
+/w2_phase_defs.py
+
+# 本地测试用 PDF（docs/seed_papers_ai_pdf，151MB，不提交）
+docs/seed_papers_ai_pdf/

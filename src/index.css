@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 /* ============================================================
-   设计 token —— 黑白账本视觉：彩色只用于证据语义
+   设计 token —— 基线取自 skill design-db tokens.css，
+   覆盖项依据 docs/ui-design.md（xept 实拍：黑白账本，彩色证据）
    ============================================================ */
 :root {
   --bg-page: #f5f5f5;
@@ -17,7 +18,11 @@
   --text-3: rgba(0, 0, 0, 0.45);
   --text-disabled: rgba(0, 0, 0, 0.25);
 
-  --ink: #111111; /* 品牌色：黑（实底黑主按钮/黑字） */
+  --ink: #111111; /* 墨色：正文/次级按钮描边 */
+  --brand: #0e7a3d; /* 品牌色：深绿（与工作台同源；主按钮/导航态/焦点环） */
+  --brand-strong: #0b6231;
+  --brand-weak: #edf7f0;
+  --brand-fg: #0a5a2d;
   --info-bg: #eff6ff;
   --info-fg: #1e40af;
   --danger: #e53935;
@@ -45,7 +50,20 @@
   }
   body {
     margin: 0;
-    @apply bg-page font-sans text-[14px] leading-[22px] text-t1 antialiased;
+    @apply font-sans text-[14px] leading-[22px] text-t1 antialiased;
+    background:
+      radial-gradient(1200px 240px at 50% -80px, rgba(14, 122, 61, 0.05), transparent 70%),
+      linear-gradient(180deg, #fafbfa 0%, #f5f6f5 320px, #f5f6f5 100%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3 {
+    letter-spacing: -0.015em;
+    font-weight: 700;
+  }
+  h1 { font-size: 22px; line-height: 30px; }
+  ::selection {
+    background: rgba(17, 17, 17, 0.85);
+    color: #fff;
   }
   :focus-visible {
     outline: 2px solid var(--ink);
@@ -145,3 +163,89 @@
 /* 引用刷模式：选区淡黄预览 */
 .hl-brushing ::selection { background: #FFF3C4; color: inherit; }
 .hl-brushing ::selection * { background: #FFF3C4; }
+
+
+/* ============================================================
+   质感层（2026-11-07）：层次、微交互、光效
+   原则：黑白账本的底子不动，加"quiet luxury"——
+   极淡渐变、卡片悬浮、微交互、骨架屏、细滚动条
+   ============================================================ */
+
+/* 页面进入动画（AppShell 按路由 key 重挂载触发） */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.page-enter {
+  animation: page-enter 260ms cubic-bezier(0.2, 0, 0, 1) backwards;
+}
+
+/* 卡片：统一的过渡底座；可交互卡片悬浮时轻微上浮 */
+.bg-card {
+  transition: box-shadow 220ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 220ms cubic-bezier(0.2, 0, 0, 1),
+    transform 220ms cubic-bezier(0.2, 0, 0, 1);
+}
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-3);
+  border-color: var(--border);
+}
+
+/* 按钮：全局微交互（按压回缩、颜色平滑） */
+button:not(:disabled) {
+  transition: background-color 150ms cubic-bezier(0.2, 0, 0, 1),
+    color 150ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 150ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 150ms cubic-bezier(0.2, 0, 0, 1),
+    transform 80ms cubic-bezier(0.2, 0, 0, 1);
+}
+button:not(:disabled):active {
+  transform: scale(0.985);
+}
+/* 主按钮：极淡的顶部光泽，破坏"死黑" */
+.bg-ink {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 46%);
+}
+.bg-ink:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+/* 输入控件：边框颜色平滑 */
+input, textarea, select {
+  transition: border-color 150ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* 骨架屏：微光扫过 */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+}
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #ececec 25%, #f6f6f6 37%, #ececec 63%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* 滚动条：细窄、中性 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.28); }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* 状态点：呼吸感（运行中） */
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(22, 119, 255, 0.12); }
+}
+.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }

@@ -6,6 +6,7 @@ import { readApiKeys } from '@/lib/apikeys';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import { toast } from '@/components/ui/feedback';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 
@@ -117,7 +118,7 @@ export function NewProjectPage() {
   const togglePlatform = (p: string) =>
     setPlatforms((s) => (s.includes(p) ? (s.length > 1 ? s.filter((x) => x !== p) : s) : [...s, p]));
 
-  // 滑杆解耦（两个滑杆各自独立，互不拽动）；保留量>检索量的归一在提交时做
+  // 滑杆解耦（用户裁决：两个滑杆各自独立，互不拽动）；保留量>检索量的归一在提交时做
   const setCorpusCapClamped = (v: number) => setCorpusCap(v);
 
   const toggleTag = (t: string) =>
@@ -200,7 +201,7 @@ export function NewProjectPage() {
     });
     if (!res.ok) {
       const d = await res.json().catch(() => ({ detail: '上传失败' }));
-      alert(`种子上传失败：${d.detail ?? res.status}`);
+      toast(`种子上传失败：${d.detail ?? res.status}`);
       return;
     }
     const d = await res.json();

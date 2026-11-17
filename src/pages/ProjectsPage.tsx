@@ -4,6 +4,7 @@ import { Search, Trash2 } from 'lucide-react';
 import type { Project } from '@/types';
 import { listProjects, deleteProject } from '@/services/api';
 import { Card } from '@/components/ui/Card';
+import { confirmDialog, toast } from '@/components/ui/feedback';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { WorkflowProgress } from '@/components/WorkflowProgress';
@@ -40,13 +41,13 @@ function ProjectCard({ p, onDeleted }: { p: Project; onDeleted: (id: string) => 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation(); // 不触发卡片跳转
     if (deleting) return;
-    if (!window.confirm(`确定删除项目「${p.title}」？\n该项目的语料、KG、RQ、综述等工作目录将一并删除，不可恢复。`)) return;
+    if (!(await confirmDialog({ title: `删除项目「${p.title}」？`, body: '该项目的语料、KG、RQ、综述等工作目录将一并删除，不可恢复。', danger: true }))) return;
     setDeleting(true);
     try {
       await deleteProject(p.id);
       onDeleted(p.id);
     } catch (err) {
-      alert(`删除失败：${err instanceof Error ? err.message : String(err)}`);
+      toast(`删除失败：${err instanceof Error ? err.message : String(err)}`);
       setDeleting(false);
     }
   };
@@ -57,7 +58,7 @@ function ProjectCard({ p, onDeleted }: { p: Project; onDeleted: (id: string) => 
       tabIndex={0}
       onClick={() => navigate(`/projects/${p.id}/rq`)}
       onKeyDown={(e) => e.key === 'Enter' && navigate(`/projects/${p.id}/rq`)}
-      className="flex cursor-pointer flex-col gap-3 p-5 transition-shadow hover:shadow-s2"
+      className="card-interactive flex cursor-pointer flex-col gap-3 p-5"
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-[16px] font-semibold leading-6">{p.title}</h3>
@@ -144,7 +145,10 @@ export function ProjectsPage() {
   return (
     <div className="mx-auto max-w-6xl px-8 py-8">
       <div className="flex items-baseline justify-between">
-        <h1 className="text-[24px] font-semibold leading-8">全部项目</h1>
+        <div>
+          <h1 className="text-[24px] font-semibold leading-8">全部项目</h1>
+          <p className="mt-1 text-[13px] text-t3">从语料检索到综述 PDF 的一站式流水线</p>
+        </div>
         <span className="text-[13px] text-t3">
           {projects ? `共 ${projects.length} 个项目` : '加载中…'}
         </span>
@@ -181,7 +185,27 @@ export function ProjectsPage() {
       </div>
 
       {projects === null ? (
-        <div className="mt-16 text-center text-[13px] text-t3">加载中…</div>
+        <div className="stagger mt-6 grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
+          {[0, 1, 2].map((i) => (
+            <Card key={i} className="flex flex-col gap-3 p-5">
+              <div className="flex items-start justify-between">
+                <div className="skeleton h-5 w-3/4" />
+                <div className="skeleton h-5 w-14" />
+              </div>
+              <div className="skeleton h-2 w-full" />
+              <div className="flex gap-2">
+                {[0, 1, 2, 3, 4].map((j) => (
+                  <div key={j} className="skeleton h-2 flex-1" />
+                ))}
+              </div>
+              <div className="flex gap-4 border-t border-line/60 pt-3">
+                <div className="skeleton h-3.5 w-16" />
+                <div className="skeleton h-3.5 w-16" />
+                <div className="skeleton h-3.5 w-16" />
+              </div>
+            </Card>
+          ))}
+        </div>
       ) : shown.length === 0 ? (
         <div className="mt-16 text-center">
           <p className="text-[14px] text-t2">

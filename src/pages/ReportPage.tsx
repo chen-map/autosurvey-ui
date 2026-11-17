@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { Download, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { OutlineNode } from '@/types/data';
@@ -66,22 +67,19 @@ export function ReportPage() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfState, setPdfState] = useState<'loading' | 'ready' | 'missing' | 'error'>('loading');
   const [pdfReload, setPdfReload] = useState(0);
-  const [data, setData] = useState<{ outline: OutlineNode[]; reviews: { round: number; date: string; verdict: string; improvements: string[] }[] } | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    getReport(projectId).then((d) => alive && setData(d)).catch(() => alive && setData({ outline: [], reviews: [] }));
-    return () => {
-      alive = false;
-    };
-  }, [projectId, pdfReload]);
+  const reportQ = useQuery({
+    queryKey: ['project', projectId, 'report'],
+    queryFn: () => getReport(projectId).catch(() => ({ outline: [], reviews: [] })),
+  });
+  const data = reportQ.data ?? null;
 
   // Human Loop 应用大纲修改后即时刷新
+  const qc = useQueryClient();
   useEffect(() => {
-    const h = () => { getReport(projectId).then((d) => setData(d)).catch(() => {}); setPdfReload((n) => n + 1); };
+    const h = () => { qc.invalidateQueries({ queryKey: ['project', projectId, 'report'] }); setPdfReload((n) => n + 1); };
     window.addEventListener('as:outline-updated', h);
     return () => window.removeEventListener('as:outline-updated', h);
-  }, [projectId]);
+  }, [projectId, qc]);
 
   // PDF 需带 Authorization 拉取 → blob URL（iframe/open 无法自定义 header）
   // 公开快照：直接引用站内静态 PDF，无需 token。
@@ -117,7 +115,7 @@ export function ReportPage() {
       alive = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [projectId]);
+  }, [projectId, pdfReload]);
 
   if (!data) return <div className="py-16 text-center text-[13px] text-t3">加载中…</div>;
 

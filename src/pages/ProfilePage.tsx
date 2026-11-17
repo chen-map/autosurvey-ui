@@ -4,7 +4,7 @@ import { KeyRound, Library, Compass, Eye, EyeOff, Check, ArrowUpRight, Bot } fro
 import { useAuth } from '@/store/auth';
 import { readLlmConfig, saveLlmConfig, type LlmConfig } from '@/lib/llm';
 import { syncKeysFromBackend, pushKeyToBackend } from '@/lib/apikeys';
-import { USE_MOCK, getProfile, putEmail } from '@/services/api';
+import { USE_MOCK, getProfile, putEmail, testLlmConnection } from '@/services/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { HlVendorManager } from '@/components/HlVendorManager';
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { ukey } from '@/lib/userScope';
 
 // 个人中心（B15 前端版）：个人信息 + 付费平台 API Key 存储
-// Key 仅存本浏览器 localStorage；生产环境由后端加密存储、接口只回掩码
+// Key 仅存本浏览器 localStorage；生产环境由后端加密存储、接口只回掩码（backend-todo.md §6）
 const LS_APIKEYS = () => ukey('as.apikeys');
 const PAID_PLATFORMS = ['IEEE', 'ACM', 'Springer', 'Elsevier', 'Agent 检索'];
 
@@ -23,8 +23,26 @@ interface UseCaseRow {
   configured: boolean; baseUrl: string; model: string; apiKeyMasked: string;
   provider?: string;
   builtin?: string;
-  thinking?: 'off' | 'on';
+  thinking?: 'off' | 'on' | 'forced';
+  thinkingMode?: 'auto' | 'on' | 'off';
+  thinkingForced?: boolean;
 }
+
+const isForcedThinkingModel = (model: string): boolean =>
+  /reasoner|(^|[-_/])o[134](-|$)|glm-5[.-]3|gemini-2[.-]5-pro|qwq|(thinking.*(kimi|magistral))/i.test(model || '');
+
+type ProviderPreset = { key: string; label: string; baseUrl: string; model: string; provider: 'openai' | 'anthropic' };
+const OPENAI_PRESETS: ProviderPreset[] = [
+  { key: 'deepseek', label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat', provider: 'openai' },
+  { key: 'glm', label: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4.7-flashx', provider: 'openai' },
+  { key: 'qwen', label: '通义 Qwen', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus', provider: 'openai' },
+  { key: 'kimi', label: 'Moonshot Kimi', baseUrl: 'https://api.moonshot.cn/v1', model: 'kimi-k2-0905-preview', provider: 'openai' },
+];
+const ANTHROPIC_PRESETS: ProviderPreset[] = [
+  { key: 'deepseek-a', label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/anthropic', model: 'deepseek-chat', provider: 'anthropic' },
+  { key: 'glm-a', label: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/anthropic', model: 'glm-4.7-flashx', provider: 'anthropic' },
+  { key: 'kimi-a', label: 'Moonshot Kimi', baseUrl: 'https://api.moonshot.cn/anthropic', model: 'kimi-k2-0905-preview', provider: 'anthropic' },
+];
 
 function readKeys(): Record<string, string> {
   try {
@@ -96,10 +114,12 @@ export function ProfilePage() {
 
   // 统一 LLM 执行器配置（url + apikey + model）
   const [llm, setLlmState] = useState<LlmConfig>(readLlmConfig);
-  const [llmThinking, setLlmThinking] = useState<'off' | 'on'>('off');
+  const [llmThinking, setLlmThinking] = useState<'auto' | 'on' | 'off'>('auto');
   // 防 800ms 防抖闭包用旧 thinking 覆盖刚切换的值
-  const llmThinkingRef = useRef<'off' | 'on'>('off');
+  const llmThinkingRef = useRef<'auto' | 'on' | 'off'>('auto');
   const [llmStatus, setLlmStatus] = useState('');
+  const [llmTestMsg, setLlmTestMsg] = useState('');
+  const [llmTestBusy, setLlmTestBusy] = useState(false);
   // Key 是否被用户改过：必须用 ref（同步）。state 是异步的——onChange 里立即读到的永远是旧值，
   // 之前用 state 导致每次按键发出的 apiKey 都是空串，Key 永远存不上（页面显示已填、刷新即丢）
   const llmKeyEditedRef = useRef(false);
@@ -113,9 +133,33 @@ export function ProfilePage() {
     llmPushTimer.current = setTimeout(() => void pushLlmConfig(next), 800); // 停止输入 800ms 后统一提交
   };
 
+  const testGlobalLlm = async () => {
+    setLlmTestBusy(true); setLlmTestMsg('');
+    try {
+      const r = await testLlmConnection({
+        baseUrl: llm.baseUrl, model: llm.model,
+        apiKey: llmKeyEditedRef.current ? llm.apiKey.trim() : '',
+        provider: 'openai', useCase: 'default',
+      });
+      setLlmTestMsg(r.ok
+        ? `✓ 连通 ${r.latency_ms ?? '?'}ms · ${r.model || ''}${r.note ? `（${r.note}）` : ''}`
+        : `✗ ${r.error || '连接失败'}`);
+    } catch (e) {
+      setLlmTestMsg(`✗ ${e instanceof Error ? e.message : '连接失败'}`);
+    } finally { setLlmTestBusy(false); }
+  };
+
+  const applyGlobalPreset = (p: ProviderPreset) => {
+    const next = { ...llm, baseUrl: p.baseUrl, model: p.model };
+    setLlmState(next);
+    if (USE_MOCK) { saveLlmConfig(next); return; }
+    if (llmPushTimer.current) clearTimeout(llmPushTimer.current);
+    llmPushTimer.current = setTimeout(() => void pushLlmConfig(next), 300);
+  };
+
   // 真实模式：LLM 配置提交后端。apiKey 仅在用户改过 Key 时提交（避免掩码回写覆盖真值）；
   // 空 Key = 保留后端原值。保存校验：Key 不完整不发；后端 400/网络错误原样提示
-  const pushLlmConfig = async (cfg: LlmConfig, thinking?: 'off' | 'on') => {
+  const pushLlmConfig = async (cfg: LlmConfig, thinking?: 'auto' | 'on' | 'off') => {
     const API = import.meta.env.VITE_API_BASE ?? '/api';
     const token = localStorage.getItem('as.token') ?? '';
     const sendKey = llmKeyEditedRef.current ? cfg.apiKey.trim() : '';
@@ -149,10 +193,11 @@ export function ProfilePage() {
 
   // AI 使用点细分：每个 WF 可独立配置 baseUrl / apiKey / model
   const [catalog, setCatalog] = useState<UseCaseRow[]>([]);
-  const [ovr, setOvr] = useState<Record<string, { baseUrl: string; model: string; apiKey: string; provider: string; thinking: 'off' | 'on' }>>({});
+  const [ovr, setOvr] = useState<Record<string, { baseUrl: string; model: string; apiKey: string; provider: string; thinking: 'auto' | 'on' | 'off' }>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showLlmKey, setShowLlmKey] = useState<Record<string, boolean>>({});
   const [keyTip, setKeyTip] = useState<Record<string, string>>({});
+  const [ucTest, setUcTest] = useState<Record<string, { msg: string; busy: boolean }>>({});
   const loadCatalog = () => {
     if (USE_MOCK) return;
     const API = import.meta.env.VITE_API_BASE ?? '/api';
@@ -174,7 +219,7 @@ export function ProfilePage() {
       if (!res.ok) return;
       const d = await res.json();
       setLlmState({ baseUrl: d.baseUrl ?? '', model: d.model ?? '', apiKey: d.apiKeyMasked ?? '' });
-      const t = d.thinking === 'on' ? 'on' : 'off';
+      const t = d.thinkingMode === 'on' || d.thinkingMode === 'off' ? d.thinkingMode : 'auto';
       llmThinkingRef.current = t;
       setLlmThinking(t);
     })().catch(() => {});
@@ -238,7 +283,7 @@ export function ProfilePage() {
         </div>
         <p className="mt-1.5 text-[12.5px] leading-5 text-t3">
           订阅制论文平台需要机构/API Key 才会真实返回数据。Key 只保存在你的浏览器中；
-          后端接入后改为服务端加密存储，接口只回传掩码。
+          后端接入后改为服务端加密存储，接口只回传掩码（见 backend-todo.md §6）。
         </p>
         {keyErr && (
           <div className="mt-3 rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-[12.5px] text-danger">{keyErr}</div>
@@ -322,21 +367,43 @@ export function ProfilePage() {
           </div>
         </div>
 
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <span className="text-[12px] text-t3">快速填充</span>
+          {OPENAI_PRESETS.map((p) => (
+            <button key={p.key} type="button" onClick={() => applyGlobalPreset(p)}
+              className="rounded border border-line bg-page px-2.5 py-1 text-[11.5px] text-t2 transition-colors hover:border-ink hover:text-t1"
+              title={`${p.baseUrl} · ${p.model}`}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+
         <div className="mt-2.5 flex items-center gap-2">
           <span className="text-[12px] text-t3">思考模式</span>
           <select
             value={llmThinking}
             onChange={(ev) => {
-              const v = ev.target.value as 'off' | 'on';
+              const v = ev.target.value as 'auto' | 'on' | 'off';
               llmThinkingRef.current = v;
               setLlmThinking(v);
               void pushLlmConfig(llm, v);
             }}
             className="h-8 rounded-lg border border-line bg-card px-2 text-[12px] text-t2 focus:border-ink focus:outline-none"
           >
-            <option value="off">关闭（推荐——思考型模型开着思考会耗尽 token，导致输出为空或 JSON 截断）</option>
-            <option value="on">开启（深度推理，慢且耗 token）</option>
+            <option value="auto">自动：按环节（W1/W2 关，W3/W4/W5 开）</option>
+            <option value="on">强制开启（深度推理，慢且耗 token）</option>
+            <option value="off">强制关闭（结构化 JSON 任务更快）</option>
           </select>
+          {isForcedThinkingModel(llm.model) && (
+            <span className="text-[11px] text-[#b45309]" title="该模型无法关闭思考">
+              该模型强制思考：W1/W2 也关不掉，系统会放大 token 预算
+            </span>
+          )}
+          <Button size="sm" variant="secondary" disabled={llmTestBusy || !llm.baseUrl || !llm.model}
+            onClick={() => void testGlobalLlm()}>
+            {llmTestBusy ? '测试中…' : '测试连接'}
+          </Button>
+          {llmTestMsg && <span className={cn('text-[11px]', llmTestMsg.startsWith('✓') ? 'text-ok' : 'text-danger')}>{llmTestMsg}</span>}
         </div>
         <details className="mt-1.5 text-[11.5px] leading-5 text-t3">
           <summary className="cursor-pointer select-none hover:text-t2">模型思考能力速查（哪些模型建议避开）</summary>
@@ -373,7 +440,7 @@ export function ProfilePage() {
           </p>
           <div className="mt-3 space-y-2">
             {catalog.filter(c => c.id !== 'default').map(uc => {
-              const e = ovr[uc.id] ?? { baseUrl: '', model: '', apiKey: '', provider: uc.provider || 'openai', thinking: (uc.thinking === 'on' ? 'on' : 'off') };
+              const e = ovr[uc.id] ?? { baseUrl: '', model: '', apiKey: '', provider: uc.provider || 'openai', thinking: (uc.thinkingMode ?? (uc.thinking === 'on' ? 'on' : 'off')) };
               const isOpen = expanded === uc.id;
               const isConfigured = uc.configured;
               return (
@@ -444,27 +511,55 @@ export function ProfilePage() {
                             <p className="mt-1 text-[11px] leading-4 text-t3">OpenAI 兼容协议适用于大多数 LLM 服务商（DeepSeek / Moonshot / 通义 / Ollama）</p>
                           )}
                         </div>
-                        {uc.id === 'w4' && (
-                          <div className="md:col-span-2 flex flex-wrap gap-2">
-                            <button type="button"
-                              onClick={() => setOvr(o => ({...o, w4: {...(o.w4 ?? e), baseUrl: 'https://api.deepseek.com/anthropic', provider: 'anthropic', model: 'deepseek-chat'}}))}
+                        <div className="md:col-span-2 flex flex-wrap items-center gap-1.5">
+                          <span className="text-[11px] text-t3">{uc.id === 'w4' ? '快速填充（Anthropic）' : '快速填充'}</span>
+                          {(uc.id === 'w4' ? ANTHROPIC_PRESETS : OPENAI_PRESETS).map((p) => (
+                            <button key={p.key} type="button"
+                              onClick={() => setOvr(o => ({...o, [uc.id]: {...e, baseUrl: p.baseUrl, model: p.model, provider: p.provider}}))}
                               className="rounded border border-line bg-page px-2.5 py-1 text-[11.5px] text-t2 transition-colors hover:border-ink hover:text-t1"
-                            >
-                              一键填 DeepSeek（Anthropic 协议）
+                              title={`${p.baseUrl} · ${p.model}`}>
+                              {p.label}
                             </button>
-                          </div>
-                        )}
+                          ))}
+                        </div>
                       </div>
                         <div className="md:col-span-2 flex items-center gap-2">
                           <span className="text-[11px] text-t3">思考模式</span>
                           <select
                             value={e.thinking}
-                            onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, thinking: ev.target.value as 'off' | 'on'}}))}
+                            onChange={ev => setOvr(o => ({...o, [uc.id]: {...e, thinking: ev.target.value as 'auto' | 'on' | 'off'}}))}
                             className="h-8 rounded-lg border border-line bg-card px-2 text-[12px] text-t2 focus:border-ink focus:outline-none"
                           >
-                            <option value="off">关闭（推荐）</option>
+                            <option value="auto">自动（按环节）</option>
                             <option value="on">开启</option>
+                            <option value="off">关闭</option>
                           </select>
+                          {isForcedThinkingModel(e.model || uc.model) && e.thinking !== 'on' && (
+                            <span className="text-[10.5px] text-[#b45309]">强制思考模型：关不掉，建议 W1/W2 换非思考模型</span>
+                          )}
+                          <Button size="sm" variant="secondary" disabled={ucTest[uc.id]?.busy}
+                            onClick={async () => {
+                              setUcTest(t => ({ ...t, [uc.id]: { msg: '', busy: true } }));
+                              try {
+                                const r = await testLlmConnection({
+                                  baseUrl: e.baseUrl, model: e.model, apiKey: e.apiKey.trim(),
+                                  provider: e.provider, useCase: uc.id,
+                                });
+                                setUcTest(t => ({ ...t, [uc.id]: {
+                                  busy: false,
+                                  msg: r.ok ? `✓ ${r.latency_ms ?? '?'}ms${r.note ? `（${r.note}）` : ''}` : `✗ ${r.error || '失败'}`,
+                                } }));
+                              } catch (err) {
+                                setUcTest(t => ({ ...t, [uc.id]: { busy: false, msg: `✗ ${err instanceof Error ? err.message : '失败'}` } }));
+                              }
+                            }}>
+                            {ucTest[uc.id]?.busy ? '测试中…' : '测试连接'}
+                          </Button>
+                          {ucTest[uc.id]?.msg && (
+                            <span className={cn('text-[10.5px]', ucTest[uc.id].msg.startsWith('✓') ? 'text-ok' : 'text-danger')}>
+                              {ucTest[uc.id].msg}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center justify-end gap-3">
                         {keyTip[uc.id] && <span className="text-[11px] text-danger">{keyTip[uc.id]}</span>}

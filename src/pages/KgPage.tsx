@@ -31,7 +31,7 @@ interface SimNode extends SimulationNodeDatum {
 type SimLink = SimulationLinkDatum<SimNode> & { type: string };
 
 const ALL_TYPES: KgType[] = ['paper', 'problem', 'method', 'dataset', 'metric', 'limitation', 'assumption'];
-const OVERVIEW_CONCEPT_CAP = 300;   // 概览模式可见概念上限（度数 Top-K）
+const OVERVIEW_CONCEPT_CAP = 140;   // 概览模式可见概念上限（度数 Top-K）
 const OVERVIEW_THRESHOLD = 400;     // 节点数超过此值才启用概览模式
 const PRE_LAYOUT_TICKS = 300;
 
@@ -154,6 +154,8 @@ export function KgPage() {
   const viewRef = useRef({ k: 1, x: 0, y: 0 });
   const hoverRef = useRef<string | null>(null);
   const dragRef = useRef<string | null>(null);
+  // 按下节点先只做候选；移动超过阈值才真正拖拽，避免点击/手抖重启力导向
+  const dragCandidateRef = useRef<{ id: string; x: number; y: number } | null>(null);
   const panRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
   const downPtRef = useRef<{ x: number; y: number } | null>(null);  // down 点，用于位移阈值判定点击
   const sizeRef = useRef(size);
@@ -179,10 +181,10 @@ export function KgPage() {
   useEffect(() => {
     if (!simNodes.length) return;
     const sim = forceSimulation<SimNode>(simNodes)
-      .force('link', forceLink<SimNode, SimLink>(simLinks).id((d) => d.id).distance(58).strength(0.6))
-      .force('charge', forceManyBody<SimNode>().strength(-150))
+      .force('link', forceLink<SimNode, SimLink>(simLinks).id((d) => d.id).distance(72).strength(0.5))
+      .force('charge', forceManyBody<SimNode>().strength(-240))
       .force('center', forceCenter(size.w / 2, size.h / 2))
-      .force('collide', forceCollide<SimNode>((d) => radiusOf(d.degree, d.type) + 8))
+      .force('collide', forceCollide<SimNode>((d) => radiusOf(d.degree, d.type) + 12))
       // 弱向心力：把互不连通的论文星簇聚拢（断连分量的 Obsidian 观感）
       .force('x', forceX(size.w / 2).strength(0.12))
       .force('y', forceY(size.h / 2).strength(0.16))
@@ -195,8 +197,6 @@ export function KgPage() {
     setTimeout(fitView, 0);
     return () => { sim.stop(); };
   }, [simNodes, simLinks, size.w, size.h, fitView]);
-
-  const reheat = () => simRef.current?.alpha(0.4).restart();
 
   // 高亮：悬停/选中节点 → 邻域；搜索 → 匹配（驱动 canvas 与详情卡）
   const [hoverId, setHoverId] = useState<string | null>(null);
@@ -324,10 +324,11 @@ export function KgPage() {
         ctx.strokeStyle = '#fff';
         ctx.stroke();
 
+        // 只给焦点/高亮/高度数节点画标签；不再给所有 Paper 画标签，否则中心区会糊成一片
         const important = focus === n.id || (st.activeSet?.has(n.id) ?? false)
-          || (st.mode === 'overview' && n.type === 'paper')
+          || n.degree >= 12
           || (st.q !== '' && n.label.toLowerCase().includes(st.q));
-        if (!dim && (labelPx >= 5.5 || important)) {
+        if (!dim && (important || labelPx >= 8)) {
           ctx.globalAlpha = 1;
           ctx.font = '10.5px -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif';
           ctx.textAlign = 'center';
@@ -372,10 +373,11 @@ export function KgPage() {
   // 指针交互：节点拖拽 / 空白平移 / 点选 / 悬停
   const onPointerDown = (e: React.PointerEvent) => {
     const rect = wrapRef.current!.getBoundingClientRect();
-    downPtRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    const hit = hitTest(e.clientX - rect.left, e.clientY - rect.top);
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    downPtRef.current = { x: mx, y: my };
+    const hit = hitTest(mx, my);
     if (hit) {
-      dragRef.current = hit.id;
+      dragCandidateRef.current = { id: hit.id, x: mx, y: my };
       (e.target as Element).setPointerCapture(e.pointerId);
     } else {
       panRef.current = { sx: e.clientX, sy: e.clientY, ox: viewRef.current.x, oy: viewRef.current.y };
@@ -384,13 +386,21 @@ export function KgPage() {
   const onPointerMove = (e: React.PointerEvent) => {
     const rect = wrapRef.current!.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const cand = dragCandidateRef.current;
+    if (!dragRef.current && cand) {
+      // 6px 以内视为点击/手抖，不进入拖拽、不固定节点、不重启仿真
+      const dx = mx - cand.x, dy = my - cand.y;
+      if (dx * dx + dy * dy <= 64) return;
+      dragRef.current = cand.id;
+      dragCandidateRef.current = null;
+    }
     if (dragRef.current) {
       const n = byId.get(dragRef.current);
       if (n) {
         const view = viewRef.current;
         n.fx = (mx - view.x) / view.k;
         n.fy = (my - view.y) / view.k;
-        reheat();
+        requestDraw();
       }
       return;
     }
@@ -413,19 +423,22 @@ export function KgPage() {
   const onPointerUp = (e: React.PointerEvent) => {
     const dragId = dragRef.current;
     dragRef.current = null;
+    dragCandidateRef.current = null;
     panRef.current = null;
-    if (dragId != null) {
-      const n = byId.get(dragId);
-      if (n) { n.fx = undefined; n.fy = undefined; }
-      reheat();
-    }
-    // 位移 <=4px 视为点击（手抖/合成事件的小位移不吞点击），否则是拖拽/平移
+    // 位移 <=6px 视为点击（手抖/合成事件的小位移不吞点击），否则是拖拽/平移
     const d0 = downPtRef.current;
     downPtRef.current = null;
-    if (!d0) return;
     const rect = wrapRef.current!.getBoundingClientRect();
-    const dx = e.clientX - rect.left - d0.x, dy = e.clientY - rect.top - d0.y;
-    if (dx * dx + dy * dy > 16) return;
+    const dx = d0 ? e.clientX - rect.left - d0.x : 0;
+    const dy = d0 ? e.clientY - rect.top - d0.y : 0;
+    const moved = dx * dx + dy * dy > 64;
+    if (dragId != null) {
+      const n = byId.get(dragId);
+      // 拖拽只移动当前节点/边，不重启力导向，避免整图跟着弹
+      if (n) { n.fx = undefined; n.fy = undefined; }
+      requestDraw();
+    }
+    if (!d0 || moved) return;
     const hit = hitTest(d0.x, d0.y);
     setSelectedId((s) => (hit ? (s === hit.id ? null : hit.id) : null));
     requestDraw();
@@ -559,6 +572,7 @@ export function KgPage() {
         onPointerUp={onPointerUp}
         onPointerLeave={() => {
           dragRef.current = null;
+          dragCandidateRef.current = null;
           panRef.current = null;
           if (hoverRef.current) { hoverRef.current = null; setHoverId(null); }
           requestDraw();
