@@ -79,28 +79,51 @@ export function CorpusPage() {
 
   if (!data) return <div className="py-16 text-center text-[13px] text-t3">加载中…</div>;
   const max = Math.max(...data.funnel.map((f) => f.count));
+  const base = data.funnel[0]?.count || 1;
+  const kindStyle: Record<string, { bar: string; tag: string }> = {
+    filter: { bar: 'bg-ink/80', tag: 'bg-black/5 text-t3' },
+    expand: { bar: 'bg-brand', tag: 'bg-brand-weak text-brand-fg' },
+    download: { bar: 'bg-ok', tag: 'bg-ok/10 text-[#0b6231]' },
+  };
+  const kindLabel: Record<string, string> = {
+    filter: '筛选', expand: '扩展', download: '下载',
+  };
 
   return (
     <div className="flex gap-6">
-      {/* PRISMA 筛选漏斗 */}
-      <Card className="h-fit w-60 shrink-0 p-5">
-        <div className="text-[14px] font-medium">PRISMA 筛选漏斗</div>
-        <div className="mt-4 space-y-3">
-          {data.funnel.map((f, i) => (
-            <div key={f.stage} className="anim-rise" style={{ animationDelay: `${i * 40}ms` }}>
-              <div className="flex items-baseline justify-between text-[12px]">
-                <span className="text-t2">{f.stage}</span>
-                <span className="font-semibold tabular-nums">{f.count.toLocaleString()}</span>
+      {/* PRISMA 证据获取流程：筛选 → 扩展 → 下载（数字可升可降，按阶段类型着色） */}
+      <Card className="h-fit w-[19rem] shrink-0 p-5">
+        <div className="text-[14px] font-medium">证据获取流程</div>
+        <div className="mt-1 text-[11px] text-t3">筛选收敛 → 引文扩展 → 下载落盘；数字不单调是正常流程</div>
+        <div className="mt-4 space-y-3.5">
+          {data.funnel.map((f, i) => {
+            const st = kindStyle[(f as { kind?: string }).kind ?? 'filter'] ?? kindStyle.filter;
+            const prev = i > 0 ? data.funnel[i - 1].count : null;
+            const rising = prev != null && f.count > prev;
+            return (
+              <div key={f.stage} className="anim-rise" style={{ animationDelay: `${i * 40}ms` }}>
+                <div className="flex items-center justify-between gap-2 text-[12px]">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className={cn('shrink-0 rounded px-1 py-px text-[10px]', st.tag)}>
+                      {kindLabel[(f as { kind?: string }).kind ?? 'filter']}
+                    </span>
+                    <span className="truncate text-t2" title={f.note}>{f.stage}</span>
+                  </span>
+                  <span className="shrink-0 font-semibold tabular-nums">{f.count.toLocaleString()}</span>
+                </div>
+                <div className="mt-1 flex items-center gap-2">
+                  <div className="h-1.5 flex-1 rounded-full bg-black/5">
+                    <div className={cn('h-1.5 rounded-full', st.bar)}
+                      style={{ width: `${Math.max((f.count / max) * 100, 2)}%` }} />
+                  </div>
+                  <span className="shrink-0 tabular-nums text-[10.5px] text-t3">
+                    {i === 0 ? '100%' : rising ? `+${Math.round((f.count / (prev || 1)) * 100)}%` : `${Math.round((f.count / base) * 100)}%`}
+                  </span>
+                </div>
+                {f.note && <div className="mt-0.5 text-[10.5px] leading-4 text-t3">{f.note}</div>}
               </div>
-              <div className="mt-1 h-2 rounded-full bg-black/5">
-                <div
-                  className={cn('h-2 rounded-full', i === data.funnel.length - 1 ? 'bg-ok' : 'bg-ink/80')}
-                  style={{ width: `${Math.max((f.count / max) * 100, 2)}%` }}
-                />
-              </div>
-              {f.note && <div className="mt-0.5 text-[11px] text-t3">{f.note}</div>}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
 
@@ -313,6 +336,23 @@ function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClos
   } | null>(null);
   useEffect(() => {
     let alive = true;
+    // 快照模式：卡片数据就在 corpus.json 的 papers[].card 里，直接用；
+    // 真实模式：走后端 paper-card 接口（W2 解析卡）。
+    if (USE_MOCK) {
+      const c = paper.card;
+      if (c) {
+        setCardData({
+          abstract: paper.abstract ?? '', authors: paper.authors ?? '', year: String(paper.year ?? ''),
+          problems: (c.problems ?? []).map((s) => ({ name: s, description: '' })),
+          methods: (c.methods ?? []).map((s) => ({ name: s, description: '' })),
+          datasets: (c.datasets ?? []).map((s) => ({ name: s, description: '' })),
+          metrics: (c.metrics ?? []).map((s) => ({ name: s, description: '' })),
+          limitations: (c.limitations ?? []).map((s) => ({ name: s, description: '' })),
+          assumptions: (c.assumptions ?? []).map((s) => ({ name: s, description: '' })),
+        });
+      }
+      return () => { alive = false; };
+    }
     const API = import.meta.env.VITE_API_BASE ?? '/api';
     const tk = localStorage.getItem('as.token') ?? '';
     fetch(`${API}/projects/${projectId}/paper-card/${encodeURIComponent(paper.rid || paper.id)}`, {
@@ -358,54 +398,65 @@ function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClos
         )}
 
         {/* 摘要与元数据：W2 解析卡摘要优先，缺卡时回退 W1 检索元数据摘要 */}
-        <div className="border-b border-line/60 p-5">
-          <div className="text-[13px] font-medium text-t2">摘要</div>
-          <p className="mt-1.5 text-[13px] leading-5 text-t1">
-            {(cardData?.abstract || paper.abstract)
-              ? (cardData?.abstract || paper.abstract)
-              : '本篇暂无摘要（检索源未提供且全文未成功下载）。'}
-          </p>
-          {((cardData?.authors || paper.authors) || (cardData?.year || paper.year)) && (
-            <p className="mt-2 text-[12px] text-t3">
-              {(cardData?.authors || paper.authors) && <span>{cardData?.authors || paper.authors} · </span>}
-              {(cardData?.year || paper.year) && <span>{cardData?.year || paper.year}</span>}
+        {(cardData?.abstract || paper.abstract) ? (
+          <div className="border-b border-line/60 p-5">
+            <div className="text-[13px] font-medium text-t2">摘要</div>
+            <p className="mt-1.5 text-[13px] leading-5 text-t1">
+              {cardData?.abstract || paper.abstract}
             </p>
-          )}
-        </div>
-
-        {/* Paper Card：六类结构化对象（W2 产出） */}
-        <div className="p-5">
-          <div className="flex items-center gap-1.5 text-[13px] font-medium">
-            <FileText size={14} className="text-t3" />
-            Paper Card · 结构化对象
-          </div>
-          <div className="mt-3 flex flex-wrap gap-1">
-            {CARD_TABS.map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setTab(key)}
-                className={cn(
-                  'rounded-md px-2.5 py-1 text-[12px] transition-colors',
-                  tab === key ? 'bg-ink text-white' : 'text-t2 hover:bg-black/5',
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <ul className="mt-3 space-y-2">
-            {(cardData?.[tab] ?? []).map((it, gi) => (
-              <li key={gi} className="rounded-lg bg-page px-3 py-2">
-                <div className="text-[13px] font-medium text-t1">{it.name}</div>
-                {it.description && <div className="mt-1 text-[12.5px] leading-5 text-t2">{it.description}</div>}
-              </li>
-            ))}
-            {(!cardData || (cardData[tab] ?? []).length === 0) && (
-              <li className="px-3 py-2 text-[12.5px] text-t3">该类暂无结构化对象（本篇未抽取到，或 W2 未运行）。</li>
+            {((cardData?.authors || paper.authors) || (cardData?.year || paper.year)) && (
+              <p className="mt-2 text-[12px] text-t3">
+                {(cardData?.authors || paper.authors) && <span>{cardData?.authors || paper.authors} · </span>}
+                {(cardData?.year || paper.year) && <span>{cardData?.year || paper.year}</span>}
+              </p>
             )}
-          </ul>
-        </div>
+          </div>
+        ) : (
+          <div className="border-b border-line/60 px-5 py-2.5 text-[11.5px] text-t3">
+            暂无摘要——该篇在检索源未返回摘要且 PDF 未成功下载。
+          </div>
+        )}
+
+        {/* Paper Card：六类结构化对象（W2 产出）；六类全空时整个区块隐藏，不展示空占位 */}
+        {(() => {
+          const counts = CARD_TABS.map(([key]) => (cardData?.[key] ?? []).length);
+          const total = counts.reduce((s, n) => s + n, 0);
+          if (total === 0) return null;
+          const firstNonEmpty = CARD_TABS.findIndex(([key]) => (cardData?.[key] ?? []).length > 0);
+          const activeIdx = CARD_TABS.findIndex(([key]) => key === tab);
+          const activeTab = counts[activeIdx] > 0 ? tab : CARD_TABS[firstNonEmpty]?.[0] ?? tab;
+          return (
+          <div className="p-5">
+            <div className="flex items-center gap-1.5 text-[13px] font-medium">
+              <FileText size={14} className="text-t3" />
+              Paper Card · 结构化对象
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1">
+              {CARD_TABS.filter(([key]) => (cardData?.[key] ?? []).length > 0).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setTab(key)}
+                  className={cn(
+                    'rounded-md px-2.5 py-1 text-[12px] transition-colors',
+                    activeTab === key ? 'bg-ink text-white' : 'text-t2 hover:bg-black/5',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <ul className="mt-3 space-y-2">
+              {(cardData?.[activeTab] ?? []).map((it, gi) => (
+                <li key={gi} className="rounded-lg bg-page px-3 py-2">
+                  <div className="text-[13px] font-medium text-t1">{it.name}</div>
+                  {it.description && <div className="mt-1 text-[12.5px] leading-5 text-t2">{it.description}</div>}
+                </li>
+              ))}
+            </ul>
+          </div>
+          );
+        })()}
 
         <div className="border-t border-line/60 p-5">
           <div className="flex items-center gap-2">
