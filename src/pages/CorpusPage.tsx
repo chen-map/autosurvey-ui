@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { X, FileText, Bookmark, Upload } from 'lucide-react';
-import type { PaperRecord, ScreenStage } from '@/types/data';
+import { X, FileText, Bookmark, Upload, ExternalLink } from 'lucide-react';
+import type { PaperRecord, ScreenStage, PrismaLevel } from '@/types/data';
 import { getCorpus, USE_MOCK } from '@/services/api';
 import { useLibrary, fingerprint } from '@/store/library';
 import { Card } from '@/components/ui/Card';
@@ -85,6 +85,11 @@ export function CorpusPage() {
     expand: { bar: 'bg-brand', tag: 'bg-brand-weak text-brand-fg' },
     download: { bar: 'bg-ok', tag: 'bg-ok/10 text-[#0b6231]' },
   };
+  // 快照 funnel 可能缺 kind 字段（旧导出）：按阶段名推断，保证标签分色正确
+  const kindOf = (f: PrismaLevel & { kind?: string }): string =>
+    f.kind ?? (f.stage === '引文扩展' ? 'expand'
+      : f.stage === '成功下载' || f.stage === '下载失败' || f.stage === '无 DOI 分流' || f.stage === '下载就绪'
+        ? 'download' : 'filter');
   const kindLabel: Record<string, string> = {
     filter: '筛选', expand: '扩展', download: '下载',
   };
@@ -97,7 +102,7 @@ export function CorpusPage() {
         <div className="mt-1 text-[11px] text-t3">筛选收敛 → 引文扩展 → 下载落盘；数字不单调是正常流程</div>
         <div className="mt-4 space-y-3.5">
           {data.funnel.map((f, i) => {
-            const st = kindStyle[(f as { kind?: string }).kind ?? 'filter'] ?? kindStyle.filter;
+            const st = kindStyle[kindOf(f)] ?? kindStyle.filter;
             const prev = i > 0 ? data.funnel[i - 1].count : null;
             const rising = prev != null && f.count > prev;
             return (
@@ -105,7 +110,7 @@ export function CorpusPage() {
                 <div className="flex items-center justify-between gap-2 text-[12px]">
                   <span className="flex min-w-0 items-center gap-1.5">
                     <span className={cn('shrink-0 rounded px-1 py-px text-[10px]', st.tag)}>
-                      {kindLabel[(f as { kind?: string }).kind ?? 'filter']}
+                      {kindLabel[kindOf(f)]}
                     </span>
                     <span className="truncate text-t2" title={f.note}>{f.stage}</span>
                   </span>
@@ -470,6 +475,20 @@ function PaperDrawer({ paper, onClose, projectId }: { paper: PaperRecord; onClos
               <Bookmark size={13} className={saved ? 'fill-ink' : ''} />
               {saved ? '已在知识库' : '收藏到知识库'}
             </Button>
+            {(() => {
+              // 外链：DOI / arXiv 任一命中即给出原文入口，填充无卡论文的信息量
+              const id = (paper.rid || paper.id || '').trim();
+              const url = /^10\./.test(id) ? `https://doi.org/${id}`
+                : /^\d{4}\.\d{4,5}(v\d+)?$/.test(id) ? `https://arxiv.org/abs/${id}` : '';
+              if (!url) return null;
+              return (
+                <a href={url} target="_blank" rel="noreferrer">
+                  <Button variant="secondary" size="sm">
+                    <ExternalLink size={13} /> 原文外链
+                  </Button>
+                </a>
+              );
+            })()}
             <span className="text-[12px] text-t3">PDF 全文预览在语料库深化阶段接入</span>
           </div>
         </div>
